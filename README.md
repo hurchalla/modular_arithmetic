@@ -1,5 +1,5 @@
 # Modular Arithmetic
-Modular Arithmetic for C++ and C
+Modular Arithmetic library for C++ and C
 
 ## Author
 
