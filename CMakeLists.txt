@@ -17,14 +17,6 @@ if(NOT DEFINED CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 endif()
 
 
-#CppCheck
-# download from http://cppcheck.sourceforge.net/
-if(NOT DEFINED CMAKE_CXX_CPPCHECK)
-message("****Check Enabled!!!!")
-    set(CMAKE_CXX_CPPCHECK "cppcheck")
-endif()
-
-
 set(public_header_files
     include/hurchalla/modular_arithmetic/ma.h
     )
@@ -43,11 +35,11 @@ if(NOT DEFINED default_value_pbc_wrap_stdlib_assert)
 endif()
 add_subdirectory(../programming_by_contract ${CMAKE_CURRENT_BINARY_DIR}/programming_by_contract)
 
-add_subdirectory(../common ${CMAKE_CURRENT_BINARY_DIR}/common)
+#add_subdirectory(../common ${CMAKE_CURRENT_BINARY_DIR}/common)
 
 
 target_link_libraries(modular_arithmetic PRIVATE programming_by_contract)
-target_link_libraries(modular_arithmetic PUBLIC common)
+#target_link_libraries(modular_arithmetic PUBLIC common)
 #  if you have a public dependency - something your implementation depends upon, and that is also
 #  visible through your public headers, use PUBLIC above instead of PRIVATE
 
