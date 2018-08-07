@@ -1,9 +1,10 @@
-cmake_minimum_required(VERSION 3.10)
-project(modular_arithmetic VERSION 1.0.0 LANGUAGES C CXX)
 
 if(TARGET modular_arithmetic)
     return()
 endif()
+
+cmake_minimum_required(VERSION 3.12)
+project(modular_arithmetic VERSION 1.0.0 LANGUAGES C CXX)
 
 
 if(NOT DEFINED CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
@@ -60,10 +61,10 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     #include(CTest)
     if(${BUILD_TESTING} OR ${BUILD_TESTING_ONLY_CURRENT_PROJECT})
         enable_testing()
-        add_subdirectory(test/)
+        add_subdirectory(test)
     endif()
 #elseif(${BUILD_TESTING} AND (NOT ${BUILD_TESTING_ONLY_CURRENT_PROJECT}) AND ${CMAKE_TESTING_ENABLED})
 elseif(${BUILD_TESTING} AND (NOT ${BUILD_TESTING_ONLY_CURRENT_PROJECT}))
-    add_subdirectory(test/)
+    add_subdirectory(test)
 endif()
 

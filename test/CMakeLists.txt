@@ -1,18 +1,21 @@
-cmake_minimum_required(VERSION 3.10)
-project(test_modular_arithmetic VERSION 1.0.0 LANGUAGES CXX)
 
 if(TARGET test_modular_arithmetic)
     return()
 endif()
 
+cmake_minimum_required(VERSION 3.12)
+#project(test_modular_arithmetic VERSION 1.0.0 LANGUAGES CXX)
+
+
 
 # The following ideas come from
 #   https://github.com/google/googletest/blob/master/googletest/README.md
-# They are further explained at https://crascit.com/2015/07/25/cmake-gtest/
-# and https://github.com/Crascit/DownloadProject/blob/master/DownloadProject.cmake
+# They are further explained at https://crascit.com/2015/07/25/cmake-gtest/ and
+# https://github.com/Crascit/DownloadProject/blob/master/DownloadProject.cmake
 if (NOT TARGET gtest_main)
    # Download and unpack googletest at configure time
-   configure_file(CMakeLists.txt.in "${CMAKE_BINARY_DIR}/googletest/download/CMakeLists.txt")
+   configure_file(CMakeLists.txt.in
+                  "${CMAKE_BINARY_DIR}/googletest/download/CMakeLists.txt")
    
    execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
      RESULT_VARIABLE result
@@ -45,18 +48,18 @@ endif()
 # needed for gtest_discover_tests()
 include(GoogleTest)
 
- 
-#add_executable(tests tests.cpp)
-#target_link_libraries(tests GTest::GTest)
-
 
 add_executable(test_modular_arithmetic  test_ma.cpp)
-target_link_libraries(test_modular_arithmetic  modular_arithmetic gtest_main)
+target_link_libraries(test_modular_arithmetic
+                      modular_arithmetic
+                      gtest_main)
 #add_test(test_modular_arithmetic  test_modular_arithmetic)
 gtest_discover_tests(test_modular_arithmetic)
 
 add_executable(test_modular_arithmetic2  test_ma2.cpp)
-target_link_libraries(test_modular_arithmetic2  modular_arithmetic gtest_main)
+target_link_libraries(test_modular_arithmetic2
+                      modular_arithmetic
+                      gtest_main)
 #add_test(test_modular_arithmetic2  test_modular_arithmetic2)
 gtest_discover_tests(test_modular_arithmetic2)
 
@@ -66,17 +69,11 @@ gtest_discover_tests(test_modular_arithmetic2)
 #--schedule-random
 
 
-# set to output to bin
-# gtest dirs into test subdir
-#### trigger all tests to run automatically upon build completion?
-# AUTORUN_TESTS_ALL_LIBS option.  only parent lib gets tested if not set
-
-
 #If a Makefile has a target named check, then make check will "build" that target. It's typically a phony target, meaning that it is a make-scripted command rather than a file named "check" that gets created.
 #The gnu project advises that all gnu software should include a make check target that runs post-build tests in the build directory.
 
 
 #undocumented CMake options:
 # -H sets the source directory for the project.
-# The -B option (also undocumented) in turn sets the binary directory.
+# The -B option (also undocumented) sets the binary directory.
 
