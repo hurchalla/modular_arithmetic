@@ -1,5 +1,5 @@
 # --- This file is distributed under the MIT Open Source License, as detailed
-# in the file "LICENSE.txt" in the root of this repository ---
+# in the file "LICENSE.TXT" in the root of this repository ---
 
 
 # Use FetchContent to get Googletest
