@@ -27,11 +27,3 @@ target_link_libraries(test_modular_arithmetic
                       gtest_main)
 #add_test(test_modular_arithmetic  test_modular_arithmetic)
 gtest_discover_tests(test_modular_arithmetic)
-
-add_executable(test_modular_arithmetic2  test_ma2.cpp)
-set_target_properties(test_modular_arithmetic2 PROPERTIES FOLDER "Tests")
-target_link_libraries(test_modular_arithmetic2
-                      modular_arithmetic
-                      gtest_main)
-#add_test(test_modular_arithmetic2  test_modular_arithmetic2)
-gtest_discover_tests(test_modular_arithmetic2)
