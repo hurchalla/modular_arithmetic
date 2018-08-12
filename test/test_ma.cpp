@@ -21,15 +21,15 @@ int main(int argc, char *argv[])
 #else
     
 namespace {
-	TEST(MAFunction1Test, TestName1) {
-		EXPECT_TRUE(true);
-	}
-	TEST(MAFunction1Test, TestName2) {
-		EXPECT_TRUE(true);
-	}
-	TEST(MAFunction2Test, TestName1) {
-		EXPECT_FALSE(false);
-	}
+    TEST(MAFunction1Test, TestName1) {
+        EXPECT_TRUE(true);
+    }
+    TEST(MAFunction1Test, TestName2) {
+        EXPECT_TRUE(true);
+    }
+    TEST(MAFunction2Test, TestName1) {
+        EXPECT_FALSE(false);
+    }
 }
 
 #endif

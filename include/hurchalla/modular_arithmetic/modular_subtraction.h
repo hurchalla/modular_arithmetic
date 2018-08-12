@@ -37,7 +37,7 @@ T modular_subtraction_prereduced_inputs(T a, T b, T modulus)
 }
 
 
-}}	// end namespace
+}}  // end namespace
 
 
 #endif
