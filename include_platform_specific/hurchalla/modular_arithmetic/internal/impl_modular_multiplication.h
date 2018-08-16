@@ -114,15 +114,15 @@ inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
     // convention other than __fastcall or __vectorcall should be allowed.
     typedef uint32_t (__cdecl *CDeclModMult)(uint32_t, uint32_t, uint32_t);
     static_cast<CDeclModMult>(impl_modular_multiplication_prereduced_inputs);
-	uint32_t result;
-	__asm {
-		mov	eax, a
-		mul	b			; EDX:EAX = EAX*b; high-order bits of the product in EDX
-		div	modulus		; (quotient EAX, remainder EDX) = EDX:EAX/modulus
-		mov	result, edx	; save the remainder
-	}
+    uint32_t result;
+    __asm {
+        mov eax, a
+        mul b           ; EDX:EAX = EAX*b; high-order bits of the product in EDX
+        div modulus     ; (quotient EAX, remainder EDX) = EDX:EAX/modulus
+        mov result, edx ; save the remainder
+    }
     postcondition3((uint64_t)result==(uint64_t)a*(uint64_t)b%(uint64_t)modulus);
-	return result;
+    return result;
 }
 #elif defined(TARGET_ISA_X86_64) || defined(TARGET_ISA_X86_32) // gnu/AT&T style
 inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,

@@ -11,14 +11,14 @@
 ;
 ; rcx == a, rdx == b, r8 == modulus
 ; return register is rax
-PUBLIC	modular_multiply_uint64_asm_UID7b5f83fc983
-modular_multiply_uint64_asm_UID7b5f83fc983	PROC
-	mov	rax, rcx
-	mul	rdx	        ; RDX:RAX = RAX*RDX; high-order bits of the product in RDX
-	div	r8	        ; (quotient RAX, remainder RDX) = RDX:RAX/R8
-	mov	rax, rdx	; return the remainder
-	ret	0
-modular_multiply_uint64_asm_UID7b5f83fc983	ENDP
+PUBLIC  modular_multiply_uint64_asm_UID7b5f83fc983
+modular_multiply_uint64_asm_UID7b5f83fc983  PROC
+    mov rax, rcx
+    mul rdx         ; RDX:RAX = RAX*RDX; high-order bits of the product in RDX
+    div r8          ; (quotient RAX, remainder RDX) = RDX:RAX/R8
+    mov rax, rdx    ; return the remainder
+    ret 0
+modular_multiply_uint64_asm_UID7b5f83fc983  ENDP
 
 
 End
