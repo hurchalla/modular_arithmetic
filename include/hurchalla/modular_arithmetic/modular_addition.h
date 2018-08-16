@@ -29,5 +29,4 @@ T modular_addition_prereduced_inputs(T a, T b, T modulus)
 
 }}  // end namespace
 
-
 #endif

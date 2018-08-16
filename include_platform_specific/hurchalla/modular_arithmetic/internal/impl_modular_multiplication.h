@@ -12,8 +12,6 @@
 #include <cstdint>
 #include <type_traits>
 
-
-
 namespace hurchalla { namespace modular_arithmetic {
 
 
@@ -31,8 +29,8 @@ Notes:
    for uint32_t and uint64_t, later in this file.
 Code review/testing notes:
    Analytical correctness: Appears perfect.
-   Empirical correctness: Impossible to exhaustively test, but passed
-      TestModularMultiplicationTemplated() */
+   Empirical correctness: Impossible to test exhaustively, but passed all tests.
+*/
 template <typename T, bool templateArgsFullySpecified=false>
 inline T impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
 {
@@ -193,8 +191,6 @@ inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
 #endif
 
 
-
 }}  // end namespace
-
 
 #endif  // include guard

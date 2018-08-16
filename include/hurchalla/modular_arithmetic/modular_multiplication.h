@@ -21,12 +21,10 @@ T modular_multiplication_prereduced_inputs(T a, T b, T modulus)
     // Postcondition: Returns (a*b)%modulus, theoretically calculated at
     //                infinite precision to avoid overflow.
 
-    T ret = impl_modular_multiplication_prereduced_inputs(a, b, modulus);
-    return ret;
+    return impl_modular_multiplication_prereduced_inputs(a, b, modulus);
 }
 
 
 }} // end namespace
-
 
 #endif
