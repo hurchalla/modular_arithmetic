@@ -14,7 +14,7 @@ namespace hurchalla { namespace modular_arithmetic {
 //    Empirically, impossible to exhaustively test, but passed all tests.
 // Adapted from pseudocode @ http://en.wikipedia.org/wiki/Modular_exponentiation
 template <typename T>
-T modular_pow(T base, T exponent, T modulus)
+T impl_modular_pow(T base, T exponent, T modulus)
 {
    static_assert(std::is_unsigned<T>::value);  //T unsigned integral type
    if (base>=modulus)
