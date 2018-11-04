@@ -24,27 +24,27 @@ Notes:
    I've made faster non-template function overloads later in this file when
    possible. They are platform specific, though the uint8_t version is available
    for any 16 bit or greater target; likewise uint16_t, uint32_t, and uint64_t
-   versions are available for any target bit width >= the uint_t's bit width.
-   Additionally for select CPU ISAs I've made overloads using assembly language
+   versions are available for any platform target with bit width that is at
+   least twice the size of the prospective uint_t's bit width.
+   Additionally for the x86/x64 ISAs I've made overloads using assembly language
    for uint32_t and uint64_t, later in this file.
+   From preliminary investigation I did on ARM, I don't believe there would be
+   any significant gain by writing assembly language versions of this function.
+   At the time of this writing none of the ARM ISAs appear to provide an
+   instruction for division of a 128 bit dividend by a 64 bit divisor (with a 64
+   bit quotient); ARM also doesn't seem to have any instruction to divide a 64
+   bit dividend by a 32 bit divisor. Not all ARM ISAs even have the standard
+   division instructions (32bit by 32bit, or 64bit by 64 bit). ARM does have a
+   UMULL instruction though, which does 32bit by 32bit multiplication for
+   (effectively) a 64bit result.
 Code review/testing notes:
    Analytical correctness: Appears perfect.
    Empirical correctness: Impossible to test exhaustively, but passed all tests.
 */
-template <typename T, bool templateArgsFullySpecified=false>
+template <typename T>
 inline T impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
 {
     static_assert(std::is_unsigned<T>::value);  //T unsigned integral type
-#ifdef defined(TARGET_ISA_HAS_DIVIDE) && MA_REQUIRE_PLATFORM_SPECIFIC_CODE
-    static_assert(templateArgsFullySpecified,
-      "MA_REQUIRE_PLATFORM_SPECIFIC_CODE was defined, yet no platform specific \
-overload of impl_modular_multiplication_prereduced_inputs was available to \
-call.  Suggestions solution: for best performance write a function overload of \
-impl_modular_multiplication_prereduced_inputs for your CPU/compiler and add it \
-to this file.  Alternatively, do not define MA_REQUIRE_PLATFORM_SPECIFIC_CODE, \
-but that may result in using this and other relatively slow generic template \
-functions.");
-#endif
     T result = 0;
     while (b > 0) {
         namespace ma = ::hurchalla::modular_arithmetic;
@@ -101,17 +101,14 @@ inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
     return result;
 }
 #elif defined(_MSC_VER) && defined(TARGET_ISA_X86_32)   // inline asm, MS syntax
-inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
-                                            uint32_t b, uint32_t modulus)
+// Since this is x86 msvc and will use inline asm, we must ensure this function
+// isn't using __fastcall or __vectorcall (see https://docs.microsoft.com/en-us/cpp/assembler/inline/using-and-preserving-registers-in-inline-assembly ).
+// To do this, we declare this function with the __cdecl modifier, which forces
+// the function to use cdecl calling convention.  This overrides any potential
+// compiler flag that might specify __fastcall or __vectorcall.
+inline uint32_t __cdecl impl_modular_multiplication_prereduced_inputs(
+                                       uint32_t a, uint32_t b, uint32_t modulus)
 {
-    // Make sure this function isn't using __fastcall or __vectorcall (see
-    // https://docs.microsoft.com/en-us/cpp/assembler/inline/using-and-preserving-registers-in-inline-assembly ).
-    // To do this, cause a compile-time cast error if this function isn't using
-    // the default calling convention of __cdecl.  Note this rejects more than 
-    // it should; __cdecl shouldn't be strictly required.  Ideally any calling
-    // convention other than __fastcall or __vectorcall should be allowed.
-    typedef uint32_t (__cdecl *CDeclModMult)(uint32_t, uint32_t, uint32_t);
-    static_cast<CDeclModMult>(impl_modular_multiplication_prereduced_inputs);
     uint32_t result;
     __asm {
         mov eax, a
@@ -159,7 +156,7 @@ inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
     // MSVC doesn't support inline asm for 64 bit targets, so use asm function
     uint64_t result = modular_multiply_uint64_asm_UID7b5f83fc983(a, b, modulus);
     postcondition3(result == impl_modular_multiplication_prereduced_inputs
-                                               <uint64_t, true>(a, b, modulus));
+                                               <uint64_t>(a, b, modulus));
     return result;
 }
 #elif defined(TARGET_ISA_X86_64)    // use inline asm with gnu/AT&T syntax
@@ -178,7 +175,7 @@ inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
              : "1"(a), "r"(b), "r"(modulus)
              : "cc");
     postcondition3(result == impl_modular_multiplication_prereduced_inputs
-                                               <uint64_t, true>(a, b, modulus));
+                                               <uint64_t>(a, b, modulus));
     return result;
 }
 #elif defined(TARGET_ISA_HAS_DIVIDE) && TARGET_BIT_WIDTH >= 128

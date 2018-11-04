@@ -1,7 +1,7 @@
 
 .code
 
-; This uses Microsoft calling convention
+; This uses Microsoft x64 calling convention
 
 
 ; extern "C" uint64_t modular_multiply_uint64_asm_UID7b5f83fc983(uint64_t a,
