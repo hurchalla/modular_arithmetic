@@ -15,7 +15,6 @@ This project is licensed under the MIT License - see the [LICENSE.TXT](LICENSE.T
 
 ## TODO
 
-Consider adding Barrett reduction.
 Add the following options/target_compile_definitions to CMakeLists.txt, and document here:
 TARGET_ISA_HAS_DIVIDE
 TARGET_BIT_WIDTH
