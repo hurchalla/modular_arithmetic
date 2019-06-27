@@ -3,11 +3,8 @@
 #define HURCHALLA_MODULAR_ARITHMETIC_IMPL_MODULAR_MULTIPLICATION_H__INCLUDED
 
 
-#include "hurchalla/platform_specific/defines_target_platform.h"
-#include "hurchalla/platform_specific/defines_compiler.h"
-
-#include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
+#include "hurchalla/programming_by_contract/programming_by_contract.h"
 
 #include <cstdint>
 #include <type_traits>
@@ -87,22 +84,38 @@ inline uint16_t impl_modular_multiplication_prereduced_inputs(uint16_t a,
 
 
 // Note: for TARGET_ISA_X86_64 (and TARGET_ISA_X86_32), 32bit mul and div should
-// be faster than 64bit mul and div.  The 32bit mul and div need a two-register
-// wide product and dividend, which requires assembly language.
+// be faster than 64bit mul and div.  For 32bit mul and div, we need access to
+// the two-register wide product and dividend, which requires assembly language.
 #if defined(_MSC_VER) && defined(TARGET_ISA_X86_64)
 extern "C" uint32_t modular_multiply_uint32_asm_UID7b5f83fc983(uint32_t a,
                                              uint32_t b, uint32_t modulus);
 inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
                                             uint32_t b, uint32_t modulus)
 {
+    // MSVC doesn't support inline asm for 64 bit code - using my assembly code
+    // will likely require an unavoidable function call.  With modern intel CPUs
+    // that now have relatively fast DIV instructions, it's unclear that setting
+    // up the stack and unwinding the stack and branching to the asm function,
+    // all just to use a single 32 bit asm MUL and DIV, will be any faster than
+    // simply using 64 bit multiply and divide in standard C++.
+    // If getting every bit of performance matters to you, for this application
+    // consider using a different compiler which supports inline asm.
+    //
+    // Absent performance measurements, I've chosen to use simple C++ 64 bit
+    // multiply and divide.  If you want asm instead, change to #if 0, below.
+  #if 1
+    return (uint32_t)((uint64_t)a*(uint64_t)b % (uint64_t)modulus);
+  #else
     // MSVC doesn't support inline asm for 64 bit targets, so use asm function
     uint32_t result = modular_multiply_uint32_asm_UID7b5f83fc983(a, b, modulus);
     postcondition3((uint64_t)result==(uint64_t)a*(uint64_t)b%(uint64_t)modulus);
     return result;
+  #endif
 }
 #elif defined(_MSC_VER) && defined(TARGET_ISA_X86_32)   // inline asm, MS syntax
 // Since this is x86 msvc and will use inline asm, we must ensure this function
-// isn't using __fastcall or __vectorcall (see https://docs.microsoft.com/en-us/cpp/assembler/inline/using-and-preserving-registers-in-inline-assembly ).
+// isn't using __fastcall or __vectorcall (see
+// https://docs.microsoft.com/en-us/cpp/assembler/inline/using-and-preserving-registers-in-inline-assembly ).
 // To do this, we declare this function with the __cdecl modifier, which forces
 // the function to use cdecl calling convention.  This overrides any potential
 // compiler flag that might specify __fastcall or __vectorcall.
