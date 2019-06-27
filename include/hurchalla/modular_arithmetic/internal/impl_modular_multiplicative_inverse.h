@@ -3,7 +3,6 @@
 #define HURCHALLA_MODULAR_ARITHMETIC_IMPL_MODULAR_MULTIPLICATIVE_INV_H__INCLUDED
 
 
-#include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include <type_traits>
 
 namespace hurchalla { namespace modular_arithmetic {
