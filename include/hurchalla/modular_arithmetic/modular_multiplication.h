@@ -12,7 +12,7 @@ namespace hurchalla { namespace modular_arithmetic {
 
 // Interface/contract.
 template <typename T>
-T modular_multiplication_prereduced_inputs(T a, T b, T modulus)
+T modular_multiplication_prereduced_inputs(T a, T b, T modulus)  noexcept
 {
     precondition_static(std::is_unsigned<T>::value);  //T unsigned integral type
     precondition(modulus>0);

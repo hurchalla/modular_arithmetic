@@ -88,7 +88,7 @@ inline uint16_t impl_modular_multiplication_prereduced_inputs(uint16_t a,
 // the two-register wide product and dividend, which requires assembly language.
 #if defined(_MSC_VER) && defined(TARGET_ISA_X86_64)
 extern "C" uint32_t modular_multiply_uint32_asm_UID7b5f83fc983(uint32_t a,
-                                             uint32_t b, uint32_t modulus);
+                                         uint32_t b, uint32_t modulus) noexcept;
 inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
                                             uint32_t b, uint32_t modulus)
 {
@@ -162,7 +162,7 @@ inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
 
 #if defined(_MSC_VER) && defined(TARGET_ISA_X86_64)
 extern "C" uint64_t modular_multiply_uint64_asm_UID7b5f83fc983(uint64_t a,
-                                             uint64_t b, uint64_t modulus);
+                                         uint64_t b, uint64_t modulus) noexcept;
 inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
                                             uint64_t b, uint64_t modulus)
 {
