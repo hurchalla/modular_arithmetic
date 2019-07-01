@@ -6,7 +6,7 @@ if(TARGET hurchalla_modular_arithmetic)
 endif()
 
 cmake_minimum_required(VERSION 3.12)
-project(hurchalla_modular_arithmetic VERSION 1.0.0 LANGUAGES C CXX)
+project(hurchalla_modular_arithmetic VERSION 1.0.0 LANGUAGES CXX)
 
 # if this is the top level CMakeLists.txt, let IDEs group projects into folders
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
