@@ -12,7 +12,7 @@ namespace hurchalla { namespace modular_arithmetic {
 template <typename T>
 T modular_addition_prereduced_inputs(T a, T b, T modulus)  noexcept
 {
-    precondition_static(std::is_unsigned<T>::value);  //T unsigned integral type
+    static_assert(std::is_unsigned<T>::value, "");  //T unsigned integral type
     precondition(modulus>0);
     precondition(a<modulus);    // i.e. the input must be prereduced
     precondition(b<modulus);    // i.e. the input must be prereduced

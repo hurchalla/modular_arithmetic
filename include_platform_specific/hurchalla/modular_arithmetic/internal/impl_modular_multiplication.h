@@ -41,7 +41,7 @@ Code review/testing notes:
 template <typename T>
 inline T impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
 {
-    static_assert(std::is_unsigned<T>::value);  //T unsigned integral type
+    static_assert(std::is_unsigned<T>::value, "");  //T unsigned integral type
     T result = 0;
     while (b > 0) {
         namespace ma = ::hurchalla::modular_arithmetic;

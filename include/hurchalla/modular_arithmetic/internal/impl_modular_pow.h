@@ -16,7 +16,7 @@ namespace hurchalla { namespace modular_arithmetic {
 template <typename T>
 T impl_modular_pow(T base, T exponent, T modulus)
 {
-   static_assert(std::is_unsigned<T>::value);  //T unsigned integral type
+   static_assert(std::is_unsigned<T>::value, "");  //T unsigned integral type
    if (base>=modulus)
       base=base%modulus;
 /*

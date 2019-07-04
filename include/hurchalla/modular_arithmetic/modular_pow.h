@@ -14,7 +14,7 @@ namespace hurchalla { namespace modular_arithmetic {
 template <typename T>
 T modular_pow(T base, T exponent, T modulus)  noexcept
 {
-    precondition_static(std::is_unsigned<T>::value);  //T unsigned integral type
+    static_assert(std::is_unsigned<T>::value, "");  //T unsigned integral type
     precondition(modulus > 1);
     // Postcondition:
     //   Returns the modular exponentiation of base^exponent (mod modulus).

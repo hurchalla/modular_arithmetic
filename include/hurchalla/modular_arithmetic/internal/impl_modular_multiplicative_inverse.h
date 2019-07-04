@@ -11,7 +11,7 @@ namespace hurchalla { namespace modular_arithmetic {
 template <typename U>
 U impl_modular_multiplicative_inverse(U val, U modulus)
 {
-    static_assert(std::is_unsigned<U>::value);  //U unsigned integral type
+    static_assert(std::is_unsigned<U>::value, "");  //U unsigned integral type
     // Precondition: modulus > 1.
     // Postcondition: Returns 0 if the inverse doesn't exist. Otherwise returns
     //    the inverse (which is never 0, given that modulus>1).
