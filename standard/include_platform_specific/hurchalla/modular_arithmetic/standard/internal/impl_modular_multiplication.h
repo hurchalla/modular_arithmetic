@@ -3,7 +3,7 @@
 #define HURCHALLA_MODULAR_ARITHMETIC_IMPL_MODULAR_MULTIPLICATION_H__INCLUDED
 
 
-#include "hurchalla/modular_arithmetic/modular_addition.h"
+#include "hurchalla/modular_arithmetic/standard/modular_addition.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 
 #include <cstdint>

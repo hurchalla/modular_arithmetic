@@ -3,7 +3,7 @@
 #define HURCHALLA_MODULAR_ARITHMETIC_MODULAR_POW_H__INCLUDED
 
 
-#include "hurchalla/modular_arithmetic/internal/impl_modular_pow.h"
+#include "hurchalla/modular_arithmetic/standard/internal/impl_modular_pow.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <type_traits>
 
