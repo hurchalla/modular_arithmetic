@@ -16,7 +16,7 @@ namespace hurchalla { namespace modular_arithmetic {
 //    a * multiplicative_inverse == 1 (mod modulus).   It is a unique number,
 //    but it exists if and only if 'a' and 'modulus' are coprime.]
 template <typename T>
-T modular_multiplicative_inverse(T a, T modulus)  noexcept
+T modular_multiplicative_inverse(T a, T modulus)
 {
     static_assert(std::is_unsigned<T>::value, "");  //T unsigned integral type
     precondition(modulus>1);
