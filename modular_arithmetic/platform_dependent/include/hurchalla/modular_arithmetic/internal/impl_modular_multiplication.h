@@ -3,7 +3,7 @@
 #define HURCHALLA_MODULAR_ARITHMETIC_IMPL_MODULAR_MULTIPLICATION_H__INCLUDED
 
 
-#include "hurchalla/modular_arithmetic/standard/modular_addition.h"
+#include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 
 #include <cstdint>
@@ -25,8 +25,8 @@ Notes:
    least twice the size of the prospective uint_t's bit width.
    Additionally for the x86/x64 ISAs I've made overloads using assembly language
    for uint32_t and uint64_t, later in this file.
-   From preliminary investigation I did on ARM, I don't believe there would be
-   any significant gain by writing assembly language versions of this function.
+   From preliminary investigation I did on ARM, I don't believe ARM would get
+   any significant gain by writing assembly language overloads of this function.
    At the time of this writing none of the ARM ISAs appear to provide an
    instruction for division of a 128 bit dividend by a 64 bit divisor (with a 64
    bit quotient); ARM also doesn't seem to have any instruction to divide a 64

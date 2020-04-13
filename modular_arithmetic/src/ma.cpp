@@ -1,4 +1,4 @@
-#include "hurchalla/modular_arithmetic/standard/ma.h"
+#include "hurchalla/modular_arithmetic/ma.h"
 
 #include <iostream>
 
