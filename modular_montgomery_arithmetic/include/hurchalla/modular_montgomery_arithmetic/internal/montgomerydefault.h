@@ -3,9 +3,9 @@
 #define HURCHALLA_MODULAR_MONTGOMERY_MONTGOMERY_DEFAULT_H__INCLUDED
 
 
-#include "hurchalla/modular_arithmetic/montgomery/internal/montyfullrange.h"
-#include "hurchalla/modular_arithmetic/montgomery/internal/montyhalfrange.h"
-#include "hurchalla/modular_arithmetic/montgomery/internal/montysqrtrange.h"
+#include "hurchalla/modular_montgomery_arithmetic/internal/montyfullrange.h"
+#include "hurchalla/modular_montgomery_arithmetic/internal/montyhalfrange.h"
+#include "hurchalla/modular_montgomery_arithmetic/internal/montysqrtrange.h"
 #include <type_traits>
 #include <cstdint>
 

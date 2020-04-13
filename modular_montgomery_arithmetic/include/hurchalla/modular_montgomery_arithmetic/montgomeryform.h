@@ -3,7 +3,7 @@
 #define HURCHALLA_MODULAR_MONTGOMERY_MONTGOMERY_FORM_H__INCLUDED
 
 
-#include "hurchalla/modular_arithmetic/montgomery/internal/montgomerydefault.h"
+#include "hurchalla/modular_montgomery_arithmetic/internal/montgomerydefault.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 
 namespace hurchalla { namespace modular_montgomery {
