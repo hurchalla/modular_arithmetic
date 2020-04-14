@@ -79,7 +79,8 @@ public:
 //    FORCE_INLINE V inline_multiply(V x, V y) const noexcept { 
 //        return impl.inline_multiply(x, y); 
 //    }
-    // Same discussion/return as inline_multiply(). This function is not inline.
+    // Same discussion/return as inline_multiply(), but this function is not
+    // forced inline.
     V multiply(V x, V y) const noexcept { return impl.multiply(x, y); }
 
     // Returns the modular sum of (the montgomery values) x and y.  The return
@@ -91,6 +92,9 @@ public:
     // precisely, x minus y.  The return value is in montgomery form but might
     // not be canonical - call getCanonicalForm() to use it in comparisons.
     V subtract(V x, V y) const noexcept { return impl.subtract(x, y); }
+
+//    bool isValid(V x) const noexcept { return impl.isValid(x); }
+//    bool isReduced(T a) const noexcept { return impl.isReduced(a); }
 };
 
 

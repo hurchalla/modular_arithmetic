@@ -8,11 +8,11 @@ namespace hurchalla { namespace modular_montgomery {
 // A simple wrapper for T, used to designate that a value is in Montgomery Form
 template<typename T> struct MontgomeryValue final {
 public:
-    MontgomeryValue() noexcept {}; // This constructor purposely does not
-                                   // initialize 'value' - the contents are
-                                   // undefined until the object is assigned to.
-    explicit MontgomeryValue(T val) noexcept : value(val) {}
-    T get() noexcept { return value; }
+    MontgomeryValue() {}; // This constructor purposely does not initialize
+                                   // 'value' - the contents are undefined
+                                   // until the object is assigned to.
+    explicit MontgomeryValue(T val) : value(val) {}
+    T get() { return value; }
 private:
     T value;
 };
