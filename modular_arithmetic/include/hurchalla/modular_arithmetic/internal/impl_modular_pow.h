@@ -4,7 +4,7 @@
 
 
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
-#include <type_traits>
+#include <limits>
 
 namespace hurchalla { namespace modular_arithmetic {
 
@@ -16,7 +16,8 @@ namespace hurchalla { namespace modular_arithmetic {
 template <typename T>
 T impl_modular_pow(T base, T exponent, T modulus)
 {
-   static_assert(std::is_unsigned<T>::value, "");  //T unsigned integral type
+   static_assert(std::numeric_limits<T>::is_integer &&
+                !(std::numeric_limits<T>::is_signed), "");
    if (base>=modulus)
       base=base%modulus;
 /*

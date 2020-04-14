@@ -5,7 +5,7 @@
 
 #include "hurchalla/modular_arithmetic/internal/impl_modular_multiplication.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
-#include <type_traits>
+#include <limits>
 
 namespace hurchalla { namespace modular_arithmetic {
 
@@ -14,7 +14,8 @@ namespace hurchalla { namespace modular_arithmetic {
 template <typename T>
 T modular_multiplication_prereduced_inputs(T a, T b, T modulus)
 {
-    static_assert(std::is_unsigned<T>::value, "");  //T unsigned integral type
+    static_assert(std::numeric_limits<T>::is_integer &&
+                 !(std::numeric_limits<T>::is_signed), "");
     precondition(modulus>0);
     precondition(a<modulus);    // i.e. the input must be prereduced
     precondition(b<modulus);    // i.e. the input must be prereduced

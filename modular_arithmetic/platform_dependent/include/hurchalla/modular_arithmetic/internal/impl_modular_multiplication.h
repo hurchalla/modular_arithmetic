@@ -7,7 +7,7 @@
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 
 #include <cstdint>
-#include <type_traits>
+#include <limits>
 
 namespace hurchalla { namespace modular_arithmetic {
 
@@ -41,7 +41,12 @@ Code review/testing notes:
 template <typename T>
 inline T impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
 {
-    static_assert(std::is_unsigned<T>::value, "");  //T unsigned integral type
+    static_assert(std::numeric_limits<T>::is_integer &&
+                 !(std::numeric_limits<T>::is_signed), "");
+    precondition(modulus>0);
+    precondition(a<modulus);
+    precondition(b<modulus);
+
     T result = 0;
     while (b > 0) {
         namespace ma = ::hurchalla::modular_arithmetic;
@@ -179,6 +184,7 @@ inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
 
 
 
+
 #if defined(_MSC_VER) && _MSC_VER >= 1920 && defined(TARGET_ISA_X86_64)
 // _MSC_VER >= 1920 indicates Visual Studio 2019 or higher. VS2019 (for x64)
 // is the first version to support _udiv128 used below.
@@ -237,6 +243,7 @@ inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
     return (uint64_t)((uint128_t)a*(uint128_t)b % (uint128_t)modulus);
 }
 #endif
+
 
 
 }}  // end namespace
