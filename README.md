@@ -7,7 +7,7 @@ In development, currently pre-alpha version
 
 ## Author
 
-* **Jeff Hurchalla**
+* **Jeffrey Hurchalla**
 
 ## License
 
