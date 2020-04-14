@@ -83,10 +83,29 @@ inline uint16_t impl_modular_multiplication_prereduced_inputs(uint16_t a,
 
 
 
+
 // Note: for TARGET_ISA_X86_64 (and TARGET_ISA_X86_32), 32bit mul and div should
 // be faster than 64bit mul and div.  For 32bit mul and div, we need access to
 // the two-register wide product and dividend, which requires assembly language.
-#if defined(_MSC_VER) && defined(TARGET_ISA_X86_64)
+
+#if defined(_MSC_VER) && _MSC_VER >= 1920 && (defined(TARGET_ISA_X86_64) || defined(TARGET_ISA_X86_32))
+// _MSC_VER >= 1920 indicates Visual Studio 2019 or higher. VS2019 (for x86/x64)
+// is the first version to support _udiv64 used below.
+#  include <immintrin.h>
+#  include <intrin.h>
+inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
+                                            uint32_t b, uint32_t modulus)
+{
+    // Note: at the time of this writing (April 2020), the MS documentation of
+    // udiv64 is likely incomplete.  udiv64 is almost certainly a direct
+    // translation of the x86/x64 assembly "div" instruction (which we want!).
+    // See  https://developercommunity.visualstudio.com/content/problem/896815/-udiv128-causes-integer-overflow-and-doesnt-have-a.html
+    uint32_t result;
+    _udiv64(__emulu(a, b), modulus, &result);
+    postcondition2((uint64_t)result==(uint64_t)a*(uint64_t)b%(uint64_t)modulus);
+    return result;
+}
+#elif defined(_MSC_VER) && defined(TARGET_ISA_X86_64)
 extern "C" uint32_t modular_multiply_uint32_asm_UID7b5f83fc983(uint32_t a,
                                          uint32_t b, uint32_t modulus) noexcept;
 inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
@@ -108,7 +127,7 @@ inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
   #else
     // MSVC doesn't support inline asm for 64 bit targets, so use asm function
     uint32_t result = modular_multiply_uint32_asm_UID7b5f83fc983(a, b, modulus);
-    postcondition3((uint64_t)result==(uint64_t)a*(uint64_t)b%(uint64_t)modulus);
+    postcondition2((uint64_t)result==(uint64_t)a*(uint64_t)b%(uint64_t)modulus);
     return result;
   #endif
 }
@@ -129,7 +148,7 @@ inline uint32_t __cdecl impl_modular_multiplication_prereduced_inputs(
         div modulus     ; (quotient EAX, remainder EDX) = EDX:EAX/modulus
         mov result, edx ; save the remainder
     }
-    postcondition3((uint64_t)result==(uint64_t)a*(uint64_t)b%(uint64_t)modulus);
+    postcondition2((uint64_t)result==(uint64_t)a*(uint64_t)b%(uint64_t)modulus);
     return result;
 }
 #elif defined(TARGET_ISA_X86_64) || defined(TARGET_ISA_X86_32) // gnu/AT&T style
@@ -147,7 +166,7 @@ inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
              : "=&d"(result), "=&a"(dummy)
              : "1"(a), "r"(b), "r"(modulus)
              : "cc");
-    postcondition3((uint64_t)result==(uint64_t)a*(uint64_t)b%(uint64_t)modulus);
+    postcondition2((uint64_t)result==(uint64_t)a*(uint64_t)b%(uint64_t)modulus);
     return result;
 }
 #elif defined(TARGET_ISA_HAS_DIVIDE) && TARGET_BIT_WIDTH >= 64
@@ -160,7 +179,26 @@ inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
 
 
 
-#if defined(_MSC_VER) && defined(TARGET_ISA_X86_64)
+#if defined(_MSC_VER) && _MSC_VER >= 1920 && defined(TARGET_ISA_X86_64)
+// _MSC_VER >= 1920 indicates Visual Studio 2019 or higher. VS2019 (for x64)
+// is the first version to support _udiv128 used below.
+#  include <immintrin.h>
+#  include <intrin.h>
+inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
+                                            uint64_t b, uint64_t modulus)
+{
+    // Note: at the time of this writing (April 2020), the MS documentation of
+    // udiv128 is likely incomplete.  udiv128 is almost certainly a direct
+    // translation of the x64 assembly "div" instruction (which we want!).
+    // See  https://developercommunity.visualstudio.com/content/problem/896815/-udiv128-causes-integer-overflow-and-doesnt-have-a.html
+    uint64_t productHigh, result;
+    uint64_t productLow = _umul128(a, b, &productHigh);
+    _udiv128(productHigh, productLow, modulus, &result);
+    postcondition3(result == impl_modular_multiplication_prereduced_inputs
+                                               <uint64_t>(a, b, modulus));
+    return result;
+}
+#elif defined(_MSC_VER) && defined(TARGET_ISA_X86_64)
 extern "C" uint64_t modular_multiply_uint64_asm_UID7b5f83fc983(uint64_t a,
                                          uint64_t b, uint64_t modulus) noexcept;
 inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
