@@ -242,6 +242,23 @@ inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
 {
     return (uint64_t)((uint128_t)a*(uint128_t)b % (uint128_t)modulus);
 }
+/*
+// For the next #elif, it's uncertain that division using __int128 on a 64bit
+// system would be any better than the generic template version of this
+// function.
+// The code below should be correct as-is. If you wish to try it, you can
+// optionally uncomment this section to enable it.
+//
+#elif defined(TARGET_ISA_HAS_DIVIDE) && defined(__SIZEOF_INT128__)
+// The macro __SIZEOF_INT128__ indicates if __int128 is supported.  See
+// https://stackoverflow.com/questions/16088282/is-there-a-128-bit-integer-in-gcc
+inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
+                                            uint64_t b, uint64_t modulus)
+{
+    using U = unsigned __int128;
+    return (uint64_t)((U)a*(U)b % (U)modulus);
+}
+*/
 #endif
 
 
