@@ -1,8 +1,8 @@
 
-#ifndef HURCHALLA_MODULAR_MONTGOMERY_MONTGOMERY_VALUE_H__INCLUDED
-#define HURCHALLA_MODULAR_MONTGOMERY_MONTGOMERY_VALUE_H__INCLUDED
+#ifndef HURCHALLA_MONTGOMERY_ARITHMETIC_MONTGOMERY_VALUE_H__INCLUDED
+#define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTGOMERY_VALUE_H__INCLUDED
 
-namespace hurchalla { namespace modular_montgomery {
+namespace hurchalla { namespace montgomery_arithmetic {
 
 
 // A simple wrapper for T, used to designate that a value is in Montgomery Form

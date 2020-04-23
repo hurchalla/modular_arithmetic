@@ -13,7 +13,7 @@ namespace hurchalla { namespace modular_arithmetic {
 
 
 /*  Generic (non-platform specific) implementation of the contract for
-modular_multiplication_prereduced_inputs(T a, T b, T modulus).
+T modular_multiplication_prereduced_inputs(T a, T b, T modulus).
 Ideally for best performance, call with a >= b.
 Notes:
    This code was adapted from mulmod() at
@@ -38,8 +38,9 @@ Code review/testing notes:
    Analytical correctness: Appears perfect.
    Empirical correctness: Impossible to test exhaustively, but passed all tests.
 */
+#ifndef COMPILE_ERROR_ON_SLOW_MATH
 template <typename T>
-inline T impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
+T impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
 {
     static_assert(std::numeric_limits<T>::is_integer &&
                  !(std::numeric_limits<T>::is_signed), "");
@@ -57,6 +58,12 @@ inline T impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
     }
     return result;
 }
+#else
+// cause a compile error if instantiating this (slow) template function
+template <typename T>
+T impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus) = delete;
+#endif // #ifndef COMPILE_ERROR_ON_SLOW_MATH
+
 
 
 
@@ -130,7 +137,8 @@ inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
   #if 1
     return (uint32_t)((uint64_t)a*(uint64_t)b % (uint64_t)modulus);
   #else
-    // MSVC doesn't support inline asm for 64 bit targets, so use asm function
+    // The older versions of MSVC don't have the _udiv64 intrinsic.  Since
+    // MSVC doesn't support inline asm for 64 bit targets, use an asm function
     uint32_t result = modular_multiply_uint32_asm_UID7b5f83fc983(a, b, modulus);
     postcondition2((uint64_t)result==(uint64_t)a*(uint64_t)b%(uint64_t)modulus);
     return result;
@@ -210,7 +218,8 @@ extern "C" uint64_t modular_multiply_uint64_asm_UID7b5f83fc983(uint64_t a,
 inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
                                             uint64_t b, uint64_t modulus)
 {
-    // MSVC doesn't support inline asm for 64 bit targets, so use asm function
+    // The older versions of MSVC don't have the _udiv128 intrinsic.  Since
+    // MSVC doesn't support inline asm for 64 bit targets, use an asm function
     uint64_t result = modular_multiply_uint64_asm_UID7b5f83fc983(a, b, modulus);
     postcondition3(result == impl_modular_multiplication_prereduced_inputs
                                                <uint64_t>(a, b, modulus));
@@ -243,7 +252,7 @@ inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
     return (uint64_t)((uint128_t)a*(uint128_t)b % (uint128_t)modulus);
 }
 /*
-// For the next #elif, it's uncertain that division using __int128 on a 64bit
+// For the next #elif, it's uncertain that division using __uint128_t on a 64bit
 // system would be any better than the generic template version of this
 // function.
 // The code below should be correct as-is. If you wish to try it, you can
@@ -255,7 +264,7 @@ inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
 inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
                                             uint64_t b, uint64_t modulus)
 {
-    using U = unsigned __int128;
+    using U = __uint128_t;
     return (uint64_t)((U)a*(U)b % (U)modulus);
 }
 */

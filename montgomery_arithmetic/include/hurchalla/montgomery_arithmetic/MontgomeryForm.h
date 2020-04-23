@@ -1,12 +1,12 @@
 
-#ifndef HURCHALLA_MODULAR_MONTGOMERY_MONTGOMERY_FORM_H__INCLUDED
-#define HURCHALLA_MODULAR_MONTGOMERY_MONTGOMERY_FORM_H__INCLUDED
+#ifndef HURCHALLA_MONTGOMERY_ARITHMETIC_MONTGOMERY_FORM_H__INCLUDED
+#define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTGOMERY_FORM_H__INCLUDED
 
 
-#include "hurchalla/modular_montgomery_arithmetic/internal/montgomerydefault.h"
+#include "hurchalla/montgomery_arithmetic/internal/montgomerydefault.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 
-namespace hurchalla { namespace modular_montgomery {
+namespace hurchalla { namespace montgomery_arithmetic {
 
 
 // When using the default MontyType, T must be signed or unsigned integral type.
