@@ -3,6 +3,7 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_IMPL_UNSIGNED_MULT_TO_HILO_H__INCLUDED
 
 
+#include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <cstdint>
 #include <limits>
 
