@@ -22,8 +22,8 @@ Notes:
 template <typename T>
 T impl_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v)
 {
-    static_assert(std::numeric_limits<T>::is_integer &&
-                 !(std::numeric_limits<T>::is_signed), "");
+    static_assert(std::numeric_limits<T>::is_integer, "");
+    static_assert(!(std::numeric_limits<T>::is_signed), "");
 
     static const unsigned int shift = sizeof(T)*(8/2);
     // for example, if T==uint64_t, shift ought to == 32
@@ -64,12 +64,12 @@ T impl_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v) = delete;
 
 // Intended for use by the functions below
 template <typename T, typename T2>
-inline T umult_to_hilo_product(T* pLowProduct, T u, T v)
+T umult_to_hilo_product(T* pLowProduct, T u, T v)
 {
-    static_assert(std::numeric_limits<T>::is_integer &&
-                 !(std::numeric_limits<T>::is_signed), "");
-    static_assert(std::numeric_limits<T2>::is_integer &&
-                 !(std::numeric_limits<T2>::is_signed), "");
+    static_assert(std::numeric_limits<T>::is_integer, "");
+    static_assert(!(std::numeric_limits<T>::is_signed), "");
+    static_assert(std::numeric_limits<T2>::is_integer, "");
+    static_assert(!(std::numeric_limits<T2>::is_signed), "");
     static_assert(std::numeric_limits<T2>::digits >=
                   2*std::numeric_limits<T>::digits, "");
     T2 product = (T2)u * (T2)v;
@@ -172,7 +172,6 @@ inline uint64_t impl_unsigned_multiply_to_hilo_product(uint64_t* pLowProduct,
 
 
 
-
 // Note for MSVC: 'uint32_t' functions using intrinsics don't improve the asm
 // generated compared to the simple function implementation, and so intrinsic
 // versions are not present here.  For reference, the intrinsics would have
@@ -216,55 +215,6 @@ inline uint64_t impl_unsigned_multiply_to_hilo_product(uint64_t* pLowProduct,
     return high;
 }
 #endif
-*/
-
-
-// For reference, this is an earlier version of the generic template function.
-// For most compilers, the current version produces better asm (particularly
-// ARM32) than this version.
-// I adapted this code from muldwu.c from the Hacker's Delight web page, see
-// https://web.archive.org/web/20190108123802/http://www.hackersdelight.org/hdcodetxt/muldwu.c.txt
-// The code implements Algorithm M from section 4.3.1 of "The Art of Computer
-// Programming, Vol 2, 3rd Ed".  See also
-// https://web.archive.org/web/20190108024819/http://www.hackersdelight.org/MontgomeryMultiplication.pdf
-/*
-template <typename T>
-inline T impl_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v)
-{
-    static_assert(std::numeric_limits<T>::is_integer &&
-                 !(std::numeric_limits<T>::is_signed), "");
-
-    static const unsigned int shift = sizeof(T)*(8/2);
-    // for example, if T==uint64_t, shift ought to == 32
-    static const T lowmask = static_cast<T>(static_cast<T>(1) << shift) - 1;
-    // for example, if T==uint64_t, lowmask ought to == 0xFFFFFFFF
-
-    T u0 = u & lowmask;
-    T v0 = v & lowmask;
-    T u1 = u >> shift;
-    T v1 = v >> shift;
-
-    T t = u0*v0;
-    T w0 = t & lowmask;  // Can omit if using alternative lowProduct calculation
-    T k = t >> shift;
-
-    t = u1*v0 + k;      // Will not overflow.  Proof: let S=2^(shift). The max
-    // possible value t = (S-1)*(S-1)+(S-1) == S*S - 2*S + 1 + S - 1 == S*S-S.
-    // S*S-S < S*S-1 == max value of type T.  Thus t < MAX(T)
-
-    T w1 = t & lowmask;
-    T w2 = t >> shift;
-
-    t = u0*v1 + w1;     // Will not overflow, same reason as above.
-    k = t >> shift;
-
-    //*pLowProduct = u*v;              // Alternative.
-    *pLowProduct = (t << shift) | w0;
-
-    return u1*v1 + w2 + k;      // Will not overflow.  Proof: as above, max
-    // val of (u1*v1 + w2) == S*S - S.  Adding the max possible value of k,
-    // which is (S-1), we would get  S*S - S + (S-1) == S*S-1 == MAX(T)
-}
 */
 
 

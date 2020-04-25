@@ -51,8 +51,8 @@ public:
 // and std::make_unsigned won't work for any type unknown to std::type_traits.)
 template <typename U>
 class MontgomeryDefaultExtended<false, U> {
-    static_assert(std::numeric_limits<U>::is_integer &&
-                  !(std::numeric_limits<U>::is_signed), "");
+    static_assert(std::numeric_limits<U>::is_integer, "");
+    static_assert(!(std::numeric_limits<U>::is_signed), "");
     static constexpr int ubits = std::numeric_limits<U>::digits;
 public:
     using type =

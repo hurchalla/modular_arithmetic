@@ -19,8 +19,8 @@ namespace hurchalla { namespace montgomery_arithmetic {
 template <typename T>
 T unsigned_multiply_to_hilo_product(T* pLowProduct, T a, T b)
 {
-    static_assert(std::numeric_limits<T>::is_integer &&
-                 !(std::numeric_limits<T>::is_signed), "");
+    static_assert(std::numeric_limits<T>::is_integer, "");
+    static_assert(!(std::numeric_limits<T>::is_signed), "");
     // Postcondition: Stores the low-bits portion of the product (a*b) in
     //                *pLowProduct.
     // Postcondition: Returns the high-bits portion of the product (a*b).

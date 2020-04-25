@@ -18,13 +18,13 @@ namespace hurchalla { namespace modular_arithmetic {
 template <typename T>
 T modular_multiplicative_inverse(T a, T modulus)
 {
-    static_assert(std::numeric_limits<T>::is_integer &&
-                 !(std::numeric_limits<T>::is_signed), "");
-    precondition(modulus>1);
+    static_assert(std::numeric_limits<T>::is_integer, "");
+    precondition(a >= 0);
+    precondition(modulus > 1);
 
     T inverse = impl_modular_multiplicative_inverse(a, modulus);
 
-    postcondition(inverse < modulus);
+    postcondition(inverse >= 0 && inverse < modulus);
     //Postcondition: Returns 0 if the inverse does not exist. Otherwise returns
     //   the value of the inverse (which is never 0, given that modulus>1).
     postcondition(inverse == 0 || modular_multiplication_prereduced_inputs(

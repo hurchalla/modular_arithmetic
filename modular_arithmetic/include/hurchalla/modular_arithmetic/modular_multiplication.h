@@ -14,11 +14,10 @@ namespace hurchalla { namespace modular_arithmetic {
 template <typename T>
 T modular_multiplication_prereduced_inputs(T a, T b, T modulus)
 {
-    static_assert(std::numeric_limits<T>::is_integer &&
-                 !(std::numeric_limits<T>::is_signed), "");
+    static_assert(std::numeric_limits<T>::is_integer, "");
     precondition(modulus>0);
-    precondition(a<modulus);    // i.e. the input must be prereduced
-    precondition(b<modulus);    // i.e. the input must be prereduced
+    precondition(a>=0 && a<modulus);    // i.e. the input must be prereduced
+    precondition(b>=0 && b<modulus);    // i.e. the input must be prereduced
     // Postcondition: Returns (a*b)%modulus, theoretically calculated at
     //                infinite precision to avoid overflow.
 

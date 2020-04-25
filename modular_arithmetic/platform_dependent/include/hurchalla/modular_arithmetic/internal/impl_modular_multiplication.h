@@ -5,14 +5,14 @@
 
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
-
 #include <cstdint>
 #include <limits>
+#include <type_traits>
 
 namespace hurchalla { namespace modular_arithmetic {
 
 
-/*  Generic (non-platform specific) implementation of the contract for
+/*  Generic (non-platform specific) implementation for
 T modular_multiplication_prereduced_inputs(T a, T b, T modulus).
 Ideally for best performance, call with a >= b.
 Notes:
@@ -38,15 +38,13 @@ Code review/testing notes:
    Analytical correctness: Appears perfect.
    Empirical correctness: Impossible to test exhaustively, but passed all tests.
 */
-#ifndef COMPILE_ERROR_ON_SLOW_MATH
 template <typename T>
-T impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
+T slow_modular_multiplication(T a, T b, T modulus)
 {
-    static_assert(std::numeric_limits<T>::is_integer &&
-                 !(std::numeric_limits<T>::is_signed), "");
+    static_assert(std::numeric_limits<T>::is_integer, "");
     precondition(modulus>0);
-    precondition(a<modulus);
-    precondition(b<modulus);
+    precondition(a>=0 && a<modulus);
+    precondition(b>=0 && b<modulus);
 
     T result = 0;
     while (b > 0) {
@@ -58,11 +56,50 @@ T impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
     }
     return result;
 }
-#else
-// cause a compile error if instantiating this (slow) template function
+
+
+
+
+// ---- TEMPLATE versions of impl_modular_multiplication_prereduced_inputs ----
+
+
+// True for signed integral types *KNOWN* to std::type_traits, otherwise false.
+// I.e. true for the native signed integer types: int, short, long, int64_t, etc
+// and false otherwise.
 template <typename T>
-T impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus) = delete;
-#endif // #ifndef COMPILE_ERROR_ON_SLOW_MATH
+struct IsNativeSignedInteger : std::integral_constant<
+            bool,
+            std::is_integral<T>::value && std::is_signed<T>::value
+        > {};
+
+
+// Enabled for matching to any not-NativeSignedInteger type T.
+template <typename T>
+typename std::enable_if<!(IsNativeSignedInteger<T>::value), T>::type
+#ifdef COMPILE_ERROR_ON_SLOW_MATH
+  // cause a compile error instead of falling back to the slow template function
+  impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus) = delete;
+#else
+  impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
+  {
+      return slow_modular_multiplication(a, b, modulus);
+  }
+#endif
+
+
+// Enabled for matching to any NativeSignedInteger type T.  The internal call
+// typically resolves to one of the platform specific overloads below.  If not,
+// it resolves to the non-NativeSignedInteger template just above.
+template <typename T>
+typename std::enable_if<IsNativeSignedInteger<T>::value, T>::type
+impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
+{
+    precondition2(a>=0 && b>=0 && modulus>0 && a<modulus && b<modulus);
+    using U = typename std::make_unsigned<T>::type;
+    static_assert(!IsNativeSignedInteger<U>::value, "");
+    return (T)impl_modular_multiplication_prereduced_inputs((U)a, (U)b,
+                                                                (U)modulus);
+}
 
 
 
@@ -208,8 +245,7 @@ inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
     uint64_t productHigh, result;
     uint64_t productLow = _umul128(a, b, &productHigh);
     _udiv128(productHigh, productLow, modulus, &result);
-    postcondition3(result == impl_modular_multiplication_prereduced_inputs
-                                               <uint64_t>(a, b, modulus));
+    postcondition3(result == slow_modular_multiplication(a, b, modulus));
     return result;
 }
 #elif defined(_MSC_VER) && defined(TARGET_ISA_X86_64)
@@ -221,8 +257,7 @@ inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
     // The older versions of MSVC don't have the _udiv128 intrinsic.  Since
     // MSVC doesn't support inline asm for 64 bit targets, use an asm function
     uint64_t result = modular_multiply_uint64_asm_UID7b5f83fc983(a, b, modulus);
-    postcondition3(result == impl_modular_multiplication_prereduced_inputs
-                                               <uint64_t>(a, b, modulus));
+    postcondition3(result == slow_modular_multiplication(a, b, modulus));
     return result;
 }
 #elif defined(TARGET_ISA_X86_64)    // use inline asm with gnu/AT&T syntax
@@ -240,8 +275,7 @@ inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
              : "=&d"(result), "=&a"(dummy)
              : "1"(a), "r"(b), "r"(modulus)
              : "cc");
-    postcondition3(result == impl_modular_multiplication_prereduced_inputs
-                                               <uint64_t>(a, b, modulus));
+    postcondition3(result == slow_modular_multiplication(a, b, modulus));
     return result;
 }
 #elif defined(TARGET_ISA_HAS_DIVIDE) && TARGET_BIT_WIDTH >= 128
