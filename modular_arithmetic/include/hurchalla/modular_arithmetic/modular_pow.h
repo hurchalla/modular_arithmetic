@@ -15,8 +15,7 @@ template <typename T>
 T modular_pow(T base, T exponent, T modulus)
 {
     static_assert(std::numeric_limits<T>::is_integer, "");
-    precondition(base >= 0);
-    precondition(exponent >= 0);
+    static_assert(!(std::numeric_limits<T>::is_signed), "");
     precondition(modulus > 1);
     // Postcondition:
     //   Returns the modular exponentiation of base^exponent (mod modulus).

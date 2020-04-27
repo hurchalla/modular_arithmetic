@@ -79,11 +79,12 @@ T umult_to_hilo_product(T* pLowProduct, T u, T v)
 
 
 
-// -------- PLATFORM SPECIFIC overloads ----------
+// -------- PLATFORM SPECIFIC nontemplate overloads ----------
 
 // Note: these fast nontemplate function overloads get first priority for being
-// called (see http://www.gotw.ca/publications/mill17.htm ), when both a
-// function overload and the generic template function match the argument type.
+// called (see http://www.gotw.ca/publications/mill17.htm ), when both one of
+// these nontemplate functions and the generic template function match the
+// caller's provided argument type(s).
 
 
 
