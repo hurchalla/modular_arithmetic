@@ -83,7 +83,14 @@ namespace detail {
     #endif
 
     // This is the generalized Dumas algorithm for the negative inverse (mod R).
-    // Note: Dumas only makes sense to use for the native integral types -
+    // I haven't yet published my generalized form of the Dumas algorithm, but
+    // the Dumas algorithm comes from  https://arxiv.org/abs/1209.6626
+    // The closest information available at the moment is from Marc Reynolds at
+    // http://marc-b-reynolds.github.io/math/2017/09/18/ModInverse.html
+    // However, Reynolds presents a straightforward adaptation of Dumas's
+    // algorithm.  This generalized form is a slightly different algo.
+    //
+    // Note: Dumas's alg only makes sense to use for the native integral types -
     // Newton's method becomes more efficient when larger types are required.
     template <typename T, int bits>
     FORCE_INLINE
@@ -112,7 +119,7 @@ namespace detail {
     }
 
     // This is Newton's method algorithm for the negative inverse (mod R).
-    // To get the starting bits of 'x' we recurse until using Dumas's method
+    // To get the starting bits of 'x' we recurse until we use Dumas's method
     // (it's more efficient than Newton's method for native integer types).
     template <typename T, int bits>
     FORCE_INLINE
