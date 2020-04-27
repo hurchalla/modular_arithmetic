@@ -1,6 +1,6 @@
 
-#ifndef HURCHALLA_MODULAR_ARITHMETIC_IMPL_MODULAR_MULTIPLICATION_H__INCLUDED
-#define HURCHALLA_MODULAR_ARITHMETIC_IMPL_MODULAR_MULTIPLICATION_H__INCLUDED
+#ifndef HURCHALLA_MODULAR_ARITHMETIC_IMPL_MODULAR_MULTIPLICATION_H_INCLUDED
+#define HURCHALLA_MODULAR_ARITHMETIC_IMPL_MODULAR_MULTIPLICATION_H_INCLUDED
 
 
 #include "hurchalla/modular_arithmetic/modular_addition.h"
@@ -64,18 +64,21 @@ T slow_modular_multiplication(T a, T b, T modulus)
 
 
 // True for signed integral types *KNOWN* to std::type_traits, otherwise false.
-// I.e. true for the native signed integer types: int, short, long, int64_t, etc
-// and false otherwise.
+// I.e. true for the integer types that are both signed and native (int, short,
+// long, int64_t, etc).
 template <typename T>
-struct IsNativeSignedInteger : std::integral_constant<
+struct IsSignedAndNativeInteger : std::integral_constant<
             bool,
             std::is_integral<T>::value && std::is_signed<T>::value
         > {};
 
 
-// Enabled for matching to any not-NativeSignedInteger type T.
+// Enabled for matching to any T that is *not* a signed-and-native integer type.
+// Note that typically, unsigned integer types resolve to one of the platform
+// specific nontemplate overloads below instead of to this template (nontemplate
+// functions get first priority for potential matches).
 template <typename T>
-typename std::enable_if<!(IsNativeSignedInteger<T>::value), T>::type
+typename std::enable_if<!(IsSignedAndNativeInteger<T>::value), T>::type
 #ifdef COMPILE_ERROR_ON_SLOW_MATH
   // cause a compile error instead of falling back to the slow template function
   impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus) = delete;
@@ -86,17 +89,17 @@ typename std::enable_if<!(IsNativeSignedInteger<T>::value), T>::type
   }
 #endif
 
-
-// Enabled for matching to any NativeSignedInteger type T.  The internal call
-// typically resolves to one of the platform specific overloads below.  If not,
-// it resolves to the non-NativeSignedInteger template just above.
+// Enabled for matching to any signed-and-native integer type T.  The internal
+// call typically resolves to one of the platform specific overloads below.  If
+// not, it resolves to the template just above enabled for not-signed-and-native
+// types.
 template <typename T>
-typename std::enable_if<IsNativeSignedInteger<T>::value, T>::type
+typename std::enable_if<IsSignedAndNativeInteger<T>::value, T>::type
 impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
 {
     precondition2(a>=0 && b>=0 && modulus>0 && a<modulus && b<modulus);
     using U = typename std::make_unsigned<T>::type;
-    static_assert(!IsNativeSignedInteger<U>::value, "");
+    static_assert(!IsSignedAndNativeInteger<U>::value, "");
     return (T)impl_modular_multiplication_prereduced_inputs((U)a, (U)b,
                                                                 (U)modulus);
 }
@@ -137,7 +140,8 @@ inline uint16_t impl_modular_multiplication_prereduced_inputs(uint16_t a,
 // be faster than 64bit mul and div.  For 32bit mul and div, we need access to
 // the two-register wide product and dividend, which requires assembly language.
 
-#if defined(_MSC_VER) && _MSC_VER >= 1920 && (defined(TARGET_ISA_X86_64) || defined(TARGET_ISA_X86_32))
+#if defined(_MSC_VER) && (_MSC_VER >= 1920) && \
+    (defined(TARGET_ISA_X86_64) || defined(TARGET_ISA_X86_32))
 // _MSC_VER >= 1920 indicates Visual Studio 2019 or higher. VS2019 (for x86/x64)
 // is the first version to support _udiv64 used below.
 #  include <immintrin.h>
