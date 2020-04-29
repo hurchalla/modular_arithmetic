@@ -18,9 +18,8 @@ Notes:
    I adapted this code from https://stackoverflow.com/a/58381061
    On ARM32 with clang it compiles nicely, using the UMAAL instruction.
 */
-#ifndef COMPILE_ERROR_ON_SLOW_MATH
 template <typename T>
-T impl_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v)
+T slow_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v)
 {
     static_assert(std::numeric_limits<T>::is_integer, "");
     static_assert(!(std::numeric_limits<T>::is_signed), "");
@@ -53,11 +52,18 @@ T impl_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v)
     *pLowProduct = (cross << shift) | (lo_lo & lowmask);
     return high;
 }
-#else
-// cause a compile error if instantiating the (slow) template function
+
+
 template <typename T>
-T impl_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v) = delete;
-#endif // #ifndef COMPILE_ERROR_ON_SLOW_MATH
+#ifdef COMPILE_ERROR_ON_SLOW_MATH
+  // cause a compile error instead of falling back to the slow template function
+  T impl_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v) = delete;
+#else
+  T impl_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v)
+  {
+      return slow_unsigned_multiply_to_hilo_product(pLowProduct, u, v);
+  }
+#endif
 
 
 
@@ -129,7 +135,7 @@ inline uint64_t impl_unsigned_multiply_to_hilo_product(uint64_t* pLowProduct,
     *pLowProduct = _umul128(u, v, &highProduct);
     if (POSTCONDITION3_MACRO_IS_ACTIVE) {
         uint64_t tmpHi, tmpLo;
-        tmpHi = impl_unsigned_multiply_to_hilo_product<uint64_t>(&tmpLo, u, v);
+        tmpHi = slow_unsigned_multiply_to_hilo_product(&tmpLo, u, v);
         postcondition3(highProduct == tmpHi && *pLowProduct == tmpLo);
     }
     return highProduct;
@@ -145,7 +151,7 @@ inline uint64_t impl_unsigned_multiply_to_hilo_product(uint64_t* pLowProduct,
     *pLowProduct = u*v;
     if (POSTCONDITION3_MACRO_IS_ACTIVE) {
         uint64_t tmpHi, tmpLo;
-        tmpHi = impl_unsigned_multiply_to_hilo_product<uint64_t>(&tmpLo, u, v);
+        tmpHi = slow_unsigned_multiply_to_hilo_product(&tmpLo, u, v);
         postcondition3(highProduct == tmpHi && *pLowProduct == tmpLo);
     }
     return highProduct;
