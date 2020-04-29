@@ -46,7 +46,8 @@ T getRModN(T N)
 }
 
 
-// Returns rSquaredModN == (R*R)%N.  rModN == R%N  (as computed by getRModN(N))
+// Returns rSquaredModN == (R*R)%N.
+// The input parameter rModN must equal R%N (call getRModN(N) to get this value)
 template <typename T>
 T getRSquaredModN(T rModN, T N)
 {

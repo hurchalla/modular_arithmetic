@@ -24,10 +24,10 @@ T slow_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v)
     static_assert(std::numeric_limits<T>::is_integer, "");
     static_assert(!(std::numeric_limits<T>::is_signed), "");
 
-    static const unsigned int shift = sizeof(T)*(8/2);
     // for example, if T==uint64_t, shift ought to == 32
-    static const T lowmask = static_cast<T>(static_cast<T>(1) << shift) - 1;
+    static const unsigned int shift = std::numeric_limits<T>::digits / 2;
     // for example, if T==uint64_t, lowmask ought to == 0xFFFFFFFF
+    static const T lowmask = (static_cast<T>(1) << shift) - static_cast<T>(1);
 
     T u0 = u & lowmask;
     T v0 = v & lowmask;
@@ -78,9 +78,9 @@ T umult_to_hilo_product(T* pLowProduct, T u, T v)
     static_assert(!(std::numeric_limits<T2>::is_signed), "");
     static_assert(std::numeric_limits<T2>::digits >=
                   2*std::numeric_limits<T>::digits, "");
-    T2 product = (T2)u * (T2)v;
-    *pLowProduct = (T)(product);
-    return (T)(product >> std::numeric_limits<T>::digits);
+    T2 product = static_cast<T2>(u) * static_cast<T2>(v);
+    *pLowProduct = static_cast<T>(product);
+    return  static_cast<T>(product >> std::numeric_limits<T>::digits);
 }
 
 

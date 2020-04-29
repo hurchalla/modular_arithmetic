@@ -27,14 +27,14 @@ impl_modular_multiplicative_inverse(T val, T modulus)
 // Nevertheless I left the code here in comment, for reference:
 /*
     if (modulus == 0)  // ordinarily operations modulo 0 are undefined
-        return std::make_tuple((T)0, false);
+        return std::make_tuple(static_cast<T>(0), false);
     if (modulus == 1) {
         // without this "if" clause, when modulus == 1 and val == 1,
         // this function would calculate the result to be 1.  That result
         // wouldn't be completely wrong, but it isn't reduced.  We always
         // want a fully reduced result.  When modulus == 1, the fully
         // reduced result will always be 0.
-        return std::make_tuple((T)0, true);
+        return std::make_tuple(static_cast<T>(0), true);
     }
 */
 
@@ -83,14 +83,14 @@ impl_modular_multiplicative_inverse(U val, U modulus)
 // Nevertheless I left the code here in comment, for reference:
 /*
     if (modulus == 0)  // ordinarily operations modulo 0 are undefined
-        return std::make_tuple((U)0, false);
+        return std::make_tuple(static_cast<T>(0), false);
     if (modulus == 1) {
         // without this "if" clause, when modulus == 1 and val == 1,
         // this function would calculate the result to be 1.  That result
         // wouldn't be completely wrong, but it isn't reduced.  We always
         // want a fully reduced result.  When modulus == 1, the fully
         // reduced result will always be 0.
-        return std::make_tuple((U)0, true);
+        return std::make_tuple(static_cast<T>(0), true);
     }
 */
 

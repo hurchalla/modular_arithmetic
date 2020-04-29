@@ -5,6 +5,7 @@
 
 #include "hurchalla/montgomery_arithmetic/internal/sized_uint.h"
 #include "hurchalla/montgomery_arithmetic/internal/compiler_macros.h"
+#include "hurchalla/montgomery_arithmetic/internal/make_safe_unsigned_integer.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <limits>
 #include <type_traits>
@@ -44,21 +45,26 @@ namespace detail_nimr {
         static_assert(std::is_unsigned<T>::value, ""); //T native unsign integer
         precondition2(a % 2 == 1);
         precondition2(a > 1);
+
+        // avoid undefined behavior that could result if T is an unsigned type
+        // that would be promoted to (signed) 'int'.
+        using U = typename make_safe_unsigned_integer<T>::type;
+        U b = static_cast<U>(a);
   
-        T x = (3*a)^12;  // good to 5 bits, but we'll treat it as good to only 4
-        static constexpr int goodbits = 4;  // must be a power of 2
-        T s = a*x;
-        T y = s+1;
+        U x = (3*b)^12;  // good to 5 bits, but we'll treat it as good to only 4
+        static const constexpr int goodbits = 4;  // must be a power of 2
+        U s = b*x;
+        U y = s+1;
   
         static_assert((bits/goodbits)*goodbits == bits, "");
-        static constexpr int iterations = log2<bits/goodbits>();
+        static const constexpr int iterations = log2<bits/goodbits>();
         REQUEST_UNROLL_LOOP
         for (int i=0; i<iterations; ++i) {
-            T t = y+1;
+            U t = y+1;
             y = y*y;
             x = x*t;
         }
-        return x;
+        return static_cast<T>(x);
     }
 
     // This is Newton's method algorithm for the negative inverse (mod R).
@@ -96,7 +102,8 @@ T negative_inverse_mod_r(T a)
     T inv = detail_nimr::impl_neg_inverse<T, std::numeric_limits<T>::digits>(a);
 
     // guarantee inv*a ≡ -1 (mod R)
-    postcondition2(inv*a == (static_cast<T>(0) - static_cast<T>(1)));
+    using U = typename make_safe_unsigned_integer<T>::type;
+    postcondition2((U)inv * (U)a == (U)0 - (U)1);
     return inv;
 }
 

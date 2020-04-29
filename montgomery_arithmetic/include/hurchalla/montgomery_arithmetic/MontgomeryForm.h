@@ -21,7 +21,7 @@ public:
 
     explicit MontgomeryForm(T modulus) : impl(static_cast<U>(modulus))
     {
-        precondition(modulus & 1 == 1);  // modulus must be odd
+        precondition(modulus % 2 == 1);  // modulus must be odd
         precondition(modulus > 1);
     }
     MontgomeryForm(const MontgomeryForm&) = delete;
@@ -95,6 +95,7 @@ public:
 
 //    bool isValid(V x) const { return impl.isValid(x); }
 //    bool isReduced(T a) const { return impl.isReduced(a); }
+//    bool isCanonical(V x) const { return impl.isCanonical(x); }
 };
 
 
