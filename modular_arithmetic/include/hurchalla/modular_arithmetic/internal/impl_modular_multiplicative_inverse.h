@@ -3,6 +3,7 @@
 #define HURCHALLA_MODULAR_ARITHMETIC_IMPL_MODULAR_MULTIPLICATIVE_INV_H_INCLUDED
 
 
+#include "hurchalla/modular_arithmetic/type_traits/type_traits.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <type_traits>
 #include <limits>
@@ -93,15 +94,7 @@ impl_modular_multiplicative_inverse(U val, U modulus)
         return std::make_tuple(static_cast<T>(0), true);
     }
 */
-
-    // std::make_signed only compiles for types known to std::type_traits, which
-    // means basically the native integral types and nothing else.
-    // If you have a compile error here, you can probably create a non-template
-    // overload of this function that is specific to the unsigned integral type
-    // that you wanted to use.  The body of the overload should essentially be a
-    // copy of this function, but with the line below changed to explicitly
-    // specify the signed version of your type (instead of std::make_signed).
-    using S = typename std::make_signed<U>::type;
+    using S = typename extensible_make_signed<U>::type;
 
     // The following algorithm is adapted from Figure 6 of
     // https://jeffhurchalla.com/2018/10/13/implementing-the-extended-euclidean-algorithm-with-unsigned-inputs/

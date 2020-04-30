@@ -7,6 +7,7 @@
 #include "hurchalla/montgomery_arithmetic/internal/MontyHalfRange.h"
 #include "hurchalla/montgomery_arithmetic/internal/MontySqrtRange.h"
 #include "hurchalla/montgomery_arithmetic/internal/sized_uint.h"
+#include "hurchalla/modular_arithmetic/type_traits/type_traits.h"
 #include <type_traits>
 #include <limits>
 
@@ -29,13 +30,12 @@ public:
         >::type;
 };
 
-// If this partial specialization is instantiated, then T is a signed integral
-// type known to std::type_traits (this class needs to be able to safely use
-// std::make_unsigned)
+// If this partial specialization is instantiated, T is a signed integral type.
 template <typename T>
-class MontgomeryDefault<T, typename
-std::enable_if<std::is_integral<T>::value && std::is_signed<T>::value>::type> {
-    using U = typename std::make_unsigned<T>::type;
+class MontgomeryDefault<T, typename std::enable_if<
+std::numeric_limits<T>::is_integer && std::numeric_limits<T>::is_signed>::type>
+{
+    using U = typename extensible_make_unsigned<T>::type;
     static constexpr int ubits = std::numeric_limits<U>::digits;
 public:
     using type =
