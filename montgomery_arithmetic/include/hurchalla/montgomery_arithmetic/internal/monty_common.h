@@ -411,7 +411,7 @@ uint8_t impl_montout_non_minimized(uint8_t x, uint8_t n, uint8_t neg_inv_n)
     bool ovf;
     T y = static_cast<T>(1);
     // Having y == 1 satisfies typecast_montmul_non_minimized's precondition
-    // that x*y < n*R
+    // that x*y < n*R, since x < R < n*R.
 
     T result = typecast_montmul_non_minimized<T, T2>(ovf, x, y, n, neg_inv_n);
     // typecast_montmul_non_minimized Postcondition #6 guarantees that since

@@ -101,8 +101,8 @@ protected:
         //
         // getRModN() guarantees the below.  getUnityValue() and
         // getNegativeOneValue() both rely on it.
-        invariant(0 < r_mod_n_ && r_mod_n_ < modulus);
-        invariant(0 < r_squared_mod_n_ && r_squared_mod_n_ < modulus);
+        invariant2(0 < r_mod_n_ && r_mod_n_ < modulus);
+        invariant2(0 < r_squared_mod_n_ && r_squared_mod_n_ < modulus);
     }
     MontyCommonBase(const MontyCommonBase&) = delete;
     MontyCommonBase& operator=(const MontyCommonBase&) = delete;
@@ -131,11 +131,16 @@ public:
     FORCE_INLINE V getUnityValue() const
     {
         // as noted in constructor, unityValue == (1*R)%n_ == r_mod_n_
-        postcondition(isCanonical(V(r_mod_n_)));
+        invariant2(isCanonical(V(r_mod_n_)));
         return V(r_mod_n_);
     }
 
-    FORCE_INLINE V getZeroValue() const { return V(0); } // zeroValue == (0*R)%N
+    FORCE_INLINE V getZeroValue() const
+    {
+        V zero(0); // zeroValue == (0*R)%N
+        invariant2(isCanonical(zero));
+        return zero;
+    } 
 
     FORCE_INLINE V getNegativeOneValue() const
     {
@@ -150,9 +155,10 @@ public:
         //   The constructor established the invariant  0 < r_mod_n_ < n_
         //   Thus we also know  0 < n_ - r_mod_n_ < n_.  This means
         //   (n_ - r_mod_n_)  is fully reduced, and thus canonical.
+        invariant2(n_ > r_mod_n_);
         T ret = n_ - r_mod_n_;
-        postcondition(0 < ret && ret < n_);
-        postcondition(isCanonical(V(ret)));
+        assert_body2(0 < ret && ret < n_);
+        invariant2(isCanonical(V(ret)));
 
         return V(ret);
     }
