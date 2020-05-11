@@ -12,7 +12,7 @@ namespace hurchalla { namespace modular_arithmetic {
 template <typename T>
 struct extensible_make_unsigned {
     static_assert(std::is_integral<T>::value,
-                     "You'll need to specialize this template for your type T");
+            "You'll need to specialize extensible_make_signed for your type T");
     using type = typename std::make_unsigned<T>::type;
 };
 
@@ -20,7 +20,7 @@ struct extensible_make_unsigned {
 template <typename T>
 struct extensible_make_signed {
     static_assert(std::is_integral<T>::value,
-                     "You'll need to specialize this template for your type T");
+            "You'll need to specialize extensible_make_signed for your type T");
     using type = typename std::make_signed<T>::type;
 };
 

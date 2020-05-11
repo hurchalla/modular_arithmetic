@@ -9,13 +9,20 @@
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
+// make_safe_unsigned_integer<T> is intended to protect against the undefined
+// behavior and unexpected results that can arise from unsigned integral
+// promotion in C++.  For details on these issues, see
+// https://jeffhurchalla.com/2019/01/16/c-c-surprises-and-undefined-behavior-due-to-unsigned-integer-promotion/
+
+
 // If an unsigned type T would get promoted to (signed) 'int', we want to make
 // sure that the type make_safe_unsigned_integer<T> provides is 'unsigned int'.
 // Otherwise the type it provides is T.
 
 
 // Note that this primary template will be enabled for non-native unsigned
-// integral types.  Non-native types are never promoted.
+// integral types.  C++ never promotes non-native integer types, so this primary
+// template just provides back the type T.
 template <typename T, typename Enable = void>
 struct make_safe_unsigned_integer {
     static_assert(std::numeric_limits<T>::is_integer, "");

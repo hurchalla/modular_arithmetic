@@ -48,10 +48,9 @@ T slow_modular_multiplication(T a, T b, T modulus)
 
     T result = 0;
     while (b > 0) {
-        namespace ma = ::hurchalla::modular_arithmetic;
         if (b & 1)
-            result = ma::modular_addition_prereduced_inputs(result, a, modulus);
-        a = ma::modular_addition_prereduced_inputs(a, a, modulus);
+            result = modular_addition_prereduced_inputs(result, a, modulus);
+        a = modular_addition_prereduced_inputs(a, a, modulus);
         b = b >> 1;
     }
     return result;

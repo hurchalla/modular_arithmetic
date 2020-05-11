@@ -103,7 +103,7 @@ T negative_inverse_mod_r(T a)
 
     // guarantee inv*a ≡ -1 (mod R)
     using U = typename make_safe_unsigned_integer<T>::type;
-    postcondition2((U)inv * (U)a == (U)0 - (U)1);
+    postcondition2((T)((U)inv * (U)a) == (T)((U)0 - (U)1));
     return inv;
 }
 

@@ -3,6 +3,7 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_IMPL_UNSIGNED_MULT_TO_HILO_H_INCLUDED
 
 
+#include "hurchalla/montgomery_arithmetic/internal/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <cstdint>
 #include <limits>
@@ -19,7 +20,7 @@ Notes:
    On ARM32 with clang it compiles nicely, using the UMAAL instruction.
 */
 template <typename T>
-T slow_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v)
+FORCE_INLINE T slow_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v)
 {
     static_assert(std::numeric_limits<T>::is_integer, "");
     static_assert(!(std::numeric_limits<T>::is_signed), "");
@@ -59,7 +60,7 @@ template <typename T>
   // cause a compile error instead of falling back to the slow template function
   T impl_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v) = delete;
 #else
-  T impl_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v)
+  FORCE_INLINE T impl_unsigned_multiply_to_hilo_product(T* pLowProduct, T u,T v)
   {
       return slow_unsigned_multiply_to_hilo_product(pLowProduct, u, v);
   }
@@ -70,7 +71,7 @@ template <typename T>
 
 // Intended for use by the functions below
 template <typename T, typename T2>
-T umult_to_hilo_product(T* pLowProduct, T u, T v)
+FORCE_INLINE T umult_to_hilo_product(T* pLowProduct, T u, T v)
 {
     static_assert(std::numeric_limits<T>::is_integer, "");
     static_assert(!(std::numeric_limits<T>::is_signed), "");
@@ -98,21 +99,21 @@ T umult_to_hilo_product(T* pLowProduct, T u, T v)
 // clang/icc/gcc is generally quite good.
 // GCC for ARM seems to make the worst generated asm, but it's not so bad as to
 // make inline asm seem worthwhile.
-inline uint8_t impl_unsigned_multiply_to_hilo_product(uint8_t* pLowProduct,
-                                                       uint8_t u, uint8_t v)
+FORCE_INLINE uint8_t impl_unsigned_multiply_to_hilo_product(
+                                     uint8_t* pLowProduct, uint8_t u, uint8_t v)
 {
     // Note we could have used 'T2 = unsigned int' since 'int' is >= 16bit.
     using T2 = uint16_t;
     return umult_to_hilo_product<decltype(u),T2>(pLowProduct, u, v);
 }
-inline uint16_t impl_unsigned_multiply_to_hilo_product(uint16_t* pLowProduct,
-                                                       uint16_t u, uint16_t v)
+FORCE_INLINE uint16_t impl_unsigned_multiply_to_hilo_product(
+                                  uint16_t* pLowProduct, uint16_t u, uint16_t v)
 {
     using T2 = uint32_t;
     return umult_to_hilo_product<decltype(u),T2>(pLowProduct, u, v);
 }
-inline uint32_t impl_unsigned_multiply_to_hilo_product(uint32_t* pLowProduct,
-                                                       uint32_t u, uint32_t v)
+FORCE_INLINE uint32_t impl_unsigned_multiply_to_hilo_product(
+                                  uint32_t* pLowProduct, uint32_t u, uint32_t v)
 {
     using T2 = uint64_t;
     return umult_to_hilo_product<decltype(u),T2>(pLowProduct, u, v);
@@ -128,8 +129,8 @@ inline uint32_t impl_unsigned_multiply_to_hilo_product(uint32_t* pLowProduct,
 // MSVC + x64
 #if defined(_MSC_VER) && defined(TARGET_ISA_X86_64)
 #  include <intrin.h>
-inline uint64_t impl_unsigned_multiply_to_hilo_product(uint64_t* pLowProduct,
-                                                       uint64_t u, uint64_t v)
+FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
+                                  uint64_t* pLowProduct, uint64_t u, uint64_t v)
 {
     uint64_t highProduct;
     *pLowProduct = _umul128(u, v, &highProduct);
@@ -144,8 +145,8 @@ inline uint64_t impl_unsigned_multiply_to_hilo_product(uint64_t* pLowProduct,
 // MSVC + ARM64
 #elif defined(_MSC_VER) && defined(TARGET_ISA_ARM_64)
 #  include <intrin.h>
-inline uint64_t impl_unsigned_multiply_to_hilo_product(uint64_t* pLowProduct,
-                                                       uint64_t u, uint64_t v)
+FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
+                                  uint64_t* pLowProduct, uint64_t u, uint64_t v)
 {
     uint64_t highProduct = __umulh(u, v);
     *pLowProduct = u*v;
@@ -157,19 +158,9 @@ inline uint64_t impl_unsigned_multiply_to_hilo_product(uint64_t* pLowProduct,
     return highProduct;
 }
 
-// GNU compatible compiler (for __uint128_t support)
-#elif TARGET_BIT_WIDTH >= 64 && ( defined(__SIZEOF_INT128__) || \
-                  (__clang_major__ >= 3) || (__INTEL_COMPILER >= 1300) || \
-                  ( !defined(__INTEL_COMPILER) && !defined(__clang_major__) && \
-                    (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) ) )
-// The macro __SIZEOF_INT128__ indicates if __int128 is supported, though some
-// compilers supported __int128 prior to providing that macro.  Clang had it at
-// least since 3.0 and icc got it in 13.0.  Gcc has had since at least 4.1.  See
-// https://stackoverflow.com/questions/16088282/is-there-a-128-bit-integer-in-gcc
-// Note also that clang and icc define the GNUC and GNUC_MINOR macros.  Clang
-// v3.0 defines them as 4,2.  Icc v13 defines them as 4,7.
-inline uint64_t impl_unsigned_multiply_to_hilo_product(uint64_t* pLowProduct,
-                                                       uint64_t u, uint64_t v)
+#elif (COMPILER_HAS_UINT128_T)
+FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
+                                  uint64_t* pLowProduct, uint64_t u, uint64_t v)
 {
     using T2 = __uint128_t;
     return umult_to_hilo_product<decltype(u),T2>(pLowProduct, u, v);
@@ -194,7 +185,7 @@ inline uint64_t impl_unsigned_multiply_to_hilo_product(uint64_t* pLowProduct,
 // MSVC + x32
 #if defined(_MSC_VER) && defined(TARGET_ISA_X86_32)
 inline uint64_t impl_unsigned_multiply_to_hilo_product(uint64_t* pLowProduct,
-                                                       uint64_t u, uint64_t v)
+                                                         uint64_t u, uint64_t v)
 {
     // this code is a modification of the generic template function, performing
     // the arithmetic with uint32_t variables rather than uint64_t variables.

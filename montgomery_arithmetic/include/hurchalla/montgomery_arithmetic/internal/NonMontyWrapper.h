@@ -6,86 +6,97 @@
 #include "hurchalla/montgomery_arithmetic/internal/MontyCommonBase.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
+#include "hurchalla/montgomery_arithmetic/internal/compiler_macros.h"
 #include <limits>
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
 template <typename T>
-struct NonMontyWrapper final {
-private:
+class NonMontyWrapper final {
     static_assert(std::numeric_limits<T>::is_integer, "");
+    static_assert(!(std::numeric_limits<T>::is_signed), "");
+    static_assert(std::numeric_limits<T>::is_modulo, "");
     using V = MontgomeryValue<T>;
     T modulus_;
 public:
-    using converting_type = T;
+    using template_param_type = T;
     using montvalue_type = V;
 
     explicit NonMontyWrapper(T modulus) : modulus_(modulus)
     {
-        precondition(modulus > 0);
+        precondition2(modulus > 0);
     }
     NonMontyWrapper(const NonMontyWrapper&) = delete;
     NonMontyWrapper& operator=(const NonMontyWrapper&) = delete;
 
-    V convertIn(T a) const
+    // intended for use in postconditions/preconditions
+    FORCE_INLINE bool isCanonical(V x) const
     {
-        precondition(a >= 0 && a < modulus_);
+        return (0 <= x.get() && x.get() < modulus_);
+    }
+    FORCE_INLINE T getModulus() const
+    {
+        return modulus;
+    }
+//    FORCE_INLINE bool isValid(V x) const { return isCanonical(x); }
+
+    FORCE_INLINE V convertIn(T a) const
+    {
+        precondition2(0 <= a && a < modulus_);
         return V(a);
     }
-    T convertOut(V x) const
+    FORCE_INLINE T convertOut(V x) const
     {
+        precondition2(isCanonical(x));
         T ret = x.get();
-        postcondition(ret >= 0 && ret < modulus_);
+        postcondition2(0 <= ret && ret < modulus_);
         return ret;
     }
 
-    V getCanonicalForm(V x) const  { return x; }
-    V getUnityValue() const        { return V(static_cast<T>(1)); }
-    V getZeroValue() const         { return V(static_cast<T>(0)); }
-    V getNegativeOneValue() const  { return V(modulus_ - static_cast<T>(1)); }
-
-    V multiply(V x, V y) const
+    FORCE_INLINE V getCanonicalForm(V x) const
     {
-        precondition(x.get() >= 0 && x.get() < modulus_);
-        precondition(y.get() >= 0 && y.get() < modulus_);
+        precondition2(isCanonical(x));
+        return x;
+    }
+
+    FORCE_INLINE V getUnityValue() const        { return V(static_cast<T>(1)); }
+    FORCE_INLINE V getZeroValue() const         { return V(static_cast<T>(0)); }
+    FORCE_INLINE V getNegativeOneValue() const  { return V(modulus_ -
+                                                           static_cast<T>(1)); }
+
+    FORCE_INLINE V multiply(V x, V y) const
+    {
+        precondition2(isCanonical(x));
+        precondition2(isCanonical(y));
         T result =
           modular_multiplication_prereduced_inputs(x.get(), y.get(), modulus_);
-        postcondition(result >= 0 && result < modulus_);
+        postcondition2(isCanonical(V(result)));
         return V(result);
     }
-    V add(V x, V y) const
+    FORCE_INLINE V square(V x) const
     {
-        precondition(x.get() >= 0 && x.get() < modulus_);
-        precondition(y.get() >= 0 && y.get() < modulus_);
+        return multiply(x, x);
+    }
+    FORCE_INLINE V add(V x, V y) const
+    {
+        precondition2(isCanonical(x));
+        precondition2(isCanonical(y));
         T result =
           modular_addition_prereduced_inputs(x.get(), y.get(), modulus_);
-        postcondition(result >= 0 && result < modulus_);
+        postcondition2(isCanonical(V(result)));
         return V(result);
     }
-    V subtract(V x, V y) const
+    FORCE_INLINE V subtract(V x, V y) const
     {
-        precondition(x.get() >= 0 && x.get() < modulus_);
-        precondition(y.get() >= 0 && y.get() < modulus_);
+        precondition2(isCanonical(x));
+        precondition2(isCanonical(y));
         T result =
           modular_subtraction_prereduced_inputs(x.get(), y.get(), modulus_);
-        postcondition(result >= 0 && result < modulus_);
+        postcondition2(isCanonical(V(result)));
         return V(result);
     }
-
-//    bool isValid(V x) const { return (x.get() < modulus_); }
 };
-/*
-    // Returns the modular sum of (the montgomery values) x and y.  The return
-    // value is in montgomery form but might not be canonical - call
-    // getCanonicalForm() to use it in comparisons.
-    V add(V x, V y) const { return impl.add(x, y); }
-
-    // Returns the modular difference of (the montgomery values) x and y.  More
-    // precisely, x minus y.  The return value is in montgomery form but might
-    // not be canonical - call getCanonicalForm() to use it in comparisons.
-    V subtract(V x, V y) const { return impl.subtract(x, y); }
-*/
 
 
 }} // end namespace

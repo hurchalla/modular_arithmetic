@@ -5,6 +5,7 @@
 
 #include "hurchalla/montgomery_arithmetic/internal/montgomerydefault.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
+#include <limits>
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
@@ -14,8 +15,9 @@ namespace hurchalla { namespace montgomery_arithmetic {
 template<typename T, class MontyType = MontgomeryDefault<T>::type>
 class MontgomeryForm final {
     MontyType impl;
-    using U = MontyType::converting_type;
-    static_assert(sizeof(U) >= sizeof(T));
+    using U = MontyType::template_param_type;
+    static_assert(std::numeric_limits<U>::digits >=
+                  std::numeric_limits<T>::digits, "");
 public:
     using V = MontyType::montvalue_type; // MontgomeryValue<U>;
 
@@ -83,6 +85,11 @@ public:
     // forced inline.
     V multiply(V x, V y) const { return impl.multiply(x, y); }
 
+    // Returns the modular product of (the montgomery value) x squared.  The
+    // return value is in montgomery form but might not be canonical - call
+    // getCanonicalForm() to use it in comparisons.
+    V square(V x) const { return impl.square(x); }
+
     // Returns the modular sum of (the montgomery values) x and y.  The return
     // value is in montgomery form but might not be canonical - call
     // getCanonicalForm() to use it in comparisons.
@@ -96,6 +103,7 @@ public:
 //    bool isValid(V x) const { return impl.isValid(x); }
 //    bool isReduced(T a) const { return impl.isReduced(a); }
 //    bool isCanonical(V x) const { return impl.isCanonical(x); }
+//    T getModulus() const { return impl.getModulus(x); }
 };
 
 
