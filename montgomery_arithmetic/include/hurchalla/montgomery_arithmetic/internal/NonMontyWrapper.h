@@ -4,7 +4,10 @@
 
 
 #include "hurchalla/montgomery_arithmetic/internal/MontyCommonBase.h"
+#include "hurchalla/montgomery_arithmetic/internal/MontgomeryValue.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
+#include "hurchalla/modular_arithmetic/modular_addition.h"
+#include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include "hurchalla/montgomery_arithmetic/internal/compiler_macros.h"
 #include <limits>
@@ -37,7 +40,7 @@ public:
     }
     FORCE_INLINE T getModulus() const
     {
-        return modulus;
+        return modulus_;
     }
 //    FORCE_INLINE bool isValid(V x) const { return isCanonical(x); }
 
@@ -69,8 +72,9 @@ public:
     {
         precondition2(isCanonical(x));
         precondition2(isCanonical(y));
-        T result =
-          modular_multiplication_prereduced_inputs(x.get(), y.get(), modulus_);
+        namespace ma = hurchalla::modular_arithmetic;
+        T result = ma::modular_multiplication_prereduced_inputs(x.get(),
+                                                             y.get(), modulus_);
         postcondition2(isCanonical(V(result)));
         return V(result);
     }
@@ -82,8 +86,9 @@ public:
     {
         precondition2(isCanonical(x));
         precondition2(isCanonical(y));
+        namespace ma = hurchalla::modular_arithmetic;
         T result =
-          modular_addition_prereduced_inputs(x.get(), y.get(), modulus_);
+          ma::modular_addition_prereduced_inputs(x.get(), y.get(), modulus_);
         postcondition2(isCanonical(V(result)));
         return V(result);
     }
@@ -91,8 +96,9 @@ public:
     {
         precondition2(isCanonical(x));
         precondition2(isCanonical(y));
+        namespace ma = hurchalla::modular_arithmetic;
         T result =
-          modular_subtraction_prereduced_inputs(x.get(), y.get(), modulus_);
+          ma::modular_subtraction_prereduced_inputs(x.get(), y.get(), modulus_);
         postcondition2(isCanonical(V(result)));
         return V(result);
     }

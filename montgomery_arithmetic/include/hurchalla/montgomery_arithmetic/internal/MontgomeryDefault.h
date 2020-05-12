@@ -35,7 +35,7 @@ template <typename T>
 class MontgomeryDefault<T, typename std::enable_if<
 std::numeric_limits<T>::is_integer && std::numeric_limits<T>::is_signed>::type>
 {
-    using U = typename extensible_make_unsigned<T>::type;
+    using U = typename modular_arithmetic::extensible_make_unsigned<T>::type;
     static constexpr int ubits = std::numeric_limits<U>::digits;
 public:
     using type =

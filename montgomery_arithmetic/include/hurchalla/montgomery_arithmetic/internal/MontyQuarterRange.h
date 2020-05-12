@@ -20,12 +20,15 @@ class MontyQuarterRange final : public MontyCommonBase<MontyQuarterRange, T> {
     static_assert(std::numeric_limits<T>::is_integer, "");
     static_assert(!(std::numeric_limits<T>::is_signed), "");
     static_assert(std::numeric_limits<T>::is_modulo, "");
-    using V = MontgomeryValue<T>;
+    using MontyCommonBase<MontyQuarterRange, T>::n_;
+    using MontyCommonBase<MontyQuarterRange, T>::neg_inv_n_;
+    using typename MontyCommonBase<MontyQuarterRange, T>::V;
 public:
     using montvalue_type = V;
     using template_param_type = T;
 
-    explicit MontyQuarterRange(T modulus) : MontyCommonBase(modulus)
+    explicit MontyQuarterRange(T modulus) :
+                                  MontyCommonBase<MontyQuarterRange, T>(modulus)
     {
         // MontyQuarterRange requires  modulus < R/4
         T Rdiv4 = static_cast<T>(1) << (std::numeric_limits<T>::digits - 2);

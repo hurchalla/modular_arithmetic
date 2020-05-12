@@ -3,7 +3,7 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTGOMERY_FORM_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/internal/montgomerydefault.h"
+#include "hurchalla/montgomery_arithmetic/internal/MontgomeryDefault.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <limits>
 
@@ -12,14 +12,14 @@ namespace hurchalla { namespace montgomery_arithmetic {
 
 // When using the default MontyType, T must be signed or unsigned integral type.
 // A custom MontyType(SIMD perhaps) might have different requirements for type T
-template<typename T, class MontyType = MontgomeryDefault<T>::type>
+template<typename T, class MontyType = typename MontgomeryDefault<T>::type>
 class MontgomeryForm final {
     MontyType impl;
-    using U = MontyType::template_param_type;
+    using U = typename MontyType::template_param_type;
     static_assert(std::numeric_limits<U>::digits >=
                   std::numeric_limits<T>::digits, "");
 public:
-    using V = MontyType::montvalue_type; // MontgomeryValue<U>;
+    using V = typename MontyType::montvalue_type; // MontgomeryValue<U>;
 
     explicit MontgomeryForm(T modulus) : impl(static_cast<U>(modulus))
     {

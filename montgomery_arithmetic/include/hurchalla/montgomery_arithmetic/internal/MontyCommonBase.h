@@ -5,6 +5,7 @@
 
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/montgomery_arithmetic/internal/negative_inverse_mod_r.h"
+#include "hurchalla/montgomery_arithmetic/internal/MontgomeryValue.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include "hurchalla/montgomery_arithmetic/internal/compiler_macros.h"
 #include <limits>
@@ -59,7 +60,8 @@ T getRSquaredModN(T rModN, T n)
     precondition2(n > 1);
 
     // rSqrModN == (R*R)%n == ((R%n)*(R%n))%n == (rModN*rModN)%n
-    T rSqrModN = modular_multiplication_prereduced_inputs(rModN, rModN, n);
+    namespace ma = modular_arithmetic;
+    T rSqrModN = ma::modular_multiplication_prereduced_inputs(rModN, rModN, n);
 
     // Since n is odd and > 1, n does not divide R*R==2^y.  Thus, rSqrModN != 0
     postcondition2(0 < rSqrModN && rSqrModN < n);
@@ -85,7 +87,8 @@ T getRSquaredModN(T rModN, T n)
 template <template <typename> class Derived, typename T>
 class MontyCommonBase {
     using D = Derived<T>;
-    using V = D::montvalue_type;
+public:
+    using V = MontgomeryValue<T>;
 protected:
     const T n_;   // the modulus
     const T neg_inv_n_;
@@ -113,11 +116,11 @@ public:
     // intended for use in postconditions/preconditions
     FORCE_INLINE bool isCanonical(V x) const
     {
-        V cfx = static_cast<D*>(this)->getCanonicalForm(x);
+        V cfx = static_cast<const D*>(this)->getCanonicalForm(x);
         // Any fully reduced value (0 <= value < N) must be canonical.  Class
         // Derived must be implemented to respect this.
         invariant2((0 <= x.get() && x.get() < n_) ? x == cfx : x != cfx);
-        bool good = static_cast<D*>(this)->isValid(x);
+        bool good = static_cast<const D*>(this)->isValid(x);
         return (x == cfx && good); 
     }
 
@@ -125,7 +128,7 @@ public:
 
     FORCE_INLINE V convertIn(T a) const
     {
-        return static_cast<D*>(this)->multiply(V(a), V(r_squared_mod_n_));
+        return static_cast<const D*>(this)->multiply(V(a), V(r_squared_mod_n_));
     }
 
     FORCE_INLINE V getUnityValue() const
@@ -157,7 +160,7 @@ public:
         //   (n_ - r_mod_n_)  is fully reduced, and thus canonical.
         invariant2(n_ > r_mod_n_);
         T ret = n_ - r_mod_n_;
-        assert_body2(0 < ret && ret < n_);
+        assert_logic2(0 < ret && ret < n_);
         invariant2(isCanonical(V(ret)));
 
         return V(ret);
@@ -165,7 +168,7 @@ public:
 
     FORCE_INLINE V square(V x) const
     {
-        return static_cast<D*>(this)->multiply(x, x);
+        return static_cast<const D*>(this)->multiply(x, x);
     }
 };
 

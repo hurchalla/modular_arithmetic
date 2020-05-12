@@ -46,7 +46,7 @@ FORCE_INLINE T REDC_non_minimized(bool& ovf, T u_hi, T u_lo, T n, T neg_inv_n)
                   std::numeric_limits<unsigned int>::digits, "");
 
     // assert(n * neg_inv_n ≡ -1 (mod R))
-    precondition2(n * neg_inv_m == static_cast<T>(0) - static_cast<T>(1));
+    precondition2(n * neg_inv_n == static_cast<T>(0) - static_cast<T>(1));
     precondition2(n % 2 == 1);
     precondition2(n > 1);
 

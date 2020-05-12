@@ -24,12 +24,15 @@ class MontyHalfRange final : public MontyCommonBase<MontyHalfRange, T> {
     static_assert(std::numeric_limits<T>::is_integer, "");
     static_assert(!(std::numeric_limits<T>::is_signed), "");
     static_assert(std::numeric_limits<T>::is_modulo, "");
-    using V = MontgomeryValue<T>;
+    using MontyCommonBase<MontyHalfRange, T>::n_;
+    using MontyCommonBase<MontyHalfRange, T>::neg_inv_n_;
+    using typename MontyCommonBase<MontyHalfRange, T>::V;
 public:
     using montvalue_type = V;
     using template_param_type = T;
 
-    explicit MontyHalfRange(T modulus) : MontyCommonBase(modulus)
+    explicit MontyHalfRange(T modulus) :
+                                MontyCommonBase<MontyHalfRange, T>(modulus)
     {
         // MontyHalfRange requires  modulus < R/2
         T Rdiv2 = static_cast<T>(1) << (std::numeric_limits<T>::digits - 1);
@@ -73,7 +76,7 @@ public:
 
         // Since from our constructor we know the modulus  n_ < R/2, the
         // montmul_non_minimized() postconditions guarantee ovf == false.
-        assert_body2(ovf == false);
+        assert_logic2(ovf == false);
         // Since ovf == false, montmul_non_minimized() postconditions guarantee
         T minimized_result = (prod >= n_) ? (prod - n_) : prod;
 

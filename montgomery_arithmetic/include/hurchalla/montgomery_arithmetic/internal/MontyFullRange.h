@@ -19,12 +19,15 @@ class MontyFullRange final : public MontyCommonBase<MontyFullRange, T> {
     static_assert(std::numeric_limits<T>::is_integer, "");
     static_assert(!(std::numeric_limits<T>::is_signed), "");
     static_assert(std::numeric_limits<T>::is_modulo, "");
-    using V = MontgomeryValue<T>;
+    using MontyCommonBase<MontyFullRange, T>::n_;
+    using MontyCommonBase<MontyFullRange, T>::neg_inv_n_;
+    using typename MontyCommonBase<MontyFullRange, T>::V;
 public:
     using montvalue_type = V;
     using template_param_type = T;
 
-    explicit MontyFullRange(T modulus) : MontyCommonBase(modulus) {}
+    explicit MontyFullRange(T modulus) :
+                                  MontyCommonBase<MontyFullRange, T>(modulus) {}
     MontyFullRange(const MontyFullRange&) = delete;
     MontyFullRange& operator=(const MontyFullRange&) = delete;
 
