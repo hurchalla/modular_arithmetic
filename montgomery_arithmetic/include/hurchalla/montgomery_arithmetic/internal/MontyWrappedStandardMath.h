@@ -1,6 +1,6 @@
 
-#ifndef HURCHALLA_MONTGOMERY_ARITHMETIC_NON_MONTY_WRAPPER_H_INCLUDED
-#define HURCHALLA_MONTGOMERY_ARITHMETIC_NON_MONTY_WRAPPER_H_INCLUDED
+#ifndef HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_WRAPPED_STANDARD_MATH_H_INCLUDED
+#define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_WRAPPED_STANDARD_MATH_H_INCLUDED
 
 
 #include "hurchalla/montgomery_arithmetic/internal/MontyCommonBase.h"
@@ -16,7 +16,7 @@ namespace hurchalla { namespace montgomery_arithmetic {
 
 
 template <typename T>
-class NonMontyWrapper final {
+class MontyWrappedStandardMath final {
     static_assert(std::numeric_limits<T>::is_integer, "");
     static_assert(!(std::numeric_limits<T>::is_signed), "");
     static_assert(std::numeric_limits<T>::is_modulo, "");
@@ -26,12 +26,12 @@ public:
     using template_param_type = T;
     using montvalue_type = V;
 
-    explicit NonMontyWrapper(T modulus) : modulus_(modulus)
+    explicit MontyWrappedStandardMath(T modulus) : modulus_(modulus)
     {
         precondition2(modulus > 0);
     }
-    NonMontyWrapper(const NonMontyWrapper&) = delete;
-    NonMontyWrapper& operator=(const NonMontyWrapper&) = delete;
+    MontyWrappedStandardMath(const MontyWrappedStandardMath&) = delete;
+    MontyWrappedStandardMath& operator=(const MontyWrappedStandardMath&)=delete;
 
     // intended for use in postconditions/preconditions
     FORCE_INLINE bool isCanonical(V x) const
