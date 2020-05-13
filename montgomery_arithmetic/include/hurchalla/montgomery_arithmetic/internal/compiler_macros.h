@@ -8,7 +8,7 @@
 #elif defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
 #  define FORCE_INLINE inline __attribute__((always_inline))
 #else
-#  define FORCE_INLINE
+#  define FORCE_INLINE inline
 #endif
 
 #if defined(__clang__) || defined(__INTEL_COMPILER)

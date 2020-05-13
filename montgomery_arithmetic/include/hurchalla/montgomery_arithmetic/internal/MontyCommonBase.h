@@ -165,11 +165,6 @@ public:
 
         return V(ret);
     }
-
-    FORCE_INLINE V square(V x) const
-    {
-        return static_cast<const D*>(this)->multiply(x, x);
-    }
 };
 
 

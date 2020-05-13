@@ -8,6 +8,9 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // A simple wrapper for T, used to designate that a value is in Montgomery Form
 template<typename T> struct MontgomeryValue final {
 public:
+    MontgomeryValue() {} // This constructor purposely does not initialize
+                                   // 'value' - the contents are undefined
+                                   // until the object is assigned to.
     explicit MontgomeryValue(T val) : value(val) {}
     T get() const { return value; }
 private:

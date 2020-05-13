@@ -23,7 +23,8 @@ T impl_modular_pow(T base, T exponent, T modulus)
    if (base >= modulus)
       base = base % modulus;
 /*
-   // original unoptimized version
+   // Applied Handbook of Cryptography- http://cacr.uwaterloo.ca/hac/
+   // Algorithm 14.76, original unoptimized version
    T result = 1;
    while (exponent > 0)
    {

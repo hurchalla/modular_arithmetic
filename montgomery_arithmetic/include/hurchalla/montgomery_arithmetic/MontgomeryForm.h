@@ -16,6 +16,8 @@ template<typename T, class MontyType = typename MontgomeryDefault<T>::type>
 class MontgomeryForm final {
     MontyType impl;
     using U = typename MontyType::template_param_type;
+    static_assert(std::numeric_limits<U>::is_integer, "");
+    static_assert(!(std::numeric_limits<U>::is_signed), "");
     static_assert(std::numeric_limits<U>::digits >=
                   std::numeric_limits<T>::digits, "");
 public:
@@ -76,28 +78,49 @@ public:
     }
 
     // Returns the modular product of (the montgomery values) x and y.  The
-    // return value is in montgomery form but might not be canonical - call
+    // return value is a montgomery value but might not be canonical - call
     // getCanonicalForm() to use it in comparisons.
-//    FORCE_INLINE V inline_multiply(V x, V y) const { 
-//        return impl.inline_multiply(x, y); 
-//    }
-    // Same discussion/return as inline_multiply(), but this function is not
-    // forced inline.
     V multiply(V x, V y) const { return impl.multiply(x, y); }
 
-    // Returns the modular product of (the montgomery value) x squared.  The
-    // return value is in montgomery form but might not be canonical - call
+//    FORCE_INLINE V inline_multiply(V x, V y) const { 
+//        return impl.multiply(x, y); 
+//    }
+
+    // Returns the modular product of (the montgomery value) x multiplied by x.
+    // The return value is a montgomery value but might not be canonical - call
     // getCanonicalForm() to use it in comparisons.
-    V square(V x) const { return impl.square(x); }
+    V square(V x) const { return impl.multiply(x, x); }
+
+    // Calculates and returns the modular exponentiation of the montgomery value
+    // 'base' to the power of (the type T variable) 'exponent'.  The return
+    // value is a mongomery value but might not be canonical - call
+    // getCanonicalForm() to use it in comparisons.
+    V pow(V base, T exponent)
+    {
+        // This is a slightly optimized version of Algorithm 14.76, from
+        // Applied Handbook of Cryptography- http://cacr.uwaterloo.ca/hac/
+        V result;
+        if (exponent & static_cast<T>(1))
+            result = base;
+        else
+            result = impl.getUnityValue();
+        while (exponent > static_cast<T>(1))
+        {
+            exponent = exponent >> static_cast<T>(1);
+            base = impl.multiply(base, base);
+            if (exponent & static_cast<T>(1))
+                result = impl.multiply(result, base);
+        }
+        return result;
+    }
 
     // Returns the modular sum of (the montgomery values) x and y.  The return
-    // value is in montgomery form but might not be canonical - call
-    // getCanonicalForm() to use it in comparisons.
+    // value might not be canonical- use getCanonicalForm() for comparisons.
     V add(V x, V y) const { return impl.add(x, y); }
 
     // Returns the modular difference of (the montgomery values) x and y.  More
-    // precisely, x minus y.  The return value is in montgomery form but might
-    // not be canonical - call getCanonicalForm() to use it in comparisons.
+    // precisely, x minus y.  The return value might not be canonical- use
+    // getCanonicalForm() for comparisons.
     V subtract(V x, V y) const { return impl.subtract(x, y); }
 
 //    bool isValid(V x) const { return impl.isValid(x); }
