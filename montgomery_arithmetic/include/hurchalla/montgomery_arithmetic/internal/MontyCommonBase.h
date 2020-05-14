@@ -71,11 +71,6 @@ T getRSquaredModN(T rModN, T n)
 
 
 
-// Make sure MontySqrtRange doesn't derive from this class - it needs different
-// functions for convertIn() and getZeroValue().
-
-
-
 // The class member variable names are based on the webpage
 // https://en.wikipedia.org/wiki/Montgomery_modular_multiplication
 //
@@ -100,7 +95,7 @@ protected:
                             r_mod_n_(getRModN(modulus)),
                             r_squared_mod_n_(getRSquaredModN(r_mod_n_, modulus))
     {
-        // Note: unityValue == (the montgomery form of 1)==(1*R)%N == rModN
+        // Note: unityValue == (the montgomery form of 1)==(1*R)%n_ == r_mod_n_.
         //
         // getRModN() guarantees the below.  getUnityValue() and
         // getNegativeOneValue() both rely on it.
@@ -117,7 +112,7 @@ public:
     FORCE_INLINE bool isCanonical(V x) const
     {
         V cfx = static_cast<const D*>(this)->getCanonicalForm(x);
-        // Any fully reduced value (0 <= value < N) must be canonical.  Class
+        // Any fully reduced value (0 <= value < n_) must be canonical.  Class
         // Derived must be implemented to respect this.
         invariant2((0 <= x.get() && x.get() < n_) ? x == cfx : x != cfx);
         bool good = static_cast<const D*>(this)->isValid(x);
@@ -140,7 +135,7 @@ public:
 
     FORCE_INLINE V getZeroValue() const
     {
-        V zero(0); // zeroValue == (0*R)%N
+        V zero(0); // zeroValue == (0*R)%n_
         invariant2(isCanonical(zero));
         return zero;
     } 
