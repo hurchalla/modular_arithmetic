@@ -31,57 +31,57 @@ public:
     MontyFullRange(const MontyFullRange&) = delete;
     MontyFullRange& operator=(const MontyFullRange&) = delete;
 
-    FORCE_INLINE bool isValid(V x) const { return (x.get() < n_); }
-//    FORCE_INLINE bool isReduced(T a) const  { return (a < n_); }
+    HURCHALLA_FORCE_INLINE bool isValid(V x) const { return (x.get() < n_); }
+//    HURCHALLA_FORCE_INLINE bool isReduced(T a) const  { return (a < n_); }
 
-    FORCE_INLINE T convertOut(V x) const
+    HURCHALLA_FORCE_INLINE T convertOut(V x) const
     {
-        precondition2(x.get() < n_);
+        HPBC_PRECONDITION2(x.get() < n_);
         T a = montout_non_minimized(x.get(), n_, neg_inv_n_);
         // montout_non_minimized() postconditions guarantee that since x < n_,
         // a < n_.  Thus 'a' is already minimized.
         T minimized_result = a;
-        postcondition2(minimized_result < n_);
+        HPBC_POSTCONDITION2(minimized_result < n_);
         return minimized_result;
     }
 
-    FORCE_INLINE V getCanonicalForm(V x) const
+    HURCHALLA_FORCE_INLINE V getCanonicalForm(V x) const
     {
-        precondition2(x.get() < n_);
+        HPBC_PRECONDITION2(x.get() < n_);
         return x;
     }
 
-    FORCE_INLINE V multiply(V x, V y) const
+    HURCHALLA_FORCE_INLINE V multiply(V x, V y) const
     {
-        precondition2(x.get() < n_);
-        precondition2(y.get() < n_);
+        HPBC_PRECONDITION2(x.get() < n_);
+        HPBC_PRECONDITION2(y.get() < n_);
         // x<n with y<n  will satisfy montmul_non_minimized's precondition
         // requirement that x*y < n*R.
         bool ovf;
         T prod = montmul_non_minimized(ovf, x.get(), y.get(), n_, neg_inv_n_);
         // montmul_non_minimized() postconditions guarantee the following
         T minimized_result = (ovf || prod >= n_) ? (prod - n_) : prod;
-        postcondition2(minimized_result < n_);
+        HPBC_POSTCONDITION2(minimized_result < n_);
         return V(minimized_result);
     }
 
-    FORCE_INLINE V add(V x, V y) const
+    HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
-        precondition2(x.get() < n_);
-        precondition2(y.get() < n_);
+        HPBC_PRECONDITION2(x.get() < n_);
+        HPBC_PRECONDITION2(y.get() < n_);
         namespace ma = hurchalla::modular_arithmetic;
         T z = ma::modular_addition_prereduced_inputs(x.get(), y.get(), n_);
-        postcondition2(z < n_);
+        HPBC_POSTCONDITION2(z < n_);
         return V(z);
     }
 
-    FORCE_INLINE V subtract(V x, V y) const
+    HURCHALLA_FORCE_INLINE V subtract(V x, V y) const
     {
-        precondition2(x.get() < n_);
-        precondition2(y.get() < n_);
+        HPBC_PRECONDITION2(x.get() < n_);
+        HPBC_PRECONDITION2(y.get() < n_);
         namespace ma = hurchalla::modular_arithmetic;
         T z = ma::modular_subtraction_prereduced_inputs(x.get(), y.get(), n_);
-        postcondition2(z < n_);
+        HPBC_POSTCONDITION2(z < n_);
         return V(z);
     }
 };

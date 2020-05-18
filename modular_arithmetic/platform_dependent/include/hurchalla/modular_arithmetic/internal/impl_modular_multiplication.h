@@ -35,16 +35,16 @@ Notes:
    UMULL instruction though, which does 32bit by 32bit multiplication for
    (effectively) a 64bit result.
 Code review/testing notes:
-   Analytical correctness: Appears perfect.
+   Analytical correctness: Looks correct.
    Empirical correctness: Impossible to test exhaustively, but passed all tests.
 */
 template <typename T>
 T slow_modular_multiplication(T a, T b, T modulus)
 {
     static_assert(std::numeric_limits<T>::is_integer, "");
-    precondition(modulus>0);
-    precondition(a>=0 && a<modulus);
-    precondition(b>=0 && b<modulus);
+    HPBC_PRECONDITION2(modulus>0);
+    HPBC_PRECONDITION2(a>=0 && a<modulus);
+    HPBC_PRECONDITION2(b>=0 && b<modulus);
 
     T result = 0;
     while (b > 0) {
@@ -78,7 +78,7 @@ struct IsSignedAndNativeInteger : std::integral_constant<
 // functions get first priority for potential matches).
 template <typename T>
 typename std::enable_if<!(IsSignedAndNativeInteger<T>::value), T>::type
-#ifdef COMPILE_ERROR_ON_SLOW_MATH
+#ifdef HURCHALLA_COMPILE_ERROR_ON_SLOW_MATH
   // cause a compile error instead of falling back to the slow template function
   impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus) = delete;
 #else
@@ -96,7 +96,7 @@ template <typename T>
 typename std::enable_if<IsSignedAndNativeInteger<T>::value, T>::type
 impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
 {
-    precondition2(a>=0 && b>=0 && modulus>0 && a<modulus && b<modulus);
+    HPBC_PRECONDITION2(a>=0 && b>=0 && modulus>0 && a<modulus && b<modulus);
     using U = typename std::make_unsigned<T>::type;
     static_assert(!IsSignedAndNativeInteger<U>::value, "");
     return (T)impl_modular_multiplication_prereduced_inputs((U)a, (U)b,
@@ -114,7 +114,7 @@ impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
 // caller's provided argument type(s).
 
 
-#if defined(TARGET_ISA_HAS_DIVIDE) && TARGET_BIT_WIDTH >= 16
+#if defined(HURCHALLA_TARGET_ISA_HAS_DIVIDE) && HURCHALLA_TARGET_BIT_WIDTH >= 16
 inline uint8_t impl_modular_multiplication_prereduced_inputs(uint8_t a,
                                             uint8_t b, uint8_t modulus)
 {
@@ -125,7 +125,7 @@ inline uint8_t impl_modular_multiplication_prereduced_inputs(uint8_t a,
 #endif
 
 
-#if defined(TARGET_ISA_HAS_DIVIDE) && TARGET_BIT_WIDTH >= 32
+#if defined(HURCHALLA_TARGET_ISA_HAS_DIVIDE) && HURCHALLA_TARGET_BIT_WIDTH >= 32
 inline uint16_t impl_modular_multiplication_prereduced_inputs(uint16_t a,
                                             uint16_t b, uint16_t modulus)
 {
@@ -136,12 +136,12 @@ inline uint16_t impl_modular_multiplication_prereduced_inputs(uint16_t a,
 
 
 
-// Note: for TARGET_ISA_X86_64 (and TARGET_ISA_X86_32), 32bit mul and div should
+// Note: for HURCHALLA_TARGET_ISA_X86_64 (and X86_32), 32bit mul and div should
 // be faster than 64bit mul and div.  For 32bit mul and div, we need access to
 // the two-register wide product and dividend, which requires assembly language.
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1920) && \
-    (defined(TARGET_ISA_X86_64) || defined(TARGET_ISA_X86_32))
+  (defined(HURCHALLA_TARGET_ISA_X86_64) || defined(HURCHALLA_TARGET_ISA_X86_32))
 // _MSC_VER >= 1920 indicates Visual Studio 2019 or higher. VS2019 (for x86/x64)
 // is the first version to support _udiv64 used below.
 #  include <immintrin.h>
@@ -155,10 +155,11 @@ inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
     // See  https://developercommunity.visualstudio.com/content/problem/896815/-udiv128-causes-integer-overflow-and-doesnt-have-a.html
     uint32_t result;
     _udiv64(__emulu(a, b), modulus, &result);
-    postcondition2((uint64_t)result==(uint64_t)a*(uint64_t)b%(uint64_t)modulus);
+    HPBC_POSTCONDITION2((uint64_t)result == 
+                        (uint64_t)a*(uint64_t)b % (uint64_t)modulus);
     return result;
 }
-#elif defined(_MSC_VER) && defined(TARGET_ISA_X86_64)
+#elif defined(_MSC_VER) && defined(HURCHALLA_TARGET_ISA_X86_64)
 extern "C" uint32_t modular_multiply_uint32_asm_UID7b5f83fc983(uint32_t a,
                                          uint32_t b, uint32_t modulus) noexcept;
 inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
@@ -181,13 +182,14 @@ inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
     // The older versions of MSVC don't have the _udiv64 intrinsic.  Since
     // MSVC doesn't support inline asm for 64 bit targets, use an asm function
     uint32_t result = modular_multiply_uint32_asm_UID7b5f83fc983(a, b, modulus);
-    postcondition2((uint64_t)result==(uint64_t)a*(uint64_t)b%(uint64_t)modulus);
+    HPBC_POSTCONDITION2((uint64_t)result ==
+                        (uint64_t)a*(uint64_t)b % (uint64_t)modulus);
     return result;
   #endif
 }
-#elif defined(_MSC_VER) && defined(TARGET_ISA_X86_32)   // inline asm, MS syntax
-// Since this is x86 msvc and will use inline asm, we must ensure this function
-// isn't using __fastcall or __vectorcall (see
+#elif defined(_MSC_VER) && defined(HURCHALLA_TARGET_ISA_X86_32)    // inline asm
+// Since this is x86 msvc and we will use inline asm, we must ensure this
+// function doesn't use __fastcall or __vectorcall (see
 // https://docs.microsoft.com/en-us/cpp/assembler/inline/using-and-preserving-registers-in-inline-assembly ).
 // To do this, we declare this function with the __cdecl modifier, which forces
 // the function to use cdecl calling convention.  This overrides any potential
@@ -202,13 +204,16 @@ inline uint32_t __cdecl impl_modular_multiplication_prereduced_inputs(
         div modulus     ; (quotient EAX, remainder EDX) = EDX:EAX/modulus
         mov result, edx ; save the remainder
     }
-    postcondition2((uint64_t)result==(uint64_t)a*(uint64_t)b%(uint64_t)modulus);
+    HPBC_POSTCONDITION2((uint64_t)result ==
+                        (uint64_t)a*(uint64_t)b % (uint64_t)modulus);
     return result;
 }
-#elif defined(TARGET_ISA_X86_64) || defined(TARGET_ISA_X86_32) // gnu/AT&T style
+#elif defined(HURCHALLA_TARGET_ISA_X86_64) || \
+           defined(HURCHALLA_TARGET_ISA_X86_32)
 inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
                                             uint32_t b, uint32_t modulus)
 {
+    // gnu/AT&T style inline asm
     // [input operands]:  EAX = a
     // mull %3:           EDX:EAX = EAX*b; high-order bits of the product in EDX
     // divl %4:           (quotient EAX, remainder EDX) = EDX:EAX/modulus
@@ -220,10 +225,12 @@ inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
              : "=&d"(result), "=&a"(dummy)
              : "1"(a), "r"(b), "r"(modulus)
              : "cc");
-    postcondition2((uint64_t)result==(uint64_t)a*(uint64_t)b%(uint64_t)modulus);
+    HPBC_POSTCONDITION2((uint64_t)result ==
+                        (uint64_t)a*(uint64_t)b % (uint64_t)modulus);
     return result;
 }
-#elif defined(TARGET_ISA_HAS_DIVIDE) && TARGET_BIT_WIDTH >= 64
+#elif defined(HURCHALLA_TARGET_ISA_HAS_DIVIDE) && \
+                   HURCHALLA_TARGET_BIT_WIDTH >= 64
 inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
                                             uint32_t b, uint32_t modulus)
 {
@@ -234,7 +241,8 @@ inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
 
 
 
-#if defined(_MSC_VER) && _MSC_VER >= 1920 && defined(TARGET_ISA_X86_64)
+#if defined(_MSC_VER) && _MSC_VER >= 1920 && \
+          defined(HURCHALLA_TARGET_ISA_X86_64)
 // _MSC_VER >= 1920 indicates Visual Studio 2019 or higher. VS2019 (for x64)
 // is the first version to support _udiv128 used below.
 #  include <immintrin.h>
@@ -249,10 +257,10 @@ inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
     uint64_t productHigh, result;
     uint64_t productLow = _umul128(a, b, &productHigh);
     _udiv128(productHigh, productLow, modulus, &result);
-    postcondition3(result == slow_modular_multiplication(a, b, modulus));
+    HPBC_POSTCONDITION3(result == slow_modular_multiplication(a, b, modulus));
     return result;
 }
-#elif defined(_MSC_VER) && defined(TARGET_ISA_X86_64)
+#elif defined(_MSC_VER) && defined(HURCHALLA_TARGET_ISA_X86_64)
 extern "C" uint64_t modular_multiply_uint64_asm_UID7b5f83fc983(uint64_t a,
                                          uint64_t b, uint64_t modulus) noexcept;
 inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
@@ -261,10 +269,10 @@ inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
     // The older versions of MSVC don't have the _udiv128 intrinsic.  Since
     // MSVC doesn't support inline asm for 64 bit targets, use an asm function
     uint64_t result = modular_multiply_uint64_asm_UID7b5f83fc983(a, b, modulus);
-    postcondition3(result == slow_modular_multiplication(a, b, modulus));
+    HPBC_POSTCONDITION3(result == slow_modular_multiplication(a, b, modulus));
     return result;
 }
-#elif defined(TARGET_ISA_X86_64)    // use inline asm with gnu/AT&T syntax
+#elif defined(HURCHALLA_TARGET_ISA_X86_64)    // inline asm with gnu/AT&T syntax
 inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
                                             uint64_t b, uint64_t modulus)
 {
@@ -279,10 +287,11 @@ inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
              : "=&d"(result), "=&a"(dummy)
              : "1"(a), "r"(b), "r"(modulus)
              : "cc");
-    postcondition3(result == slow_modular_multiplication(a, b, modulus));
+    HPBC_POSTCONDITION3(result == slow_modular_multiplication(a, b, modulus));
     return result;
 }
-#elif defined(TARGET_ISA_HAS_DIVIDE) && TARGET_BIT_WIDTH >= 128
+#elif defined(HURCHALLA_TARGET_ISA_HAS_DIVIDE) && \
+                  HURCHALLA_TARGET_BIT_WIDTH >= 128
 // this is speculative since I don't know of any 128 bit ALUs.
 inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
                                             uint64_t b, uint64_t modulus)
@@ -296,9 +305,9 @@ inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
 // The code below should be correct as-is. If you wish to try it, you can
 // optionally uncomment this section to enable it.
 //
-#elif defined(TARGET_ISA_HAS_DIVIDE) && defined(__SIZEOF_INT128__)
+#elif defined(HURCHALLA_TARGET_ISA_HAS_DIVIDE) && defined(__SIZEOF_INT128__)
 // The macro __SIZEOF_INT128__ indicates if __int128 is supported.  See
-// https://stackoverflow.com/questions/16088282/is-there-a-128-bit-integer-in-gcc
+//https://stackoverflow.com/questions/16088282/is-there-a-128-bit-integer-in-gcc
 inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
                                             uint64_t b, uint64_t modulus)
 {

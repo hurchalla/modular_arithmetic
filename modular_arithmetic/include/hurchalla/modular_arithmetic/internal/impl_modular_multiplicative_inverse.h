@@ -18,10 +18,12 @@ impl_modular_multiplicative_inverse(T val, T modulus)
 {
     static_assert(std::numeric_limits<T>::is_integer, "");
     static_assert(std::numeric_limits<T>::is_signed, "");
-    precondition(val >= 0);
-    precondition(modulus > 1);
-    // Postcondition: Returns 0 if the inverse doesn't exist. Otherwise returns
+    HPBC_PRECONDITION2(val >= 0);
+    HPBC_PRECONDITION2(modulus > 1);
+
+    // POSTCONDITION: Returns 0 if the inverse doesn't exist. Otherwise returns
     //    the inverse (which is never 0, given that modulus>1).
+
 
 // I decided not to support modulus<=1, since it's not likely to be used and
 // it complicates the return type and adds conditional branches. 
@@ -60,7 +62,7 @@ impl_modular_multiplicative_inverse(T val, T modulus)
 
     if (gcd == 1) {
         T inv = (y < 0) ? y + modulus : y;
-        postcondition(inv>=0 && inv<modulus);
+        HPBC_POSTCONDITION2(inv>=0 && inv<modulus);
         return inv;
     }
     else
@@ -75,9 +77,11 @@ impl_modular_multiplicative_inverse(U val, U modulus)
 {
     static_assert(std::numeric_limits<U>::is_integer, "");
     static_assert(!(std::numeric_limits<U>::is_signed), "");
-    precondition(modulus>1);
-    // Postcondition: Returns 0 if the inverse doesn't exist. Otherwise returns
+    HPBC_PRECONDITION2(modulus>1);
+
+    // POSTCONDITION: Returns 0 if the inverse doesn't exist. Otherwise returns
     //    the inverse (which is never 0, given that modulus>1).
+
 
 // I decided not to support modulus<=1, since it's not likely to be used and
 // it complicates the return type and adds conditional branches. 
@@ -119,7 +123,7 @@ impl_modular_multiplicative_inverse(U val, U modulus)
     U gcd = a1;
     if (gcd == 1) {
         U inv = (y < 0) ? static_cast<U>(y) + modulus : static_cast<U>(y);
-        postcondition(inv<modulus);
+        HPBC_POSTCONDITION2(inv<modulus);
         return inv;
     }
     else

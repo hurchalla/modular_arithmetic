@@ -28,78 +28,86 @@ public:
 
     explicit MontyWrappedStandardMath(T modulus) : modulus_(modulus)
     {
-        precondition2(modulus > 0);
+        HPBC_PRECONDITION2(modulus > 0);
     }
     MontyWrappedStandardMath(const MontyWrappedStandardMath&) = delete;
     MontyWrappedStandardMath& operator=(const MontyWrappedStandardMath&)=delete;
 
     // intended for use in postconditions/preconditions
-    FORCE_INLINE bool isCanonical(V x) const
+    HURCHALLA_FORCE_INLINE bool isCanonical(V x) const
     {
         return (0 <= x.get() && x.get() < modulus_);
     }
-    FORCE_INLINE T getModulus() const
+    HURCHALLA_FORCE_INLINE T getModulus() const
     {
         return modulus_;
     }
-//    FORCE_INLINE bool isValid(V x) const { return isCanonical(x); }
+//    HURCHALLA_FORCE_INLINE bool isValid(V x) const { return isCanonical(x); }
 
-    FORCE_INLINE V convertIn(T a) const
+    HURCHALLA_FORCE_INLINE V convertIn(T a) const
     {
-        precondition2(0 <= a && a < modulus_);
+        HPBC_PRECONDITION2(0 <= a && a < modulus_);
         return V(a);
     }
-    FORCE_INLINE T convertOut(V x) const
+    HURCHALLA_FORCE_INLINE T convertOut(V x) const
     {
-        precondition2(isCanonical(x));
+        HPBC_PRECONDITION2(isCanonical(x));
         T ret = x.get();
-        postcondition2(0 <= ret && ret < modulus_);
+        HPBC_POSTCONDITION2(0 <= ret && ret < modulus_);
         return ret;
     }
 
-    FORCE_INLINE V getCanonicalForm(V x) const
+    HURCHALLA_FORCE_INLINE V getCanonicalForm(V x) const
     {
-        precondition2(isCanonical(x));
+        HPBC_PRECONDITION2(isCanonical(x));
         return x;
     }
 
-    FORCE_INLINE V getUnityValue() const        { return V(static_cast<T>(1)); }
-    FORCE_INLINE V getZeroValue() const         { return V(static_cast<T>(0)); }
-    FORCE_INLINE V getNegativeOneValue() const  { return V(modulus_ -
-                                                           static_cast<T>(1)); }
-
-    FORCE_INLINE V multiply(V x, V y) const
+    HURCHALLA_FORCE_INLINE V getUnityValue() const
     {
-        precondition2(isCanonical(x));
-        precondition2(isCanonical(y));
+        return V(static_cast<T>(1));
+    }
+    HURCHALLA_FORCE_INLINE V getZeroValue() const
+    {
+        return V(static_cast<T>(0));
+    }
+    HURCHALLA_FORCE_INLINE V getNegativeOneValue() const 
+    {
+        return V(modulus_ - static_cast<T>(1));
+    }
+
+    HURCHALLA_FORCE_INLINE V multiply(V x, V y) const
+    {
+        HPBC_PRECONDITION2(isCanonical(x));
+        HPBC_PRECONDITION2(isCanonical(y));
         namespace ma = hurchalla::modular_arithmetic;
         T result = ma::modular_multiplication_prereduced_inputs(x.get(),
                                                              y.get(), modulus_);
-        postcondition2(isCanonical(V(result)));
+        HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
-    FORCE_INLINE V square(V x) const
+    HURCHALLA_FORCE_INLINE V square(V x) const
     {
         return multiply(x, x);
     }
-    FORCE_INLINE V add(V x, V y) const
+    HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
-        precondition2(isCanonical(x));
-        precondition2(isCanonical(y));
+        HPBC_PRECONDITION2(isCanonical(x));
+        HPBC_PRECONDITION2(isCanonical(y));
         namespace ma = hurchalla::modular_arithmetic;
         T result =
           ma::modular_addition_prereduced_inputs(x.get(), y.get(), modulus_);
-        postcondition2(isCanonical(V(result)));
+        HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
-    FORCE_INLINE V subtract(V x, V y) const
+    HURCHALLA_FORCE_INLINE V subtract(V x, V y) const
     {
-        precondition2(isCanonical(x));
-        precondition2(isCanonical(y));
+        HPBC_PRECONDITION2(isCanonical(x));
+        HPBC_PRECONDITION2(isCanonical(y));
         namespace ma = hurchalla::modular_arithmetic;
         T result =
           ma::modular_subtraction_prereduced_inputs(x.get(), y.get(), modulus_);
-        postcondition2(isCanonical(V(result)));
+        HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
 };

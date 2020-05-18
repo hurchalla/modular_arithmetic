@@ -4,23 +4,23 @@
 
 
 #ifdef _MSC_VER
-#  define FORCE_INLINE __forceinline
+#  define HURCHALLA_FORCE_INLINE __forceinline
 #elif defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
-#  define FORCE_INLINE inline __attribute__((always_inline))
+#  define HURCHALLA_FORCE_INLINE inline __attribute__((always_inline))
 #else
-#  define FORCE_INLINE inline
+#  define HURCHALLA_FORCE_INLINE inline
 #endif
 
 #if defined(__clang__) || defined(__INTEL_COMPILER)
-#  define REQUEST_UNROLL_LOOP _Pragma("unroll")
+#  define HURCHALLA_REQUEST_UNROLL_LOOP _Pragma("unroll")
 #elif defined(__GNUC__) && __GNUC__ >= 8
-#  define REQUEST_UNROLL_LOOP _Pragma("GCC unroll 127")
+#  define HURCHALLA_REQUEST_UNROLL_LOOP _Pragma("GCC unroll 127")
 #else
-#  define REQUEST_UNROLL_LOOP
+#  define HURCHALLA_REQUEST_UNROLL_LOOP
 #endif
 
-#ifndef TARGET_BIT_WIDTH
-#error "TARGET_BIT_WIDTH must be defined"
+#ifndef HURCHALLA_TARGET_BIT_WIDTH
+#error "HURCHALLA_TARGET_BIT_WIDTH must be defined"
 #endif
 // In theory, the macro __SIZEOF_INT128__ indicates if __int128 is supported,
 // but some compilers supported __int128 prior to providing that macro.  Clang
@@ -30,17 +30,18 @@
 // Note also that clang and icc define the GNUC and GNUC_MINOR macros.  Clang
 // v3.0 defines them as 4,2.  Icc v13 defines them as 4,7.
 //
-// The macro  COMPILER_HAS_UINT128_T  lets us know if __uint128_t is supported.
-#if (TARGET_BIT_WIDTH < 64)
-#  define COMPILER_HAS_UINT128_T 0
+// The macro  HURCHALLA_COMPILER_HAS_UINT128_T  lets us know if __uint128_t is
+// supported.
+#if (HURCHALLA_TARGET_BIT_WIDTH < 64)
+#  define HURCHALLA_COMPILER_HAS_UINT128_T 0
 #elif defined(__SIZEOF_INT128__) || (__clang_major__ >= 3) ||  \
                                     (__INTEL_COMPILER >= 1300)
-#  define COMPILER_HAS_UINT128_T 1
+#  define HURCHALLA_COMPILER_HAS_UINT128_T 1
 #elif !defined(__INTEL_COMPILER) && !defined(__clang_major__) &&  \
                          (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1))
-#  define COMPILER_HAS_UINT128_T 1
+#  define HURCHALLA_COMPILER_HAS_UINT128_T 1
 #else
-#  define COMPILER_HAS_UINT128_T 0
+#  define HURCHALLA_COMPILER_HAS_UINT128_T 0
 #endif
 
 

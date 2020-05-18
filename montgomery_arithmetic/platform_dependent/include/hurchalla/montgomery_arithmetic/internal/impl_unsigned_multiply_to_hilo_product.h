@@ -20,7 +20,8 @@ Notes:
    On ARM32 with clang it compiles nicely, using the UMAAL instruction.
 */
 template <typename T>
-FORCE_INLINE T slow_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v)
+HURCHALLA_FORCE_INLINE
+T slow_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v)
 {
     static_assert(std::numeric_limits<T>::is_integer, "");
     static_assert(!(std::numeric_limits<T>::is_signed), "");
@@ -56,11 +57,12 @@ FORCE_INLINE T slow_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v)
 
 
 template <typename T>
-#ifdef COMPILE_ERROR_ON_SLOW_MATH
+#ifdef HURCHALLA_COMPILE_ERROR_ON_SLOW_MATH
   // cause a compile error instead of falling back to the slow template function
   T impl_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v) = delete;
 #else
-  FORCE_INLINE T impl_unsigned_multiply_to_hilo_product(T* pLowProduct, T u,T v)
+  HURCHALLA_FORCE_INLINE
+  T impl_unsigned_multiply_to_hilo_product(T* pLowProduct, T u,T v)
   {
       return slow_unsigned_multiply_to_hilo_product(pLowProduct, u, v);
   }
@@ -71,7 +73,7 @@ template <typename T>
 
 // Intended for use by the functions below
 template <typename T, typename T2>
-FORCE_INLINE T umult_to_hilo_product(T* pLowProduct, T u, T v)
+HURCHALLA_FORCE_INLINE T umult_to_hilo_product(T* pLowProduct, T u, T v)
 {
     static_assert(std::numeric_limits<T>::is_integer, "");
     static_assert(!(std::numeric_limits<T>::is_signed), "");
@@ -99,20 +101,20 @@ FORCE_INLINE T umult_to_hilo_product(T* pLowProduct, T u, T v)
 // clang/icc/gcc is generally quite good.
 // GCC for ARM seems to make the worst generated asm, but it's not so bad as to
 // make inline asm seem worthwhile.
-FORCE_INLINE uint8_t impl_unsigned_multiply_to_hilo_product(
+HURCHALLA_FORCE_INLINE uint8_t impl_unsigned_multiply_to_hilo_product(
                                      uint8_t* pLowProduct, uint8_t u, uint8_t v)
 {
     // Note we could have used 'T2 = unsigned int' since 'int' is >= 16bit.
     using T2 = uint16_t;
     return umult_to_hilo_product<decltype(u),T2>(pLowProduct, u, v);
 }
-FORCE_INLINE uint16_t impl_unsigned_multiply_to_hilo_product(
+HURCHALLA_FORCE_INLINE uint16_t impl_unsigned_multiply_to_hilo_product(
                                   uint16_t* pLowProduct, uint16_t u, uint16_t v)
 {
     using T2 = uint32_t;
     return umult_to_hilo_product<decltype(u),T2>(pLowProduct, u, v);
 }
-FORCE_INLINE uint32_t impl_unsigned_multiply_to_hilo_product(
+HURCHALLA_FORCE_INLINE uint32_t impl_unsigned_multiply_to_hilo_product(
                                   uint32_t* pLowProduct, uint32_t u, uint32_t v)
 {
     using T2 = uint64_t;
@@ -127,39 +129,39 @@ FORCE_INLINE uint32_t impl_unsigned_multiply_to_hilo_product(
 // the intrinsics.
 
 // MSVC + x64
-#if defined(_MSC_VER) && defined(TARGET_ISA_X86_64)
+#if defined(_MSC_VER) && defined(HURCHALLA_TARGET_ISA_X86_64)
 #  include <intrin.h>
-FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
+HURCHALLA_FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
                                   uint64_t* pLowProduct, uint64_t u, uint64_t v)
 {
     uint64_t highProduct;
     *pLowProduct = _umul128(u, v, &highProduct);
-    if (POSTCONDITION3_MACRO_IS_ACTIVE) {
+    if (HPBC_POSTCONDITION3_MACRO_IS_ACTIVE) {
         uint64_t tmpHi, tmpLo;
         tmpHi = slow_unsigned_multiply_to_hilo_product(&tmpLo, u, v);
-        postcondition3(highProduct == tmpHi && *pLowProduct == tmpLo);
+        HPBC_POSTCONDITION3(highProduct == tmpHi && *pLowProduct == tmpLo);
     }
     return highProduct;
 }
 
 // MSVC + ARM64
-#elif defined(_MSC_VER) && defined(TARGET_ISA_ARM_64)
+#elif defined(_MSC_VER) && defined(HURCHALLA_TARGET_ISA_ARM_64)
 #  include <intrin.h>
-FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
+HURCHALLA_FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
                                   uint64_t* pLowProduct, uint64_t u, uint64_t v)
 {
     uint64_t highProduct = __umulh(u, v);
     *pLowProduct = u*v;
-    if (POSTCONDITION3_MACRO_IS_ACTIVE) {
+    if (HPBC_POSTCONDITION3_MACRO_IS_ACTIVE) {
         uint64_t tmpHi, tmpLo;
         tmpHi = slow_unsigned_multiply_to_hilo_product(&tmpLo, u, v);
-        postcondition3(highProduct == tmpHi && *pLowProduct == tmpLo);
+        HPBC_POSTCONDITION3(highProduct == tmpHi && *pLowProduct == tmpLo);
     }
     return highProduct;
 }
 
-#elif (COMPILER_HAS_UINT128_T)
-FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
+#elif (HURCHALLA_COMPILER_HAS_UINT128_T)
+HURCHALLA_FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
                                   uint64_t* pLowProduct, uint64_t u, uint64_t v)
 {
     using T2 = __uint128_t;
@@ -180,10 +182,10 @@ FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
 // via the generic template function is terrible.  In contrast, the code in
 // comments below produces decent asm for MSVC x86-32.  I expect this code to
 // be fine if you wish to use it.  However, it remains in comments because
-// x86-32 is obsolete (making it an unnecessary complication).
+// x86-32 is obsolete.
 /*
 // MSVC + x32
-#if defined(_MSC_VER) && defined(TARGET_ISA_X86_32)
+#if defined(_MSC_VER) && defined(HURCHALLA_TARGET_ISA_X86_32)
 inline uint64_t impl_unsigned_multiply_to_hilo_product(uint64_t* pLowProduct,
                                                          uint64_t u, uint64_t v)
 {

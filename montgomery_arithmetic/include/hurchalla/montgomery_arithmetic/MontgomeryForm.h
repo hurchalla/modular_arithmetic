@@ -25,8 +25,8 @@ public:
 
     explicit MontgomeryForm(T modulus) : impl(static_cast<U>(modulus))
     {
-        precondition(modulus % 2 == 1);  // modulus must be odd
-        precondition(modulus > 1);
+        HPBC_PRECONDITION(modulus % 2 == 1);  // modulus must be odd
+        HPBC_PRECONDITION(modulus > 1);
     }
     MontgomeryForm(const MontgomeryForm&) = delete;
     MontgomeryForm& operator=(const MontgomeryForm&) = delete;
@@ -36,8 +36,8 @@ public:
     // call getCanonicalForm() if you need to use it in comparisons.
     V convertIn(T a) const
     {
-        precondition(a >= 0);
-        precondition(a < static_cast<T>(impl.getModulus()));
+        HPBC_PRECONDITION(a >= 0);
+        HPBC_PRECONDITION(a < static_cast<T>(impl.getModulus()));
         return impl.convertIn(static_cast<U>(a));
     }
     // Converts (montgomery value) x into a "normal" number; returns the result.
@@ -45,8 +45,8 @@ public:
     T convertOut(V x) const
     {
         T a = static_cast<T>(impl.convertOut(x));
-        postcondition(a >= 0);
-        postcondition(a < static_cast<T>(impl.getModulus()));
+        HPBC_POSTCONDITION(a >= 0);
+        HPBC_POSTCONDITION(a < static_cast<T>(impl.getModulus()));
         return a;
     }
 
@@ -59,21 +59,21 @@ public:
     V getUnityValue() const
     {
         V ret = impl.getUnityValue();
-        postcondition(impl.isCanonical(ret));
+        HPBC_POSTCONDITION(impl.isCanonical(ret));
         return ret;
     }
     // Returns the canonical converted value of 0 in montgomery form.
     V getZeroValue() const
     {
         V ret = impl.getZeroValue();
-        postcondition(impl.isCanonical(ret));
+        HPBC_POSTCONDITION(impl.isCanonical(ret));
         return ret;
     }
     // Returns the canonical converted value of modulus-1 (or -1) in monty form.
     V getNegativeOneValue() const
     {
         V ret = impl.getNegativeOneValue();
-        postcondition(impl.isCanonical(ret));
+        HPBC_POSTCONDITION(impl.isCanonical(ret));
         return ret;
     }
 
@@ -82,7 +82,7 @@ public:
     // getCanonicalForm() to use it in comparisons.
     V multiply(V x, V y) const { return impl.multiply(x, y); }
 
-//    FORCE_INLINE V inline_multiply(V x, V y) const { 
+//    HURCHALLA_FORCE_INLINE V inline_multiply(V x, V y) const { 
 //        return impl.multiply(x, y); 
 //    }
 
@@ -97,8 +97,10 @@ public:
     // getCanonicalForm() to use it in comparisons.
     V pow(V base, T exponent)
     {
+        HPBC_PRECONDITION(exponent >= 0);
         // This is a slightly optimized version of Algorithm 14.76, from
         // Applied Handbook of Cryptography- http://cacr.uwaterloo.ca/hac/
+        // See also: hurchalla/modular_arithmetic/internal/impl_modular_pow.h
         V result;
         if (exponent & static_cast<T>(1))
             result = base;
@@ -122,11 +124,6 @@ public:
     // precisely, x minus y.  The return value might not be canonical- use
     // getCanonicalForm() for comparisons.
     V subtract(V x, V y) const { return impl.subtract(x, y); }
-
-//    bool isValid(V x) const { return impl.isValid(x); }
-//    bool isReduced(T a) const { return impl.isReduced(a); }
-//    bool isCanonical(V x) const { return impl.isCanonical(x); }
-//    T getModulus() const { return impl.getModulus(x); }
 };
 
 

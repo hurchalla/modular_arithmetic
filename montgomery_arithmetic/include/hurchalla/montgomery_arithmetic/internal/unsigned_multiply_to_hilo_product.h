@@ -4,7 +4,6 @@
 
 
 #include "hurchalla/montgomery_arithmetic/internal/impl_unsigned_multiply_to_hilo_product.h"
-#include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include "hurchalla/montgomery_arithmetic/internal/compiler_macros.h"
 #include <limits>
 
@@ -18,13 +17,14 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // The high-bit portion of the product is returned, and the low-bit portion is
 // stored in *pLowProduct.
 template <typename T>
-FORCE_INLINE T unsigned_multiply_to_hilo_product(T* pLowProduct, T a, T b)
+HURCHALLA_FORCE_INLINE
+T unsigned_multiply_to_hilo_product(T* pLowProduct, T a, T b)
 {
     static_assert(std::numeric_limits<T>::is_integer, "");
     static_assert(!(std::numeric_limits<T>::is_signed), "");
-    // Postcondition: Stores the low-bits portion of the product (a*b) in
+    // POSTCONDITION: Stores the low-bits portion of the product (a*b) in
     //                *pLowProduct.
-    // Postcondition: Returns the high-bits portion of the product (a*b).
+    // POSTCONDITION: Returns the high-bits portion of the product (a*b).
 
     return impl_unsigned_multiply_to_hilo_product(pLowProduct, a, b);
 }

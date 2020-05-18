@@ -19,7 +19,7 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // altered to omit calculations that are not needed, given the preconditions of
 // n < sqrt(R), and 0 < x <= n, and 0 < y <= n.
 template <typename T>
-FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
+HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
 {
     static_assert(std::numeric_limits<T>::is_integer, "");
     static_assert(!(std::numeric_limits<T>::is_signed), "");
@@ -35,14 +35,16 @@ FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
     static_assert(bit_width_T % 2 == 0, "");   // bit_width_T divisible by 2
     // MontySqrtRange requires  modulus < sqrt(R)
     static constexpr T sqrtR = static_cast<T>(1) << (bit_width_T / 2);
-    precondition2(1 < n && n < sqrtR);
-    precondition2(n % 2 == 1);
-    precondition2(0 < x && x <= n);
-    precondition2(0 < y && y <= n);
+    HPBC_PRECONDITION2(1 < n && n < sqrtR);
+    HPBC_PRECONDITION2(n % 2 == 1);
+    HPBC_PRECONDITION2(0 < x && x <= n);
+    HPBC_PRECONDITION2(0 < y && y <= n);
 
     // assert(n * neg_inv_n ≡ -1 (mod R))
-    precondition2( static_cast<T>(static_cast<V>(n) * static_cast<V>(neg_inv_n))
-                     == static_cast<T>(static_cast<V>(0) - static_cast<V>(1)) );
+    HPBC_PRECONDITION2(
+                static_cast<T>(static_cast<V>(n) * static_cast<V>(neg_inv_n)) ==
+                static_cast<T>(static_cast<V>(0) - static_cast<V>(1))
+                );
 
     // Since n < sqrtR, and x <= n and y <= n,  x*y <= n*n < sqrtR*sqrtR == R.
     // We have x*y < R, and since n>1, x*y < R < R*n.  Thus we've satisfied the
@@ -60,14 +62,14 @@ FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
     // Therefore mn == mn_hi*R + mn_lo < R*n, and mn_hi*R < R*n - mn_lo <= R*n,
     // and thus  mn_hi < n.
         // *** Assertion #1 ***
-    assert_logic2(mn_hi < n);
+    HPBC_ASSERT2(mn_hi < n);
 
     // compute t_hi = (u_hi + mn_hi) % R.  Since we know u_hi == 0, we simply
     // omit the addition of u_hi.
     T t_hi = mn_hi;
 
     // The REDC algorithm guarantees (u_lo + mn_lo) % R == 0.
-    assert_logic2(static_cast<T>(u_lo + mn_lo) == static_cast<T>(0));
+    HPBC_ASSERT2(static_cast<T>(u_lo + mn_lo) == static_cast<T>(0));
     // REDC_non_minimized() would normally next calculate
     // t_hi += (u_lo != 0);
     // However, we know  u_lo = (x*y)%R, and we proved  u_lo == x*y < R.  Since
@@ -82,14 +84,14 @@ FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
 
     // The discussion prior to Assertion #1 proves that mn_hi < n, and therefore
     // 0 < mn_hi + 1 < n + 1.  Since t_hi = mn_hi + 1, we know  0 < t_hi <= n.
-    postcondition2(0 < t_hi && t_hi <= n);
+    HPBC_POSTCONDITION2(0 < t_hi && t_hi <= n);
     // From REDC_non_minimized() we have the postcondition:
     //   T minimized_result = (ovf || t_hi >= n) ? (t_hi - n) : t_hi;
-    //   postcondition2(minimized_result < n);
+    //   HPBC_POSTCONDITION2(minimized_result < n);
     // since  ovf == false  and  0 < t_hi <= n,  we can simplify this to
-    if (POSTCONDITION2_MACRO_IS_ACTIVE) {
+    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
         T minimized_result = (t_hi == n) ? 0 : t_hi;
-        postcondition2(minimized_result < n);
+        HPBC_POSTCONDITION2(minimized_result < n);
     }
 
     // return the non-minimized result
@@ -104,7 +106,7 @@ FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
 
 
 // everything relies on input and output V values being 0 < val <= n_
-// and precondition2(modulus < sqrtR);
+// and HPBC_PRECONDITION2(modulus < sqrtR);
 
 
 // The class member variable names are based on the webpage
@@ -135,64 +137,64 @@ public:
         static_assert(bitsT % 2 == 0, "");   // bitsT divisible by 2
         // MontySqrtRange requires  modulus < sqrt(R)
         static constexpr T sqrtR = static_cast<T>(1) << (bitsT / 2);
-        precondition2(1 < modulus && modulus < sqrtR);
-        precondition2(modulus % 2 == 1);
+        HPBC_PRECONDITION2(1 < modulus && modulus < sqrtR);
+        HPBC_PRECONDITION2(modulus % 2 == 1);
 
         // Note: unityValue == (the montgomery form of 1)==(1*R)%n_ == r_mod_n_.
         // getRModN() guarantees the below.  getUnityValue() and
         // getNegativeOneValue() and convertIn() rely on it.
-        invariant2(0 < r_mod_n_ && r_mod_n_ < modulus);
-        invariant2(0 < r_squared_mod_n_ && r_squared_mod_n_ < modulus);
+        HPBC_INVARIANT2(0 < r_mod_n_ && r_mod_n_ < modulus);
+        HPBC_INVARIANT2(0 < r_squared_mod_n_ && r_squared_mod_n_ < modulus);
     }
     MontySqrtRange(const MontySqrtRange&) = delete;
     MontySqrtRange& operator=(const MontySqrtRange&) = delete;
 
-    FORCE_INLINE bool isValid(V x) const
+    HURCHALLA_FORCE_INLINE bool isValid(V x) const
     {
         return (0 < x.get() && x.get() <= n_);
     }
 
-//    FORCE_INLINE bool isReduced(T a) const  { return (a < n_); }
+//    HURCHALLA_FORCE_INLINE bool isReduced(T a) const  { return (a < n_); }
 
     // intended for use in postconditions/preconditions
-    FORCE_INLINE bool isCanonical(V x) const
+    HURCHALLA_FORCE_INLINE bool isCanonical(V x) const
     {
         V cfx = getCanonicalForm(x);
         bool good = isValid(x);
         return (x == cfx && good); 
     }
 
-    FORCE_INLINE T getModulus() const { return n_; }
+    HURCHALLA_FORCE_INLINE T getModulus() const { return n_; }
 
-    FORCE_INLINE V convertIn(T a) const
+    HURCHALLA_FORCE_INLINE V convertIn(T a) const
     {
-        precondition2(0 <= a && a < n_);
+        HPBC_PRECONDITION2(0 <= a && a < n_);
         // multiply requires valid input values, and 0 is the single possible
         // invalid value of 'a' for the multiply.  We treat this case a == 0
         // separately, with  a*R (mod n) ≡ 0*R (mod n) ≡ 0 (mod n) ≡ n (mod n).
         V result = (a > 0) ? multiply(V(a), V(r_squared_mod_n_)) : V(n_);
-        postcondition2(0 < result.get() && result.get() <= n_);
+        HPBC_POSTCONDITION2(0 < result.get() && result.get() <= n_);
         return result;
     }
 
-    FORCE_INLINE V getUnityValue() const
+    HURCHALLA_FORCE_INLINE V getUnityValue() const
     {
         // as noted in constructor, unityValue == (1*R)%n_ == r_mod_n_,
         // and 0 < r_mod_n_ < n_.
-        invariant2(isCanonical(V(r_mod_n_)));
+        HPBC_INVARIANT2(isCanonical(V(r_mod_n_)));
         return V(r_mod_n_);
     }
 
-    FORCE_INLINE V getZeroValue() const
+    HURCHALLA_FORCE_INLINE V getZeroValue() const
     {
         // We want returnVal == (0*R)%n_, but since isValid() requires
         // 0 < returnVal <= n_, we return n_ (n_ ≡ 0 (mod n_))
         V zero(n_);
-        invariant2(isCanonical(zero));
+        HPBC_INVARIANT2(isCanonical(zero));
         return zero;
     } 
 
-    FORCE_INLINE V getNegativeOneValue() const
+    HURCHALLA_FORCE_INLINE V getNegativeOneValue() const
     {
         // We want to get  returnVal = getCanonicalForm(subtract(getZeroValue(),
         //                                               getUnityValue())).
@@ -201,77 +203,77 @@ public:
         //   (n_ - r_mod_n_) (mod n_). The constructor established the invariant
         //   0 < r_mod_n_ < n_.  Thus we know  0 < n_ - r_mod_n_ < n_.  This
         //   means (n_ - r_mod_n_)  satisfies isValid() and getCanonicalForm().
-        invariant2(n_ > r_mod_n_);
+        HPBC_INVARIANT2(n_ > r_mod_n_);
         T negOne = n_ - r_mod_n_;
-        assert_logic2(0 < negOne && negOne < n_);
-        invariant2(isCanonical(V(negOne)));
+        HPBC_ASSERT2(0 < negOne && negOne < n_);
+        HPBC_INVARIANT2(isCanonical(V(negOne)));
         return V(negOne);
     }
 
-    FORCE_INLINE T convertOut(V x) const
+    HURCHALLA_FORCE_INLINE T convertOut(V x) const
     {
-        precondition2(0 < x.get() && x.get() <= n_);
+        HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
 
         T y = static_cast<T>(1);
         T prod = msr_montmul_non_minimized(x.get(), y, n_, neg_inv_n_);
 
         // msr_montmul_non_minimized() postconditions guarantee the following
-        postcondition2(0 < prod && prod <= n_);
+        HPBC_POSTCONDITION2(0 < prod && prod <= n_);
         T minimized_result = (prod != n_) ? prod : 0;
-        postcondition2(minimized_result < n_);
+        HPBC_POSTCONDITION2(minimized_result < n_);
         return minimized_result;
     }
 
-    FORCE_INLINE V getCanonicalForm(V x) const
+    HURCHALLA_FORCE_INLINE V getCanonicalForm(V x) const
     {
-        precondition2(0 < x.get() && x.get() <= n_);
+        HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
         return x;
     }
 
-    FORCE_INLINE V multiply(V x, V y) const
+    HURCHALLA_FORCE_INLINE V multiply(V x, V y) const
     {
-        precondition2(0 < x.get() && x.get() <= n_);
-        precondition2(0 < y.get() && y.get() <= n_);
+        HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
+        HPBC_PRECONDITION2(0 < y.get() && y.get() <= n_);
 
         T prod = msr_montmul_non_minimized(x.get(), y.get(), n_, neg_inv_n_);
 
         // msr_montmul_non_minimized() postconditions guarantee the following
-        postcondition2(0 < prod && prod <= n_);
+        HPBC_POSTCONDITION2(0 < prod && prod <= n_);
         // Since 0 < prod <= n, we don't want to reduce mod n;  prod is in the
         // canonical form required by most of the class functions.
         return V(prod);
     }
 
-    FORCE_INLINE V add(V x, V y) const
+    HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
         // modular addition (mod n_), except that a result of 0 becomes n_.
         // This is adapted from  modular_addition_prereduced_inputs():
         T a = x.get();
         T b = y.get();
-        precondition2(0 < a && a <= n_);
-        precondition2(0 < b && b <= n_);
-        invariant2(n_ > 0);
+        HPBC_PRECONDITION2(0 < a && a <= n_);
+        HPBC_PRECONDITION2(0 < b && b <= n_);
+        HPBC_INVARIANT2(n_ > 0);
 
         T tmp = n_ - b;
         T result = (a <= tmp) ? a+b : a-tmp;
 
-        postcondition2(0 < result && result <= n_);
+        HPBC_POSTCONDITION2(0 < result && result <= n_);
         return V(result);
     }
 
-    FORCE_INLINE V subtract(V x, V y) const
+    HURCHALLA_FORCE_INLINE V subtract(V x, V y) const
     {
         // modular subtraction (mod n_), except that a result of 0 becomes n_.
         // This is adapted from  modular_subtraction_prereduced_inputs():
         T a = x.get();
         T b = y.get();
-        precondition2(0 < a && a <= n_);
-        precondition2(0 < b && b <= n_);
-        invariant2(n_ > 0);
+        HPBC_PRECONDITION2(0 < a && a <= n_);
+        HPBC_PRECONDITION2(0 < b && b <= n_);
+        HPBC_INVARIANT2(n_ > 0);
 
         T result = (a>b) ? a-b : n_ - (b-a);
 
-        postcondition2(0 < result && result <= n_);
+        HPBC_POSTCONDITION2(0 < result && result <= n_);
         return V(result);
     }
 };

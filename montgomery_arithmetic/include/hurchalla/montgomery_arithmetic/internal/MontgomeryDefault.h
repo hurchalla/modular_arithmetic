@@ -24,7 +24,7 @@ public:
     using type =
         typename std::conditional<
             !(std::is_same<typename sized_uint<ubits*2>::type, void>::value)
-                && (ubits*2 <= TARGET_BIT_WIDTH),
+                && (ubits*2 <= HURCHALLA_TARGET_BIT_WIDTH),
             MontySqrtRange<typename sized_uint<ubits*2>::type>,
             MontyFullRange<T>
         >::type;
@@ -41,7 +41,7 @@ public:
     using type =
         typename std::conditional<
             !(std::is_same<typename sized_uint<ubits*2>::type, void>::value)
-                && (ubits*2 <= TARGET_BIT_WIDTH),
+                && (ubits*2 <= HURCHALLA_TARGET_BIT_WIDTH),
             MontySqrtRange<typename sized_uint<ubits*2>::type>,
             MontyHalfRange<U>
         >::type;

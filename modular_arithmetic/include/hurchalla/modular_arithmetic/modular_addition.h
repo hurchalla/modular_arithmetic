@@ -13,10 +13,11 @@ template <typename T>
 T modular_addition_prereduced_inputs(T a, T b, T modulus)
 {
     static_assert(std::numeric_limits<T>::is_integer, "");
-    precondition(modulus>0);
-    precondition(a>=0 && a<modulus);   // i.e. the input must be prereduced
-    precondition(b>=0 && b<modulus);   // i.e. the input must be prereduced
-    // Postcondition:
+    HPBC_PRECONDITION(modulus>0);
+    HPBC_PRECONDITION(a>=0 && a<modulus);   // i.e. the input must be prereduced
+    HPBC_PRECONDITION(b>=0 && b<modulus);   // i.e. the input must be prereduced
+
+    // POSTCONDITION:
     //   Returns (a+b)%modulus.  Guarantees no overflow internally on a+b.
     
     /* We want essentially-  result = (a+b < modulus) ? a+b : a+b-modulus

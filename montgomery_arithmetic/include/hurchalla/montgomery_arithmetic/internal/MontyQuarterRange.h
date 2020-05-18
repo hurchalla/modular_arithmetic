@@ -32,37 +32,37 @@ public:
     {
         // MontyQuarterRange requires  modulus < R/4
         T Rdiv4 = static_cast<T>(1) << (std::numeric_limits<T>::digits - 2);
-        precondition2(modulus < Rdiv4);
+        HPBC_PRECONDITION2(modulus < Rdiv4);
     }
 
     MontyQuarterRange(const MontyQuarterRange&) = delete;
     MontyQuarterRange& operator=(const MontyQuarterRange&) = delete;
 
-    FORCE_INLINE bool isValid(V x) const { return (x.get() < 2*n_); }
-//    FORCE_INLINE bool isReduced(T a) const  { return (a < n_); }
+    HURCHALLA_FORCE_INLINE bool isValid(V x) const { return (x.get() < 2*n_); }
+//    HURCHALLA_FORCE_INLINE bool isReduced(T a) const  { return (a < n_); }
 
-    FORCE_INLINE T convertOut(V x) const
+    HURCHALLA_FORCE_INLINE T convertOut(V x) const
     {
-        precondition2(x.get() < 2*n_);
+        HPBC_PRECONDITION2(x.get() < 2*n_);
         T a = montout_non_minimized(x.get(), n_, neg_inv_n_);
         // montout_non_minimized() postconditions guarantee the following
         T minimized_result = (a >= n_) ? (a - n_) : a;
-        postcondition2(minimized_result < n_);
+        HPBC_POSTCONDITION2(minimized_result < n_);
         return minimized_result;
     }
 
-    FORCE_INLINE V getCanonicalForm(V x) const
+    HURCHALLA_FORCE_INLINE V getCanonicalForm(V x) const
     {
-        precondition2(x.get() < 2*n_);
+        HPBC_PRECONDITION2(x.get() < 2*n_);
         T cf = (x.get() < n_) ? x.get() : x.get() - n_;
-        postcondition2(cf < n_);
+        HPBC_POSTCONDITION2(cf < n_);
         return V(cf);
     }
 
-    FORCE_INLINE V multiply(V x, V y) const
+    HURCHALLA_FORCE_INLINE V multiply(V x, V y) const
     {
-        precondition2(x.get() < 2*n_);
-        precondition2(y.get() < 2*n_);
+        HPBC_PRECONDITION2(x.get() < 2*n_);
+        HPBC_PRECONDITION2(y.get() < 2*n_);
         // Since x<2*n and y<2*n, we know x*y < 4*n*n, and since we have a class
         // precondition that our modulus n < R/4, we know  x*y < 4*n*R/4 == n*R.
         // This satisfies montmul_non_minimized's precondition of x*y < n*R.
@@ -71,29 +71,29 @@ public:
 
         // Since our constructor required modulus n < R/4, the postconditions of
         // montmul_non_minimized() guarantee  prod < 2*n.
-        postcondition2(prod < 2*n_);
+        HPBC_POSTCONDITION2(prod < 2*n_);
         return V(prod);
     }
 
-    FORCE_INLINE V add(V x, V y) const
+    HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
-        precondition2(x.get() < 2*n_);
-        precondition2(y.get() < 2*n_);
+        HPBC_PRECONDITION2(x.get() < 2*n_);
+        HPBC_PRECONDITION2(y.get() < 2*n_);
         namespace ma = hurchalla::modular_arithmetic;
         T z = ma::modular_addition_prereduced_inputs(x.get(), y.get(), 
                                                           static_cast<T>(2*n_));
-        postcondition2(z < 2*n_);
+        HPBC_POSTCONDITION2(z < 2*n_);
         return V(z);
     }
 
-    FORCE_INLINE V subtract(V x, V y) const
+    HURCHALLA_FORCE_INLINE V subtract(V x, V y) const
     {
-        precondition2(x.get() < 2*n_);
-        precondition2(y.get() < 2*n_);
+        HPBC_PRECONDITION2(x.get() < 2*n_);
+        HPBC_PRECONDITION2(y.get() < 2*n_);
         namespace ma = hurchalla::modular_arithmetic;
         T z = ma::modular_subtraction_prereduced_inputs(x.get(), y.get(),
                                                           static_cast<T>(2*n_));
-        postcondition2(z < 2*n_);
+        HPBC_POSTCONDITION2(z < 2*n_);
         return V(z);
     }
 };

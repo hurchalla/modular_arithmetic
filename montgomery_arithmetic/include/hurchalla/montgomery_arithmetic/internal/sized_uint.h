@@ -15,7 +15,7 @@ template<> struct sized_uint<16>  { using type = uint16_t; };
 template<> struct sized_uint<32>  { using type = uint32_t; };
 template<> struct sized_uint<64>  { using type = uint64_t; };
 // Some compilers support __uint128_t, so we'll specialize with it if possible.
-#if (COMPILER_HAS_UINT128_T)
+#if (HURCHALLA_COMPILER_HAS_UINT128_T)
 template<> struct sized_uint<128> { using type = __uint128_t; };
 #endif
 
