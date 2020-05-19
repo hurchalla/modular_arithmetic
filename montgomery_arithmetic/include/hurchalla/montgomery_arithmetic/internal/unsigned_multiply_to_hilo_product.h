@@ -10,12 +10,12 @@
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
-// Interface/contract.
-// Description:  unsigned_multiply_to_hilo_product() calculates a 'double-width'
-// multiplication product.  This is in contrast to a 'standard' multiply which
-// drops/ignores the highest bits of the product whenever overflow occurs.
-// The high-bit portion of the product is returned, and the low-bit portion is
-// stored in *pLowProduct.
+// unsigned_multiply_to_hilo_product() calculates a 'double-width'
+// multiplication product.  This behavior differs from a 'standard' multiply
+// which drops/ignores the highest bits of the product whenever overflow occurs.
+//
+// Returns the high-bit portion of the product, and stores the low-bit portion
+// in *pLowProduct.
 template <typename T>
 HURCHALLA_FORCE_INLINE
 T unsigned_multiply_to_hilo_product(T* pLowProduct, T a, T b)

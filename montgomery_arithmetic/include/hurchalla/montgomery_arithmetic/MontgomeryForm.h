@@ -11,7 +11,8 @@ namespace hurchalla { namespace montgomery_arithmetic {
 
 
 // When using the default MontyType, T must be signed or unsigned integral type.
-// A custom MontyType(SIMD perhaps) might have different requirements for type T
+// A custom MontyType may have different requirements for type T (e.g. that T is
+// an unsigned interal type).
 template<typename T, class MontyType = typename MontgomeryDefault<T>::type>
 class MontgomeryForm final {
     MontyType impl;

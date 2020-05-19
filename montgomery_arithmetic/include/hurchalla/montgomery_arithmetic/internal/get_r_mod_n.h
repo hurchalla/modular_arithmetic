@@ -12,7 +12,7 @@ namespace hurchalla { namespace montgomery_arithmetic {
 
 // For discussion purposes, given an unsigned integral type T, let
 // R = 2^(std::numeric_limits<T>::digits). For example: if T is uint64_t
-// then R = 2^64. The name 'R' is based on the wikipedia presentation.
+// then R = 2^64.
 //
 // Returns r_mod_n == R%n
 template <typename T>

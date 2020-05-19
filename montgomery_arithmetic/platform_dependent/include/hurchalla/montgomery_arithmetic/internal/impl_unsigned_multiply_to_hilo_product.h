@@ -11,14 +11,13 @@
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
-/* Generic (non-platform specific) implementation of the contract for
-   T unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v).
-Return Value:
-   Returns the high portion of the product.
-Notes:
-   I adapted this code from https://stackoverflow.com/a/58381061
-   On ARM32 with clang it compiles nicely, using the UMAAL instruction.
-*/
+// Generic (non-platform specific) implementation of the contract for
+//   T unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v).
+// Return Value:
+//   Returns the high portion of the product.
+// Notes:
+//   I adapted this code from https://stackoverflow.com/a/58381061
+//   On ARM32 with clang it compiles nicely, using the UMAAL instruction.
 template <typename T>
 HURCHALLA_FORCE_INLINE
 T slow_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v)
@@ -168,7 +167,6 @@ HURCHALLA_FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
     return umult_to_hilo_product<decltype(u),T2>(pLowProduct, u, v);
 }
 #endif
-
 
 
 

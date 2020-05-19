@@ -18,7 +18,6 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // constructor has the precondition that modulus < R/2, and in that multiply()
 // takes advantage of the fact that modulus < R/2 guarantees  ovf == false.
 // [The theoretical constant R = 2^(std::numeric_limits<T>::digits).]
-
 template <typename T>
 class MontyHalfRange final : public MontyCommonBase<MontyHalfRange, T> {
     static_assert(std::numeric_limits<T>::is_integer, "");

@@ -14,7 +14,6 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // promotion in C++.  For details on these issues, see
 // https://jeffhurchalla.com/2019/01/16/c-c-surprises-and-undefined-behavior-due-to-unsigned-integer-promotion/
 
-
 // If an unsigned type T would get promoted to (signed) 'int', we want to make
 // sure that the type make_safe_unsigned_integer<T> provides is 'unsigned int'.
 // Otherwise the type it provides is T.

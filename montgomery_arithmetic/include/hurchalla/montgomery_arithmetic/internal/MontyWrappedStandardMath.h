@@ -15,6 +15,9 @@
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
+// This class provides a standard modular arithmetic implementation, wrapped
+// inside a Monty template.  This allows standard modular arithmetic to be used
+// in a generic MontgomeryForm instantation.
 template <typename T>
 class MontyWrappedStandardMath final {
     static_assert(std::numeric_limits<T>::is_integer, "");
@@ -42,7 +45,6 @@ public:
     {
         return modulus_;
     }
-//    HURCHALLA_FORCE_INLINE bool isValid(V x) const { return isCanonical(x); }
 
     HURCHALLA_FORCE_INLINE V convertIn(T a) const
     {
