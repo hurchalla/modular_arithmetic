@@ -1,9 +1,9 @@
 # Modular Arithmetic
-Modular Arithmetic library for C++ and C
+Modular Arithmetic library for C++
 
 ## Status
 
-In development, currently pre-alpha version
+In development, currently alpha version.  All planned functionality is complete and works correctly with simple tests.  I need to implement full tests and update the CMakeLists.txt to be in beta.
 
 ## Author
 
@@ -15,8 +15,13 @@ This project is licensed under the MIT License - see the [LICENSE.TXT](LICENSE.T
 
 ## TODO
 
+Add the newest files in git to CMakeLists.txt.
+Add Google tests.
 Add the following options/target_compile_definitions to CMakeLists.txt, and document here:
-TARGET_ISA_HAS_DIVIDE
-TARGET_BIT_WIDTH
-TARGET_ISA_X86_32
-TARGET_ISA_X86_64
+HURCHALLA_TARGET_ISA_HAS_DIVIDE
+HURCHALLA_TARGET_BIT_WIDTH
+HURCHALLA_TARGET_ISA_X86_32
+HURCHALLA_TARGET_ISA_X86_64
+HURCHALLA_TARGET_ISA_ARM_32
+HURCHALLA_TARGET_ISA_ARM_64
+HURCHALLA_COMPILE_ERROR_ON_SLOW_MATH
