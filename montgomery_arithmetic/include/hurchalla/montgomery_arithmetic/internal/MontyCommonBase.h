@@ -48,10 +48,8 @@ protected:
         //
         // getRModN() guarantees the below.  getUnityValue() and
         // getNegativeOneValue() both rely on it.
-        HPBC_INVARIANT2(0 < r_mod_n_ && r_mod_n_ < modulus);
-        // Since n_ == modulus is odd and n_ > 1, n_ can not divide R*R==2^y.
-        // Thus  r_squared_mod_n_ == R*R (mod n_) != 0.
-        HPBC_INVARIANT2(0 < r_squared_mod_n_ && r_squared_mod_n_ < modulus);
+        HPBC_INVARIANT2(0 < r_mod_n_ && r_mod_n_ < n_);
+        HPBC_INVARIANT2(r_squared_mod_n_ < n_);
     }
     MontyCommonBase(const MontyCommonBase&) = delete;
     MontyCommonBase& operator=(const MontyCommonBase&) = delete;

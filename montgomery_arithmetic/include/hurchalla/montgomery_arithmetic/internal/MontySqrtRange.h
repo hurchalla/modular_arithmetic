@@ -140,11 +140,11 @@ public:
 
         // Note: unityValue == (the montgomery form of 1)==(1*R)%n_ == r_mod_n_.
         // getRModN() guarantees the below.  getUnityValue() and
-        // getNegativeOneValue() and convertIn() rely on it.
-        HPBC_INVARIANT2(0 < r_mod_n_ && r_mod_n_ < modulus);
+        // getNegativeOneValue() rely on it.
+        HPBC_INVARIANT2(0 < r_mod_n_ && r_mod_n_ < n_);
         // Since n_ == modulus is odd and n_ > 1, n_ can not divide R*R==2^y.
-        // Thus  r_squared_mod_n_ == R*R (mod n_) != 0.
-        HPBC_INVARIANT2(0 < r_squared_mod_n_ && r_squared_mod_n_ < modulus);
+        // Thus  r_squared_mod_n_ == R*R (mod n_) != 0.  convertIn relies on it.
+        HPBC_INVARIANT2(0 < r_squared_mod_n_ && r_squared_mod_n_ < n_);
     }
     MontySqrtRange(const MontySqrtRange&) = delete;
     MontySqrtRange& operator=(const MontySqrtRange&) = delete;
@@ -185,6 +185,7 @@ public:
 
     HURCHALLA_FORCE_INLINE V convertIn(T a) const
     {
+        HPBC_INVARIANT2(0 < r_squared_mod_n_ && r_squared_mod_n_ < n_);
         HPBC_PRECONDITION2(0 <= a && a < n_);
         // multiply requires valid input values, and 0 is the single possible
         // invalid value of 'a' for the multiply.  We treat this case a == 0
