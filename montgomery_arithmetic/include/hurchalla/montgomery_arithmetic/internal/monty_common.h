@@ -13,6 +13,17 @@
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
+// This file provides the following two helper functions to callers:
+//
+// T montmul_non_minimized(bool& ovf, T x, T y, T n, T neg_inv_n) -
+//      Multiplies two mongomery values x and y, and returns their non-minimized
+//      (mod n) montgomery product.
+//
+// T montout_non_minimized(T x, T n, T neg_inv_n) -
+//      Converts the montgomery value 'x' to a non-minimized (mod n) standard
+//      integer.
+
+
 namespace detail_monty_common {
 // -----------------
 // Private Functions
