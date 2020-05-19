@@ -6,7 +6,6 @@
 #include "hurchalla/montgomery_arithmetic/internal/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/montgomery_arithmetic/internal/make_safe_unsigned_integer.h"
 #include "hurchalla/montgomery_arithmetic/internal/negative_inverse_mod_r.h"
-#include "hurchalla/montgomery_arithmetic/internal/get_r_mod_n.h"
 #include "hurchalla/montgomery_arithmetic/internal/MontgomeryValue.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include "hurchalla/montgomery_arithmetic/internal/compiler_macros.h"
@@ -127,7 +126,7 @@ public:
 
     explicit MontySqrtRange(T modulus) : n_(modulus),
                              neg_inv_n_(negative_inverse_mod_r(n_)),
-                             r_mod_n_(get_r_mod_n(n_)),
+                             r_mod_n_(getRModN(n_)),
                              r_squared_mod_n_( modular_arithmetic::
                                     modular_multiplication_prereduced_inputs(
                                                        r_mod_n_, r_mod_n_, n_) )
@@ -140,7 +139,7 @@ public:
         HPBC_PRECONDITION2(modulus % 2 == 1);
 
         // Note: unityValue == (the montgomery form of 1)==(1*R)%n_ == r_mod_n_.
-        // get_r_mod_n() guarantees the below.  getUnityValue() and
+        // getRModN() guarantees the below.  getUnityValue() and
         // getNegativeOneValue() and convertIn() rely on it.
         HPBC_INVARIANT2(0 < r_mod_n_ && r_mod_n_ < modulus);
         // Since n_ == modulus is odd and n_ > 1, n_ can not divide R*R==2^y.
@@ -150,6 +149,25 @@ public:
     MontySqrtRange(const MontySqrtRange&) = delete;
     MontySqrtRange& operator=(const MontySqrtRange&) = delete;
 
+private:
+    static T getRModN(T n)
+    {
+        HPBC_PRECONDITION2(n % 2 == 1);
+        HPBC_PRECONDITION2(n > 1);
+        // Assign a tmp T variable rather than directly using the intermediate
+        // expression, in order to avoid a negative value (and a wrong answer)
+        // in cases where 'n' would be promoted to type 'int'.
+        T tmp = static_cast<T>(0) - n;
+        // Compute R%n.  For example, if R==2^64, arithmetic wraparound behavior
+        // of the unsigned integral type T results in (0 - n) representing
+        // (2^64 - n).  Thus, rModN = R%n == (2^64)%n == (2^64 - n)%n == (0-n)%n
+        T rModN = tmp % n;
+        // Since n is odd and > 1, n does not divide R==2^x.  Thus, rModN != 0
+        HPBC_POSTCONDITION2(0 < rModN && rModN < n);
+        return rModN;
+    }
+
+public:
     HURCHALLA_FORCE_INLINE bool isValid(V x) const
     {
         return (0 < x.get() && x.get() <= n_);
