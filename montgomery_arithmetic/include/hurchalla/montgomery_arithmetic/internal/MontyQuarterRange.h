@@ -39,7 +39,6 @@ public:
     MontyQuarterRange& operator=(const MontyQuarterRange&) = delete;
 
     HURCHALLA_FORCE_INLINE bool isValid(V x) const { return (x.get() < 2*n_); }
-//    HURCHALLA_FORCE_INLINE bool isReduced(T a) const  { return (a < n_); }
 
     HURCHALLA_FORCE_INLINE T convertOut(V x) const
     {

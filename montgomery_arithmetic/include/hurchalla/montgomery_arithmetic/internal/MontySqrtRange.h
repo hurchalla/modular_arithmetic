@@ -6,8 +6,8 @@
 #include "hurchalla/montgomery_arithmetic/internal/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/montgomery_arithmetic/internal/make_safe_unsigned_integer.h"
 #include "hurchalla/montgomery_arithmetic/internal/negative_inverse_mod_r.h"
+#include "hurchalla/montgomery_arithmetic/internal/get_r_mod_n.h"
 #include "hurchalla/montgomery_arithmetic/internal/MontgomeryValue.h"
-#include "hurchalla/montgomery_arithmetic/internal/MontyCommonBase.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include "hurchalla/montgomery_arithmetic/internal/compiler_macros.h"
 #include <limits>
@@ -100,14 +100,11 @@ HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
 
 
 
-// Except for where stated otherwise, the algorithms and variable names in this
-// file are based on the webpage (in April 2020)
-// https://en.wikipedia.org/wiki/Montgomery_modular_multiplication
-
-
-// everything relies on input and output V values being 0 < val <= n_
-// and HPBC_PRECONDITION2(modulus < sqrtR);
-
+// MontySqrtRange uses optimizations based on input and output V values being
+// 0 < val <= n_, and on modulus < sqrtR.
+// These restrictions allow us to implement a more efficient version of the REDC
+// algorithm  (in the function msr_montmul_non_minimized()), by omitting some
+// conditionals and calculations that would normally be needed.
 
 // The class member variable names are based on the webpage
 // https://en.wikipedia.org/wiki/Montgomery_modular_multiplication
@@ -129,9 +126,11 @@ public:
     using template_param_type = T;
 
     explicit MontySqrtRange(T modulus) : n_(modulus),
-                            neg_inv_n_(negative_inverse_mod_r(modulus)),
-                            r_mod_n_(getRModN(modulus)),
-                            r_squared_mod_n_(getRSquaredModN(r_mod_n_, modulus))
+                             neg_inv_n_(negative_inverse_mod_r(n_)),
+                             r_mod_n_(get_r_mod_n(n_)),
+                             r_squared_mod_n_( modular_arithmetic::
+                                    modular_multiplication_prereduced_inputs(
+                                                       r_mod_n_, r_mod_n_, n_) )
     {
         static constexpr int bitsT = std::numeric_limits<T>::digits;
         static_assert(bitsT % 2 == 0, "");   // bitsT divisible by 2
@@ -141,9 +140,11 @@ public:
         HPBC_PRECONDITION2(modulus % 2 == 1);
 
         // Note: unityValue == (the montgomery form of 1)==(1*R)%n_ == r_mod_n_.
-        // getRModN() guarantees the below.  getUnityValue() and
+        // get_r_mod_n() guarantees the below.  getUnityValue() and
         // getNegativeOneValue() and convertIn() rely on it.
         HPBC_INVARIANT2(0 < r_mod_n_ && r_mod_n_ < modulus);
+        // Since n_ == modulus is odd and n_ > 1, n_ can not divide R*R==2^y.
+        // Thus  r_squared_mod_n_ == R*R (mod n_) != 0.
         HPBC_INVARIANT2(0 < r_squared_mod_n_ && r_squared_mod_n_ < modulus);
     }
     MontySqrtRange(const MontySqrtRange&) = delete;
@@ -153,8 +154,6 @@ public:
     {
         return (0 < x.get() && x.get() <= n_);
     }
-
-//    HURCHALLA_FORCE_INLINE bool isReduced(T a) const  { return (a < n_); }
 
     // intended for use in postconditions/preconditions
     HURCHALLA_FORCE_INLINE bool isCanonical(V x) const

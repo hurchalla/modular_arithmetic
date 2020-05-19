@@ -82,10 +82,6 @@ public:
     // getCanonicalForm() to use it in comparisons.
     V multiply(V x, V y) const { return impl.multiply(x, y); }
 
-//    HURCHALLA_FORCE_INLINE V inline_multiply(V x, V y) const { 
-//        return impl.multiply(x, y); 
-//    }
-
     // Returns the modular product of (the montgomery value) x multiplied by x.
     // The return value is a montgomery value but might not be canonical - call
     // getCanonicalForm() to use it in comparisons.

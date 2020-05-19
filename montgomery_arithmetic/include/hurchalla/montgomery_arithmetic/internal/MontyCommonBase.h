@@ -4,7 +4,8 @@
 
 
 #include "hurchalla/montgomery_arithmetic/internal/negative_inverse_mod_r.h"
-#include "hurchalla/montgomery_arithmetic/internal/monty_common.h"
+#include "hurchalla/montgomery_arithmetic/internal/get_r_mod_n.h"
+#include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/montgomery_arithmetic/internal/MontgomeryValue.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include "hurchalla/montgomery_arithmetic/internal/compiler_macros.h"
@@ -23,6 +24,9 @@ namespace hurchalla { namespace montgomery_arithmetic {
 //exception).
 template <template <typename> class Derived, typename T>
 class MontyCommonBase {
+    static_assert(std::numeric_limits<T>::is_integer, "");
+    static_assert(!(std::numeric_limits<T>::is_signed), "");
+    static_assert(std::numeric_limits<T>::is_modulo, "");
     using D = Derived<T>;
 public:
     using V = MontgomeryValue<T>;
@@ -33,21 +37,25 @@ protected:
     const T r_squared_mod_n_;
 
     explicit MontyCommonBase(T modulus) : n_(modulus),
-                            neg_inv_n_(negative_inverse_mod_r(modulus)),
-                            r_mod_n_(getRModN(modulus)),
-                            r_squared_mod_n_(getRSquaredModN(r_mod_n_, modulus))
+                              neg_inv_n_(negative_inverse_mod_r(n_)),
+                              r_mod_n_(get_r_mod_n(n_)),
+                              r_squared_mod_n_( modular_arithmetic::
+                                  modular_multiplication_prereduced_inputs(
+                                                       r_mod_n_, r_mod_n_, n_) )
     {
+        HPBC_PRECONDITION2(modulus % 2 == 1);
+        HPBC_PRECONDITION2(modulus > 1);
         // Note: unityValue == (the montgomery form of 1)==(1*R)%n_ == r_mod_n_.
         //
-        // getRModN() guarantees the below.  getUnityValue() and
+        // get_r_mod_n() guarantees the below.  getUnityValue() and
         // getNegativeOneValue() both rely on it.
         HPBC_INVARIANT2(0 < r_mod_n_ && r_mod_n_ < modulus);
+        // Since n_ == modulus is odd and n_ > 1, n_ can not divide R*R==2^y.
+        // Thus  r_squared_mod_n_ == R*R (mod n_) != 0.
         HPBC_INVARIANT2(0 < r_squared_mod_n_ && r_squared_mod_n_ < modulus);
     }
     MontyCommonBase(const MontyCommonBase&) = delete;
     MontyCommonBase& operator=(const MontyCommonBase&) = delete;
-
-//    bool isReduced(T a) const { return (0 <= a && a < getModulus()); }
 
 public:
     // intended for use in postconditions/preconditions

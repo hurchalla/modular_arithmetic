@@ -32,7 +32,6 @@ public:
     MontyFullRange& operator=(const MontyFullRange&) = delete;
 
     HURCHALLA_FORCE_INLINE bool isValid(V x) const { return (x.get() < n_); }
-//    HURCHALLA_FORCE_INLINE bool isReduced(T a) const  { return (a < n_); }
 
     HURCHALLA_FORCE_INLINE T convertOut(V x) const
     {

@@ -3,11 +3,11 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_COMMON_H_INCLUDED
 
 
-#include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/montgomery_arithmetic/internal/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/montgomery_arithmetic/internal/make_safe_unsigned_integer.h"
 #include "hurchalla/montgomery_arithmetic/internal/sized_uint.h"
 #include "hurchalla/montgomery_arithmetic/internal/compiler_macros.h"
+#include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <limits>
 
 namespace hurchalla { namespace montgomery_arithmetic {
@@ -536,65 +536,6 @@ HURCHALLA_FORCE_INLINE T montout_non_minimized(T x, T n, T neg_inv_n)
     }
     return result;
 }
-
-
-
-// Except for where stated otherwise, the algorithms and variable names below
-// are based on the webpage (in April 2020)
-// https://en.wikipedia.org/wiki/Montgomery_modular_multiplication
-
-// For discussion purposes throughout this file, given an unsigned integral type
-// T, let R = 2^(std::numeric_limits<T>::digits).  For example: if T is uint64_t
-// then R = 2^64.  The name 'R' is based on the wikipedia presentation.
-
-
-// Returns rModN == R%n.  R is described above.
-template <typename T>
-T getRModN(T n)
-{
-    static_assert(std::numeric_limits<T>::is_integer, "");
-    static_assert(!(std::numeric_limits<T>::is_signed), "");
-    static_assert(std::numeric_limits<T>::is_modulo, "");
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(n > 1);
-
-    // Assign a tmp T variable rather than directly using the intermediate
-    // expression, in order to avoid a negative value (and a wrong answer) in
-    // cases where 'n' would be promoted to type 'int'
-    T tmp = static_cast<T>(0) - n;
-
-    // Compute R%n.  For example, if R==2^64, arithmetic wraparound behavior of
-    // the unsigned integral type T results in (0 - n) representing (2^64 - n).
-    // Thus, rModN = R%n == (2^64)%n == (2^64 - n)%n == (0-n)%n
-    T rModN = tmp % n;
-
-    // Since n is odd and > 1, n does not divide R==2^x.  Thus, rModN != 0
-    HPBC_POSTCONDITION2(0 < rModN && rModN < n);
-    return rModN;
-}
-
-
-// Returns rSquaredModN == (R*R)%n.
-// The input parameter rModN must equal R%n (call getRModN(n) to get this value)
-template <typename T>
-T getRSquaredModN(T rModN, T n)
-{
-    static_assert(std::numeric_limits<T>::is_integer, "");
-    static_assert(!(std::numeric_limits<T>::is_signed), "");
-    static_assert(std::numeric_limits<T>::is_modulo, "");
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(n > 1);
-
-    // rSqrModN == (R*R)%n == ((R%n)*(R%n))%n == (rModN*rModN)%n
-    namespace ma = modular_arithmetic;
-    T rSqrModN = ma::modular_multiplication_prereduced_inputs(rModN, rModN, n);
-
-    // Since n is odd and > 1, n does not divide R*R==2^y.  Thus, rSqrModN != 0
-    HPBC_POSTCONDITION2(0 < rSqrModN && rSqrModN < n);
-    return rSqrModN;
-}
-
-
 
 
 }} // end namespace
