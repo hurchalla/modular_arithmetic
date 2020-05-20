@@ -144,7 +144,7 @@ HURCHALLA_FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
 }
 
 // MSVC + ARM64
-#elif defined(_MSC_VER) && defined(HURCHALLA_TARGET_ISA_ARM_64)
+#elif defined(_MSC_VER) && defined(_M_ARM64)
 #  include <intrin.h>
 HURCHALLA_FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
                                   uint64_t* pLowProduct, uint64_t u, uint64_t v)

@@ -25,68 +25,54 @@
 #  ifndef HURCHALLA_TARGET_ISA_X86_64
 #    define HURCHALLA_TARGET_ISA_X86_64 1
 #  endif
-#  ifndef HURCHALLA_TARGET_BIT_WIDTH
-#    define HURCHALLA_TARGET_BIT_WIDTH 64
-#  endif
 #elif defined(__i386) || defined(_M_IX86)
 #  ifndef HURCHALLA_TARGET_ISA_X86_32
 #    define HURCHALLA_TARGET_ISA_X86_32 1
 #  endif
-#  ifndef HURCHALLA_TARGET_BIT_WIDTH
-#    define HURCHALLA_TARGET_BIT_WIDTH 32
-#  endif
-#elif defined(__aarch64__) || defined(_M_ARM64)
-#  ifndef HURCHALLA_TARGET_ISA_ARM_64
-#    define HURCHALLA_TARGET_ISA_ARM_64 1
-#  endif
-#  ifndef HURCHALLA_TARGET_BIT_WIDTH
-#    define HURCHALLA_TARGET_BIT_WIDTH 64
-#  endif
-#elif defined(__arm__) || defined(_M_ARM)
-#  ifndef HURCHALLA_TARGET_ISA_ARM_32
-#    define HURCHALLA_TARGET_ISA_ARM_32 1
-#  endif
-#  ifndef HURCHALLA_TARGET_BIT_WIDTH
-#    define HURCHALLA_TARGET_BIT_WIDTH 32
-#  endif
-#elif defined(__powerpc__) || defined(__ppc__) || defined(__PPC__)
-#  if defined(__powerpc64__) || defined(__ppc64__) || defined(__PPC64__) || \
-               defined(_ARCH_PPC64) || defined(__64BIT__) || defined(_LP64) || \
-               defined(__LP64__)
-#    ifndef HURCHALLA_TARGET_BIT_WIDTH
-#      define HURCHALLA_TARGET_BIT_WIDTH 64
-#    endif
-#  else
-#    ifndef HURCHALLA_TARGET_BIT_WIDTH
-#      define HURCHALLA_TARGET_BIT_WIDTH 32
-#    endif
-#  endif
-#elif defined(__ia64) || defined(__itanium__) || defined(_M_IA64) || \
-                                                               defined(__ia64__)
-#  ifndef HURCHALLA_TARGET_BIT_WIDTH
-#    define HURCHALLA_TARGET_BIT_WIDTH 64
-#  endif
 #endif
+
 
 #ifndef HURCHALLA_TARGET_BIT_WIDTH
-// fallback if it's still undefined after checking predefined compiler macros
-#  include <cstdint>
-#  if SIZE_MAX == UINT64_MAX
+#  if defined(__x86_64__) || defined(_M_X64)
 #    define HURCHALLA_TARGET_BIT_WIDTH 64
-#  elif SIZE_MAX == UINT32_MAX
+#  elif defined(__i386) || defined(_M_IX86)
 #    define HURCHALLA_TARGET_BIT_WIDTH 32
-#  elif SIZE_MAX == UINT16_MAX
-#    define HURCHALLA_TARGET_BIT_WIDTH 16
+#  elif defined(__aarch64__) || defined(_M_ARM64)
+#    define HURCHALLA_TARGET_BIT_WIDTH 64
+#  elif defined(__arm__) || defined(_M_ARM)
+#    define HURCHALLA_TARGET_BIT_WIDTH 32
+#  elif defined(__powerpc__) || defined(__ppc__) || defined(__PPC__)
+#    if defined(__powerpc64__) || defined(__ppc64__) || defined(__PPC64__) || \
+               defined(_ARCH_PPC64) || defined(__64BIT__) || defined(_LP64) || \
+               defined(__LP64__)
+#      define HURCHALLA_TARGET_BIT_WIDTH 64
+#    else
+#      define HURCHALLA_TARGET_BIT_WIDTH 32
+#    endif
+#  elif defined(__ia64) || defined(__itanium__) || defined(_M_IA64) || \
+                                                               defined(__ia64__)
+#    define HURCHALLA_TARGET_BIT_WIDTH 64
 #  else
-#    error "HURCHALLA_TARGET_BIT_WIDTH was undefined, and couldn't get bitwidth"
+     // fallback if we couldn't find the target ALU's native bit depth after
+     // looking at predefined compiler macros
+#    include <cstdint>
+#    if SIZE_MAX == UINT64_MAX
+#      define HURCHALLA_TARGET_BIT_WIDTH 64
+#    elif SIZE_MAX == UINT32_MAX
+#      define HURCHALLA_TARGET_BIT_WIDTH 32
+#    elif SIZE_MAX == UINT16_MAX
+#      define HURCHALLA_TARGET_BIT_WIDTH 16
+#    else
+#      error "HURCHALLA_TARGET_BIT_WIDTH was undefined, and couldn't be deduced"
+#    endif
 #  endif
+
+   // sanity check the setting we deduced for HURCHALLA_TARGET_BIT_WIDTH
+#  include <cstddef>
+#  include <climits>
+   static_assert(sizeof(std::size_t) * CHAR_BIT == HURCHALLA_TARGET_BIT_WIDTH,
+      "[This may be a false positive, but] This error suggests that the preprocessor logic in this header file incorrectly set HURCHALLA_TARGET_BIT_WIDTH.  You can predefine HURCHALLA_TARGET_BIT_WIDTH yourself, or change this file");
 #endif
-
-#include <cstddef>
-#include <climits>
-static_assert(sizeof(std::size_t) * CHAR_BIT == HURCHALLA_TARGET_BIT_WIDTH,
-    "[This may be a false positive, but] This error suggests your compilation target bit width is set incorrectly in HURCHALLA_TARGET_BIT_WIDTH");
-
 
 
 // In theory, the macro __SIZEOF_INT128__ indicates if __int128 is supported,
