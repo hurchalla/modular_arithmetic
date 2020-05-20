@@ -4,6 +4,7 @@
 
 
 #include "hurchalla/modular_arithmetic/modular_addition.h"
+#include "hurchalla/modular_arithmetic/internal/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <cstdint>
 #include <limits>
@@ -114,7 +115,8 @@ impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
 // caller's provided argument type(s).
 
 
-#if defined(HURCHALLA_TARGET_ISA_HAS_DIVIDE) && HURCHALLA_TARGET_BIT_WIDTH >= 16
+#if !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
+                   HURCHALLA_TARGET_BIT_WIDTH >= 16
 inline uint8_t impl_modular_multiplication_prereduced_inputs(uint8_t a,
                                             uint8_t b, uint8_t modulus)
 {
@@ -125,7 +127,8 @@ inline uint8_t impl_modular_multiplication_prereduced_inputs(uint8_t a,
 #endif
 
 
-#if defined(HURCHALLA_TARGET_ISA_HAS_DIVIDE) && HURCHALLA_TARGET_BIT_WIDTH >= 32
+#if !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
+                   HURCHALLA_TARGET_BIT_WIDTH >= 32
 inline uint16_t impl_modular_multiplication_prereduced_inputs(uint16_t a,
                                             uint16_t b, uint16_t modulus)
 {
@@ -229,8 +232,8 @@ inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
                         (uint64_t)a*(uint64_t)b % (uint64_t)modulus);
     return result;
 }
-#elif defined(HURCHALLA_TARGET_ISA_HAS_DIVIDE) && \
-                   HURCHALLA_TARGET_BIT_WIDTH >= 64
+#elif !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
+                     HURCHALLA_TARGET_BIT_WIDTH >= 64
 inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
                                             uint32_t b, uint32_t modulus)
 {
@@ -290,8 +293,8 @@ inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
     HPBC_POSTCONDITION3(result == slow_modular_multiplication(a, b, modulus));
     return result;
 }
-#elif defined(HURCHALLA_TARGET_ISA_HAS_DIVIDE) && \
-                  HURCHALLA_TARGET_BIT_WIDTH >= 128
+#elif !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
+                    HURCHALLA_TARGET_BIT_WIDTH >= 128
 // this is speculative since I don't know of any 128 bit ALUs.
 inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
                                             uint64_t b, uint64_t modulus)
@@ -305,7 +308,7 @@ inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
 // The code below should be correct as-is. If you wish to try it, you can
 // optionally uncomment this section to enable it.
 //
-#elif defined(HURCHALLA_TARGET_ISA_HAS_DIVIDE) && defined(__SIZEOF_INT128__)
+#elif !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && defined(__SIZEOF_INT128__)
 // The macro __SIZEOF_INT128__ indicates if __int128 is supported.  See
 //https://stackoverflow.com/questions/16088282/is-there-a-128-bit-integer-in-gcc
 inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,

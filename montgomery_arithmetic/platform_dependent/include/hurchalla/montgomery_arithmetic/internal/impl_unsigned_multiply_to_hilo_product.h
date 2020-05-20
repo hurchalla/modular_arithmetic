@@ -3,7 +3,7 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_IMPL_UNSIGNED_MULT_TO_HILO_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/internal/compiler_macros.h"
+#include "hurchalla/modular_arithmetic/internal/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <cstdint>
 #include <limits>

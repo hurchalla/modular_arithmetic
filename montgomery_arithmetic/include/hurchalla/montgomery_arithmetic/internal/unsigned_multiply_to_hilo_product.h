@@ -4,7 +4,7 @@
 
 
 #include "hurchalla/montgomery_arithmetic/internal/impl_unsigned_multiply_to_hilo_product.h"
-#include "hurchalla/montgomery_arithmetic/internal/compiler_macros.h"
+#include "hurchalla/modular_arithmetic/internal/compiler_macros.h"
 #include <limits>
 
 namespace hurchalla { namespace montgomery_arithmetic {

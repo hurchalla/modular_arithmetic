@@ -8,6 +8,7 @@
 #include "hurchalla/montgomery_arithmetic/internal/MontySqrtRange.h"
 #include "hurchalla/montgomery_arithmetic/internal/sized_uint.h"
 #include "hurchalla/modular_arithmetic/type_traits/type_traits.h"
+#include "hurchalla/modular_arithmetic/internal/compiler_macros.h"
 #include <type_traits>
 #include <limits>
 

@@ -7,8 +7,8 @@
 #include "hurchalla/montgomery_arithmetic/internal/MontyCommonBase.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
+#include "hurchalla/modular_arithmetic/internal/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
-#include "hurchalla/montgomery_arithmetic/internal/compiler_macros.h"
 #include <limits>
 
 namespace hurchalla { namespace montgomery_arithmetic {

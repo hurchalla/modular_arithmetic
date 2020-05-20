@@ -18,10 +18,10 @@ This project is licensed under the MIT License - see the [LICENSE.TXT](LICENSE.T
 Add the newest files in git to CMakeLists.txt.
 Add Google tests.
 Add the following options/target_compile_definitions to CMakeLists.txt, and document here:
-HURCHALLA_TARGET_ISA_HAS_DIVIDE
+HURCHALLA_COMPILE_ERROR_ON_SLOW_MATH
+HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE
 HURCHALLA_TARGET_BIT_WIDTH
 HURCHALLA_TARGET_ISA_X86_32
 HURCHALLA_TARGET_ISA_X86_64
 HURCHALLA_TARGET_ISA_ARM_32
 HURCHALLA_TARGET_ISA_ARM_64
-HURCHALLA_COMPILE_ERROR_ON_SLOW_MATH
