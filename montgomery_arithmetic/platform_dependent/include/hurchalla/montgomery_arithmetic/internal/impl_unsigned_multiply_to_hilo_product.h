@@ -159,7 +159,7 @@ HURCHALLA_FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
     return highProduct;
 }
 
-#elif (HURCHALLA_COMPILER_HAS_UINT128_T)
+#elif (HURCHALLA_COMPILER_HAS_UINT128_T())
 HURCHALLA_FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
                                   uint64_t* pLowProduct, uint64_t u, uint64_t v)
 {

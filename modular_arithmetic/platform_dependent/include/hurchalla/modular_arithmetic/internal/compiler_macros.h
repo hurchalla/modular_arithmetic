@@ -83,18 +83,18 @@
 // Note also that clang and icc define the GNUC and GNUC_MINOR macros.  Clang
 // v3.0 defines them as 4,2.  Icc v13 defines them as 4,7.
 //
-// The macro  HURCHALLA_COMPILER_HAS_UINT128_T  lets us know if __uint128_t is
+// The macro  HURCHALLA_COMPILER_HAS_UINT128_T()  lets us know if __uint128_t is
 // supported.
 #if (HURCHALLA_TARGET_BIT_WIDTH < 64)
-#  define HURCHALLA_COMPILER_HAS_UINT128_T 0
+#  define HURCHALLA_COMPILER_HAS_UINT128_T() 0
 #elif defined(__SIZEOF_INT128__) || (__clang_major__ >= 3) ||  \
                                     (__INTEL_COMPILER >= 1300)
-#  define HURCHALLA_COMPILER_HAS_UINT128_T 1
+#  define HURCHALLA_COMPILER_HAS_UINT128_T() 1
 #elif !defined(__INTEL_COMPILER) && !defined(__clang_major__) &&  \
                          (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1))
-#  define HURCHALLA_COMPILER_HAS_UINT128_T 1
+#  define HURCHALLA_COMPILER_HAS_UINT128_T() 1
 #else
-#  define HURCHALLA_COMPILER_HAS_UINT128_T 0
+#  define HURCHALLA_COMPILER_HAS_UINT128_T() 0
 #endif
 
 

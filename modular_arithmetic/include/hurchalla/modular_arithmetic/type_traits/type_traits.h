@@ -3,6 +3,7 @@
 #define HURCHALLA_MODULAR_ARITHMETIC_TYPE_TRAITS_H_INCLUDED
 
 
+#include "hurchalla/modular_arithmetic/internal/compiler_macros.h"
 #include <type_traits>
 
 namespace hurchalla { namespace modular_arithmetic {
@@ -30,10 +31,7 @@ struct extensible_make_signed {
 // integer type you wish to use.  Note that the primary template will pass its
 // static assert and work fine if its type T is known to std::type_traits.
 
-#if defined(__SIZEOF_INT128__)
-// The macro __SIZEOF_INT128__ indicates if __int128 is supported.  See
-//https://stackoverflow.com/questions/16088282/is-there-a-128-bit-integer-in-gcc
-
+#if (HURCHALLA_COMPILER_HAS_UINT128_T())
 template<>  // explicit specialization for T = __int128_t
 struct extensible_make_unsigned<__int128_t> {
     using type = __uint128_t;

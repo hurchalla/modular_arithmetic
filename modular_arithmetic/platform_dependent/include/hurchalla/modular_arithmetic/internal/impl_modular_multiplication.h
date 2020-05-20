@@ -281,9 +281,8 @@ inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
 // The code below should be correct as-is. If you wish to try it, you can
 // optionally uncomment this section to enable it.
 //
-#elif !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && defined(__SIZEOF_INT128__)
-// The macro __SIZEOF_INT128__ indicates if __int128 is supported.  See
-//https://stackoverflow.com/questions/16088282/is-there-a-128-bit-integer-in-gcc
+#elif !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
+                                            (HURCHALLA_COMPILER_HAS_UINT128_T())
 inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
                                             uint64_t b, uint64_t modulus)
 {
