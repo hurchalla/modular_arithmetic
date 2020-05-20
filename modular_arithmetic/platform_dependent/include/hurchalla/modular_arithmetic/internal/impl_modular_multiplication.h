@@ -139,9 +139,10 @@ inline uint16_t impl_modular_multiplication_prereduced_inputs(uint16_t a,
 
 
 
-// Note: for HURCHALLA_TARGET_ISA_X86_64 (and X86_32), 32bit mul and div should
-// be faster than 64bit mul and div.  For 32bit mul and div, we need access to
-// the two-register wide product and dividend, which requires assembly language.
+// Note: for HURCHALLA_TARGET_ISA_X86_32 and HURCHALLA_TARGET_ISA_X86_64, 32bit
+// mul and div is faster (on current and past intel/amd cpus) than 64bit mul
+// and div.  To use 32bit mul and div here, we need access to the two-register
+// wide product and dividend, which requires assembly language or intrinsics.
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1920) && \
   (defined(HURCHALLA_TARGET_ISA_X86_64) || defined(HURCHALLA_TARGET_ISA_X86_32))
@@ -161,34 +162,6 @@ inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
     HPBC_POSTCONDITION2((uint64_t)result == 
                         (uint64_t)a*(uint64_t)b % (uint64_t)modulus);
     return result;
-}
-#elif defined(_MSC_VER) && defined(HURCHALLA_TARGET_ISA_X86_64)
-extern "C" uint32_t modular_multiply_uint32_asm_UID7b5f83fc983(uint32_t a,
-                                         uint32_t b, uint32_t modulus) noexcept;
-inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
-                                            uint32_t b, uint32_t modulus)
-{
-    // MSVC doesn't support inline asm for 64 bit code - using my assembly code
-    // will likely require an unavoidable function call.  With modern intel CPUs
-    // that now have relatively fast DIV instructions, it's unclear that setting
-    // up the stack and unwinding the stack and branching to the asm function,
-    // all just to use a single 32 bit asm MUL and DIV, will be any faster than
-    // simply using 64 bit multiply and divide in standard C++.
-    // If getting every bit of performance matters to you, for this application
-    // consider using a different compiler which supports inline asm.
-    //
-    // Absent performance measurements, I've chosen to use simple C++ 64 bit
-    // multiply and divide.  If you want asm instead, change to #if 0, below.
-  #if 1
-    return (uint32_t)((uint64_t)a*(uint64_t)b % (uint64_t)modulus);
-  #else
-    // The older versions of MSVC don't have the _udiv64 intrinsic.  Since
-    // MSVC doesn't support inline asm for 64 bit targets, use an asm function
-    uint32_t result = modular_multiply_uint32_asm_UID7b5f83fc983(a, b, modulus);
-    HPBC_POSTCONDITION2((uint64_t)result ==
-                        (uint64_t)a*(uint64_t)b % (uint64_t)modulus);
-    return result;
-  #endif
 }
 #elif defined(_MSC_VER) && defined(HURCHALLA_TARGET_ISA_X86_32)    // inline asm
 // Since this is x86 msvc and we will use inline asm, we must ensure this
@@ -211,8 +184,8 @@ inline uint32_t __cdecl impl_modular_multiplication_prereduced_inputs(
                         (uint64_t)a*(uint64_t)b % (uint64_t)modulus);
     return result;
 }
-#elif defined(HURCHALLA_TARGET_ISA_X86_64) || \
-           defined(HURCHALLA_TARGET_ISA_X86_32)
+#elif !defined(_MSC_VER) && (defined(HURCHALLA_TARGET_ISA_X86_64) || \
+           defined(HURCHALLA_TARGET_ISA_X86_32))
 inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
                                             uint32_t b, uint32_t modulus)
 {
