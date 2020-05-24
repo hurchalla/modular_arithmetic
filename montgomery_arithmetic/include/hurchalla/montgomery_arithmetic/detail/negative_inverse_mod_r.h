@@ -3,9 +3,9 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_NEGATIVE_INVERSE_MODR_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/internal/sized_uint.h"
-#include "hurchalla/montgomery_arithmetic/internal/make_safe_unsigned_integer.h"
-#include "hurchalla/modular_arithmetic/internal/compiler_macros.h"
+#include "hurchalla/montgomery_arithmetic/detail/sized_uint.h"
+#include "hurchalla/montgomery_arithmetic/detail/make_safe_unsigned_integer.h"
+#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <limits>
 #include <type_traits>

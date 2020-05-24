@@ -3,7 +3,7 @@
 #define HURCHALLA_MODULAR_ARITHMETIC_MODULAR_MULTIPLICATIVE_INVERSE_H_INCLUDED
 
 
-#include "hurchalla/modular_arithmetic/internal/impl_modular_multiplicative_inverse.h"
+#include "hurchalla/modular_arithmetic/detail/impl_modular_multiplicative_inverse.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <limits>

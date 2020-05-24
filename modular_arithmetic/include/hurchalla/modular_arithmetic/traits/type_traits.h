@@ -3,7 +3,7 @@
 #define HURCHALLA_MODULAR_ARITHMETIC_TYPE_TRAITS_H_INCLUDED
 
 
-#include "hurchalla/modular_arithmetic/internal/compiler_macros.h"
+#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include <type_traits>
 
 namespace hurchalla { namespace modular_arithmetic {

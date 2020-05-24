@@ -20,7 +20,8 @@ include(FetchGoogleTest.cmake)
 include(GoogleTest)
 
 
-add_executable(test_hurchalla_modular_arithmetic  test_ma.cpp)
+add_executable(test_hurchalla_modular_arithmetic
+               test_ma.cpp)
 set_target_properties(test_hurchalla_modular_arithmetic
                       PROPERTIES FOLDER "Tests")
 target_link_libraries(test_hurchalla_modular_arithmetic

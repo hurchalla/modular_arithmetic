@@ -3,12 +3,12 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTGOMERY_DEFAULT_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/internal/MontyFullRange.h"
-#include "hurchalla/montgomery_arithmetic/internal/MontyHalfRange.h"
-#include "hurchalla/montgomery_arithmetic/internal/MontySqrtRange.h"
-#include "hurchalla/montgomery_arithmetic/internal/sized_uint.h"
-#include "hurchalla/modular_arithmetic/type_traits/type_traits.h"
-#include "hurchalla/modular_arithmetic/internal/compiler_macros.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontyFullRange.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontySqrtRange.h"
+#include "hurchalla/montgomery_arithmetic/detail/sized_uint.h"
+#include "hurchalla/modular_arithmetic/traits/type_traits.h"
+#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include <type_traits>
 #include <limits>
 

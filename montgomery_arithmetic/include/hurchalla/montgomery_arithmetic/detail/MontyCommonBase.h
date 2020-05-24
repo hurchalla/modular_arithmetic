@@ -3,10 +3,10 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_COMMON_BASE_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/internal/negative_inverse_mod_r.h"
+#include "hurchalla/montgomery_arithmetic/detail/negative_inverse_mod_r.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
-#include "hurchalla/montgomery_arithmetic/internal/MontgomeryValue.h"
-#include "hurchalla/modular_arithmetic/internal/compiler_macros.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontgomeryValue.h"
+#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <limits>
 

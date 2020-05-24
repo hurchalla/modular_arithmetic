@@ -3,7 +3,7 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTGOMERY_FORM_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/internal/MontgomeryDefault.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontgomeryDefault.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <limits>
 

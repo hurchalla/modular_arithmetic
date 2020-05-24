@@ -3,7 +3,7 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_SIZED_UINT_H_INCLUDED
 
 
-#include "hurchalla/modular_arithmetic/internal/compiler_macros.h"
+#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include <cstdint>
 
 namespace hurchalla { namespace montgomery_arithmetic {

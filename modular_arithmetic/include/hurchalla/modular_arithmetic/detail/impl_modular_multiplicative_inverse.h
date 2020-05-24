@@ -3,7 +3,7 @@
 #define HURCHALLA_MODULAR_ARITHMETIC_IMPL_MODULAR_MULTIPLICATIVE_INV_H_INCLUDED
 
 
-#include "hurchalla/modular_arithmetic/type_traits/type_traits.h"
+#include "hurchalla/modular_arithmetic/traits/type_traits.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <type_traits>
 #include <limits>

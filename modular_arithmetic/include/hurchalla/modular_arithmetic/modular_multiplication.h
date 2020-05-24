@@ -3,7 +3,7 @@
 #define HURCHALLA_MODULAR_ARITHMETIC_MODULAR_MULTIPLICATION_H_INCLUDED
 
 
-#include "hurchalla/modular_arithmetic/internal/impl_modular_multiplication.h"
+#include "hurchalla/modular_arithmetic/detail/platform_specific/impl_modular_multiplication.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <limits>
 

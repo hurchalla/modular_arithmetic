@@ -3,11 +3,11 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_QUARTER_RANGE_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/internal/monty_common.h"
-#include "hurchalla/montgomery_arithmetic/internal/MontyCommonBase.h"
+#include "hurchalla/montgomery_arithmetic/detail/monty_common.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
-#include "hurchalla/modular_arithmetic/internal/compiler_macros.h"
+#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <limits>
 

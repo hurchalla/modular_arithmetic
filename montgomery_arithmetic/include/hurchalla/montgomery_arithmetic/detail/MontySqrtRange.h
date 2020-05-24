@@ -3,11 +3,11 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_SQRT_RANGE_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/internal/unsigned_multiply_to_hilo_product.h"
-#include "hurchalla/montgomery_arithmetic/internal/make_safe_unsigned_integer.h"
-#include "hurchalla/montgomery_arithmetic/internal/negative_inverse_mod_r.h"
-#include "hurchalla/montgomery_arithmetic/internal/MontgomeryValue.h"
-#include "hurchalla/modular_arithmetic/internal/compiler_macros.h"
+#include "hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h"
+#include "hurchalla/montgomery_arithmetic/detail/make_safe_unsigned_integer.h"
+#include "hurchalla/montgomery_arithmetic/detail/negative_inverse_mod_r.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontgomeryValue.h"
+#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <limits>
 

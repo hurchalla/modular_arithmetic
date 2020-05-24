@@ -51,16 +51,56 @@ endif()
 
 
 set(public_header_files
-    include/hurchalla/modular_arithmetic/ma.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/ma.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/modular_addition.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/modular_multiplication.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/modular_multiplicative_inverse.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/modular_pow.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/modular_subtraction.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/traits/type_traits.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/MontgomeryForm.h
     )
 
-add_library(hurchalla_modular_arithmetic STATIC
-            src/ma.cpp
-            ${public_header_files}
+set(detail_header_files
+    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/detail/impl_modular_multiplicative_inverse.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/detail/impl_modular_pow.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/make_safe_unsigned_integer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/MontgomeryDefault.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/MontgomeryValue.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/monty_common.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/MontyFullRange.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/MontyQuarterRange.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/MontySqrtRange.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/MontyWrappedStandardMath.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/negative_inverse_mod_r.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/sized_uint.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h
+    )
+
+set(platform_dependent_header_files
+    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/detail/platform_specific/impl_modular_multiplication.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/platform_specific/impl_unsigned_multiply_to_hilo_product.h
+    )
+
+
+#TODO remove  ma.h and .cpp
+#TODO I removed a bunch of PBC_WRAP_STDLIB_ASSERT stuff.  make sure contract asserts are wrapped or not, correctly.
+#TODO make the asm conditionally included depending on architecture
+#TODO make add_library type STATIC or INTERFACE depending on arch
+
+
+add_library(hurchalla_modular_arithmetic STATIC)
+
+target_sources(hurchalla_modular_arithmetic PRIVATE
+            modular_arithmetic/src/ma.cpp
+#            modular_arithmetic/src/platform_specific_MSVC_x86_64/modular_multiply_uint64--x64_microsoft.asm
             )
 
 target_include_directories(hurchalla_modular_arithmetic
-            PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+            PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include>)
 
 target_include_directories(hurchalla_modular_arithmetic SYSTEM
             PUBLIC $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>)
@@ -76,21 +116,6 @@ target_include_directories(hurchalla_modular_arithmetic SYSTEM
 #           >)
 
 
-
-
-# By default, don't require clients of this library to know anything about
-# the programming_by_contract library. If the default option value for
-# HURCHALLA_INTERNAL_PBC_WRAP_STDLIB_ASSERT were OFF instead of ON below,
-# clients of this library would be obligated by default to provide a custom
-# assert handler.
-option(HURCHALLA_INTERNAL_PBC_WRAP_STDLIB_ASSERT
-       "Option HURCHALLA_INTERNAL_PBC_WRAP_STDLIB_ASSERT: Set to ON by default.  If you set HURCHALLA_INTERNAL_PBC_WRAP_STDLIB_ASSERT=OFF, then you will be able to (and required to) provide a custom assert handler, and you will have full access to the programming by contract functionality.  You can set this option via command line 'cmake -DHURCHALLA_INTERNAL_PBC_WRAP_STDLIB_ASSERT=OFF ...')"
-       ON)
-if(HURCHALLA_INTERNAL_PBC_WRAP_STDLIB_ASSERT)
-    target_compile_definitions(hurchalla_modular_arithmetic PRIVATE
-              PBC_WRAP_STDLIB_ASSERT
-              )
-endif()
 
 add_subdirectory(../programming_by_contract
             ${CMAKE_CURRENT_BINARY_DIR}/programming_by_contract)
