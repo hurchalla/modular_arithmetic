@@ -32,6 +32,19 @@ public:
     MontgomeryForm(const MontgomeryForm&) = delete;
     MontgomeryForm& operator=(const MontgomeryForm&) = delete;
 
+    // Returns the largest valid modulus allowed for the constructor.
+    // Some MontyTypes are designed with restricted modulus size for better
+    // performance (see the specific MontyType you are using for details).
+    static constexpr T max_modulus()
+    {
+        U maxmod = MontyType::max_modulus();
+        T max = std::numeric_limits<T>::max();
+        if (maxmod > static_cast<U>(max))
+            return max;
+        else
+            return static_cast<T>(maxmod);
+    }
+
     // Returns the converted value of the standard number 'a' into monty form.
     // Requires 0 <= a < modulus.  The return value might not be canonical -
     // call getCanonicalForm() if you need to use it in comparisons.

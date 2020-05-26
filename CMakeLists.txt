@@ -5,7 +5,8 @@ if(TARGET hurchalla_modular_arithmetic)
     return()
 endif()
 
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.13)
+
 project(hurchalla_modular_arithmetic VERSION 1.0.0 LANGUAGES CXX)
 
 # if this is the top level CMakeLists.txt, let IDEs group projects into folders
@@ -13,19 +14,23 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 endif()
 
+
+
+# TODO: this section seems slightly messy for detecting/setting up testing
+# --------------------
 option(TEST_HURCHALLA_LIBS
-       "Build tests for all Hurchalla library projects."
+       "Build the tests for all Hurchalla library projects."
        OFF)
 
 # if this is the top level CMakeLists.txt, add testing options, and enable
 # testing when testing options have been set to ON.
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-    option(TEST_HURCHALLA_TOP_LEVEL
-           "Build tests for the top level Hurchalla library project."
-           OFF)
-    if(TEST_HURCHALLA_TOP_LEVEL OR TEST_HURCHALLA_LIBS)
+    option(TEST_HURCHALLA_MODULAR_ARITHMETIC
+        "Build the tests for the Hurchalla modular arithmetic library project."
+        OFF)
+    if(TEST_HURCHALLA_MODULAR_ARITHMETIC OR TEST_HURCHALLA_LIBS)
         enable_testing()
-        #include(CTest)
+        # include(CTest)
     endif()
 elseif(TEST_HURCHALLA_LIBS)
     # If TEST_HURCHALLA_LIBS is set to ON, enable_testing() should have been
@@ -39,6 +44,8 @@ endif()
 
 
 
+# TODO: I'm not sure whether these lines provide any benefit:
+# --------------------
 if(NOT DEFINED CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 endif()
@@ -50,87 +57,35 @@ if(NOT DEFINED CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 endif()
 
 
-set(public_header_files
-    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/ma.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/modular_addition.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/modular_multiplication.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/modular_multiplicative_inverse.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/modular_pow.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/modular_subtraction.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/traits/type_traits.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/MontgomeryForm.h
-    )
 
-set(detail_header_files
-    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/detail/impl_modular_multiplicative_inverse.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/detail/impl_modular_pow.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/make_safe_unsigned_integer.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/MontgomeryDefault.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/MontgomeryValue.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/monty_common.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/MontyFullRange.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/MontyQuarterRange.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/MontySqrtRange.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/MontyWrappedStandardMath.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/negative_inverse_mod_r.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/sized_uint.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h
-    )
-
-set(platform_dependent_header_files
-    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include/hurchalla/modular_arithmetic/detail/platform_specific/impl_modular_multiplication.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/platform_specific/impl_unsigned_multiply_to_hilo_product.h
-    )
+add_library(hurchalla_modular_arithmetic INTERFACE)
 
 
-#TODO remove  ma.h and .cpp
-#TODO I removed a bunch of PBC_WRAP_STDLIB_ASSERT stuff.  make sure contract asserts are wrapped or not, correctly.
-#TODO make the asm conditionally included depending on architecture
-#TODO make add_library type STATIC or INTERFACE depending on arch
-
-
-add_library(hurchalla_modular_arithmetic STATIC)
-
-target_sources(hurchalla_modular_arithmetic PRIVATE
-            modular_arithmetic/src/ma.cpp
-#            modular_arithmetic/src/platform_specific_MSVC_x86_64/modular_multiply_uint64--x64_microsoft.asm
-            )
-
-target_include_directories(hurchalla_modular_arithmetic
-            PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/modular_arithmetic/include>)
-
-target_include_directories(hurchalla_modular_arithmetic SYSTEM
-            PUBLIC $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>)
-#use this instead?
-#target_include_directories(hurchalla_modular_arithmetic
-#            PUBLIC $<INSTALL_INTERFACE:include>)
-
-
-# Check for required C++ features only if the C++ compiler ID is non-empty.
-#target_compile_features(hurchalla_modular_arithmetic INTERFACE 
-#          $<$<NOT:$<CXX_COMPILER_ID:>>:
-#               cxx_static_assert
-#           >)
-
-
-
-add_subdirectory(../programming_by_contract
-            ${CMAKE_CURRENT_BINARY_DIR}/programming_by_contract)
-
-
-#add_subdirectory(../common ${CMAKE_CURRENT_BINARY_DIR}/common)
-
+add_subdirectory(modular_arithmetic
+                 ${CMAKE_CURRENT_BINARY_DIR}/modular_arithmetic)
+add_subdirectory(montgomery_arithmetic
+                 ${CMAKE_CURRENT_BINARY_DIR}/montgomery_arithmetic)
 
 target_link_libraries(hurchalla_modular_arithmetic
-                      PRIVATE programming_by_contract)
-#target_link_libraries(hurchalla_modular_arithmetic PUBLIC common)
-# if you have a public dependency - something your implementation depends upon,
-# and that is also visible through your public headers, use PUBLIC above instead
-# of PRIVATE
+                      INTERFACE hurchalla_basic_modular_arithmetic)
+target_link_libraries(hurchalla_modular_arithmetic
+                      INTERFACE hurchalla_montgomery_arithmetic)
 
+
+
+# TODO:  The following is a guess at how installing target include directories
+# should be done.  It may be wrong.  It assumes that the build step from the
+# subdirectories montgomery_arithmetic and modular_arithmetic (which have
+# build phase target_include_directories commands) provides the information to
+# cmake which cmake then uses in the install phase target_include_directories
+# below.  I haven't tested this or anything related to cmake install yet...
+# ---------------------
+target_include_directories(hurchalla_modular_arithmetic
+                           INTERFACE $<INSTALL_INTERFACE:include>)
+# TODO: use this instead?
+# ----------------
+#target_include_directories(hurchalla_modular_arithmetic SYSTEM
+#                      INTERFACE $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>)
 
 
 
@@ -138,10 +93,9 @@ target_link_libraries(hurchalla_modular_arithmetic
 
 # if this is the top level CMakeLists.txt
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-    if(TEST_HURCHALLA_TOP_LEVEL OR TEST_HURCHALLA_LIBS)
+    if(TEST_HURCHALLA_MODULAR_ARITHMETIC OR TEST_HURCHALLA_LIBS)
         add_subdirectory(test)
     endif()
 elseif(TEST_HURCHALLA_LIBS)
     add_subdirectory(test)
 endif()
-

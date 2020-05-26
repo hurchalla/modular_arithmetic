@@ -149,6 +149,14 @@ public:
     MontySqrtRange(const MontySqrtRange&) = delete;
     MontySqrtRange& operator=(const MontySqrtRange&) = delete;
 
+    static constexpr T max_modulus()
+    {
+        constexpr int bitsT = std::numeric_limits<T>::digits;
+        static_assert(bitsT % 2 == 0, "");   // bitsT divisible by 2
+        constexpr T sqrtR = static_cast<T>(1) << (bitsT / 2);
+        return sqrtR - 1;
+    }
+
 private:
     static T getRModN(T n)
     {

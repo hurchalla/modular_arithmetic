@@ -5,8 +5,7 @@ if(TARGET test_hurchalla_modular_arithmetic)
     return()
 endif()
 
-cmake_minimum_required(VERSION 3.12)
-#project(test_hurchalla_modular_arithmetic VERSION 1.0.0 LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.13)
 
 
 include(FetchGoogleTest.cmake)

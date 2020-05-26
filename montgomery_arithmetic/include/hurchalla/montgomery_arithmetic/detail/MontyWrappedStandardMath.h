@@ -36,6 +36,11 @@ public:
     MontyWrappedStandardMath(const MontyWrappedStandardMath&) = delete;
     MontyWrappedStandardMath& operator=(const MontyWrappedStandardMath&)=delete;
 
+    static constexpr T max_modulus()
+    {
+        return std::numeric_limits<T>::max();
+    }
+
     // intended for use in postconditions/preconditions
     HURCHALLA_FORCE_INLINE bool isCanonical(V x) const
     {

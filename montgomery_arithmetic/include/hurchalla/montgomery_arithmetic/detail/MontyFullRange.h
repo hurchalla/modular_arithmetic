@@ -31,6 +31,11 @@ public:
     MontyFullRange(const MontyFullRange&) = delete;
     MontyFullRange& operator=(const MontyFullRange&) = delete;
 
+    static constexpr T max_modulus()
+    {
+        return std::numeric_limits<T>::max();
+    }
+
     HURCHALLA_FORCE_INLINE bool isValid(V x) const { return (x.get() < n_); }
 
     HURCHALLA_FORCE_INLINE T convertOut(V x) const

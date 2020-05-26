@@ -41,6 +41,12 @@ public:
     MontyHalfRange(const MontyHalfRange&) = delete;
     MontyHalfRange& operator=(const MontyHalfRange&) = delete;
 
+    static constexpr T max_modulus()
+    {
+        T Rdiv2 = static_cast<T>(1) << (std::numeric_limits<T>::digits - 1);
+        return Rdiv2 - 1;
+    }
+
     HURCHALLA_FORCE_INLINE bool isValid(V x) const { return (x.get() < n_); }
 
     HURCHALLA_FORCE_INLINE T convertOut(V x) const

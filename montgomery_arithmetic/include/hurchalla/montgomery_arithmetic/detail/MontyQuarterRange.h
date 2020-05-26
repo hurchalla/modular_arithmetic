@@ -38,6 +38,12 @@ public:
     MontyQuarterRange(const MontyQuarterRange&) = delete;
     MontyQuarterRange& operator=(const MontyQuarterRange&) = delete;
 
+    static constexpr T max_modulus()
+    {
+        T Rdiv4 = static_cast<T>(1) << (std::numeric_limits<T>::digits - 2);
+        return Rdiv4 - 1;
+    }
+
     HURCHALLA_FORCE_INLINE bool isValid(V x) const { return (x.get() < 2*n_); }
 
     HURCHALLA_FORCE_INLINE T convertOut(V x) const
