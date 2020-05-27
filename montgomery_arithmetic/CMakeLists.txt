@@ -48,6 +48,11 @@ target_include_directories(hurchalla_montgomery_arithmetic
             INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 
+add_subdirectory(../modular_arithmetic
+            ${CMAKE_CURRENT_BINARY_DIR}/modular_arithmetic)
+target_link_libraries(hurchalla_montgomery_arithmetic
+                      INTERFACE hurchalla_basic_modular_arithmetic)
+
 
 # TODO: Currently we assume the programming_by_contract dependency is in a
 # folder at the relative location specified below.  This is a hack, since users
@@ -62,6 +67,5 @@ target_include_directories(hurchalla_montgomery_arithmetic
 # ---------------------------
 add_subdirectory(../../programming_by_contract
             ${CMAKE_CURRENT_BINARY_DIR}/programming_by_contract)
-
 target_link_libraries(hurchalla_montgomery_arithmetic
                       INTERFACE programming_by_contract)

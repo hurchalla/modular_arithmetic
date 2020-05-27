@@ -84,6 +84,5 @@ target_include_directories(hurchalla_basic_modular_arithmetic INTERFACE
 # ---------------------------
 add_subdirectory(../../programming_by_contract
             ${CMAKE_CURRENT_BINARY_DIR}/programming_by_contract)
-
 target_link_libraries(hurchalla_basic_modular_arithmetic
                       INTERFACE programming_by_contract)

@@ -21,6 +21,13 @@ include(GoogleTest)
 
 add_executable(test_hurchalla_modular_arithmetic
                test_ma.cpp)
+if(MSVC)
+    target_compile_options(test_hurchalla_modular_arithmetic PRIVATE /W4 /WX)
+else()
+    target_compile_options(test_hurchalla_modular_arithmetic PRIVATE -Wall
+                            -Wextra -Wpedantic -pedantic-errors -Werror -Wshadow
+                            -Wconversion -Wsign-conversion)
+endif()
 set_target_properties(test_hurchalla_modular_arithmetic
                       PROPERTIES FOLDER "Tests")
 target_link_libraries(test_hurchalla_modular_arithmetic
