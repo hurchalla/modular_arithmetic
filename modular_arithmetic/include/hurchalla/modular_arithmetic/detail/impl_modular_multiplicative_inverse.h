@@ -3,21 +3,21 @@
 #define HURCHALLA_MODULAR_ARITHMETIC_IMPL_MODULAR_MULTIPLICATIVE_INV_H_INCLUDED
 
 
-#include "hurchalla/modular_arithmetic/traits/type_traits.h"
+#include "hurchalla/modular_arithmetic/traits/extensible_make_signed.h"
+#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <type_traits>
-#include <limits>
 
 namespace hurchalla { namespace modular_arithmetic {
 
 
 // Enabled only for signed (integral) types T.
 template <typename T>
-typename std::enable_if<std::numeric_limits<T>::is_signed, T>::type
+typename std::enable_if<ma_numeric_limits<T>::is_signed, T>::type
 impl_modular_multiplicative_inverse(T val, T modulus)
 {
-    static_assert(std::numeric_limits<T>::is_integer, "");
-    static_assert(std::numeric_limits<T>::is_signed, "");
+    static_assert(ma_numeric_limits<T>::is_integer, "");
+    static_assert(ma_numeric_limits<T>::is_signed, "");
     HPBC_PRECONDITION2(val >= 0);
     HPBC_PRECONDITION2(modulus > 1);
 
@@ -72,11 +72,11 @@ impl_modular_multiplicative_inverse(T val, T modulus)
 
 // Enabled only for unsigned (integral) types U.
 template <typename U>
-typename std::enable_if<!(std::numeric_limits<U>::is_signed), U>::type
+typename std::enable_if<!(ma_numeric_limits<U>::is_signed), U>::type
 impl_modular_multiplicative_inverse(U val, U modulus)
 {
-    static_assert(std::numeric_limits<U>::is_integer, "");
-    static_assert(!(std::numeric_limits<U>::is_signed), "");
+    static_assert(ma_numeric_limits<U>::is_integer, "");
+    static_assert(!(ma_numeric_limits<U>::is_signed), "");
     HPBC_PRECONDITION2(modulus>1);
 
     // POSTCONDITION: Returns 0 if the inverse doesn't exist. Otherwise returns

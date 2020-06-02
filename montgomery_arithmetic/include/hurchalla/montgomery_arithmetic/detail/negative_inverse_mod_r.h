@@ -4,10 +4,10 @@
 
 
 #include "hurchalla/montgomery_arithmetic/detail/sized_uint.h"
-#include "hurchalla/montgomery_arithmetic/detail/make_safe_unsigned_integer.h"
+#include "hurchalla/montgomery_arithmetic/detail/safely_promote_unsigned.h"
+#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
-#include <limits>
 #include <type_traits>
 
 namespace hurchalla { namespace montgomery_arithmetic {
@@ -41,14 +41,15 @@ namespace detail_nimr {
     typename std::enable_if<bits<=HURCHALLA_TARGET_BIT_WIDTH, T>::type
     impl_neg_inverse(T a)
     {
-        static_assert(bits == std::numeric_limits<T>::digits, "");
+        namespace ma = hurchalla::modular_arithmetic;
+        static_assert(bits == ma::ma_numeric_limits<T>::digits, "");
         static_assert(std::is_unsigned<T>::value, ""); //T native unsign integer
         HPBC_PRECONDITION2(a % 2 == 1);
         HPBC_PRECONDITION2(a > 1);
 
         // avoid undefined behavior that could result if T is an unsigned type
         // that would be promoted to (signed) 'int'.
-        using U = typename make_safe_unsigned_integer<T>::type;
+        using U = typename safely_promote_unsigned<T>::type;
         U b = static_cast<U>(a);
   
         U x = (3*b)^12;  // good to 5 bits, but we'll treat it as good to only 4
@@ -93,16 +94,17 @@ namespace detail_nimr {
 template <typename T>
 T negative_inverse_mod_r(T a)
 {
-    static_assert(std::numeric_limits<T>::is_integer, "");
-    static_assert(!(std::numeric_limits<T>::is_signed), "");
-    static_assert(std::numeric_limits<T>::is_modulo, "");
+    namespace ma = hurchalla::modular_arithmetic;
+    static_assert(ma::ma_numeric_limits<T>::is_integer, "");
+    static_assert(!(ma::ma_numeric_limits<T>::is_signed), "");
+    static_assert(ma::ma_numeric_limits<T>::is_modulo, "");
     HPBC_PRECONDITION2(a % 2 == 1);
     HPBC_PRECONDITION2(a > 1);
 
-    T inv = detail_nimr::impl_neg_inverse<T, std::numeric_limits<T>::digits>(a);
+    T inv= detail_nimr::impl_neg_inverse<T,ma::ma_numeric_limits<T>::digits>(a);
 
     // guarantee inv*a ≡ -1 (mod R)
-    using U = typename make_safe_unsigned_integer<T>::type;
+    using U = typename safely_promote_unsigned<T>::type;
     HPBC_POSTCONDITION2((T)((U)inv * (U)a) == (T)((U)0 - (U)1));
     return inv;
 }

@@ -1,6 +1,6 @@
 
-#ifndef HURCHALLA_MODULAR_ARITHMETIC_TYPE_TRAITS_H_INCLUDED
-#define HURCHALLA_MODULAR_ARITHMETIC_TYPE_TRAITS_H_INCLUDED
+#ifndef HURCHALLA_MODULAR_ARITHMETIC_EXTENSIBLE_MAKE_SIGNED_H_INCLUDED
+#define HURCHALLA_MODULAR_ARITHMETIC_EXTENSIBLE_MAKE_SIGNED_H_INCLUDED
 
 
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
@@ -8,14 +8,6 @@
 
 namespace hurchalla { namespace modular_arithmetic {
 
-
-// primary template
-template <typename T>
-struct extensible_make_unsigned {
-    static_assert(std::is_integral<T>::value,
-            "You'll need to specialize extensible_make_signed for your type T");
-    using type = typename std::make_unsigned<T>::type;
-};
 
 // primary template
 template <typename T>
@@ -30,17 +22,11 @@ struct extensible_make_signed {
 // You can use the following as examples of how to specialize for a particular
 // integer type you wish to use.  Note that the primary template will pass its
 // static assert and work fine if its type T is known to std::type_traits.
+//
+// ** If you specialize this type, you should probably also specialize
+// extensible_make_unsigned (in extensible_make_unsigned.h) **
 
 #if (HURCHALLA_COMPILER_HAS_UINT128_T())
-template<>  // explicit specialization for T = __int128_t
-struct extensible_make_unsigned<__int128_t> {
-    using type = __uint128_t;
-};
-template<>  // explicit specialization for T = __uint128_t
-struct extensible_make_unsigned<__uint128_t> {
-    using type = __uint128_t;
-};
-
 template<>  // explicit specialization for T = __int128_t
 struct extensible_make_signed<__int128_t> {
     using type = __int128_t;

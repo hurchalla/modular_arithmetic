@@ -4,8 +4,8 @@
 
 
 #include "hurchalla/montgomery_arithmetic/detail/MontgomeryDefault.h"
+#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
-#include <limits>
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
@@ -17,11 +17,12 @@ template<typename T, class MontyType = typename MontgomeryDefault<T>::type>
 class MontgomeryForm final {
     MontyType impl;
     using U = typename MontyType::template_param_type;
-    static_assert(std::numeric_limits<U>::is_integer, "");
-    static_assert(!(std::numeric_limits<U>::is_signed), "");
-    static_assert(std::numeric_limits<U>::digits >=
-                  std::numeric_limits<T>::digits, "");
+    static_assert(modular_arithmetic::ma_numeric_limits<U>::is_integer, "");
+    static_assert(!(modular_arithmetic::ma_numeric_limits<U>::is_signed), "");
+    static_assert(modular_arithmetic::ma_numeric_limits<U>::digits >=
+                  modular_arithmetic::ma_numeric_limits<T>::digits, "");
 public:
+    using T_type = T;
     using V = typename MontyType::montvalue_type; // MontgomeryValue<U>;
 
     explicit MontgomeryForm(T modulus) : impl(static_cast<U>(modulus))
@@ -38,12 +39,15 @@ public:
     static constexpr T max_modulus()
     {
         U maxmod = MontyType::max_modulus();
-        T max = std::numeric_limits<T>::max();
+        T max = modular_arithmetic::ma_numeric_limits<T>::max();
         if (maxmod > static_cast<U>(max))
             return max;
         else
             return static_cast<T>(maxmod);
     }
+
+    // Returns the modulus given to the constructor
+    T getModulus() const { return static_cast<T>(impl.getModulus()); }
 
     // Returns the converted value of the standard number 'a' into monty form.
     // Requires 0 <= a < modulus.  The return value might not be canonical -
@@ -105,7 +109,7 @@ public:
     // 'base' to the power of (the type T variable) 'exponent'.  The return
     // value is a mongomery value but might not be canonical - call
     // getCanonicalForm() to use it in comparisons.
-    V pow(V base, T exponent)
+    V pow(V base, T exponent) const
     {
         HPBC_PRECONDITION(exponent >= 0);
         // This is a slightly optimized version of Algorithm 14.76, from
@@ -118,7 +122,7 @@ public:
             result = impl.getUnityValue();
         while (exponent > static_cast<T>(1))
         {
-            exponent = exponent >> static_cast<T>(1);
+            exponent = static_cast<T>(exponent >> static_cast<T>(1));
             base = impl.multiply(base, base);
             if (exponent & static_cast<T>(1))
                 result = impl.multiply(result, base);

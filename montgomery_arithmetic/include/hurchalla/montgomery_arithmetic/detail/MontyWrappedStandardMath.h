@@ -8,9 +8,9 @@
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
+#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
-#include <limits>
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
@@ -20,9 +20,9 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // in a generic MontgomeryForm instantation.
 template <typename T>
 class MontyWrappedStandardMath final {
-    static_assert(std::numeric_limits<T>::is_integer, "");
-    static_assert(!(std::numeric_limits<T>::is_signed), "");
-    static_assert(std::numeric_limits<T>::is_modulo, "");
+    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
+    static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
+    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
     using V = MontgomeryValue<T>;
     T modulus_;
 public:
@@ -38,7 +38,7 @@ public:
 
     static constexpr T max_modulus()
     {
-        return std::numeric_limits<T>::max();
+        return modular_arithmetic::ma_numeric_limits<T>::max();
     }
 
     // intended for use in postconditions/preconditions
@@ -80,7 +80,7 @@ public:
     }
     HURCHALLA_FORCE_INLINE V getNegativeOneValue() const 
     {
-        return V(modulus_ - static_cast<T>(1));
+        return V(static_cast<T>(modulus_ - static_cast<T>(1)));
     }
 
     HURCHALLA_FORCE_INLINE V multiply(V x, V y) const

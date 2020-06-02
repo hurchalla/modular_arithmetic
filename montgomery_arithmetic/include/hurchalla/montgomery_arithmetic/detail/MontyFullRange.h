@@ -7,18 +7,18 @@
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
+#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
-#include <limits>
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
 template <typename T>
 class MontyFullRange final : public MontyCommonBase<MontyFullRange, T> {
-    static_assert(std::numeric_limits<T>::is_integer, "");
-    static_assert(!(std::numeric_limits<T>::is_signed), "");
-    static_assert(std::numeric_limits<T>::is_modulo, "");
+    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
+    static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
+    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
     using MontyCommonBase<MontyFullRange, T>::n_;
     using MontyCommonBase<MontyFullRange, T>::neg_inv_n_;
     using typename MontyCommonBase<MontyFullRange, T>::V;
@@ -33,7 +33,7 @@ public:
 
     static constexpr T max_modulus()
     {
-        return std::numeric_limits<T>::max();
+        return modular_arithmetic::ma_numeric_limits<T>::max();
     }
 
     HURCHALLA_FORCE_INLINE bool isValid(V x) const { return (x.get() < n_); }
@@ -64,7 +64,7 @@ public:
         bool ovf;
         T prod = montmul_non_minimized(ovf, x.get(), y.get(), n_, neg_inv_n_);
         // montmul_non_minimized() postconditions guarantee the following
-        T minimized_result = (ovf || prod >= n_) ? (prod - n_) : prod;
+        T minimized_result = (ovf || prod>=n_) ? static_cast<T>(prod-n_) : prod;
         HPBC_POSTCONDITION2(minimized_result < n_);
         return V(minimized_result);
     }

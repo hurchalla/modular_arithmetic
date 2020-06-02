@@ -4,11 +4,11 @@
 
 
 #include "hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h"
-#include "hurchalla/montgomery_arithmetic/detail/make_safe_unsigned_integer.h"
+#include "hurchalla/montgomery_arithmetic/detail/safely_promote_unsigned.h"
 #include "hurchalla/montgomery_arithmetic/detail/sized_uint.h"
+#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
-#include <limits>
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
@@ -36,7 +36,7 @@ namespace detail_monty_common {
 // "T" in C++ is conventionally reserved for use as a template parameter name.
 // We also use "n" instead of "N", and "neg_inv_n" instead of "N′" (N with a
 // prime symbol).  The constant "R" remains the same, and represents the value
-// R = 2^(std::numeric_limits<T>::digits).  For example, if T is uint64_t, then
+// R = 2^(ma::ma_numeric_limits<T>::digits).  For example, if T is uint64_t, then
 // R = 2^64.
 // The comments below explain additional changes from the wikipedia article.
 //
@@ -47,16 +47,17 @@ template <typename T>
 HURCHALLA_FORCE_INLINE
 T REDC_non_minimized(bool& ovf, T u_hi, T u_lo, T n, T neg_inv_n)
 {
-    static_assert(std::numeric_limits<T>::is_integer, "");
-    static_assert(!(std::numeric_limits<T>::is_signed), "");
-    static_assert(std::numeric_limits<T>::is_modulo, "");
+    namespace ma = hurchalla::modular_arithmetic;
+    static_assert(ma::ma_numeric_limits<T>::is_integer, "");
+    static_assert(!(ma::ma_numeric_limits<T>::is_signed), "");
+    static_assert(ma::ma_numeric_limits<T>::is_modulo, "");
     // We require T is at least as large as unsigned int.
     // If T is a smaller type than that, we'll need a different function that
     // will be both more efficient, and protected from surprises and undefined
     // behavior from the tricky unsigned integral promotion rules in C++.  See
     // https://jeffhurchalla.com/2019/01/16/c-c-surprises-and-undefined-behavior-due-to-unsigned-integer-promotion/
-    static_assert(std::numeric_limits<T>::digits >=
-                  std::numeric_limits<unsigned int>::digits, "");
+    static_assert(ma::ma_numeric_limits<T>::digits >=
+                  ma::ma_numeric_limits<unsigned int>::digits, "");
 
     // assert(n * neg_inv_n ≡ -1 (mod R))
     HPBC_PRECONDITION2(n * neg_inv_n == static_cast<T>(0) - static_cast<T>(1));
@@ -199,7 +200,7 @@ T REDC_non_minimized(bool& ovf, T u_hi, T u_lo, T n, T neg_inv_n)
     // Multiplication Technique: How to Make It Smaller and Faster", at
     // https://www.comodo.com/resources/research/cryptography/CDW_CHES_99.ps ]
     if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T Rdiv2 = static_cast<T>(1) << (std::numeric_limits<T>::digits - 1);
+        T Rdiv2 = static_cast<T>(1) << (ma::ma_numeric_limits<T>::digits - 1);
         HPBC_POSTCONDITION2((n < Rdiv2) ? (ovf == false && t_hi < 2*n) : true);
     }
 
@@ -215,7 +216,7 @@ T REDC_non_minimized(bool& ovf, T u_hi, T u_lo, T n, T neg_inv_n)
 //   https://en.wikipedia.org/wiki/Montgomery_modular_multiplication#The_REDC_algorithm
 // Precondition: with theoretical unlimited precision standard multiplication,
 //   we require  x*y < n*R.  The constant R represents the value
-//   R = 2^(std::numeric_limits<T>::digits).
+//   R = 2^(ma::ma_numeric_limits<T>::digits).
 // Returns: the non-minimized montgomery product.
 // Implmentation: this function is a safer and generic version of the following-
 // uint32_t montmul_non_minimized(bool& ovf, uint32_t x, uint32_t y, uint32_t n,
@@ -228,33 +229,34 @@ T REDC_non_minimized(bool& ovf, T u_hi, T u_lo, T n, T neg_inv_n)
 //    T2 mn = static_cast<T2>(m) * static_cast<T2>(n);
 //    T2 t = u + mn;
 //    ovf = (t < u);
-//    T t_hi = static_cast<T>(t >> std::numeric_limits<T>::digits);
+//    T t_hi = static_cast<T>(t >> ma::ma_numeric_limits<T>::digits);
 //    return t_hi;
 // }
 template <typename T, typename T2>
 HURCHALLA_FORCE_INLINE
 T typecast_montmul_non_minimized(bool& ovf, T x, T y, T n, T neg_inv_n)
 {
-    static_assert(std::numeric_limits<T>::is_integer, "");
-    static_assert(!(std::numeric_limits<T>::is_signed), "");
-    static_assert(std::numeric_limits<T>::is_modulo, "");
+    namespace ma = hurchalla::modular_arithmetic;
+    static_assert(ma::ma_numeric_limits<T>::is_integer, "");
+    static_assert(!(ma::ma_numeric_limits<T>::is_signed), "");
+    static_assert(ma::ma_numeric_limits<T>::is_modulo, "");
 
-    static_assert(std::numeric_limits<T2>::is_integer, "");
-    static_assert(!(std::numeric_limits<T2>::is_signed), "");
-    static_assert(std::numeric_limits<T2>::is_modulo, "");
+    static_assert(ma::ma_numeric_limits<T2>::is_integer, "");
+    static_assert(!(ma::ma_numeric_limits<T2>::is_signed), "");
+    static_assert(ma::ma_numeric_limits<T2>::is_modulo, "");
 
-    static_assert(std::numeric_limits<T2>::digits ==
-                  2 * std::numeric_limits<T>::digits, "");
+    static_assert(ma::ma_numeric_limits<T2>::digits ==
+                  2 * ma::ma_numeric_limits<T>::digits, "");
 
     // For casts, we want to use types that are protected from surprises and
     // undefined behavior due to the unsigned integral promotion rules in C++.
     // https://jeffhurchalla.com/2019/01/16/c-c-surprises-and-undefined-behavior-due-to-unsigned-integer-promotion/
-    using V = typename make_safe_unsigned_integer<T>::type;
-    using V2 = typename make_safe_unsigned_integer<T2>::type;
-    static_assert(std::numeric_limits<V>::is_modulo, "");
-    static_assert(std::numeric_limits<V2>::is_modulo, "");
+    using V = typename safely_promote_unsigned<T>::type;
+    using V2 = typename safely_promote_unsigned<T2>::type;
+    static_assert(ma::ma_numeric_limits<V>::is_modulo, "");
+    static_assert(ma::ma_numeric_limits<V2>::is_modulo, "");
 
-    static constexpr int bit_width_T = std::numeric_limits<T>::digits;
+    static constexpr int bit_width_T = ma::ma_numeric_limits<T>::digits;
     static constexpr V2 R = static_cast<V2>(1) << bit_width_T;
 
     // assert(n * neg_inv_n ≡ -1 (mod R))
@@ -280,7 +282,7 @@ T typecast_montmul_non_minimized(bool& ovf, T x, T y, T n, T neg_inv_n)
     // minimized result, aside from this postcondition.
     // Postcondition #5
     if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T minimized_result = (ovf || t_hi >= n) ? (t_hi - n) : t_hi;
+        T minimized_result = (ovf || t_hi >= n) ? static_cast<T>(t_hi-n) : t_hi;
         HPBC_POSTCONDITION2(minimized_result < n);
     }
 
@@ -319,7 +321,7 @@ T typecast_montmul_non_minimized(bool& ovf, T x, T y, T n, T neg_inv_n)
     // know  t < 2*R*n.  Since t_hi = t/R (which divides evenly), we know
     // t_hi = t/R < (2*R*n)/R == 2*n, and thus,  t_hi < 2*n.
     if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T Rdiv2 = static_cast<T>(1) << (std::numeric_limits<T>::digits - 1);
+        T Rdiv2 = static_cast<T>(1) << (ma::ma_numeric_limits<T>::digits - 1);
         HPBC_POSTCONDITION2((n < Rdiv2) ?
                        (ovf == false && t_hi < static_cast<T>(2)*n) : true);
     }
@@ -339,6 +341,7 @@ template <typename T>
 HURCHALLA_FORCE_INLINE
 T impl_montmul_non_minimized(bool& ovf, T x, T y, T n, T neg_inv_n)
 {
+    namespace ma = hurchalla::modular_arithmetic;
     T u_lo;
     T u_hi = unsigned_multiply_to_hilo_product(&u_lo, x, y);
     // Having u_hi < n is sufficient and necessary to satisfy the requirement of
@@ -350,7 +353,7 @@ T impl_montmul_non_minimized(bool& ovf, T x, T y, T n, T neg_inv_n)
     // REDC_non_minimized Postcondition #4 guarantees that if n < R/2, then
     // ovf == false  and  result < 2*n.
     if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T Rdiv2 = static_cast<T>(1) << (std::numeric_limits<T>::digits - 1);
+        T Rdiv2 = static_cast<T>(1) << (ma::ma_numeric_limits<T>::digits - 1);
         HPBC_POSTCONDITION2((n < Rdiv2) ? (ovf==false && result<2*n) : true);
     }
     // REDC_non_minimized Postcondition #1 guarantees the following
@@ -400,6 +403,7 @@ HURCHALLA_FORCE_INLINE uint8_t impl_montmul_non_minimized(bool& ovf, uint8_t x,
 {
     // Precondition: Assuming theoretical unlimited precision standard
     // multiplication, this function requires  x*y < n*R.
+    namespace ma = hurchalla::modular_arithmetic;
     using T = uint8_t;
     using T2 = uint16_t;
     T result = typecast_montmul_non_minimized<T, T2>(ovf, x, y, n, neg_inv_n);
@@ -407,12 +411,13 @@ HURCHALLA_FORCE_INLINE uint8_t impl_montmul_non_minimized(bool& ovf, uint8_t x,
     // typecast_montmul_non_minimized Postcondition #8 guarantees that
     // if n < R/2, then  ovf == false  and  result < 2*n.
     if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T Rdiv2 = static_cast<T>(1) << (std::numeric_limits<T>::digits - 1);
+        T Rdiv2 = static_cast<T>(1) << (ma::ma_numeric_limits<T>::digits - 1);
         HPBC_POSTCONDITION2((n < Rdiv2) ? (ovf==false && result<2*n) : true);
     }
     // typecast_montmul_non_minimized Postcondition #5 guarantees the following
     if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T minimized_result = (ovf || result >= n) ? (result - n) : result;
+        T minimized_result = (ovf || result >= n) ? static_cast<T>(result - n) :
+                                                    result;
         HPBC_POSTCONDITION2(minimized_result < n);
     }
     // Note that these postconditions are the same as the template function
@@ -440,7 +445,7 @@ uint8_t impl_montout_non_minimized(uint8_t x, uint8_t n, uint8_t neg_inv_n)
     // typecast_montmul_non_minimized Postcondition #5 guarantees the following,
     // since we know ovf == false:
     if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T minimized_result = (result >= n) ? (result - n) : result;
+        T minimized_result = (result >= n) ? static_cast<T>(result-n) : result;
         HPBC_POSTCONDITION2(minimized_result < n);
     }
     // Note that these postconditions are the same as the template function
@@ -515,18 +520,20 @@ T montmul_non_minimized(bool& ovf, T x, T y, T n, T neg_inv_n)
 {
     // Precondition: Assuming theoretical unlimited precision standard
     // multiplication, this function requires  x*y < n*R.  (The constant R
-    // represents the value R = 2^(std::numeric_limits<T>::digits))
+    // represents the value R = 2^(ma::ma_numeric_limits<T>::digits))
 
+    namespace ma = hurchalla::modular_arithmetic;
     namespace dmc = detail_monty_common;
     T result = dmc::impl_montmul_non_minimized(ovf, x, y, n, neg_inv_n);
 
     // (All versions of impl_montmul_non_minimized guarantee the following)
     if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T Rdiv2 = static_cast<T>(1) << (std::numeric_limits<T>::digits - 1);
+        T Rdiv2 = static_cast<T>(1) << (ma::ma_numeric_limits<T>::digits - 1);
         HPBC_POSTCONDITION2((n < Rdiv2) ? (ovf==false && result<2*n) : true);
     }
     if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T minimized_result = (ovf || result >= n) ? (result - n) : result;
+        T minimized_result = (ovf || result >= n) ? static_cast<T>(result - n)
+                                                  : result;
         HPBC_POSTCONDITION2(minimized_result < n);
     }
     return result;
@@ -542,7 +549,7 @@ HURCHALLA_FORCE_INLINE T montout_non_minimized(T x, T n, T neg_inv_n)
     // (All versions of impl_montout_non_minimized guarantee the following)
     HPBC_POSTCONDITION2((x < n) ? result < n : true);
     if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T minimized_result = (result >= n) ? (result - n) : result;
+        T minimized_result = (result >= n) ? static_cast<T>(result-n) : result;
         HPBC_POSTCONDITION2(minimized_result < n);
     }
     return result;

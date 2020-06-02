@@ -4,12 +4,12 @@
 
 
 #include "hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h"
-#include "hurchalla/montgomery_arithmetic/detail/make_safe_unsigned_integer.h"
+#include "hurchalla/montgomery_arithmetic/detail/safely_promote_unsigned.h"
 #include "hurchalla/montgomery_arithmetic/detail/negative_inverse_mod_r.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontgomeryValue.h"
+#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
-#include <limits>
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
@@ -20,17 +20,18 @@ namespace hurchalla { namespace montgomery_arithmetic {
 template <typename T>
 HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
 {
-    static_assert(std::numeric_limits<T>::is_integer, "");
-    static_assert(!(std::numeric_limits<T>::is_signed), "");
-    static_assert(std::numeric_limits<T>::is_modulo, "");
+    namespace ma = hurchalla::modular_arithmetic;
+    static_assert(ma::ma_numeric_limits<T>::is_integer, "");
+    static_assert(!(ma::ma_numeric_limits<T>::is_signed), "");
+    static_assert(ma::ma_numeric_limits<T>::is_modulo, "");
 
     // For casts, we want to use types that are protected from surprises and
     // undefined behavior due to the unsigned integral promotion rules in C++.
     // https://jeffhurchalla.com/2019/01/16/c-c-surprises-and-undefined-behavior-due-to-unsigned-integer-promotion/
-    using V = typename make_safe_unsigned_integer<T>::type;
-    static_assert(std::numeric_limits<V>::is_modulo, "");
+    using V = typename safely_promote_unsigned<T>::type;
+    static_assert(ma::ma_numeric_limits<V>::is_modulo, "");
 
-    static constexpr int bit_width_T = std::numeric_limits<T>::digits;
+    static constexpr int bit_width_T = ma::ma_numeric_limits<T>::digits;
     static_assert(bit_width_T % 2 == 0, "");   // bit_width_T divisible by 2
     // MontySqrtRange requires  modulus < sqrt(R)
     static constexpr T sqrtR = static_cast<T>(1) << (bit_width_T / 2);
@@ -74,7 +75,7 @@ HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
     // However, we know  u_lo = (x*y)%R, and we proved  u_lo == x*y < R.  Since
     // our preconditions specify x>0 and y>0, we know  x*y > 0.  Thus  u_lo > 0,
     // or more specifically, u_lo != 0.  The calculation of t_hi simplifies to
-    t_hi += static_cast<T>(1);
+    t_hi = static_cast<T>(t_hi + static_cast<T>(1));
 
     // REDC_non_minimized() would normally next calculate
     // ovf = (t_hi < u_hi);
@@ -108,13 +109,13 @@ HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
 // The class member variable names are based on the webpage
 // https://en.wikipedia.org/wiki/Montgomery_modular_multiplication
 //
-// For discussion purposes, let R = 2^(std::numeric_limits<T>::digits).  For
+// For discussion purposes, let R = 2^(ma_numeric_limits<T>::digits).  For
 // example if T is uint64_t, then R = 2^64.
 template <typename T>
 class MontySqrtRange final {
-    static_assert(std::numeric_limits<T>::is_integer, "");
-    static_assert(!(std::numeric_limits<T>::is_signed), "");
-    static_assert(std::numeric_limits<T>::is_modulo, "");
+    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
+    static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
+    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
     const T n_;   // the modulus
     const T neg_inv_n_;
     const T r_mod_n_;
@@ -131,7 +132,8 @@ public:
                                     modular_multiplication_prereduced_inputs(
                                                        r_mod_n_, r_mod_n_, n_) )
     {
-        static constexpr int bitsT = std::numeric_limits<T>::digits;
+        namespace ma = hurchalla::modular_arithmetic;
+        static constexpr int bitsT = ma::ma_numeric_limits<T>::digits;
         static_assert(bitsT % 2 == 0, "");   // bitsT divisible by 2
         // MontySqrtRange requires  modulus < sqrt(R)
         static constexpr T sqrtR = static_cast<T>(1) << (bitsT / 2);
@@ -151,7 +153,7 @@ public:
 
     static constexpr T max_modulus()
     {
-        constexpr int bitsT = std::numeric_limits<T>::digits;
+        constexpr int bitsT = modular_arithmetic::ma_numeric_limits<T>::digits;
         static_assert(bitsT % 2 == 0, "");   // bitsT divisible by 2
         constexpr T sqrtR = static_cast<T>(1) << (bitsT / 2);
         return sqrtR - 1;
@@ -165,7 +167,7 @@ private:
         // Assign a tmp T variable rather than directly using the intermediate
         // expression, in order to avoid a negative value (and a wrong answer)
         // in cases where 'n' would be promoted to type 'int'.
-        T tmp = static_cast<T>(0) - n;
+        T tmp = static_cast<T>(static_cast<T>(0) - n);
         // Compute R%n.  For example, if R==2^64, arithmetic wraparound behavior
         // of the unsigned integral type T results in (0 - n) representing
         // (2^64 - n).  Thus, rModN = R%n == (2^64)%n == (2^64 - n)%n == (0-n)%n
@@ -230,7 +232,7 @@ public:
         //   0 < r_mod_n_ < n_.  Thus we know  0 < n_ - r_mod_n_ < n_.  This
         //   means (n_ - r_mod_n_)  satisfies isValid() and getCanonicalForm().
         HPBC_INVARIANT2(n_ > r_mod_n_);
-        T negOne = n_ - r_mod_n_;
+        T negOne = static_cast<T>(n_ - r_mod_n_);
         HPBC_ASSERT2(0 < negOne && negOne < n_);
         HPBC_INVARIANT2(isCanonical(V(negOne)));
         return V(negOne);
@@ -280,8 +282,8 @@ public:
         HPBC_PRECONDITION2(0 < b && b <= n_);
         HPBC_INVARIANT2(n_ > 0);
 
-        T tmp = n_ - b;
-        T result = (a <= tmp) ? a+b : a-tmp;
+        T tmp = static_cast<T>(n_ - b);
+        T result = (a <= tmp) ? static_cast<T>(a+b) : static_cast<T>(a-tmp);
 
         HPBC_POSTCONDITION2(0 < result && result <= n_);
         return V(result);
@@ -297,7 +299,7 @@ public:
         HPBC_PRECONDITION2(0 < b && b <= n_);
         HPBC_INVARIANT2(n_ > 0);
 
-        T result = (a>b) ? a-b : n_ - (b-a);
+        T result = (a>b) ? static_cast<T>(a-b) : static_cast<T>(n_ - (b-a));
 
         HPBC_POSTCONDITION2(0 < result && result <= n_);
         return V(result);

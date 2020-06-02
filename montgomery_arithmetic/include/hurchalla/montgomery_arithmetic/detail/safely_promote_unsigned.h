@@ -1,21 +1,21 @@
 
-#ifndef HURCHALLA_MONTGOMERY_ARITHMETIC_MAKE_SAFE_UNSIGNED_INTEGER_H_INCLUDED
-#define HURCHALLA_MONTGOMERY_ARITHMETIC_MAKE_SAFE_UNSIGNED_INTEGER_H_INCLUDED
+#ifndef HURCHALLA_MONTGOMERY_ARITHMETIC_SAFELY_PROMOTE_UNSIGNED_H_INCLUDED
+#define HURCHALLA_MONTGOMERY_ARITHMETIC_SAFELY_PROMOTE_UNSIGNED_H_INCLUDED
 
 
+#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include <type_traits>
-#include <limits>
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
-// make_safe_unsigned_integer<T> is intended to protect against the undefined
+// safely_promote_unsigned<T> is intended to protect against the undefined
 // behavior and unexpected results that can arise from unsigned integral
 // promotion in C++.  For details on these issues, see
 // https://jeffhurchalla.com/2019/01/16/c-c-surprises-and-undefined-behavior-due-to-unsigned-integer-promotion/
 
 // If an unsigned type T would get promoted to (signed) 'int', we want to make
-// sure that the type make_safe_unsigned_integer<T> provides is 'unsigned int'.
+// sure that the type safely_promote_unsigned<T> provides is 'unsigned int'.
 // Otherwise the type it provides is T.
 
 
@@ -23,16 +23,16 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // integral types.  C++ never promotes non-native integer types, so this primary
 // template just provides back the type T.
 template <typename T, typename Enable = void>
-struct make_safe_unsigned_integer {
-    static_assert(std::numeric_limits<T>::is_integer, "");
-    static_assert(!(std::numeric_limits<T>::is_signed), "");
+struct safely_promote_unsigned {
+    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
+    static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
     using type = T;
 };
 
 // Note that this specialization will be enabled for native unsigned integral
 // types (std::is_unsigned<T>::value is true only for native unsigned int types)
 template <typename T>
-struct make_safe_unsigned_integer<T, 
+struct safely_promote_unsigned<T, 
                     typename std::enable_if<std::is_unsigned<T>::value>::type> {
     using type = typename std::make_unsigned<decltype((T)1*(T)1)>::type;
 };

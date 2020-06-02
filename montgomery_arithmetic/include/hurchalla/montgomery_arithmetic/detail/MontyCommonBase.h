@@ -6,15 +6,15 @@
 #include "hurchalla/montgomery_arithmetic/detail/negative_inverse_mod_r.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontgomeryValue.h"
+#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
-#include <limits>
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
 // For discussion purposes throughout this file, given an unsigned integral type
-// T, let R = 2^(std::numeric_limits<T>::digits).  For example: if T is uint64_t
+// T, let R = 2^(ma_numeric_limits<T>::digits).  For example: if T is uint64_t
 // then R = 2^64.  The name 'R' is based on the wikipedia presentation.
 //
 // This base class uses the CRTP idiom
@@ -23,9 +23,9 @@ namespace hurchalla { namespace montgomery_arithmetic {
 //exception).
 template <template <typename> class Derived, typename T>
 class MontyCommonBase {
-    static_assert(std::numeric_limits<T>::is_integer, "");
-    static_assert(!(std::numeric_limits<T>::is_signed), "");
-    static_assert(std::numeric_limits<T>::is_modulo, "");
+    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
+    static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
+    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
     using D = Derived<T>;
 public:
     using V = MontgomeryValue<T>;
@@ -62,11 +62,11 @@ private:
         // Assign a tmp T variable rather than directly using the intermediate
         // expression, in order to avoid a negative value (and a wrong answer)
         // in cases where 'n' would be promoted to type 'int'.
-        T tmp = static_cast<T>(0) - n;
+        T tmp = static_cast<T>(static_cast<T>(0) - n);
         // Compute R%n.  For example, if R==2^64, arithmetic wraparound behavior
         // of the unsigned integral type T results in (0 - n) representing
         // (2^64 - n).  Thus, rModN = R%n == (2^64)%n == (2^64 - n)%n == (0-n)%n
-        T rModN = tmp % n;
+        T rModN = static_cast<T>(tmp % n);
         // Since n is odd and > 1, n does not divide R==2^x.  Thus, rModN != 0
         HPBC_POSTCONDITION2(0 < rModN && rModN < n);
         return rModN;
@@ -119,7 +119,7 @@ public:
         //   Thus we also know  0 < n_ - r_mod_n_ < n_.  This means
         //   (n_ - r_mod_n_)  is fully reduced, and thus canonical.
         HPBC_INVARIANT2(n_ > r_mod_n_);
-        T ret = n_ - r_mod_n_;
+        T ret = static_cast<T>(n_ - r_mod_n_);
         HPBC_ASSERT2(0 < ret && ret < n_);
         HPBC_INVARIANT2(isCanonical(V(ret)));
 

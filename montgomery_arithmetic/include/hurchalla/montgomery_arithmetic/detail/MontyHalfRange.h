@@ -7,9 +7,9 @@
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
+#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
-#include <limits>
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
@@ -17,12 +17,12 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // MontyHalfRange is exactly the same as MontyFullRange, except that the
 // constructor has the precondition that modulus < R/2, and in that multiply()
 // takes advantage of the fact that modulus < R/2 guarantees  ovf == false.
-// [The theoretical constant R = 2^(std::numeric_limits<T>::digits).]
+// [The theoretical constant R = 2^(ma_numeric_limits<T>::digits).]
 template <typename T>
 class MontyHalfRange final : public MontyCommonBase<MontyHalfRange, T> {
-    static_assert(std::numeric_limits<T>::is_integer, "");
-    static_assert(!(std::numeric_limits<T>::is_signed), "");
-    static_assert(std::numeric_limits<T>::is_modulo, "");
+    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
+    static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
+    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
     using MontyCommonBase<MontyHalfRange, T>::n_;
     using MontyCommonBase<MontyHalfRange, T>::neg_inv_n_;
     using typename MontyCommonBase<MontyHalfRange, T>::V;
@@ -34,7 +34,8 @@ public:
                                 MontyCommonBase<MontyHalfRange, T>(modulus)
     {
         // MontyHalfRange requires  modulus < R/2
-        T Rdiv2 = static_cast<T>(1) << (std::numeric_limits<T>::digits - 1);
+        T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
+                        (modular_arithmetic::ma_numeric_limits<T>::digits - 1));
         HPBC_PRECONDITION2(modulus < Rdiv2);
     }
 
@@ -43,8 +44,9 @@ public:
 
     static constexpr T max_modulus()
     {
-        T Rdiv2 = static_cast<T>(1) << (std::numeric_limits<T>::digits - 1);
-        return Rdiv2 - 1;
+        T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
+                        (modular_arithmetic::ma_numeric_limits<T>::digits - 1));
+        return static_cast<T>(Rdiv2 - 1);
     }
 
     HURCHALLA_FORCE_INLINE bool isValid(V x) const { return (x.get() < n_); }
@@ -82,7 +84,7 @@ public:
         // montmul_non_minimized() postconditions guarantee ovf == false.
         HPBC_ASSERT2(ovf == false);
         // Since ovf == false, montmul_non_minimized() postconditions guarantee
-        T minimized_result = (prod >= n_) ? (prod - n_) : prod;
+        T minimized_result = (prod >= n_) ? static_cast<T>(prod - n_) : prod;
 
         HPBC_POSTCONDITION2(minimized_result < n_);
         return V(minimized_result);

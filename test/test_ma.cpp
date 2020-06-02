@@ -9,6 +9,7 @@
 #include "hurchalla/montgomery_arithmetic/detail/MontyFullRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyQuarterRange.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontySqrtRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyWrappedStandardMath.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontgomeryValue.h"
 
@@ -48,10 +49,11 @@ struct hardcoded_test_67 {
         EXPECT_TRUE(mf.convertOut(mf.add(x,y)) == 6);
         EXPECT_TRUE(mf.convertOut(mf.subtract(y,x)) == 20);
         EXPECT_TRUE(mf.getCanonicalForm(mf.add(x,y)) ==
-                                        mf.getCanonicalForm(mf.convertIn(6)));
+                                          mf.getCanonicalForm(mf.convertIn(6)));
         EXPECT_TRUE(mf.getUnityValue() == mf.convertIn(1));
         EXPECT_TRUE(mf.getZeroValue() == mf.convertIn(0));
-        EXPECT_TRUE(mf.getNegativeOneValue() == mf.convertIn(modulus - 1));
+        EXPECT_TRUE(mf.getNegativeOneValue() ==
+                                     mf.convertIn(static_cast<T>(modulus - 1)));
         EXPECT_TRUE(mf.convertOut(mf.multiply(x,y)) == 43);
         EXPECT_TRUE(mf.convertOut(mf.square(y)) == 35);
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 1)) == 13);
@@ -76,7 +78,8 @@ struct hardcoded_test_uint128 {
         // with test_default() and test_explicit()
         static_assert(std::is_same<T, __uint128_t>::value, "");
 
-        T modulus = std::numeric_limits<T>::max() - 2;
+        T modulus =
+                 hurchalla::modular_arithmetic::ma_numeric_limits<T>::max() - 2;
         // this test isn't applicable if the modulus is larger than the max
         // modulus that the template param M (the MontyType) allows.
         if (modulus > M::max_modulus())

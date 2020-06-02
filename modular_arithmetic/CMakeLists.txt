@@ -53,7 +53,8 @@ target_sources(hurchalla_basic_modular_arithmetic INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/modular_multiplicative_inverse.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/modular_pow.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/modular_subtraction.h>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/traits/type_traits.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/traits/extensible_make_signed.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/traits/extensible_make_unsigned.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/impl_modular_multiplicative_inverse.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/impl_modular_pow.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h>

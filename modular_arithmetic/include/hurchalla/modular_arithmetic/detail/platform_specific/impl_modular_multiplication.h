@@ -4,10 +4,10 @@
 
 
 #include "hurchalla/modular_arithmetic/modular_addition.h"
+#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <cstdint>
-#include <limits>
 #include <type_traits>
 
 namespace hurchalla { namespace modular_arithmetic {
@@ -42,7 +42,7 @@ Code review/testing notes:
 template <typename T>
 T slow_modular_multiplication(T a, T b, T modulus)
 {
-    static_assert(std::numeric_limits<T>::is_integer, "");
+    static_assert(ma_numeric_limits<T>::is_integer, "");
     HPBC_PRECONDITION2(modulus>0);
     HPBC_PRECONDITION2(a>=0 && a<modulus);
     HPBC_PRECONDITION2(b>=0 && b<modulus);
