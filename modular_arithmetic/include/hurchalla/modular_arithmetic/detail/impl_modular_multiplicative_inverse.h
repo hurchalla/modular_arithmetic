@@ -64,8 +64,7 @@ impl_modular_multiplicative_inverse(T val, T modulus)
         T inv = (y < 0) ? y + modulus : y;
         HPBC_POSTCONDITION2(inv>=0 && inv<modulus);
         return inv;
-    }
-    else
+    } else
         return 0;
 }
 
@@ -125,8 +124,7 @@ impl_modular_multiplicative_inverse(U val, U modulus)
         U inv = (y < 0) ? static_cast<U>(y) + modulus : static_cast<U>(y);
         HPBC_POSTCONDITION2(inv<modulus);
         return inv;
-    }
-    else
+    } else
         return 0;
 }
 
