@@ -48,7 +48,7 @@ struct ma_numeric_limits<__int128_t> {
     static constexpr bool is_integer = true;
     static constexpr bool is_modulo = false;
     static constexpr int digits = 127;
-    static constexpr __uint128_t max() noexcept
+    static constexpr __int128_t max() noexcept
     {
         // Return (2^127)-1 without overflow
         return ((static_cast<__int128_t>(1) << 126) - 1) +
@@ -57,12 +57,13 @@ struct ma_numeric_limits<__int128_t> {
         // be the max value of __int128_t.
         // For two's complement, ones' complement, signed magnitude, or offset
         // binary/excess-k, this would be the correct value.  It would be wrong
-        // for base-2 representation, but it seems exceedingly unlikely that a
-        // a compiler would use that representation or anything different from
-        // two's complement/ones' complement/signed magnitude.  When I look at
-        // the asm from the latest versions (as of 6/7/20) of gcc clang and icc,
-        // adding or subtracting two __int128_t values, or casting a single
-        // int128_t to int64_t, all appear to rely on two's complement.
+        // for base -2 (negative two) representation, but it seems exceedingly
+        // unlikely that a compiler would use that representation or anything
+        // different from two's complement/ones' complement/signed magnitude.
+        // When I look at the generated asm from the latest versions (as of
+        // 6/7/20) of gcc clang and icc, adding or subtracting two __int128_t
+        // values, or casting a single __int128_t to int64_t, all appear to rely
+        // on two's complement.
         //
         // Nevertheless we can't be absolutely certain this value is correct for
         // all compilers and compiler versions.  Unfortunately I don't see any
