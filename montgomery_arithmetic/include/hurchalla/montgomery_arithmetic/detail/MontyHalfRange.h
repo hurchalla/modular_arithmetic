@@ -44,9 +44,8 @@ public:
 
     static constexpr T max_modulus()
     {
-        T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
-                        (modular_arithmetic::ma_numeric_limits<T>::digits - 1));
-        return static_cast<T>(Rdiv2 - 1);
+        return static_cast<T>((static_cast<T>(1) <<
+                   (modular_arithmetic::ma_numeric_limits<T>::digits - 1)) - 1);
     }
 
     HURCHALLA_FORCE_INLINE bool isValid(V x) const { return (x.get() < n_); }

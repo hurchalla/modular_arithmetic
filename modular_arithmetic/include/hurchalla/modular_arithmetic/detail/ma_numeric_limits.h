@@ -50,19 +50,37 @@ struct ma_numeric_limits<__int128_t> {
     static constexpr int digits = 127;
     static constexpr __uint128_t max() noexcept
     {
-        constexpr __int128_t one = static_cast<__int128_t>(1);
-        constexpr __int128_t twoPow126 = one << 126;
         // Return (2^127)-1 without overflow
-        return (twoPow126 - 1) + twoPow126;
-        // Note that this relies on a guess that  (2^127)-1  is the max value
-        // of __int128_t (and that it's representable in __int128_t).  For
-        // two's complement this would be true.  But this isn't a given.
-        // Unfortunately I don't see any reliable way to get the max value from
-        // the compiler - considering that we already know clang/gcc won't
-        // specialize std::numeric_limits for __int128_t  under a number of
-        // circumstances.  *Maybe* stdint.h would have this information, but at
-        // the moment I'm assuming even if it did, it would be as unreliable as
-        // std::numeric_limits.
+        return ((static_cast<__int128_t>(1) << 126) - 1) +
+                                            (static_cast<__int128_t>(1) << 126);
+        // The return value relies on the strong evidence that  (2^127)-1  must
+        // be the max value of __int128_t.
+        // For two's complement, ones' complement, signed magnitude, or offset
+        // binary/excess-k, this would be the correct value.  It would be wrong
+        // for base-2 representation, but it seems exceedingly unlikely that a
+        // a compiler would use that representation or anything different from
+        // two's complement/ones' complement/signed magnitude.  When I look at
+        // the asm from the latest versions (as of 6/7/20) of gcc clang and icc,
+        // adding or subtracting two __int128_t values, or casting a single
+        // int128_t to int64_t, all appear to rely on two's complement.
+        //
+        // Nevertheless we can't be absolutely certain this value is correct for
+        // all compilers and compiler versions.  Unfortunately I don't see any
+        // good reliable way to get the max __int128_t value from the compiler,
+        // considering that we already know clang/gcc won't specialize
+        // std::numeric_limits for __int128_t  under a number of circumstances.
+        //
+        // Note: Perhaps one way to get the correct value when the compiler does
+        // not provide it, would be to compile and run a small program with gcc
+        // extensions enabled (which should get the compiler to provide a
+        // specialization std::numeric_limits<__int128_t>) and print the max
+        // value in a dedicated header file.  Then during any build of modular
+        // arithmetic, that utility program would build and run first, and then
+        // in a subsequent build, this ma_numeric_limits header file would
+        // #include the header that the utility program wrote.  This adds an
+        // awkward extra step to building, and extra complication overall.  I
+        // believe the very strong guess used above is preferable to the added
+        // complexity.
     }
 };
 template<>

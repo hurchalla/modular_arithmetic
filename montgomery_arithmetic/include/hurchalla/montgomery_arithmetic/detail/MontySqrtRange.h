@@ -153,10 +153,9 @@ public:
 
     static constexpr T max_modulus()
     {
-        constexpr int bitsT = modular_arithmetic::ma_numeric_limits<T>::digits;
-        static_assert(bitsT % 2 == 0, "");   // bitsT divisible by 2
-        constexpr T sqrtR = static_cast<T>(1) << (bitsT / 2);
-        return sqrtR - 1;
+        namespace ma = modular_arithmetic;
+        static_assert(ma::ma_numeric_limits<T>::digits % 2 == 0, "");
+        return (static_cast<T>(1) << (ma::ma_numeric_limits<T>::digits/2)) - 1;
     }
 
 private:

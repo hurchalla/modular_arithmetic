@@ -38,12 +38,10 @@ public:
     // performance (see the specific MontyType you are using for details).
     static constexpr T max_modulus()
     {
-        U maxmod = MontyType::max_modulus();
-        T max = modular_arithmetic::ma_numeric_limits<T>::max();
-        if (maxmod > static_cast<U>(max))
-            return max;
-        else
-            return static_cast<T>(maxmod);
+        return (MontyType::max_modulus() >
+                static_cast<U>(modular_arithmetic::ma_numeric_limits<T>::max()))
+            ? modular_arithmetic::ma_numeric_limits<T>::max()
+            : static_cast<T>(MontyType::max_modulus());
     }
 
     // Returns the modulus given to the constructor
