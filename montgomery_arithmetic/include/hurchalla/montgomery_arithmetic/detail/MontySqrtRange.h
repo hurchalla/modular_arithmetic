@@ -153,9 +153,9 @@ public:
 
     static constexpr T max_modulus()
     {
-        namespace ma = modular_arithmetic;
-        static_assert(ma::ma_numeric_limits<T>::digits % 2 == 0, "");
-        return (static_cast<T>(1) << (ma::ma_numeric_limits<T>::digits/2)) - 1;
+        static_assert(modular_arithmetic::ma_numeric_limits<T>::digits%2==0,"");
+        return (static_cast<T>(1) <<
+                      (modular_arithmetic::ma_numeric_limits<T>::digits/2)) - 1;
     }
 
 private:
@@ -170,7 +170,7 @@ private:
         // Compute R%n.  For example, if R==2^64, arithmetic wraparound behavior
         // of the unsigned integral type T results in (0 - n) representing
         // (2^64 - n).  Thus, rModN = R%n == (2^64)%n == (2^64 - n)%n == (0-n)%n
-        T rModN = tmp % n;
+        T rModN = static_cast<T>(tmp % n);
         // Since n is odd and > 1, n does not divide R==2^x.  Thus, rModN != 0
         HPBC_POSTCONDITION2(0 < rModN && rModN < n);
         return rModN;

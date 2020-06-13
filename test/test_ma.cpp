@@ -14,7 +14,7 @@
 #include "hurchalla/montgomery_arithmetic/detail/MontgomeryValue.h"
 
 #include "gtest/gtest.h"
-#include <stdint.h>
+#include <cstdint>
 
 
 template <typename T>
