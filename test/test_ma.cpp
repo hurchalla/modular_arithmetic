@@ -142,16 +142,16 @@ namespace {
         T modulus = 13;
 
         T result = ma::modular_multiplication_prereduced_inputs(a, b, modulus);
-        EXPECT_TRUE(result == (uint32_t)8);
+        EXPECT_TRUE(result == static_cast<T>(8));
         result = ma::modular_addition_prereduced_inputs(a, b, modulus);
-        EXPECT_TRUE(result == (uint32_t)4);
+        EXPECT_TRUE(result == static_cast<T>(4));
         result = ma::modular_subtraction_prereduced_inputs(a, b, modulus);
-        EXPECT_TRUE(result == (uint32_t)6);
+        EXPECT_TRUE(result == static_cast<T>(6));
 
         T base = 5;
         T exponent = 53;
         result = ma::modular_pow(base, exponent, modulus);
-        EXPECT_TRUE(result == (uint32_t)5);
+        EXPECT_TRUE(result == static_cast<T>(5));
         base = 81452;
         exponent = 4013;
         modulus = 2951486173u;
@@ -160,12 +160,12 @@ namespace {
 
         modulus = 13;
         result = ma::modular_multiplicative_inverse(a, modulus);
-        EXPECT_TRUE(result == (uint32_t)8);
+        EXPECT_TRUE(result == static_cast<T>(8));
         // The inverse doesn't exist if gcd(a, modulus) > 1.
         // A return value of 0 indicates the inverse doesn't exist.
         modulus = 21;   // shares the factor 3 with b
         result = ma::modular_multiplicative_inverse(b, modulus);
-        EXPECT_TRUE(result == (uint32_t)0);        
+        EXPECT_TRUE(result == static_cast<T>(0));
     }
 
 

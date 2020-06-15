@@ -2,6 +2,13 @@
 #ifndef HURCHALLA_MONTGOMERY_ARITHMETIC_MONTGOMERY_VALUE_H_INCLUDED
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTGOMERY_VALUE_H_INCLUDED
 
+
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Weffc++"
+#endif
+
+
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
@@ -28,5 +35,11 @@ bool operator!=(const MontgomeryValue<T>& lhs, const MontgomeryValue<T>& rhs) {
 
 
 }} // end namespace
+
+
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
+
 
 #endif

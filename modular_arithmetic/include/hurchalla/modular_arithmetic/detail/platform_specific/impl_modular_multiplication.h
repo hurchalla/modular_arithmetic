@@ -10,6 +10,12 @@
 #include <cstdint>
 #include <type_traits>
 
+
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+
 namespace hurchalla { namespace modular_arithmetic {
 
 
@@ -295,5 +301,10 @@ inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
 
 
 }}  // end namespace
+
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
+
 
 #endif  // include guard

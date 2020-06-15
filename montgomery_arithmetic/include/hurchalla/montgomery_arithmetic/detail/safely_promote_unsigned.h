@@ -34,7 +34,8 @@ struct safely_promote_unsigned {
 template <typename T>
 struct safely_promote_unsigned<T, 
                     typename std::enable_if<std::is_unsigned<T>::value>::type> {
-    using type = typename std::make_unsigned<decltype((T)1*(T)1)>::type;
+    using type = typename std::make_unsigned<
+                           decltype(static_cast<T>(1)*static_cast<T>(1))>::type;
 };
 
 

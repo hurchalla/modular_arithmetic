@@ -105,7 +105,8 @@ T negative_inverse_mod_r(T a)
 
     // guarantee inv*a ≡ -1 (mod R)
     using U = typename safely_promote_unsigned<T>::type;
-    HPBC_POSTCONDITION2((T)((U)inv * (U)a) == (T)((U)0 - (U)1));
+    HPBC_POSTCONDITION2(static_cast<T>(static_cast<U>(inv) * static_cast<U>(a))
+                      == static_cast<T>(static_cast<U>(0) - static_cast<U>(1)));
     return inv;
 }
 
