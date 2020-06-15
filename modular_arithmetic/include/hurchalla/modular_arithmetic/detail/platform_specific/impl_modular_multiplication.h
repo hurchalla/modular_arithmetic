@@ -127,8 +127,8 @@ inline uint8_t impl_modular_multiplication_prereduced_inputs(uint8_t a,
                                             uint8_t b, uint8_t modulus)
 {
     // Calculate (a*b)%modulus, guaranteeing no overflow on a*b.
-    // Note: promotion to (signed)int won't disturb the calculation if it occurs
-    return (uint8_t)((uint16_t)a*(uint16_t)b % (uint16_t)modulus);
+    // Note: the C++ standard mandates 'unsigned int' is at least 16 bits wide
+    return (uint8_t)((unsigned int)a*(unsigned int)b % (unsigned int)modulus);
 }
 #endif
 

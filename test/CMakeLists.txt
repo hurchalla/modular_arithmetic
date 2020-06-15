@@ -36,9 +36,9 @@ else()
           -Winvalid-pch -Wstack-protector -Wpacked -Wnull-dereference
           -Wuninitialized -Wregister -Wunused -Wunused-parameter -Wformat=2
           -Wdisabled-optimization -Wvla -Wold-style-cast -Wdouble-promotion
-          -Winline -Wundef -Wpadded -Wformat-nonliteral -Wmissing-noreturn
+          -Winline -Wundef -Wformat-nonliteral -Wmissing-noreturn
           -Wzero-as-null-pointer-constant -Weffc++ -Wctor-dtor-privacy
-          -Wmissing-declarations -Wmissing-format-attribute)
+          -Wmissing-declarations)
     if((NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")) OR
                (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.1))
         target_compile_options(test_hurchalla_modular_arithmetic PRIVATE
@@ -52,7 +52,7 @@ else()
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(test_hurchalla_modular_arithmetic PRIVATE
                 -fmax-errors=3 -Wlogical-op -Wnoexcept
-                -Wsuggest-attribute=pure -Wduplicated-cond -Wduplicated-branches
+                -Wduplicated-cond -Wduplicated-branches
                 -Wstringop-overflow=3 -Wsuggest-final-methods -Wplacement-new=2
                 -Wsuggest-final-types -Wsuggest-override -Walloc-zero
                 -Wnormalized -Wformat-truncation=2 -Wformat-overflow=2

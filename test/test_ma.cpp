@@ -41,11 +41,11 @@ struct hardcoded_test_67 {
             return;
 
         M mf(modulus);
-    
+
         using V = typename decltype(mf)::V;
         V x = mf.convertIn(60);
         V y = mf.convertIn(13);
-    
+
         EXPECT_TRUE(mf.convertOut(mf.add(x,y)) == 6);
         EXPECT_TRUE(mf.convertOut(mf.subtract(y,x)) == 20);
         EXPECT_TRUE(mf.getCanonicalForm(mf.add(x,y)) ==

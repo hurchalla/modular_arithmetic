@@ -93,10 +93,6 @@ public:
         HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
-    HURCHALLA_FORCE_INLINE V square(V x) const
-    {
-        return multiply(x, x);
-    }
     HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
         HPBC_PRECONDITION2(isCanonical(x));
