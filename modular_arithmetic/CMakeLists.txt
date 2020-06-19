@@ -40,13 +40,6 @@ else()
 endif()
 
 
-# Check for required C++ features only if the C++ compiler ID is non-empty.
-#target_compile_features(hurchalla_basic_modular_arithmetic INTERFACE 
-#          $<$<NOT:$<CXX_COMPILER_ID:>>:
-#               cxx_static_assert
-#           >)
-
-
 target_sources(hurchalla_basic_modular_arithmetic INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/modular_addition.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/modular_multiplication.h>

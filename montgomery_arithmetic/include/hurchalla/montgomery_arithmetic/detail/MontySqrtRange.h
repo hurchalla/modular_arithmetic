@@ -90,7 +90,7 @@ HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
     //   HPBC_POSTCONDITION2(minimized_result < n);
     // since  ovf == false  and  0 < t_hi <= n,  we can simplify this to
     if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T minimized_result = (t_hi == n) ? 0 : t_hi;
+        T minimized_result = (t_hi == n) ? static_cast<T>(0) : t_hi;
         HPBC_POSTCONDITION2(minimized_result < n);
     }
 
@@ -246,7 +246,7 @@ public:
 
         // msr_montmul_non_minimized() postconditions guarantee the following
         HPBC_POSTCONDITION2(0 < prod && prod <= n_);
-        T minimized_result = (prod != n_) ? prod : 0;
+        T minimized_result = (prod != n_) ? prod : static_cast<T>(0);
         HPBC_POSTCONDITION2(minimized_result < n_);
         return minimized_result;
     }

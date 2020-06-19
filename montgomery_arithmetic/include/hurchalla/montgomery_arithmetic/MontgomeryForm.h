@@ -15,7 +15,7 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // an unsigned interal type).
 template<typename T, class MontyType = typename MontgomeryDefault<T>::type>
 class MontgomeryForm final {
-    MontyType impl;
+    const MontyType impl;
     using U = typename MontyType::template_param_type;
     static_assert(modular_arithmetic::ma_numeric_limits<U>::is_integer, "");
     static_assert(!(modular_arithmetic::ma_numeric_limits<U>::is_signed), "");

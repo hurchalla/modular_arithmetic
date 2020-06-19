@@ -19,13 +19,6 @@ endif()
 add_library(hurchalla_montgomery_arithmetic INTERFACE)
 
 
-# Check for required C++ features only if the C++ compiler ID is non-empty.
-#target_compile_features(hurchalla_montgomery_arithmetic INTERFACE 
-#          $<$<NOT:$<CXX_COMPILER_ID:>>:
-#               cxx_static_assert
-#           >)
-
-
 target_sources(hurchalla_montgomery_arithmetic INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/montgomery_arithmetic/MontgomeryForm.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/montgomery_arithmetic/detail/safely_promote_unsigned.h>
