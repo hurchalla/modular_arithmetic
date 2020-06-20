@@ -17,7 +17,7 @@ else()
           -Wmissing-declarations)
 
     # clang or gcc
-    if ((CMAKE_CXX_COMPILER_ID MATCHES "Clang") OR
+    if((CMAKE_CXX_COMPILER_ID MATCHES "Clang") OR
                (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
         target_compile_options(${target} PRIVATE
                 -Weffc++ -Wpedantic -Wredundant-decls -Wstrict-overflow=4
@@ -37,7 +37,7 @@ else()
 
     # additional compiler specific warnings
 
-    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
       # CLANG -----------
         target_compile_options(${target} PRIVATE  -ferror-limit=3
                 -Wcast-align -Wmismatched-tags -Wabstract-vbase-init
@@ -46,7 +46,7 @@ else()
                 -Wc++14-compat-pedantic -Wc++14-extensions
                 -Wc++17-compat-pedantic -Wc++17-extensions -Wclass-varargs
                 -Wcomma -Wconditional-uninitialized -Wconsumed
-                -Wcovered-switch-default -Wcuda-compat -Wdeprecated
+                -Wcuda-compat -Wdeprecated
                 -Wduplicate-enum -Wformat-non-iso -Wformat-pedantic -Wgcc-compat
                 -Wgnu -Wheader-hygiene -Widiomatic-parentheses
                 -Wimplicitly-unsigned-literal
@@ -54,7 +54,7 @@ else()
                 -Wmicrosoft -Wmissing-variable-declarations -Wnewline-eof
                 -Wnon-gcc -Wnonportable-system-include-path
                 -Wnullable-to-nonnull-conversion -Wopenmp-clauses -Wover-aligned
-                -Wpadded -Wpedantic-core-features -Wpointer-arith
+                -Wpedantic-core-features -Wpointer-arith
                 -Wpointer-to-int-cast -Wpragma-pack -Wpragmas
                 -Wprofile-instr-missing -Wredundant-parens -Wreserved-id-macro
                 -Wreserved-user-defined-literal -Wretained-language-linkage
@@ -67,8 +67,10 @@ else()
                 -Wunnamed-type-template-args -Wunreachable-code-aggressive
                 -Wunsupported-dll-base-class-template
                 -Wunused-exception-parameter -Wunused-member-function
-                -Wunused-template -Wused-but-marked-unused -Wvector-conversion
+                -Wunused-template -Wvector-conversion
                 -Wwritable-strings)
+        # gtest has problems with -Wcovered-switch-default and
+        # -Wused-but-marked-unused, so we don't use them.
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)
             target_compile_options(${target} PRIVATE
                     -Walloca -Watomic-implicit-seq-cst -Wc++20-compat-pedantic
@@ -79,7 +81,7 @@ else()
                     -Wquoted-include-in-framework-header -Wsuspicious-memaccess)
         endif()
 
-    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
       # GCC ----------------
         target_compile_options(${target} PRIVATE  -fmax-errors=3
                 -Wlogical-op -Wnoexcept -Wduplicated-cond -Wduplicated-branches
@@ -96,7 +98,7 @@ else()
                                -Wcast-align)
         endif()
 
-    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
       # INTEL C++ ----------------
         target_compile_options(${target} PRIVATE  -fmax-errors=3
                 -pedantic -Wno-type-limits)

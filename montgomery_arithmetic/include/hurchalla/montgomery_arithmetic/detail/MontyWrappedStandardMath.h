@@ -44,7 +44,10 @@ public:
     // intended for use in postconditions/preconditions
     HURCHALLA_FORCE_INLINE bool isCanonical(V x) const
     {
-        return (0 <= x.get() && x.get() < modulus_);
+        // this static_assert guarantees 0 <= x.get()
+        static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed),
+                      "");
+        return (x.get() < modulus_);
     }
     HURCHALLA_FORCE_INLINE T getModulus() const
     {
