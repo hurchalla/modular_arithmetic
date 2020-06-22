@@ -5,7 +5,7 @@ if(TARGET hurchalla_basic_modular_arithmetic)
     return()
 endif()
 
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.14)
 
 
 # We need to detect if we're using MSVC for x86_64, prior to MSVC2019, since
@@ -64,19 +64,13 @@ target_include_directories(hurchalla_basic_modular_arithmetic INTERFACE
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 
+include(FetchContent)
+FetchContent_Declare(
+    hurchalla_programming_by_contract
+    GIT_REPOSITORY https://github.com/hurchalla/programming_by_contract.git
+    GIT_TAG        master
+)
+FetchContent_MakeAvailable(hurchalla_programming_by_contract)
 
-# TODO: Currently we assume the programming_by_contract dependency is in a
-# folder at the relative location specified below.  This is a hack, since users
-# usually won't know this is a requirement, and it obligates the user to perform
-# a manual step (even if only once) to get the dependency from git and place it
-# in the correct location.  The dependency should be completely invisible to the
-# user, and this cmake script should "just work" without any extra steps.
-# Among the possible solutions might be git submodules, or FetchContent.  Git
-# submodules often seems to be warned against, making me more optimistic about
-# FetchContent or perhaps some other solution.  Note: the tests for this project
-# currently use FetchContent to get the Google Tests dependency.
-# ---------------------------
-add_subdirectory(../../programming_by_contract
-            ${CMAKE_CURRENT_BINARY_DIR}/programming_by_contract)
 target_link_libraries(hurchalla_basic_modular_arithmetic
-                      INTERFACE programming_by_contract)
+                      INTERFACE hurchalla_programming_by_contract)

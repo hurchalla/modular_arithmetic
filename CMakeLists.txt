@@ -5,15 +5,15 @@ if(TARGET hurchalla_modular_arithmetic)
     return()
 endif()
 
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.14)
 
 project(hurchalla_modular_arithmetic VERSION 1.0.0 LANGUAGES CXX)
+
 
 # if this is the top level CMakeLists.txt, let IDEs group projects into folders
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 endif()
-
 
 
 # TODO: this section seems slightly messy for detecting/setting up testing
