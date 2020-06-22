@@ -7,7 +7,7 @@ macro(EnableMaxWarnings target)
 # warnings from our headers.
 
 if(MSVC)
-    target_compile_options(${target} PRIVATE /W4 /WX /Wall)
+    target_compile_options(${target} PRIVATE /W4 /WX)
 else()
     target_compile_options(${target} PRIVATE -Werror -Wall -Wextra
           -pedantic-errors -Wshadow -Wcast-qual -Wmissing-include-dirs
