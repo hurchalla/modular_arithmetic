@@ -9,6 +9,10 @@
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <cstdint>
 #include <type_traits>
+#if defined(_MSC_VER)
+#  include <immintrin.h>
+#  include <intrin.h>
+#endif
 
 
 #ifdef __GNUC__
@@ -154,8 +158,6 @@ inline uint16_t impl_modular_multiplication_prereduced_inputs(uint16_t a,
   (defined(HURCHALLA_TARGET_ISA_X86_64) || defined(HURCHALLA_TARGET_ISA_X86_32))
 // _MSC_VER >= 1920 indicates Visual Studio 2019 or higher. VS2019 (for x86/x64)
 // is the first version to support _udiv64 used below.
-#  include <immintrin.h>
-#  include <intrin.h>
 inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
                                             uint32_t b, uint32_t modulus)
 {
@@ -227,8 +229,6 @@ inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
           defined(HURCHALLA_TARGET_ISA_X86_64)
 // _MSC_VER >= 1920 indicates Visual Studio 2019 or higher. VS2019 (for x64)
 // is the first version to support _udiv128 used below.
-#  include <immintrin.h>
-#  include <intrin.h>
 inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
                                             uint64_t b, uint64_t modulus)
 {

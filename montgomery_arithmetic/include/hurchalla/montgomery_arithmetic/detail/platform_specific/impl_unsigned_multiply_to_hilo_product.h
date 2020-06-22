@@ -7,6 +7,11 @@
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <cstdint>
+#if defined(_MSC_VER)
+#  include <intrin.h>
+#  pragma warning(push)
+#  pragma warning(disable : 4127)
+#endif
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
@@ -131,7 +136,6 @@ HURCHALLA_FORCE_INLINE uint32_t impl_unsigned_multiply_to_hilo_product(
 
 // MSVC + x64
 #if defined(_MSC_VER) && defined(HURCHALLA_TARGET_ISA_X86_64)
-#  include <intrin.h>
 HURCHALLA_FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
                                   uint64_t* pLowProduct, uint64_t u, uint64_t v)
 {
@@ -147,7 +151,6 @@ HURCHALLA_FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
 
 // MSVC + ARM64
 #elif defined(_MSC_VER) && defined(_M_ARM64)
-#  include <intrin.h>
 HURCHALLA_FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
                                   uint64_t* pLowProduct, uint64_t u, uint64_t v)
 {
@@ -219,5 +222,10 @@ inline uint64_t impl_unsigned_multiply_to_hilo_product(uint64_t* pLowProduct,
 
 
 }} // end namespace
+
+
+#if defined(_MSC_VER)
+#  pragma warning(pop)
+#endif
 
 #endif

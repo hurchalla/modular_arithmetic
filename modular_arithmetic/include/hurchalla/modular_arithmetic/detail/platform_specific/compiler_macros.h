@@ -87,11 +87,13 @@
 // supported.
 #if (HURCHALLA_TARGET_BIT_WIDTH < 64)
 #  define HURCHALLA_COMPILER_HAS_UINT128_T() 0
-#elif defined(__SIZEOF_INT128__) || (__clang_major__ >= 3) ||  \
-                                    (__INTEL_COMPILER >= 1300)
+#elif defined(__SIZEOF_INT128__) || \
+             (defined(__clang_major__) && (__clang_major__ >= 3)) ||  \
+             (defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 1300))
 #  define HURCHALLA_COMPILER_HAS_UINT128_T() 1
-#elif !defined(__INTEL_COMPILER) && !defined(__clang_major__) &&  \
-                         (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1))
+#elif defined(__GNUC__) && defined(__GNUC_MINOR__) && \
+             !defined(__INTEL_COMPILER) && !defined(__clang__) && \
+             (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1))
 #  define HURCHALLA_COMPILER_HAS_UINT128_T() 1
 #else
 #  define HURCHALLA_COMPILER_HAS_UINT128_T() 0
