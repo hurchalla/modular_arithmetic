@@ -1,3 +1,5 @@
+; --- This file is distributed under the MIT Open Source License, as detailed
+; by the file "LICENSE.TXT" in the root of this repository ---
 
 .code
 
