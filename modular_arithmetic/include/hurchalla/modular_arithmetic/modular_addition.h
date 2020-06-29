@@ -5,12 +5,14 @@
 #define HURCHALLA_MODULAR_ARITHMETIC_MODULAR_ADDITION_H_INCLUDED
 
 
+#include "hurchalla/modular_arithmetic/detail/platform_specific/impl_modular_addition.h"
 #include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 
 namespace hurchalla { namespace modular_arithmetic {
 
 
+// Interface/contract.
 template <typename T>
 T modular_addition_prereduced_inputs(T a, T b, T modulus)
 {
@@ -20,13 +22,10 @@ T modular_addition_prereduced_inputs(T a, T b, T modulus)
     HPBC_PRECONDITION(b>=0 && b<modulus);   // i.e. the input must be prereduced
 
     // POSTCONDITION:
-    //   Returns (a+b)%modulus.  Guarantees no overflow internally on a+b.
+    // Returns (a+b)%modulus, performed as if a and b have infinite precision
+    // and thus as if (a+b) is never subject to integer overflow.
     
-    /* We want essentially-  result = (a+b < modulus) ? a+b : a+b-modulus
-       But due to potential overflow on a+b we need to write it as follows */
-    T tmp = static_cast<T>(modulus - b);
-    T result = (a < tmp) ? static_cast<T>(a+b) : static_cast<T>(a-tmp);
-    return result;
+    return impl_modular_addition_prereduced_inputs(a, b, modulus);
 }
 
 

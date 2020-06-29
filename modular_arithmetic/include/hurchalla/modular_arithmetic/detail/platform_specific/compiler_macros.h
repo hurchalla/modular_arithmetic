@@ -33,6 +33,16 @@
 #  endif
 #endif
 
+#if defined(__aarch64__) || defined(_M_ARM64)
+#  ifndef HURCHALLA_TARGET_ISA_ARM_64
+#    define HURCHALLA_TARGET_ISA_ARM_64 1
+#  endif
+#elif defined(__arm__) || defined(_M_ARM)
+#  ifndef HURCHALLA_TARGET_ISA_ARM_32
+#    define HURCHALLA_TARGET_ISA_ARM_32 1
+#  endif
+#endif
+
 
 #ifndef HURCHALLA_TARGET_BIT_WIDTH
 #  if defined(__x86_64__) || defined(_M_X64)

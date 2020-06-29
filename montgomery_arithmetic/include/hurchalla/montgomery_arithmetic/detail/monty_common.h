@@ -43,8 +43,8 @@ namespace detail_monty_common {
 // "T" in C++ is conventionally reserved for use as a template parameter name.
 // We also use "n" instead of "N", and "neg_inv_n" instead of "N′" (N with a
 // prime symbol).  The constant "R" remains the same, and represents the value
-// R = 2^(ma::ma_numeric_limits<T>::digits).  For example, if T is uint64_t, then
-// R = 2^64.
+// R = 2^(ma::ma_numeric_limits<T>::digits).  As an example, if T is uint64_t,
+// then R = 2^64.
 // The comments below explain additional changes from the wikipedia article.
 //
 // This function's name is "REDC_non_minimized" to reflect the fact that the

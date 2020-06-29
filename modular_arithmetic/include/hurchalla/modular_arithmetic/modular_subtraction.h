@@ -20,23 +20,14 @@ T modular_subtraction_prereduced_inputs(T a, T b, T modulus)
     HPBC_PRECONDITION(b>=0 && b<modulus);   // i.e. the input must be prereduced
 
     // POSTCONDITION:
-    //   Returns (a-b)%modulus.  Guarantees no underflow internally on a-b.
+    // Returns (a-b)%modulus, performed as if a and b are infinite precision
+    // signed ints and thus as if (a-b) is never subject to wraparound/overflow.
 
-    /* We want essentially-  result = (a-b < 0) ? a-b+modulus : a-b
-        But due to potential overflow on a-b we need to write it as follows */
-    T result = (a>=b) ? static_cast<T>(a-b) : static_cast<T>(modulus-(b-a));
+    // We want essentially-  result = (a-b < 0) ? a-b+modulus : a-b
+    //    But for unsigned type T, (a-b < 0) is always false.  So instead we use
+    T tmp = static_cast<T>(a-b);
+    T result = (a<b) ? static_cast<T>(modulus+tmp) : tmp;
     return result;
-
-    /* The branches for both modular_subtraction and modular_addition are
-        usually unpredictable, so the following *might* be faster (it
-        avoids a conditional branch)
-        T maybe_addend = modulus & (static_cast<T>(0) - static_cast<T>(a < b));
-        T result = (a - b) + maybe_addend;
-        This is probably worse than a conditional move (cmov) though.
-        Really, what we would like is a way to designate that a branch is
-        unpredictable, like clang's __builtin_unpredictable().  Presumably the
-        compiler would use conditional moves in that case.
-    */
 }
 
 
