@@ -165,7 +165,7 @@ inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
 {
     // Note: at the time of this writing (April 2020), the MS documentation of
     // udiv64 is likely incomplete.  udiv64 is almost certainly a direct
-    // translation of the x86/x64 assembly "div" instruction (which we want!).
+    // translation of the x86/x64 assembly "div" instruction (which we want).
     // See  https://developercommunity.visualstudio.com/content/problem/896815/-udiv128-causes-integer-overflow-and-doesnt-have-a.html
     uint32_t result;
     _udiv64(__emulu(a, b), modulus, &result);
@@ -173,7 +173,8 @@ inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
                         (uint64_t)a*(uint64_t)b % (uint64_t)modulus);
     return result;
 }
-#elif defined(_MSC_VER) && defined(HURCHALLA_TARGET_ISA_X86_32)    // inline asm
+#elif defined(HURCHALLA_ALLOW_MODMULT_INLINE_ASM) && defined(_MSC_VER) && \
+      defined(HURCHALLA_TARGET_ISA_X86_32)
 // Since this is x86 msvc and we will use inline asm, we must ensure this
 // function doesn't use __fastcall or __vectorcall (see
 // https://docs.microsoft.com/en-us/cpp/assembler/inline/using-and-preserving-registers-in-inline-assembly ).
@@ -194,8 +195,9 @@ inline uint32_t __cdecl impl_modular_multiplication_prereduced_inputs(
                         (uint64_t)a*(uint64_t)b % (uint64_t)modulus);
     return result;
 }
-#elif !defined(_MSC_VER) && (defined(HURCHALLA_TARGET_ISA_X86_64) || \
-           defined(HURCHALLA_TARGET_ISA_X86_32))
+#elif defined(HURCHALLA_ALLOW_MODMULT_INLINE_ASM) && !defined(_MSC_VER) && \
+      ( defined(HURCHALLA_TARGET_ISA_X86_64) || \
+        defined(HURCHALLA_TARGET_ISA_X86_32) )
 inline uint32_t impl_modular_multiplication_prereduced_inputs(uint32_t a,
                                             uint32_t b, uint32_t modulus)
 {
@@ -256,7 +258,8 @@ inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
     HPBC_POSTCONDITION3(result == slow_modular_multiplication(a, b, modulus));
     return result;
 }
-#elif defined(HURCHALLA_TARGET_ISA_X86_64)    // inline asm with gnu/AT&T syntax
+#elif defined(HURCHALLA_ALLOW_MODMULT_INLINE_ASM) && \
+      defined(HURCHALLA_TARGET_ISA_X86_64)    // inline asm with gnu/AT&T syntax
 inline uint64_t impl_modular_multiplication_prereduced_inputs(uint64_t a,
                                             uint64_t b, uint64_t modulus)
 {

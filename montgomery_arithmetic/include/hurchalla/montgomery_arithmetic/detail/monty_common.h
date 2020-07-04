@@ -11,6 +11,7 @@
 #include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
+#include <cstdint>
 
 #if defined(_MSC_VER)
 #  pragma warning(push)

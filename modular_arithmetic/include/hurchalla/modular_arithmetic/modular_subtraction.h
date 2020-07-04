@@ -5,6 +5,7 @@
 #define HURCHALLA_MODULAR_ARITHMETIC_MODULAR_SUBTRACTION_H_INCLUDED
 
 
+#include "hurchalla/modular_arithmetic/detail/platform_specific/impl_modular_subtraction.h"
 #include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 
@@ -20,14 +21,13 @@ T modular_subtraction_prereduced_inputs(T a, T b, T modulus)
     HPBC_PRECONDITION(b>=0 && b<modulus);   // i.e. the input must be prereduced
 
     // POSTCONDITION:
-    // Returns (a-b)%modulus, performed as if a and b are infinite precision
-    // signed ints and thus as if (a-b) is never subject to wraparound/overflow.
+    // Let a conceptual "%%" operator represent a modulo operator that always
+    // returns a non-negative remainder.
+    // This function returns (a-b) %% modulus, performed as if a and b are
+    // infinite precision signed ints (and thus as if it is impossible for the
+    // subtraction (a-b) to overflow).
 
-    // We want essentially-  result = (a-b < 0) ? a-b+modulus : a-b
-    //    But for unsigned type T, (a-b < 0) is always false.  So instead we use
-    T tmp = static_cast<T>(a-b);
-    T result = (a<b) ? static_cast<T>(modulus+tmp) : tmp;
-    return result;
+    return impl_modular_subtraction_prereduced_inputs(a, b, modulus);
 }
 
 

@@ -8,6 +8,7 @@
 #ifdef _MSC_VER
 #  define HURCHALLA_FORCE_INLINE __forceinline
 #elif defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
+   // Note that Intel compiler (icc) also accepts __forceinline
 #  define HURCHALLA_FORCE_INLINE inline __attribute__((always_inline))
 #else
 #  define HURCHALLA_FORCE_INLINE inline
@@ -109,6 +110,17 @@
 #  define HURCHALLA_COMPILER_HAS_UINT128_T() 1
 #else
 #  define HURCHALLA_COMPILER_HAS_UINT128_T() 0
+#endif
+
+
+#if defined(HURCHALLA_TEST_INLINE_ASM) && \
+             !defined(HURCHALLA_ALLOW_ALL_INLINE_ASM)
+#  define HURCHALLA_ALLOW_ALL_INLINE_ASM 1
+#endif
+
+#if defined(HURCHALLA_ALLOW_ALL_INLINE_ASM) && \
+             !defined(HURCHALLA_ALLOW_MODMULT_INLINE_ASM)
+#  define HURCHALLA_ALLOW_MODMULT_INLINE_ASM 1
 #endif
 
 

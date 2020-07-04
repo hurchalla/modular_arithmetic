@@ -16,9 +16,13 @@ template<> struct sized_uint<8>   { using type = uint8_t; };
 template<> struct sized_uint<16>  { using type = uint16_t; };
 template<> struct sized_uint<32>  { using type = uint32_t; };
 template<> struct sized_uint<64>  { using type = uint64_t; };
-// Some compilers support __uint128_t, so we'll specialize with it if possible.
+
 #if (HURCHALLA_COMPILER_HAS_UINT128_T())
-template<> struct sized_uint<128> { using type = __uint128_t; };
+  // Some compilers support __uint128_t, so we'll specialize with it if possible
+  template<> struct sized_uint<128> { using type = __uint128_t; };
+#elif (HURCHALLA_TARGET_BIT_WIDTH > = 128)
+  // presumably if a CPU target is >= 128bit, type uint128_t will exist.
+  template<> struct sized_uint<128> { using type = uint128_t; };
 #endif
 
 
