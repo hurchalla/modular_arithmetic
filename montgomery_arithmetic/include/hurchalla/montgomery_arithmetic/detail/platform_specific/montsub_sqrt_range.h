@@ -18,9 +18,20 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // However, the allowable input/output ranges differ, which slightly changes the
 // arithmetic and necessitates this file.
 
-// The name "sqrt_range" signifies that modulus 'n' must be less than sqrt(R),
-// where R = 2^(ma_numeric_limits<T>::digits).  For example, if T is uint64_t
-// then R = 2^64 and sqrt(R) == 2^32, and thus we would require  n < 2^32.
+// The name "sqrt_range" signifies that this function is intended to be used
+// with MontySqrtRange.h.
+
+// Our function montsub_sqrt_range() requires an unusual input range:
+// 0 <= a <= n,  and  0 <= b <= n  (so long as !(a==0 && b==n)).
+// The output return value range will be  0 < returnValue <= n.
+// Obviously neither the inputs nor outputs necessarily belong to the minimal
+// residue class modulo n, since they are allowed to equal n.
+// These preconditions and postconditions originate from MontySqrtRange.h,
+// although the preconditions here are relaxed slightly from MontySqrtRange.
+// They allow this function to be used seemlessly by MontySqrtRange, since
+// MontySqrtRange will always provide inputs that respect our preconditions,
+// and our postconditions ensure we will always provide valid values for
+// MontySqrtRange.
 
 
 template <typename T>
@@ -30,8 +41,17 @@ HURCHALLA_FORCE_INLINE T montsub_sqrt_range(T a, T b, T n)
     static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
     static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
     HPBC_PRECONDITION2(n > 0);
-    HPBC_PRECONDITION2(0 < a && a <= n);
-    HPBC_PRECONDITION2(0 < b && b <= n);
+    // MontySqrtRange uses input/output values that satisfy 0 < value <= n, but
+    // we can relax the precondition here to allow zero values for a or b, even
+    // though MontySqrtRange won't send those values.  This will be useful in
+    // some circumstances, though we need to make sure we'll still be able to
+    // correctly satisfy our postcondition of  0 < result <= n.
+    // To accomplish this we just need to make sure our newly relaxed
+    // preconditions disallow a==0 with b==n, since that is the one and only
+    // combination that is problematic.
+    HPBC_PRECONDITION2(0 <= b && b <= n);
+    HPBC_PRECONDITION2(0 <= a && a <= n);
+    HPBC_PRECONDITION2(!(a == 0 && b == n));
 
     // We want essentially-  result = (a-b <= 0) ? a-b+n : a-b
     //    But (a-b) overflows whenever b>a, so instead of testing if (a-b <= 0),
@@ -66,8 +86,12 @@ HURCHALLA_FORCE_INLINE uint64_t montsub_sqrt_range(uint64_t a, uint64_t b,
                                                                      uint64_t n)
 {
     HPBC_PRECONDITION2(n > 0);
-    HPBC_PRECONDITION2(0 < a && a <= n);
-    HPBC_PRECONDITION2(0 < b && b <= n);
+    // See the discussion in the above template function regarding the next
+    // preconditions, which allow a==0 and/or b==0 so long as we don't have the
+    // combination a==0 with b==n.
+    HPBC_PRECONDITION2(b <= n);  // 0 <= b is guaranteed by uint64_t
+    HPBC_PRECONDITION2(a <= n);  // 0 <= a is guaranteed by uint64_t
+    HPBC_PRECONDITION2(!(a == 0 && b == n));
 
     // By calculating diff outside of the __asm__, we allow the compiler to loop
     // hoist diff, if this function is inlined into a loop.
