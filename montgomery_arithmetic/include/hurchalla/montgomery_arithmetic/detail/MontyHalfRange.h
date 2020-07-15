@@ -5,6 +5,7 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_HALF_RANGE_H_INCLUDED
 
 
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/montmul_half_range.h"
 #include "hurchalla/montgomery_arithmetic/detail/monty_common.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
@@ -18,7 +19,7 @@ namespace hurchalla { namespace montgomery_arithmetic {
 
 // MontyHalfRange is exactly the same as MontyFullRange, except that the
 // constructor has the precondition that modulus < R/2, and in that multiply()
-// takes advantage of the fact that modulus < R/2 guarantees  ovf == false.
+// calls montmul_half_range() rather than montmul_full_range().
 // [The theoretical constant R = 2^(ma_numeric_limits<T>::digits).]
 template <typename T>
 class MontyHalfRange final : public MontyCommonBase<MontyHalfRange, T> {
@@ -71,24 +72,16 @@ public:
 
     // Aside from the constructor's precondition of modulus < R/2, this
     // function is the only thing that differs from class MontyFullRange.
-    // It takes advantage of the fact that ovf is always false.
     HURCHALLA_FORCE_INLINE V multiply(V x, V y) const
     {
         HPBC_PRECONDITION2(x.get() < n_);
         HPBC_PRECONDITION2(y.get() < n_);
-        // x<n with y<n  will satisfy montmul_non_minimized's precondition
-        // requirement that x*y < n*R.
-        bool ovf;
-        T prod = montmul_non_minimized(ovf, x.get(), y.get(), n_, neg_inv_n_);
 
-        // Since from our constructor we know the modulus  n_ < R/2, the
-        // montmul_non_minimized() postconditions guarantee ovf == false.
-        HPBC_ASSERT2(ovf == false);
-        // Since ovf == false, montmul_non_minimized() postconditions guarantee
-        T minimized_result = (prod >= n_) ? static_cast<T>(prod - n_) : prod;
+        T result = montmul_half_range(x.get(), y.get(), n_, neg_inv_n_);
+        // montmul_half_range()'s postcondition guarantees the following
+        HPBC_POSTCONDITION2(result < n_);
 
-        HPBC_POSTCONDITION2(minimized_result < n_);
-        return V(minimized_result);
+        return V(result);
     }
 
     HURCHALLA_FORCE_INLINE V add(V x, V y) const

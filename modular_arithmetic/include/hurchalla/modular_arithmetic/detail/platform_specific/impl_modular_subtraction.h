@@ -13,38 +13,31 @@
 namespace hurchalla { namespace modular_arithmetic {
 
 
-// MSVC doesn't support inline asm, and clang compiles the template to optimal
-// asm (with more flexibility), so we skip MSVC and only compile this for clang
-// when we want to test inline asm (especially for clang compilation warnings).
-#if defined(HURCHALLA_ALLOW_ALL_INLINE_ASM) && \
-    defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER) && \
-    ( !defined(__clang__) || defined(HURCHALLA_TEST_INLINE_ASM) )
+// MSVC doesn't support inline asm so we skip it.
+#if defined(HURCHALLA_ALLOW_INLINE_ASM_MODSUB) && \
+    defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 inline uint32_t impl_modular_subtraction_prereduced_inputs(uint32_t a,
                                                    uint32_t b, uint32_t modulus)
 {
     HPBC_PRECONDITION2(modulus>0);
     HPBC_PRECONDITION2(a<modulus);  // uint32_t guarantees a>=0.
     HPBC_PRECONDITION2(b<modulus);  // uint32_t guarantees b>=0.
-    // Note: we want to make sure the LEA instruction doesn't use RBP/EBP or R13
-    // for the base register, since that would necessitate a slower form of LEA
-    // that has an extra 2 cycles latency and half the throughput of the fast
-    // form.  We prevent this by using the "U" constraint which allows only RAX,
-    // RCX, RDX, R8, R9, R10, R11 for the Microsoft x64 calling convention, and
-    // allows only RAX, RCX, RDX, RSI, RDI, R8, R9, R10, R11 for the System V
-    // AMD64 calling convention.  ICC (intel compiler) and clang don't support
-    // "U" so we use "Q" for them (this allows rax, rbx, rcx, rdx).
-    uint32_t result, dummy;
-    __asm__ ("subl %3, %2 \n\t"
-             "leal (%q0, %q4), %1 \n\t"
-             "cmovbl %1, %0 \n\t"
-#if defined(__INTEL_COMPILER) || defined(__clang__)
-                 : "=&Q"(result), "=r"(dummy)
-#else
-                 : "=&U"(result), "=r"(dummy)
-#endif
-             : "0"(a), "r"(b), "r"(modulus)
+
+    // By calculating diff outside of the __asm__, we allow the compiler to loop
+    // hoist diff, if this function is inlined into a loop.
+    // https://en.wikipedia.org/wiki/Loop-invariant_code_motion
+    uint32_t diff = modulus - b;
+    uint32_t tmp = diff + a;
+
+    uint32_t result;
+    __asm__ ("subl %[b], %0 \n\t"      /* result = a - b */
+             "cmovbl %[tmp], %0 \n\t"  /* result = (result>=a) ? sum : result */
+             : "=&r"(result)
+             : "0"(a), [b]"r"(b), [tmp]"r"(tmp)
              : "cc");
     return result;
+
+
 }
 inline uint64_t impl_modular_subtraction_prereduced_inputs(uint64_t a,
                                                    uint64_t b, uint64_t modulus)
@@ -52,18 +45,18 @@ inline uint64_t impl_modular_subtraction_prereduced_inputs(uint64_t a,
     HPBC_PRECONDITION2(modulus>0);
     HPBC_PRECONDITION2(a<modulus);  // uint64_t guarantees a>=0.
     HPBC_PRECONDITION2(b<modulus);  // uint64_t guarantees b>=0.
-    // Note: the issues and solutions with LEA and RBP/EBP/R13 are the same
-    // here as for the uint32_t version of this function above.
-    uint64_t result, dummy;
-    __asm__ ("subq %3, %2 \n\t"
-             "leaq (%0, %4), %1 \n\t"
-             "cmovbq %1, %0 \n\t"
-#if defined(__INTEL_COMPILER) || defined(__clang__)
-                 : "=&Q"(result), "=r"(dummy)
-#else
-                 : "=&U"(result), "=r"(dummy)
-#endif
-             : "0"(a), "r"(b), "r"(modulus)
+
+    // By calculating diff outside of the __asm__, we allow the compiler to loop
+    // hoist diff, if this function is inlined into a loop.
+    // https://en.wikipedia.org/wiki/Loop-invariant_code_motion
+    uint64_t diff = modulus - b;
+    uint64_t tmp = diff + a;
+
+    uint64_t result;
+    __asm__ ("subq %[b], %0 \n\t"      /* result = a - b */
+             "cmovbq %[tmp], %0 \n\t"  /* result = (result>=a) ? sum : result */
+             : "=&r"(result)
+             : "0"(a), [b]"r"(b), [tmp]"r"(tmp)
              : "cc");
     return result;
 }

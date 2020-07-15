@@ -5,6 +5,7 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_QUARTER_RANGE_H_INCLUDED
 
 
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/montmul_quarter_range.h"
 #include "hurchalla/montgomery_arithmetic/detail/monty_common.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
@@ -71,16 +72,14 @@ public:
     {
         HPBC_PRECONDITION2(x.get() < 2*n_);
         HPBC_PRECONDITION2(y.get() < 2*n_);
-        // Since x<2*n and y<2*n, we know x*y < 4*n*n, and since we have a class
-        // precondition that our modulus n < R/4, we know  x*y < 4*n*R/4 == n*R.
-        // This satisfies montmul_non_minimized's precondition of x*y < n*R.
-        bool ovf;
-        T prod = montmul_non_minimized(ovf, x.get(), y.get(), n_, neg_inv_n_);
+        // Since we have a class precondition that our modulus n_ < R/4,  we are
+        // able to satisfy the preconditions to call montmul_quarter_range().
 
-        // Since our constructor required modulus n < R/4, the postconditions of
-        // montmul_non_minimized() guarantee  prod < 2*n.
-        HPBC_POSTCONDITION2(prod < 2*n_);
-        return V(prod);
+        T result = montmul_quarter_range(x.get(), y.get(), n_, neg_inv_n_);
+        // montmul_quarter_range()'s postcondition guarantees the following
+        HPBC_POSTCONDITION2(result < 2*n_);
+
+        return V(result);
     }
 
     HURCHALLA_FORCE_INLINE V add(V x, V y) const

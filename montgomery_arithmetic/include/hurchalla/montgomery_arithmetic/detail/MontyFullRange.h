@@ -5,6 +5,7 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_FULL_RANGE_H_INCLUDED
 
 
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/montmul_full_range.h"
 #include "hurchalla/montgomery_arithmetic/detail/monty_common.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
@@ -61,14 +62,12 @@ public:
     {
         HPBC_PRECONDITION2(x.get() < n_);
         HPBC_PRECONDITION2(y.get() < n_);
-        // x<n with y<n  will satisfy montmul_non_minimized's precondition
-        // requirement that x*y < n*R.
-        bool ovf;
-        T prod = montmul_non_minimized(ovf, x.get(), y.get(), n_, neg_inv_n_);
-        // montmul_non_minimized() postconditions guarantee the following
-        T minimized_result = (ovf || prod>=n_) ? static_cast<T>(prod-n_) : prod;
-        HPBC_POSTCONDITION2(minimized_result < n_);
-        return V(minimized_result);
+
+        T result = montmul_full_range(x.get(), y.get(), n_, neg_inv_n_);
+        // montmul_full_range()'s postcondition guarantees the following
+        HPBC_POSTCONDITION2(result < n_);
+
+        return V(result);
     }
 
     HURCHALLA_FORCE_INLINE V add(V x, V y) const

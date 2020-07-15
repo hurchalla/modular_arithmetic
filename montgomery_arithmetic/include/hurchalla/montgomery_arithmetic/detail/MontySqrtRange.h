@@ -21,6 +21,9 @@
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
+// For discussion purposes, let R = 2^(ma_numeric_limits<T>::digits).  For
+// example if T is uint64_t, then R = 2^64.
+//
 // This function is based on REDC_non_minimized() from monty_common.h.  It is
 // altered to omit calculations that are not needed, given the preconditions of
 // n < sqrt(R), and 0 < x <= n, and 0 < y <= n.
@@ -68,7 +71,8 @@ HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
     // mn = m*n.  Since m=(u_lo*neg_inv_n)%R, we know m < R, and thus  mn < R*n.
     // Therefore mn == mn_hi*R + mn_lo < R*n, and mn_hi*R < R*n - mn_lo <= R*n,
     // and thus  mn_hi < n.
-        // *** Assertion #1 ***
+    
+    // *** Assertion #1 ***
     HPBC_ASSERT2(mn_hi < n);
 
     // compute t_hi = (u_hi + mn_hi) % R.  Since we know u_hi == 0, we simply
@@ -206,7 +210,11 @@ public:
         // multiply requires valid input values, and 0 is the single possible
         // invalid value of 'a' for the multiply.  We treat this case a == 0
         // separately, with  a*R (mod n) ≡ 0*R (mod n) ≡ 0 (mod n) ≡ n (mod n).
-        V result = (a > 0) ? multiply(V(a), V(r_squared_mod_n_)) : V(n_);
+        V result;
+        HURCHALLA_LIKELY_IF (a > 0)
+            result = multiply(V(a), V(r_squared_mod_n_));
+        else
+            result = V(n_);
         HPBC_POSTCONDITION2(0 < result.get() && result.get() <= n_);
         return result;
     }
@@ -253,7 +261,12 @@ public:
 
         // msr_montmul_non_minimized() postconditions guarantee the following
         HPBC_POSTCONDITION2(0 < prod && prod <= n_);
-        T minimized_result = (prod != n_) ? prod : static_cast<T>(0);
+
+        T minimized_result;
+        HURCHALLA_LIKELY_IF (prod != n_)
+            minimized_result = prod;
+        else
+            minimized_result = static_cast<T>(0);
         HPBC_POSTCONDITION2(minimized_result < n_);
         return minimized_result;
     }

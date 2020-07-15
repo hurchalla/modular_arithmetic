@@ -113,14 +113,56 @@
 #endif
 
 
-#if defined(HURCHALLA_TEST_INLINE_ASM) && \
-             !defined(HURCHALLA_ALLOW_ALL_INLINE_ASM)
-#  define HURCHALLA_ALLOW_ALL_INLINE_ASM 1
+#if defined(__has_builtin)
+#  define HURCHALLA_COMPILER_HAS_BUILTIN(builtin) __has_builtin(builtin)
+#else
+#  define HURCHALLA_COMPILER_HAS_BUILTIN(builtin) 0
+#endif
+#if HURCHALLA_COMPILER_HAS_BUILTIN(__builtin_expect) || \
+    ( defined(__GNUC__) && !defined(__INTEL_COMPILER) && \
+            !defined(__clang__) && __GNUC__ >= 3 ) || \
+    ( defined(__INTEL_COMPILER) && __INTEL_COMPILER >= 1300 )
+#  define HURCHALLA_LIKELY_IF(cond)   if (__builtin_expect(!!(cond), 1))
+#  define HURCHALLA_UNLIKELY_IF(cond) if (__builtin_expect(!!(cond), 0))
+#elif defined(__has_cpp_attribute)
+#  if __has_cpp_attribute(likely)
+#    define HURCHALLA_LIKELY_IF(cond)   if (!!(cond)) [[likely]]
+#  else
+#    define HURCHALLA_LIKELY_IF(cond)   if (!!(cond))
+#  endif
+#  if __has_cpp_attribute(unlikely)
+#    define HURCHALLA_UNLIKELY_IF(cond) if (!!(cond)) [[unlikely]]
+#  else
+#    define HURCHALLA_UNLIKELY_IF(cond) if (!!(cond))
+#  endif
+#else
+#  define HURCHALLA_LIKELY_IF(cond)   if (!!(cond))
+#  define HURCHALLA_UNLIKELY_IF(cond) if (!!(cond))
 #endif
 
-#if defined(HURCHALLA_ALLOW_ALL_INLINE_ASM) && \
-             !defined(HURCHALLA_ALLOW_MODMULT_INLINE_ASM)
-#  define HURCHALLA_ALLOW_MODMULT_INLINE_ASM 1
+
+#ifdef HURCHALLA_ALLOW_INLINE_ASM_ALL
+#  undef HURCHALLA_DISALLOW_INLINE_ASM_MODMUL
+#  undef HURCHALLA_ALLOW_INLINE_ASM_MODMUL
+#  define HURCHALLA_ALLOW_INLINE_ASM_MODMUL 1
+
+#  undef HURCHALLA_ALLOW_INLINE_ASM_MODADD
+#  define HURCHALLA_ALLOW_INLINE_ASM_MODADD 1
+
+#  undef HURCHALLA_ALLOW_INLINE_ASM_MODSUB
+#  define HURCHALLA_ALLOW_INLINE_ASM_MODSUB 1
+
+#  undef HURCHALLA_ALLOW_INLINE_ASM_MONTMUL
+#  define HURCHALLA_ALLOW_INLINE_ASM_MONTMUL 1
+#else
+   // By default, enable the inline asm modmult unless explicitly disallowed.
+   // The x86 asm version is many times faster than the non-asm version, and for
+   // asm it is relatively simple (though all inline asm is extremely difficult
+   // to verify).
+#  undef HURCHALLA_ALLOW_INLINE_ASM_MODMUL
+#  ifndef HURCHALLA_DISALLOW_INLINE_ASM_MODMUL
+#    define HURCHALLA_ALLOW_INLINE_ASM_MODMUL 1
+#  endif
 #endif
 
 
