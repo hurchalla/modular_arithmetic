@@ -27,11 +27,11 @@ inline uint32_t impl_modular_subtraction_prereduced_inputs(uint32_t a,
     // hoist diff, if this function is inlined into a loop.
     // https://en.wikipedia.org/wiki/Loop-invariant_code_motion
     uint32_t diff = modulus - b;
-    uint32_t tmp = diff + a;
+    uint32_t tmp = a + diff;
 
     uint32_t result;
     __asm__ ("subl %[b], %0 \n\t"      /* result = a - b */
-             "cmovbl %[tmp], %0 \n\t"  /* result = (result>=a) ? sum : result */
+             "cmovbl %[tmp], %0 \n\t"  /* result = (a < b) ? tmp : result */
              : "=&r"(result)
              : "0"(a), [b]"r"(b), [tmp]"r"(tmp)
              : "cc");
@@ -50,11 +50,11 @@ inline uint64_t impl_modular_subtraction_prereduced_inputs(uint64_t a,
     // hoist diff, if this function is inlined into a loop.
     // https://en.wikipedia.org/wiki/Loop-invariant_code_motion
     uint64_t diff = modulus - b;
-    uint64_t tmp = diff + a;
+    uint64_t tmp = a + diff;
 
     uint64_t result;
     __asm__ ("subq %[b], %0 \n\t"      /* result = a - b */
-             "cmovbq %[tmp], %0 \n\t"  /* result = (result>=a) ? sum : result */
+             "cmovbq %[tmp], %0 \n\t"  /* result = (a < b) ? tmp : result */
              : "=&r"(result)
              : "0"(a), [b]"r"(b), [tmp]"r"(tmp)
              : "cc");
@@ -88,9 +88,18 @@ T impl_modular_subtraction_prereduced_inputs(T a, T b, T modulus)
     // subtraction (a-b) to overflow).
 
     // We want essentially-  result = (a-b < 0) ? a-b+modulus : a-b
-    //    But for unsigned type T, (a-b < 0) is always false.  So instead we use
-    T tmp = static_cast<T>(a-b);
-    T result = (a<b) ? static_cast<T>(modulus+tmp) : tmp;
+    //    But (a-b) overflows whenever b>a, so instead of testing if (a-b < 0),
+    //   we test the alternative predicate (a < b).  This gives us our desired
+    //   result without any problem of overflow.  So we can and should use:
+    //   result = (a < b) ? a-b+modulus : a-b
+
+    // we calculate diff here to encourage the compiler to hoist it out of a
+    // loop (assuming this function is inlined inside a loop).
+    T diff = static_cast<T>(modulus - b);
+
+    T tmp = static_cast<T>(a + diff);
+    T tmp2 = static_cast<T>(a - b);
+    T result = (a < b) ? tmp : tmp2;
 
     HPBC_POSTCONDITION2(0<=result && result<modulus);
     return result;

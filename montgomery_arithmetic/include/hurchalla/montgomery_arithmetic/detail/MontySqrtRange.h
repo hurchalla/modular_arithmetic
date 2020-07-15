@@ -5,6 +5,8 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_SQRT_RANGE_H_INCLUDED
 
 
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/montadd_sqrt_range.h"
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/montsub_sqrt_range.h"
 #include "hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/montgomery_arithmetic/detail/safely_promote_unsigned.h"
 #include "hurchalla/montgomery_arithmetic/detail/negative_inverse_mod_r.h"
@@ -293,16 +295,13 @@ public:
 
     HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
-        // modular addition (mod n_), except that a result of 0 becomes n_.
-        // This is adapted from  modular_addition_prereduced_inputs():
         T a = x.get();
         T b = y.get();
         HPBC_PRECONDITION2(0 < a && a <= n_);
         HPBC_PRECONDITION2(0 < b && b <= n_);
         HPBC_INVARIANT2(n_ > 0);
 
-        T tmp = static_cast<T>(n_ - b);
-        T result = (a <= tmp) ? static_cast<T>(a+b) : static_cast<T>(a-tmp);
+        T result = montadd_sqrt_range(a, b, n_);
 
         HPBC_POSTCONDITION2(0 < result && result <= n_);
         return V(result);
@@ -310,15 +309,13 @@ public:
 
     HURCHALLA_FORCE_INLINE V subtract(V x, V y) const
     {
-        // modular subtraction (mod n_), except that a result of 0 becomes n_.
-        // This is adapted from  modular_subtraction_prereduced_inputs():
         T a = x.get();
         T b = y.get();
         HPBC_PRECONDITION2(0 < a && a <= n_);
         HPBC_PRECONDITION2(0 < b && b <= n_);
         HPBC_INVARIANT2(n_ > 0);
 
-        T result = (a>b) ? static_cast<T>(a-b) : static_cast<T>(n_ - (b-a));
+        T result = montsub_sqrt_range(a, b, n_);
 
         HPBC_POSTCONDITION2(0 < result && result <= n_);
         return V(result);
