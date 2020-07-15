@@ -22,10 +22,12 @@ T modular_multiplication_prereduced_inputs(T a, T b, T modulus)
     HPBC_PRECONDITION(a>=0 && a<modulus);   // i.e. the input must be prereduced
     HPBC_PRECONDITION(b>=0 && b<modulus);   // i.e. the input must be prereduced
 
+    T result = impl_modular_multiplication_prereduced_inputs(a, b, modulus);
+
     // POSTCONDITION: Returns (a*b)%modulus, theoretically calculated at
     //                infinite precision to avoid overflow.
-
-    return impl_modular_multiplication_prereduced_inputs(a, b, modulus);
+    HPBC_POSTCONDITION(0<=result && result<modulus);
+    return result;
 }
 
 

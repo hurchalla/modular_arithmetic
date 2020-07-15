@@ -20,12 +20,14 @@ T modular_addition_prereduced_inputs(T a, T b, T modulus)
     HPBC_PRECONDITION(modulus>0);
     HPBC_PRECONDITION(a>=0 && a<modulus);   // i.e. the input must be prereduced
     HPBC_PRECONDITION(b>=0 && b<modulus);   // i.e. the input must be prereduced
+    
+    T result = impl_modular_addition_prereduced_inputs(a, b, modulus);
 
     // POSTCONDITION:
     // Returns (a+b)%modulus, performed as if a and b have infinite precision
     // and thus as if (a+b) is never subject to integer overflow.
-    
-    return impl_modular_addition_prereduced_inputs(a, b, modulus);
+    HPBC_POSTCONDITION(0<=result && result<modulus);
+    return result;
 }
 
 

@@ -26,7 +26,7 @@ T modular_multiplicative_inverse(T a, T modulus)
 
     T inverse = impl_modular_multiplicative_inverse(a, modulus);
 
-    HPBC_POSTCONDITION(inverse >= 0 && inverse < modulus);
+    HPBC_POSTCONDITION(0 <= inverse && inverse < modulus);
     //POSTCONDITION: Returns 0 if the inverse does not exist. Otherwise returns
     //   the value of the inverse (which is never 0, given that modulus>1).
     HPBC_POSTCONDITION(inverse == 0 || modular_multiplication_prereduced_inputs(

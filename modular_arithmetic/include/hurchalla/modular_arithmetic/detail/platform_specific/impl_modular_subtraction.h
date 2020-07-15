@@ -35,9 +35,9 @@ inline uint32_t impl_modular_subtraction_prereduced_inputs(uint32_t a,
              : "=&r"(result)
              : "0"(a), [b]"r"(b), [tmp]"r"(tmp)
              : "cc");
+
+    HPBC_POSTCONDITION2(result<modulus);  // uint32_t guarantees result>=0.
     return result;
-
-
 }
 inline uint64_t impl_modular_subtraction_prereduced_inputs(uint64_t a,
                                                    uint64_t b, uint64_t modulus)
@@ -58,6 +58,8 @@ inline uint64_t impl_modular_subtraction_prereduced_inputs(uint64_t a,
              : "=&r"(result)
              : "0"(a), [b]"r"(b), [tmp]"r"(tmp)
              : "cc");
+
+    HPBC_POSTCONDITION2(result<modulus);  // uint64_t guarantees result>=0.
     return result;
 }
 #endif
@@ -89,6 +91,8 @@ T impl_modular_subtraction_prereduced_inputs(T a, T b, T modulus)
     //    But for unsigned type T, (a-b < 0) is always false.  So instead we use
     T tmp = static_cast<T>(a-b);
     T result = (a<b) ? static_cast<T>(modulus+tmp) : tmp;
+
+    HPBC_POSTCONDITION2(0<=result && result<modulus);
     return result;
 }
 

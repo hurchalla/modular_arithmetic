@@ -20,10 +20,12 @@ T modular_pow(T base, T exponent, T modulus)
     static_assert(!(ma_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION(modulus > 1);
 
+    T result = impl_modular_pow(base, exponent, modulus);
+
     // POSTCONDITION:
     //   Returns the modular exponentiation of base^exponent (mod modulus).
-
-    return impl_modular_pow(base, exponent, modulus);
+    HPBC_POSTCONDITION(0<=result && result<modulus);
+    return result;
 }
 
 
