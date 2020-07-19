@@ -324,11 +324,17 @@ fi
 if [ "$compiler_name" = "gcc" ]; then
   gcc_ubsan="-fsanitize=undefined -fno-sanitize-recover \
            -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow"
+
 elif [ "$compiler_name" = "clang" ]; then
+  # My installed version of clang doesn't support -fsanitize=implicit-conversion
   clang_ubsan="-fsanitize=undefined -fsanitize=nullability -fsanitize=bounds \
              -fsanitize=float-divide-by-zero"
-  # clang_ubsan=""
-  # My installed version of clang doesn't support -fsanitize=implicit-conversion
+
+  # The next line in a perfect world wouldn't be needed, but for some versions
+  # of clang (clang 10 for me), the linker doesn't find __muloti4 when using the
+  # undefined behavior sanitizers.  __muloti4 is defined in compiler-rt.
+  # See https://bugs.llvm.org/show_bug.cgi?id=16404
+  clang_ubsan_link_flags="-rtlib=compiler-rt -lgcc_s"
 fi
 
 
@@ -418,7 +424,8 @@ if [ "${mode,,}" = "release" ]; then
     pushd script_dir > /dev/null 2>&1
     build_dir=build/release_$compiler_name
     mkdir -p $build_dir
-    cmake -S. -B./$build_dir -DTEST_HURCHALLA_LIBS=ON -DCMAKE_BUILD_TYPE=Release \
+    cmake -S. -B./$build_dir -DTEST_HURCHALLA_LIBS=ON \
+            -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_FLAGS="$cpp_standard  \
             $use_inline_asm  \
             $gcc_static_analysis"  "${clang_static_analysis[@]}" \
@@ -431,7 +438,9 @@ elif [ "${mode,,}" = "debug" ]; then
     pushd script_dir > /dev/null 2>&1
     build_dir=build/debug_$compiler_name
     mkdir -p $build_dir
-    cmake -S. -B./$build_dir -DTEST_HURCHALLA_LIBS=ON -DCMAKE_BUILD_TYPE=Debug \
+    cmake -S. -B./$build_dir -DTEST_HURCHALLA_LIBS=ON \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_EXE_LINKER_FLAGS="$clang_ubsan_link_flags" \
             -DCMAKE_CXX_FLAGS="$cpp_standard  $clang_ubsan  $gcc_ubsan  \
             $use_inline_asm  \
             $gcc_static_analysis"  "${clang_static_analysis[@]}" \
