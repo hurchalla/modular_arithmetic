@@ -47,9 +47,7 @@ Notes:
    division instructions (32bit by 32bit, or 64bit by 64 bit). ARM does have a
    UMULL instruction though, which does 32bit by 32bit multiplication for
    (effectively) a 64bit result.
-Code review/testing notes:
-   Analytical correctness: Looks correct.
-   Empirical correctness: Impossible to test exhaustively, but passed all tests.
+Code review notes: Everything appears correct.
 */
 template <typename T>
 T slow_modular_multiplication(T a, T b, T modulus)
@@ -64,7 +62,7 @@ T slow_modular_multiplication(T a, T b, T modulus)
         if (b & 1)
             result = modular_addition_prereduced_inputs(result, a, modulus);
         a = modular_addition_prereduced_inputs(a, a, modulus);
-        b = b >> 1;
+        b = static_cast<T>(b >> 1);
     }
     return result;
 }

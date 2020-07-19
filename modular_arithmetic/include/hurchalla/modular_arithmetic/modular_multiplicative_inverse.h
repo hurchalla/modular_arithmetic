@@ -30,7 +30,7 @@ T modular_multiplicative_inverse(T a, T modulus)
     //POSTCONDITION: Returns 0 if the inverse does not exist. Otherwise returns
     //   the value of the inverse (which is never 0, given that modulus>1).
     HPBC_POSTCONDITION(inverse == 0 || modular_multiplication_prereduced_inputs(
-                                           a % modulus, inverse, modulus) == 1);
+                           static_cast<T>(a % modulus), inverse, modulus) == 1);
     return inverse;
 }
 

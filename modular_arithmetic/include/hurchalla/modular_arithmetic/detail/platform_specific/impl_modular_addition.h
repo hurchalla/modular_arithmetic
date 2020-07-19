@@ -14,6 +14,34 @@
 namespace hurchalla { namespace modular_arithmetic {
 
 
+template <typename T>
+T impl_modular_addition_prereduced_inputs(T a, T b, T modulus)
+{
+    static_assert(ma_numeric_limits<T>::is_integer, "");
+    HPBC_PRECONDITION2(modulus>0);
+    HPBC_PRECONDITION2(0<=a && a<modulus);  // i.e. the input must be prereduced
+    HPBC_PRECONDITION2(0<=b && b<modulus);  // i.e. the input must be prereduced
+
+    // We want essentially-  result = (a+b < modulus) ? a+b : a+b-modulus
+    //   But due to the potential for overflow on a+b, we need to instead test
+    //   the alternative predicate (a < modulus-b), which gives us our desired
+    //   result without any problem of overflow.  So we can and should use:
+    //   result = (a < modulus-b) ? a+b : a+b-modulus
+    T tmp = static_cast<T>(modulus - b);
+    T result = (a < tmp) ? static_cast<T>(a + b) : static_cast<T>(a - tmp);
+
+    HPBC_POSTCONDITION2(static_cast<T>(0)<=result && result<modulus);
+    return result;
+}
+
+
+// ----------------------------------------------------------------------------
+// Non-template function overloads.  By C++ rules, these overloads have first
+// priority for function argument matching - the corresponding template version
+// above has second priority.
+// ----------------------------------------------------------------------------
+
+
 // MSVC doesn't support inline asm, so we skip it.
 #if defined(HURCHALLA_ALLOW_INLINE_ASM_MODADD) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
@@ -37,8 +65,11 @@ inline uint32_t impl_modular_addition_prereduced_inputs(uint32_t a, uint32_t b,
              : "cc");
 
     HPBC_POSTCONDITION2(result<modulus);  // uint32_t guarantees result>=0.
+    HPBC_POSTCONDITION2(result ==
+              impl_modular_addition_prereduced_inputs<uint32_t>(a, b, modulus));
     return result;
 }
+
 inline uint64_t impl_modular_addition_prereduced_inputs(uint64_t a, uint64_t b,
                                                                uint64_t modulus)
 {
@@ -59,38 +90,11 @@ inline uint64_t impl_modular_addition_prereduced_inputs(uint64_t a, uint64_t b,
              : "cc");
 
     HPBC_POSTCONDITION2(result<modulus);  // uint64_t guarantees result>=0.
+    HPBC_POSTCONDITION2(result ==
+              impl_modular_addition_prereduced_inputs<uint64_t>(a, b, modulus));
     return result;
 }
 #endif
-
-
-// -----------------------------------------------------------------------------
-// Template function version.  By C++ rules, this function has second priority
-// for function argument matching - the non-template versions above have first
-// priority.
-// -----------------------------------------------------------------------------
-
-template <typename T>
-T impl_modular_addition_prereduced_inputs(T a, T b, T modulus)
-{
-    static_assert(ma_numeric_limits<T>::is_integer, "");
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(0<=a && a<modulus);  // i.e. the input must be prereduced
-    HPBC_PRECONDITION2(0<=b && b<modulus);  // i.e. the input must be prereduced
-
-    // We want essentially-  result = (a+b < modulus) ? a+b : a+b-modulus
-    //   But due to the potential for overflow on a+b, we need to instead test
-    //   the alternative predicate (a < modulus-b), which gives us our desired
-    //   result without any problem of overflow.  So we can and should use:
-    //   result = (a < modulus-b) ? a+b : a+b-modulus
-    T tmp = static_cast<T>(modulus - b);
-    T sum = static_cast<T>(a + b);
-    T tmp2 = static_cast<T>(a - tmp);
-    T result = (a < tmp) ? sum : tmp2;
-
-    HPBC_POSTCONDITION2(0<=result && result<modulus);
-    return result;
-}
 
 
 }}  // end namespace

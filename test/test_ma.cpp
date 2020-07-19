@@ -19,18 +19,6 @@
 #include <cstdint>
 
 
-template <typename T>
-T brute_modular_pow(T a, T power, T modulus)
-{
-    namespace ma = hurchalla::modular_arithmetic;
-    T result = 1;
-    for (T i=0; i<power; ++i)
-        result = ma::modular_multiplication_prereduced_inputs(result, a,
-                                                              modulus);
-    return result;
-}
-
-
 
 struct hardcoded_test_67 {
     template <typename T, typename M>
@@ -136,41 +124,6 @@ void test_explicit()
 
 
 namespace {
-    TEST(ModularArithmetic, basic_examples) {
-        using T = uint32_t;
-        namespace ma = hurchalla::modular_arithmetic;
-        T a = 5;
-        T b = 12;
-        T modulus = 13;
-
-        T result = ma::modular_multiplication_prereduced_inputs(a, b, modulus);
-        EXPECT_TRUE(result == static_cast<T>(8));
-        result = ma::modular_addition_prereduced_inputs(a, b, modulus);
-        EXPECT_TRUE(result == static_cast<T>(4));
-        result = ma::modular_subtraction_prereduced_inputs(a, b, modulus);
-        EXPECT_TRUE(result == static_cast<T>(6));
-
-        T base = 5;
-        T exponent = 53;
-        result = ma::modular_pow(base, exponent, modulus);
-        EXPECT_TRUE(result == static_cast<T>(5));
-        base = 81452;
-        exponent = 4013;
-        modulus = 2951486173u;
-        result = ma::modular_pow(base, exponent, modulus);
-        EXPECT_TRUE(result == brute_modular_pow(base, exponent, modulus));
-
-        modulus = 13;
-        result = ma::modular_multiplicative_inverse(a, modulus);
-        EXPECT_TRUE(result == static_cast<T>(8));
-        // The inverse doesn't exist if gcd(a, modulus) > 1.
-        // A return value of 0 indicates the inverse doesn't exist.
-        modulus = 21;   // shares the factor 3 with b
-        result = ma::modular_multiplicative_inverse(b, modulus);
-        EXPECT_TRUE(result == static_cast<T>(0));
-    }
-
-
     // Test basic montgomery functions with a hardcoded modulus=67
     // and hardcoded arguments for the functions.  We'll test every
     // permutation of types possible without using extended

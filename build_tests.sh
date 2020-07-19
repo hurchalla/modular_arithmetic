@@ -327,6 +327,7 @@ if [ "$compiler_name" = "gcc" ]; then
 elif [ "$compiler_name" = "clang" ]; then
   clang_ubsan="-fsanitize=undefined -fsanitize=nullability -fsanitize=bounds \
              -fsanitize=float-divide-by-zero"
+  # clang_ubsan=""
   # My installed version of clang doesn't support -fsanitize=implicit-conversion
 fi
 
@@ -451,10 +452,10 @@ fi
 
 
 if [ "$run_tests" = true ]; then
-  ./$build_dir/test_ndebug_programming_by_contract
+  ./$build_dir/test_ndebug_programming_by_contract --gtest_break_on_failure
   exit_on_failure
-  ./$build_dir/test_programming_by_contract
+  ./$build_dir/test_programming_by_contract --gtest_break_on_failure
   exit_on_failure
-  ./$build_dir/test_hurchalla_modular_arithmetic
+  ./$build_dir/test_hurchalla_modular_arithmetic --gtest_break_on_failure
   exit_on_failure
 fi

@@ -107,6 +107,7 @@ HURCHALLA_FORCE_INLINE uint64_t montsub_sqrt_range(uint64_t a, uint64_t b,
              : "cc");
 
     HPBC_POSTCONDITION2(0 < result && result <= n);
+    HPBC_POSTCONDITION2(result == montsub_sqrt_range<uint64_t>(a, b, n));
     return result;
 }
 #endif

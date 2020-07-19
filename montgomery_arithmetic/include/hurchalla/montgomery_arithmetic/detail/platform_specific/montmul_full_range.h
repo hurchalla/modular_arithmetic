@@ -85,6 +85,8 @@ HURCHALLA_FORCE_INLINE uint64_t montmul_full_range(uint64_t x, uint64_t y,
         : "rdx", "cc");
 
     HPBC_POSTCONDITION2(result < n);
+    HPBC_POSTCONDITION2(result ==
+                              montmul_full_range<uint64_t>(x, y, n, neg_inv_n));
     return result;
 }
 #endif

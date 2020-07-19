@@ -21,6 +21,12 @@ include(GoogleTest)
 
 
 add_executable(test_hurchalla_modular_arithmetic
+               modular_arithmetic/test_modular_addition.cpp
+               modular_arithmetic/test_modular_subtraction.cpp
+               modular_arithmetic/test_modular_addition_with_subtraction.cpp
+               modular_arithmetic/test_modular_multiplication.cpp
+               modular_arithmetic/test_modular_multiplicative_inverse.cpp
+               modular_arithmetic/test_modular_pow.cpp
                test_ma.cpp)
 
 EnableMaxWarnings(test_hurchalla_modular_arithmetic)
