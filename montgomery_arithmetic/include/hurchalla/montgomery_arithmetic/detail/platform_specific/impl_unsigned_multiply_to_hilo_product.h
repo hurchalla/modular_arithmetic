@@ -122,15 +122,21 @@ HURCHALLA_FORCE_INLINE uint16_t impl_unsigned_multiply_to_hilo_product(
     using T2 = uint32_t;
     return umult_to_hilo_product<decltype(u),T2>(pLowProduct, u, v);
 }
+// --------------------------------------------------------------------------
 HURCHALLA_FORCE_INLINE uint32_t impl_unsigned_multiply_to_hilo_product(
                                   uint32_t* pLowProduct, uint32_t u, uint32_t v)
 {
     using T2 = uint64_t;
     return umult_to_hilo_product<decltype(u),T2>(pLowProduct, u, v);
 }
+// Note for MSVC: 'uint32_t' functions using intrinsics don't improve the asm
+// generated compared to the simple function implementation, and so intrinsic
+// versions are not present here.  For reference, the intrinsics would have
+// been __emulu (for X86) and _arm_umull (for ARM32).
+// --------------------------------------------------------------------------
 
 
-// These fast 'uint64_t' functions use intrinsics (MSVC), or compiler
+// The following fast 'uint64_t' functions use intrinsics (MSVC), or compiler
 // extensions (__uint128_t on GNU compatible compilers).
 // Assembly versions for x86 or ARM aren't needed - clang/gcc/icc generate
 // assembly that is good enough via __uint128_t, and MSVC does well using
@@ -174,53 +180,6 @@ HURCHALLA_FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
     return umult_to_hilo_product<decltype(u),T2>(pLowProduct, u, v);
 }
 #endif
-
-
-
-// Note for MSVC: 'uint32_t' functions using intrinsics don't improve the asm
-// generated compared to the simple function implementation, and so intrinsic
-// versions are not present here.  For reference, the intrinsics would have
-// been __emulu (for X86) and _arm_umull (for ARM32).
-
-
-// Note for MSVC for X86-32 bit: the asm generated for the 'uint64_t' version
-// via the generic template function is terrible.  In contrast, the code in
-// comments below produces decent asm for MSVC x86-32.  I expect this code to
-// be fine if you wish to use it.  However, it remains in comments because
-// x86-32 is obsolete.
-/*
-// MSVC + x32
-#if defined(_MSC_VER) && defined(HURCHALLA_TARGET_ISA_X86_32)
-inline uint64_t impl_unsigned_multiply_to_hilo_product(uint64_t* pLowProduct,
-                                                         uint64_t u, uint64_t v)
-{
-    // this code is a modification of the generic template function, performing
-    // the arithmetic with uint32_t variables rather than uint64_t variables.
-
-    uint32_t u0 = (uint32_t)u;
-    uint32_t v0 = (uint32_t)v;
-    uint32_t u1 = (uint32_t)(u >> 32);
-    uint32_t v1 = (uint32_t)(v >> 32);
-
-    uint32_t lolo_lo;
-    uint32_t lolo_hi = impl_unsigned_multiply_to_hilo_product(&lolo_lo, u0, v0);
-    uint32_t hilo_lo;
-    uint32_t hilo_hi = impl_unsigned_multiply_to_hilo_product(&hilo_lo, u1, v0);
-    uint32_t lohi_lo;
-    uint32_t lohi_hi = impl_unsigned_multiply_to_hilo_product(&lohi_lo, u0, v1);
-    uint32_t hihi_lo;
-    uint32_t hihi_hi = impl_unsigned_multiply_to_hilo_product(&hihi_lo, u1, v1);
-
-    uint64_t cross = (uint64_t)lolo_hi + (uint64_t)hilo_lo +
-                     (((uint64_t)lohi_hi << 32) | (uint64_t)lohi_lo);
-    uint64_t high = (uint64_t)hilo_hi + (cross >> 32) +
-                    (((uint64_t)hihi_hi << 32) | (uint64_t)hihi_lo);
-
-    *pLowProduct = (cross << 32) | (uint64_t)(lolo_lo);
-    return high;
-}
-#endif
-*/
 
 
 }} // end namespace

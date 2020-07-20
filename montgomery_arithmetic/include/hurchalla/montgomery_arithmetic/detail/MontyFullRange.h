@@ -36,7 +36,9 @@ public:
 
     static constexpr T max_modulus()
     {
-        return modular_arithmetic::ma_numeric_limits<T>::max();
+        return (modular_arithmetic::ma_numeric_limits<T>::max() % 2 == 0) ?
+           static_cast<T>(modular_arithmetic::ma_numeric_limits<T>::max() - 1) :
+           modular_arithmetic::ma_numeric_limits<T>::max();
     }
 
     HURCHALLA_FORCE_INLINE bool isValid(V x) const { return (x.get() < n_); }

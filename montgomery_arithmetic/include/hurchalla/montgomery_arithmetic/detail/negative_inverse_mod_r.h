@@ -15,6 +15,10 @@
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
+// For discussion purposes, let R = 2^(ma_numeric_limits<T>::digits).  For
+// example if T is uint64_t, then R = 2^64.
+
+
 namespace detail_nimr {
     template <int n>
     constexpr int log2()
@@ -47,7 +51,6 @@ namespace detail_nimr {
         static_assert(bits == ma::ma_numeric_limits<T>::digits, "");
         static_assert(std::is_unsigned<T>::value, ""); //T native unsign integer
         HPBC_PRECONDITION2(a % 2 == 1);
-        HPBC_PRECONDITION2(a > 1);
 
         // avoid undefined behavior that could result if T is an unsigned type
         // that would be promoted to (signed) 'int'.
@@ -101,7 +104,6 @@ T negative_inverse_mod_r(T a)
     static_assert(!(ma::ma_numeric_limits<T>::is_signed), "");
     static_assert(ma::ma_numeric_limits<T>::is_modulo, "");
     HPBC_PRECONDITION2(a % 2 == 1);
-    HPBC_PRECONDITION2(a > 1);
 
     T inv= detail_nimr::impl_neg_inverse<T,ma::ma_numeric_limits<T>::digits>(a);
 
