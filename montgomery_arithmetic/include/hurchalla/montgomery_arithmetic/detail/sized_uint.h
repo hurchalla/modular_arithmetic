@@ -20,7 +20,7 @@ template<> struct sized_uint<64>  { using type = uint64_t; };
 #if (HURCHALLA_COMPILER_HAS_UINT128_T())
   // Some compilers support __uint128_t, so we'll specialize with it if possible
   template<> struct sized_uint<128> { using type = __uint128_t; };
-#elif (HURCHALLA_TARGET_BIT_WIDTH > = 128)
+#elif (HURCHALLA_TARGET_BIT_WIDTH >= 128)
   // presumably if a CPU target is >= 128bit, type uint128_t will exist.
   template<> struct sized_uint<128> { using type = uint128_t; };
 #endif

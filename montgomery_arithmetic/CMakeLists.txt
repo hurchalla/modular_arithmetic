@@ -49,11 +49,11 @@ target_link_libraries(hurchalla_montgomery_arithmetic
 
 include(FetchContent)
 FetchContent_Declare(
-    hurchalla_programming_by_contract
+    programming_by_contract
     GIT_REPOSITORY https://github.com/hurchalla/programming_by_contract.git
     GIT_TAG        master
 )
-FetchContent_MakeAvailable(hurchalla_programming_by_contract)
+FetchContent_MakeAvailable(programming_by_contract)
 
 target_link_libraries(hurchalla_montgomery_arithmetic
                       INTERFACE hurchalla_programming_by_contract)
