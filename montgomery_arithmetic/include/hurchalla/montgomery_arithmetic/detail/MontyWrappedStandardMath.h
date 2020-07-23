@@ -6,7 +6,6 @@
 
 
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
-#include "hurchalla/montgomery_arithmetic/detail/MontgomeryValue.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
@@ -22,14 +21,41 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // in a generic MontgomeryForm instantation.
 template <typename T>
 class MontyWrappedStandardMath final {
+public:
+    class MontgomeryValue {
+        friend MontyWrappedStandardMath;
+        explicit MontgomeryValue(T val) : value(val) {}
+    public:
+        MontgomeryValue() {} // This constructor purposely does not initialize
+        // 'value' - the contents are undefined until the object is assigned to.
+    protected:
+        T get() const { return value; }
+        T value;
+    };
+    class CanonicalValue : public MontgomeryValue {
+        friend MontyWrappedStandardMath;
+        explicit CanonicalValue(T val) : MontgomeryValue(val) {}
+    public:
+        CanonicalValue() : MontgomeryValue() {}
+        friend bool operator==(const CanonicalValue& x, const CanonicalValue& y)
+        {
+            return x.value == y.value;
+        }
+        friend bool operator!=(const CanonicalValue& x, const CanonicalValue& y)
+        {
+            return !(x == y);
+        }
+    };
+private:
     static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
     static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
     static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
-    using V = MontgomeryValue<T>;
+    using V = MontgomeryValue;
     T modulus_;
 public:
     using template_param_type = T;
     using montvalue_type = V;
+    using canonical_value_type = CanonicalValue;
 
     explicit MontyWrappedStandardMath(T modulus) : modulus_(modulus)
     {
@@ -69,23 +95,23 @@ public:
         return ret;
     }
 
-    HURCHALLA_FORCE_INLINE V getCanonicalForm(V x) const
+    HURCHALLA_FORCE_INLINE CanonicalValue getCanonicalForm(V x) const
     {
         HPBC_PRECONDITION2(isCanonical(x));
-        return x;
+        return CanonicalValue(x.get());
     }
 
-    HURCHALLA_FORCE_INLINE V getUnityValue() const
+    HURCHALLA_FORCE_INLINE CanonicalValue getUnityValue() const
     {
-        return V(static_cast<T>(1));
+        return CanonicalValue(static_cast<T>(1));
     }
-    HURCHALLA_FORCE_INLINE V getZeroValue() const
+    HURCHALLA_FORCE_INLINE CanonicalValue getZeroValue() const
     {
-        return V(static_cast<T>(0));
+        return CanonicalValue(static_cast<T>(0));
     }
-    HURCHALLA_FORCE_INLINE V getNegativeOneValue() const 
+    HURCHALLA_FORCE_INLINE CanonicalValue getNegativeOneValue() const
     {
-        return V(static_cast<T>(modulus_ - static_cast<T>(1)));
+        return CanonicalValue(static_cast<T>(modulus_ - static_cast<T>(1)));
     }
 
     HURCHALLA_FORCE_INLINE V multiply(V x, V y) const

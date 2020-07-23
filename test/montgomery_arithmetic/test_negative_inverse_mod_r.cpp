@@ -9,6 +9,11 @@
 #include <cstdint>
 
 
+#if defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable : 4309)
+#endif
+
 template <typename T>
 void test_single_inverse(T a)
 {
@@ -20,6 +25,10 @@ void test_single_inverse(T a)
     EXPECT_TRUE(static_cast<T>(static_cast<U>(inv) * static_cast<U>(a)) ==
                                                                       minusOne);
 }
+
+#if defined(_MSC_VER)
+#  pragma warning(pop)
+#endif
 
 
 template <typename T>

@@ -22,15 +22,21 @@ class MontyFullRange final : public MontyCommonBase<MontyFullRange, T> {
     static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
     static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
     static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
-    using MontyCommonBase<MontyFullRange, T>::n_;
-    using MontyCommonBase<MontyFullRange, T>::neg_inv_n_;
-    using typename MontyCommonBase<MontyFullRange, T>::V;
+    using MontyCommonBase<
+        ::hurchalla::montgomery_arithmetic::MontyFullRange, T>::n_;
+    using MontyCommonBase<
+        ::hurchalla::montgomery_arithmetic::MontyFullRange, T>::neg_inv_n_;
+    using typename MontyCommonBase<
+        ::hurchalla::montgomery_arithmetic::MontyFullRange, T>::CanonicalValue;
+    using V = typename MontyCommonBase<
+        ::hurchalla::montgomery_arithmetic::MontyFullRange, T>::MontgomeryValue;
 public:
     using montvalue_type = V;
     using template_param_type = T;
+    using canonical_value_type = CanonicalValue;
 
-    explicit MontyFullRange(T modulus) :
-                                  MontyCommonBase<MontyFullRange, T>(modulus) {}
+    explicit MontyFullRange(T modulus) : MontyCommonBase<
+        ::hurchalla::montgomery_arithmetic::MontyFullRange, T>(modulus) {}
     MontyFullRange(const MontyFullRange&) = delete;
     MontyFullRange& operator=(const MontyFullRange&) = delete;
 
@@ -54,10 +60,10 @@ public:
         return minimized_result;
     }
 
-    HURCHALLA_FORCE_INLINE V getCanonicalForm(V x) const
+    HURCHALLA_FORCE_INLINE CanonicalValue getCanonicalForm(V x) const
     {
         HPBC_PRECONDITION2(x.get() < n_);
-        return x;
+        return CanonicalValue(x.get());
     }
 
     HURCHALLA_FORCE_INLINE V multiply(V x, V y) const

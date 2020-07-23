@@ -26,15 +26,21 @@ class MontyHalfRange final : public MontyCommonBase<MontyHalfRange, T> {
     static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
     static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
     static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
-    using MontyCommonBase<MontyHalfRange, T>::n_;
-    using MontyCommonBase<MontyHalfRange, T>::neg_inv_n_;
-    using typename MontyCommonBase<MontyHalfRange, T>::V;
+    using MontyCommonBase<
+        ::hurchalla::montgomery_arithmetic::MontyHalfRange, T>::n_;
+    using MontyCommonBase<
+        ::hurchalla::montgomery_arithmetic::MontyHalfRange, T>::neg_inv_n_;
+    using typename MontyCommonBase<
+        ::hurchalla::montgomery_arithmetic::MontyHalfRange, T>::CanonicalValue;
+    using V = typename MontyCommonBase<
+        ::hurchalla::montgomery_arithmetic::MontyHalfRange, T>::MontgomeryValue;
 public:
     using montvalue_type = V;
     using template_param_type = T;
+    using canonical_value_type = CanonicalValue;
 
-    explicit MontyHalfRange(T modulus) :
-                                MontyCommonBase<MontyHalfRange, T>(modulus)
+    explicit MontyHalfRange(T modulus) : MontyCommonBase<
+        ::hurchalla::montgomery_arithmetic::MontyHalfRange, T>(modulus)
     {
         // MontyHalfRange requires  modulus < R/2
         T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
@@ -64,10 +70,10 @@ public:
         return minimized_result;
     }
 
-    HURCHALLA_FORCE_INLINE V getCanonicalForm(V x) const
+    HURCHALLA_FORCE_INLINE CanonicalValue getCanonicalForm(V x) const
     {
         HPBC_PRECONDITION2(x.get() < n_);
-        return x;
+        return CanonicalValue(x.get());
     }
 
     // Aside from the constructor's precondition of modulus < R/2, this

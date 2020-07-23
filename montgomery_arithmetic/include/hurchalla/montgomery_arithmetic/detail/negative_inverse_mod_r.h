@@ -95,6 +95,11 @@ namespace detail_nimr {
 }
 
 
+#if defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable : 4309)
+#endif
+
 // Returns the integer x satisfying  x*a ≡ -1 (mod R)
 template <typename T>
 T negative_inverse_mod_r(T a)
@@ -113,6 +118,10 @@ T negative_inverse_mod_r(T a)
                       == static_cast<T>(static_cast<U>(0) - static_cast<U>(1)));
     return inv;
 }
+
+#if defined(_MSC_VER)
+#  pragma warning(pop)
+#endif
 
 
 }} // end namespace

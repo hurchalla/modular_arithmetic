@@ -7,7 +7,6 @@
 
 #include "hurchalla/montgomery_arithmetic/detail/negative_inverse_mod_r.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
-#include "hurchalla/montgomery_arithmetic/detail/MontgomeryValue.h"
 #include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
@@ -22,15 +21,40 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // This base class uses the CRTP idiom
 // https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern
 // This is the base class shared by most montgomery forms (MontySqrtRange is an
-//exception).
+// exception).
 template <template <typename> class Derived, typename T>
 class MontyCommonBase {
+public:
+    class MontgomeryValue {
+        friend Derived<T>; friend MontyCommonBase;
+        explicit MontgomeryValue(T val) : value(val) {}
+    public:
+        MontgomeryValue() {} // This constructor purposely does not initialize
+        // 'value' - the contents are undefined until the object is assigned to.
+    protected:
+        T get() const { return value; }
+        T value;
+    };
+    class CanonicalValue : public MontgomeryValue {
+        friend Derived<T>; friend MontyCommonBase;
+        explicit CanonicalValue(T val) : MontgomeryValue(val) {}
+    public:
+        CanonicalValue() : MontgomeryValue() {}
+        friend bool operator==(const CanonicalValue& x, const CanonicalValue& y)
+        {
+            return x.value == y.value;
+        }
+        friend bool operator!=(const CanonicalValue& x, const CanonicalValue& y)
+        {
+            return !(x == y);
+        }
+    };
+private:
     static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
     static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
     static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
     using D = Derived<T>;
-public:
-    using V = MontgomeryValue<T>;
+    using V = MontgomeryValue;
 protected:
     const T n_;   // the modulus
     const T neg_inv_n_;
@@ -78,12 +102,13 @@ public:
     // intended for use in postconditions/preconditions
     HURCHALLA_FORCE_INLINE bool isCanonical(V x) const
     {
-        V cfx = static_cast<const D*>(this)->getCanonicalForm(x);
+        CanonicalValue cfx = static_cast<const D*>(this)->getCanonicalForm(x);
         // Any fully reduced value (0 <= value < n_) must be canonical.  Class
         // Derived must be implemented to respect this.
-        HPBC_INVARIANT2((0 <= x.get() && x.get() < n_) ? x == cfx : x != cfx);
+        HPBC_INVARIANT2((0 <= x.get() && x.get() < n_) ? x.get() == cfx.get() :
+                                                         x.get() != cfx.get());
         bool good = static_cast<const D*>(this)->isValid(x);
-        return (x == cfx && good); 
+        return (x.get() == cfx.get() && good);
     }
 
     HURCHALLA_FORCE_INLINE T getModulus() const { return n_; }
@@ -93,21 +118,21 @@ public:
         return static_cast<const D*>(this)->multiply(V(a), V(r_squared_mod_n_));
     }
 
-    HURCHALLA_FORCE_INLINE V getUnityValue() const
+    HURCHALLA_FORCE_INLINE CanonicalValue getUnityValue() const
     {
         // as noted in constructor, unityValue == (1*R)%n_ == r_mod_n_
         HPBC_INVARIANT2(isCanonical(V(r_mod_n_)));
-        return V(r_mod_n_);
+        return CanonicalValue(r_mod_n_);
     }
 
-    HURCHALLA_FORCE_INLINE V getZeroValue() const
+    HURCHALLA_FORCE_INLINE CanonicalValue getZeroValue() const
     {
-        V zero(0); // zeroValue == (0*R)%n_
-        HPBC_INVARIANT2(isCanonical(zero));
-        return zero;
-    } 
+        // zeroValue == (0*R)%n_
+        HPBC_INVARIANT2(isCanonical(V(0)));
+        return CanonicalValue(0);
+    }
 
-    HURCHALLA_FORCE_INLINE V getNegativeOneValue() const
+    HURCHALLA_FORCE_INLINE CanonicalValue getNegativeOneValue() const
     {
         // We want to get  returnVal = getCanonicalForm(subtract(getZeroValue(),
         //                                               getUnityValue())).
@@ -125,7 +150,7 @@ public:
         HPBC_ASSERT2(0 < ret && ret < n_);
         HPBC_INVARIANT2(isCanonical(V(ret)));
 
-        return V(ret);
+        return CanonicalValue(ret);
     }
 };
 

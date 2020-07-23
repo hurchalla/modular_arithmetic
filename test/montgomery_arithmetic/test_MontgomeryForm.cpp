@@ -42,7 +42,7 @@ void test_mf_general_checks(M& mf, typename M::T_type a, typename M::T_type b)
     namespace ma = hurchalla::modular_arithmetic;
 
     using T = typename M::T_type;
-    using V = typename M::V;
+    using V = typename M::MontgomeryValue;
     T modulus = mf.getModulus();
     V x = mf.convertIn(a);
     V y = mf.convertIn(b);
@@ -88,7 +88,7 @@ template <typename M>
 void test_MontgomeryForm()
 {
     using T = typename M::T_type;
-    using V = typename M::V;
+    using V = typename M::MontgomeryValue;
 
     // Try a basic test case first that is valid for all possible Monty types,
     // even M == MontySqrtRange<uint8_t>.
