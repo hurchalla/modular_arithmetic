@@ -5,6 +5,8 @@ set build_dir=build\msvc
 REM Example of how to use an earlier version of MSVC than the default:
 REM cmake --help   (will show the available Generators you can use)
 REM cmake -S. -B.\%build_dir% -DTEST_HURCHALLA_LIBS=ON -G "Visual Studio 15"
+REM the above line appears to build x86-32.  To get x64:
+REM cmake -S. -B.\%build_dir% -DTEST_HURCHALLA_LIBS=ON -G "Visual Studio 15 2017 Win64"
 
 cmake -S. -B.\%build_dir% -DTEST_HURCHALLA_LIBS=ON
 if %errorlevel% neq 0 exit /b %errorlevel%

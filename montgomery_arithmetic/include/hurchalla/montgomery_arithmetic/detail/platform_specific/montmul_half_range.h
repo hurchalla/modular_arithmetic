@@ -14,6 +14,7 @@
 #if defined(_MSC_VER)
 #  pragma warning(push)
 #  pragma warning(disable : 4127)
+#  pragma warning(disable : 4189)
 #endif
 
 namespace hurchalla { namespace montgomery_arithmetic {
