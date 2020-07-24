@@ -29,8 +29,15 @@ public:
         friend Derived<T>; friend MontyCommonBase;
         explicit MontgomeryValue(T val) : value(val) {}
     public:
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Weffc++"
+#endif
         MontgomeryValue() {} // This constructor purposely does not initialize
         // 'value' - the contents are undefined until the object is assigned to.
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
     protected:
         T get() const { return value; }
         T value;

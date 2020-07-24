@@ -8,7 +8,7 @@
 # This is my working rough-draft script for invoking the testing builds and
 # then running the tests.
 # The syntax is 
-# ./build_tests [-c=<compiler_name>] [-r] [-a] [-m=Release|Debug]
+# ./build_tests [-c<compiler_name>] [-r] [-a] [-m<Release|Debug>]
 #
 # -c allows you to select the compiler, rather than using the default.
 # -r specifies to run all tests after the build.  Without -r, no tests will run.
@@ -202,11 +202,13 @@ if [ "${compiler,,}" = "gcc" ] || [ "${compiler,,}" = "g++" ]; then
   cmake_cpp_compiler=-DCMAKE_CXX_COMPILER=g++
   cmake_c_compiler=-DCMAKE_C_COMPILER=gcc
   compiler_name=gcc
-elif [ "${compiler,,}" = "gcc-7" ] || [ "${compiler,,}" = "g++-7" ]; then
+elif [ "${compiler,,}" = "gcc-7" ] || [ "${compiler,,}" = "g++-7" ] ||
+     [ "${compiler,,}" = "gcc7" ] || [ "${compiler,,}" = "g++7" ]; then
   cmake_cpp_compiler=-DCMAKE_CXX_COMPILER=g++-7
   cmake_c_compiler=-DCMAKE_C_COMPILER=gcc-7
   compiler_name=gcc7
-elif [ "${compiler,,}" = "gcc-10" ] || [ "${compiler,,}" = "g++-10" ]; then
+elif [ "${compiler,,}" = "gcc-10" ] || [ "${compiler,,}" = "g++-10" ] ||
+     [ "${compiler,,}" = "gcc10" ] || [ "${compiler,,}" = "g++10" ]; then
   cmake_cpp_compiler=-DCMAKE_CXX_COMPILER=g++-10
   cmake_c_compiler=-DCMAKE_C_COMPILER=gcc-10
   compiler_name=gcc10
@@ -214,11 +216,13 @@ elif [ "${compiler,,}" = "clang" ] || [ "${compiler,,}" = "clang++" ]; then
   cmake_cpp_compiler=-DCMAKE_CXX_COMPILER=clang++
   cmake_c_compiler=-DCMAKE_C_COMPILER=clang
   compiler_name=clang
-elif [ "${compiler,,}" = "clang-6" ] || [ "${compiler,,}" = "clang++-6" ]; then
+elif [ "${compiler,,}" = "clang-6" ] || [ "${compiler,,}" = "clang++-6" ] ||
+     [ "${compiler,,}" = "clang6" ] || [ "${compiler,,}" = "clang++6" ]; then
   cmake_cpp_compiler=-DCMAKE_CXX_COMPILER=clang++-6.0
   cmake_c_compiler=-DCMAKE_C_COMPILER=clang-6.0
   compiler_name=clang6
-elif [ "${compiler,,}" = "clang-10" ] || [ "${compiler,,}" = "clang++-10" ]; then
+elif [ "${compiler,,}" = "clang-10" ] || [ "${compiler,,}" = "clang++-10" ] ||
+     [ "${compiler,,}" = "clang10" ] || [ "${compiler,,}" = "clang++10" ]; then
   cmake_cpp_compiler=-DCMAKE_CXX_COMPILER=clang++-10
   cmake_c_compiler=-DCMAKE_C_COMPILER=clang-10
   compiler_name=clang10
