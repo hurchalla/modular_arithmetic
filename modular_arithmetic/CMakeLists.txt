@@ -7,6 +7,7 @@ endif()
 
 cmake_minimum_required(VERSION 3.14)
 
+project(hurchalla_basic_modular_arithmetic VERSION 1.0.0 LANGUAGES CXX)
 
 # We need to detect if we're using MSVC for x86_64, prior to MSVC2019, since
 # these old MSVC versions need a separate asm file for modular multiplication.
@@ -15,15 +16,9 @@ if((CMAKE_CXX_COMPILER_ID MATCHES "MSVC") AND (MSVC_VERSION LESS 1920) AND
           (CMAKE_SYSTEM_PROCESSOR MATCHES "x86|X86|amd64|AMD64|EM64T") AND
           (CMAKE_SIZEOF_VOID_P EQUAL 8))
     set(HURCHALLA_MA_USING_OLD_MSVC_X64 TRUE)
+    enable_language(ASM_MASM)
 else()
     set(HURCHALLA_MA_USING_OLD_MSVC_X64 FALSE)
-endif()
-
-
-if(HURCHALLA_MA_USING_OLD_MSVC_X64)
-    project(hurchalla_basic_modular_arithmetic VERSION 1.0.0 LANGUAGES CXX ASM)
-else()
-    project(hurchalla_basic_modular_arithmetic VERSION 1.0.0 LANGUAGES CXX)
 endif()
 
 
