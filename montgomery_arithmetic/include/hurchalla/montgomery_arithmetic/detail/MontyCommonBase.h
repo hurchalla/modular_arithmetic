@@ -42,20 +42,6 @@ public:
         T get() const { return value; }
         T value;
     };
-    class CanonicalValue : public MontgomeryValue {
-        friend Derived<T>; friend MontyCommonBase;
-        explicit CanonicalValue(T val) : MontgomeryValue(val) {}
-    public:
-        CanonicalValue() : MontgomeryValue() {}
-        friend bool operator==(const CanonicalValue& x, const CanonicalValue& y)
-        {
-            return x.value == y.value;
-        }
-        friend bool operator!=(const CanonicalValue& x, const CanonicalValue& y)
-        {
-            return !(x == y);
-        }
-    };
 private:
     static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
     static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
@@ -109,7 +95,7 @@ public:
     // intended for use in postconditions/preconditions
     HURCHALLA_FORCE_INLINE bool isCanonical(V x) const
     {
-        CanonicalValue cfx = static_cast<const D*>(this)->getCanonicalForm(x);
+        V cfx = static_cast<const D*>(this)->getCanonicalValue(x);
         // Any fully reduced value (0 <= value < n_) must be canonical.  Class
         // Derived must be implemented to respect this.
         HPBC_INVARIANT2((0 <= x.get() && x.get() < n_) ? x.get() == cfx.get() :
@@ -125,23 +111,23 @@ public:
         return static_cast<const D*>(this)->multiply(V(a), V(r_squared_mod_n_));
     }
 
-    HURCHALLA_FORCE_INLINE CanonicalValue getUnityValue() const
+    HURCHALLA_FORCE_INLINE V getUnityValue() const
     {
         // as noted in constructor, unityValue == (1*R)%n_ == r_mod_n_
-        HPBC_INVARIANT2(isCanonical(V(r_mod_n_)));
-        return CanonicalValue(r_mod_n_);
+        HPBC_POSTCONDITION2(isCanonical(V(r_mod_n_)));
+        return V(r_mod_n_);
     }
 
-    HURCHALLA_FORCE_INLINE CanonicalValue getZeroValue() const
+    HURCHALLA_FORCE_INLINE V getZeroValue() const
     {
         // zeroValue == (0*R)%n_
-        HPBC_INVARIANT2(isCanonical(V(0)));
-        return CanonicalValue(0);
+        HPBC_POSTCONDITION2(isCanonical(V(0)));
+        return V(0);
     }
 
-    HURCHALLA_FORCE_INLINE CanonicalValue getNegativeOneValue() const
+    HURCHALLA_FORCE_INLINE V getNegativeOneValue() const
     {
-        // We want to get  returnVal = getCanonicalForm(subtract(getZeroValue(),
+        // We want to get returnVal = getCanonicalValue(subtract(getZeroValue(),
         //                                               getUnityValue())).
         //   getZeroValue() returns a value belonging to the equivalence class
         //   0*R (mod n_).  This equivalence class can equally be represented by
@@ -155,9 +141,9 @@ public:
         HPBC_INVARIANT2(n_ > r_mod_n_);
         T ret = static_cast<T>(n_ - r_mod_n_);
         HPBC_ASSERT2(0 < ret && ret < n_);
-        HPBC_INVARIANT2(isCanonical(V(ret)));
 
-        return CanonicalValue(ret);
+        HPBC_POSTCONDITION2(isCanonical(V(ret)));
+        return V(ret);
     }
 };
 

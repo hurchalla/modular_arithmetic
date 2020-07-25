@@ -32,14 +32,11 @@ class MontyQuarterRange final : public MontyCommonBase<MontyQuarterRange, T> {
       ::hurchalla::montgomery_arithmetic::MontyQuarterRange, T>::n_;
     using MontyCommonBase<
       ::hurchalla::montgomery_arithmetic::MontyQuarterRange, T>::neg_inv_n_;
-    using typename MontyCommonBase<
-      ::hurchalla::montgomery_arithmetic::MontyQuarterRange, T>::CanonicalValue;
     using V = typename MontyCommonBase<
       ::hurchalla::montgomery_arithmetic::MontyQuarterRange,T>::MontgomeryValue;
 public:
     using montvalue_type = V;
     using template_param_type = T;
-    using canonical_value_type = CanonicalValue;
 
     explicit MontyQuarterRange(T modulus) : MontyCommonBase<
               ::hurchalla::montgomery_arithmetic::MontyQuarterRange, T>(modulus)
@@ -71,12 +68,12 @@ public:
         return minimized_result;
     }
 
-    HURCHALLA_FORCE_INLINE CanonicalValue getCanonicalForm(V x) const
+    HURCHALLA_FORCE_INLINE V getCanonicalValue(V x) const
     {
         HPBC_PRECONDITION2(x.get() < 2*n_);
         T cf = (x.get() < n_) ? x.get() : static_cast<T>(x.get() - n_);
         HPBC_POSTCONDITION2(cf < n_);
-        return CanonicalValue(cf);
+        return V(cf);
     }
 
     HURCHALLA_FORCE_INLINE V multiply(V x, V y) const

@@ -163,7 +163,7 @@ while getopts ":m:c:h-:ra" opt; do
     h)
       ;&
     -)
-      echo "Usage: build_tests [-c=<compiler_name>] [-r] [-a] [-m=Release|Debug]" >&2
+      echo "Usage: build_tests [-c<compiler_name>] [-r] [-a] [-m<Release|Debug>]" >&2
       exit 1
       ;;
     c)

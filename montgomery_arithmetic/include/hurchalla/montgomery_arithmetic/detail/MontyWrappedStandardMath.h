@@ -39,20 +39,6 @@ public:
         T get() const { return value; }
         T value;
     };
-    class CanonicalValue : public MontgomeryValue {
-        friend MontyWrappedStandardMath;
-        explicit CanonicalValue(T val) : MontgomeryValue(val) {}
-    public:
-        CanonicalValue() : MontgomeryValue() {}
-        friend bool operator==(const CanonicalValue& x, const CanonicalValue& y)
-        {
-            return x.value == y.value;
-        }
-        friend bool operator!=(const CanonicalValue& x, const CanonicalValue& y)
-        {
-            return !(x == y);
-        }
-    };
 private:
     static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
     static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
@@ -62,7 +48,6 @@ private:
 public:
     using template_param_type = T;
     using montvalue_type = V;
-    using canonical_value_type = CanonicalValue;
 
     explicit MontyWrappedStandardMath(T modulus) : modulus_(modulus)
     {
@@ -102,23 +87,23 @@ public:
         return ret;
     }
 
-    HURCHALLA_FORCE_INLINE CanonicalValue getCanonicalForm(V x) const
+    HURCHALLA_FORCE_INLINE V getCanonicalValue(V x) const
     {
         HPBC_PRECONDITION2(isCanonical(x));
-        return CanonicalValue(x.get());
+        return x;
     }
 
-    HURCHALLA_FORCE_INLINE CanonicalValue getUnityValue() const
+    HURCHALLA_FORCE_INLINE V getUnityValue() const
     {
-        return CanonicalValue(static_cast<T>(1));
+        return V(static_cast<T>(1));
     }
-    HURCHALLA_FORCE_INLINE CanonicalValue getZeroValue() const
+    HURCHALLA_FORCE_INLINE V getZeroValue() const
     {
-        return CanonicalValue(static_cast<T>(0));
+        return V(static_cast<T>(0));
     }
-    HURCHALLA_FORCE_INLINE CanonicalValue getNegativeOneValue() const
+    HURCHALLA_FORCE_INLINE V getNegativeOneValue() const
     {
-        return CanonicalValue(static_cast<T>(modulus_ - static_cast<T>(1)));
+        return V(static_cast<T>(modulus_ - static_cast<T>(1)));
     }
 
     HURCHALLA_FORCE_INLINE V multiply(V x, V y) const

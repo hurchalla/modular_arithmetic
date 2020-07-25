@@ -145,20 +145,6 @@ public:
         T get() const { return value; }
         T value;
     };
-    class CanonicalValue : public MontgomeryValue {
-        friend MontySqrtRange;
-        explicit CanonicalValue(T val) : MontgomeryValue(val) {}
-    public:
-        CanonicalValue() : MontgomeryValue() {}
-        friend bool operator==(const CanonicalValue& x, const CanonicalValue& y)
-        {
-            return x.value == y.value;
-        }
-        friend bool operator!=(const CanonicalValue& x, const CanonicalValue& y)
-        {
-            return !(x == y);
-        }
-    };
 private:
     static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
     static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
@@ -171,7 +157,6 @@ private:
 public:
     using montvalue_type = V;
     using template_param_type = T;
-    using canonical_value_type = CanonicalValue;
 
     explicit MontySqrtRange(T modulus) : n_(modulus),
                              neg_inv_n_(negative_inverse_mod_r(n_)),
@@ -233,7 +218,7 @@ public:
     // intended for use in postconditions/preconditions
     HURCHALLA_FORCE_INLINE bool isCanonical(V x) const
     {
-        CanonicalValue cfx = getCanonicalForm(x);
+        V cfx = getCanonicalValue(x);
         bool good = isValid(x);
         return (x.get() == cfx.get() && good);
     }
@@ -256,36 +241,37 @@ public:
         return result;
     }
 
-    HURCHALLA_FORCE_INLINE CanonicalValue getUnityValue() const
+    HURCHALLA_FORCE_INLINE V getUnityValue() const
     {
         // as noted in constructor, unityValue == (1*R)%n_ == r_mod_n_,
         // and 0 < r_mod_n_ < n_.
-        HPBC_INVARIANT2(isCanonical(V(r_mod_n_)));
-        return CanonicalValue(r_mod_n_);
+        HPBC_POSTCONDITION2(isCanonical(V(r_mod_n_)));
+        return V(r_mod_n_);
     }
 
-    HURCHALLA_FORCE_INLINE CanonicalValue getZeroValue() const
+    HURCHALLA_FORCE_INLINE V getZeroValue() const
     {
         // We want returnVal == (0*R)%n_, but since isValid() requires
         // 0 < returnVal <= n_, we return n_ (n_ ≡ 0 (mod n_))
-        HPBC_INVARIANT2(isCanonical(V(n_)));
-        return CanonicalValue(n_);
+        HPBC_POSTCONDITION2(isCanonical(V(n_)));
+        return V(n_);
     } 
 
-    HURCHALLA_FORCE_INLINE CanonicalValue getNegativeOneValue() const
+    HURCHALLA_FORCE_INLINE V getNegativeOneValue() const
     {
-        // We want to get  returnVal = getCanonicalForm(subtract(getZeroValue(),
+        // We want to get returnVal = getCanonicalValue(subtract(getZeroValue(),
         //                                               getUnityValue())).
         //   getZeroValue() returns n_, and getUnityValue() returns r_mod_n_.
         //   Therefore the subtraction results in the equivalence class
         //   (n_ - r_mod_n_) (mod n_). The constructor established the invariant
         //   0 < r_mod_n_ < n_.  Thus we know  0 < n_ - r_mod_n_ < n_.  This
-        //   means (n_ - r_mod_n_)  satisfies isValid() and getCanonicalForm().
+        //   means (n_ - r_mod_n_)  satisfies isValid() and getCanonicalValue().
         HPBC_INVARIANT2(n_ > r_mod_n_);
         T negOne = static_cast<T>(n_ - r_mod_n_);
         HPBC_ASSERT2(0 < negOne && negOne < n_);
-        HPBC_INVARIANT2(isCanonical(V(negOne)));
-        return CanonicalValue(negOne);
+
+        HPBC_POSTCONDITION2(isCanonical(V(negOne)));
+        return V(negOne);
     }
 
     HURCHALLA_FORCE_INLINE T convertOut(V x) const
@@ -307,10 +293,10 @@ public:
         return minimized_result;
     }
 
-    HURCHALLA_FORCE_INLINE CanonicalValue getCanonicalForm(V x) const
+    HURCHALLA_FORCE_INLINE V getCanonicalValue(V x) const
     {
         HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
-        return CanonicalValue(x.get());
+        return x;
     }
 
     HURCHALLA_FORCE_INLINE V multiply(V x, V y) const

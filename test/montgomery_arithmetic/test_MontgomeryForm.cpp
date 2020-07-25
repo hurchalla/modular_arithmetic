@@ -50,18 +50,18 @@ void test_mf_general_checks(M& mf, typename M::T_type a, typename M::T_type b)
     T reference_sum = ma::modular_addition_prereduced_inputs(a,b,modulus);
     EXPECT_TRUE(mf.convertOut(mf.add(x,y)) == reference_sum);
     EXPECT_TRUE(mf.convertOut(mf.add(y,x)) == reference_sum);
-    EXPECT_TRUE(mf.getCanonicalForm(mf.add(x,y)) ==
-                              mf.getCanonicalForm(mf.convertIn(reference_sum)));
+    EXPECT_TRUE(mf.getCanonicalValue(mf.add(x,y)) ==
+                             mf.getCanonicalValue(mf.convertIn(reference_sum)));
 
     EXPECT_TRUE(mf.convertOut(mf.subtract(y,x)) ==
                         ma::modular_subtraction_prereduced_inputs(b,a,modulus));
     EXPECT_TRUE(mf.convertOut(mf.subtract(x,y)) ==
                         ma::modular_subtraction_prereduced_inputs(a,b,modulus));
 
-    EXPECT_TRUE(mf.getUnityValue() == mf.getCanonicalForm(mf.convertIn(1)));
-    EXPECT_TRUE(mf.getZeroValue() == mf.getCanonicalForm(mf.convertIn(0)));
+    EXPECT_TRUE(mf.getUnityValue() == mf.getCanonicalValue(mf.convertIn(1)));
+    EXPECT_TRUE(mf.getZeroValue() == mf.getCanonicalValue(mf.convertIn(0)));
     EXPECT_TRUE(mf.getNegativeOneValue() ==
-              mf.getCanonicalForm(mf.convertIn(static_cast<T>(modulus-1))));
+              mf.getCanonicalValue(mf.convertIn(static_cast<T>(modulus-1))));
 
     T ref_product = ma::modular_multiplication_prereduced_inputs(a,b,modulus);
     EXPECT_TRUE(mf.convertOut(mf.multiply(x,y)) == ref_product);
@@ -102,12 +102,12 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.add(y,x)) == 4);
         EXPECT_TRUE(mf.convertOut(mf.subtract(y,x)) == 5);
         EXPECT_TRUE(mf.convertOut(mf.subtract(x,y)) == 8);
-        EXPECT_TRUE(mf.getCanonicalForm(mf.add(x,y)) ==
-                                          mf.getCanonicalForm(mf.convertIn(4)));
-        EXPECT_TRUE(mf.getUnityValue() == mf.getCanonicalForm(mf.convertIn(1)));
-        EXPECT_TRUE(mf.getZeroValue() == mf.getCanonicalForm(mf.convertIn(0)));
+        EXPECT_TRUE(mf.getCanonicalValue(mf.add(x,y)) ==
+                                         mf.getCanonicalValue(mf.convertIn(4)));
+        EXPECT_TRUE(mf.getUnityValue()== mf.getCanonicalValue(mf.convertIn(1)));
+        EXPECT_TRUE(mf.getZeroValue() == mf.getCanonicalValue(mf.convertIn(0)));
         EXPECT_TRUE(mf.getNegativeOneValue() ==
-                  mf.getCanonicalForm(mf.convertIn(static_cast<T>(modulus-1))));
+                 mf.getCanonicalValue(mf.convertIn(static_cast<T>(modulus-1))));
         EXPECT_TRUE(mf.convertOut(mf.multiply(x,y)) == 1);
         EXPECT_TRUE(mf.convertOut(mf.multiply(y,x)) == 1);
         EXPECT_TRUE(mf.convertOut(mf.square(y)) == 4);
@@ -132,12 +132,12 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.add(y,x)) == 0);
         EXPECT_TRUE(mf.convertOut(mf.subtract(y,x)) == 1);
         EXPECT_TRUE(mf.convertOut(mf.subtract(x,y)) == 2);
-        EXPECT_TRUE(mf.getCanonicalForm(mf.subtract(x,y)) ==
-                                          mf.getCanonicalForm(mf.convertIn(2)));
-        EXPECT_TRUE(mf.getUnityValue() == mf.getCanonicalForm(mf.convertIn(1)));
-        EXPECT_TRUE(mf.getZeroValue() == mf.getCanonicalForm(mf.convertIn(0)));
+        EXPECT_TRUE(mf.getCanonicalValue(mf.subtract(x,y)) ==
+                                         mf.getCanonicalValue(mf.convertIn(2)));
+        EXPECT_TRUE(mf.getUnityValue()== mf.getCanonicalValue(mf.convertIn(1)));
+        EXPECT_TRUE(mf.getZeroValue() == mf.getCanonicalValue(mf.convertIn(0)));
         EXPECT_TRUE(mf.getNegativeOneValue() ==
-                  mf.getCanonicalForm(mf.convertIn(static_cast<T>(modulus-1))));
+                 mf.getCanonicalValue(mf.convertIn(static_cast<T>(modulus-1))));
         EXPECT_TRUE(mf.convertOut(mf.multiply(x,y)) == 2);
         EXPECT_TRUE(mf.convertOut(mf.multiply(y,x)) == 2);
         EXPECT_TRUE(mf.convertOut(mf.square(y)) == 1);
@@ -160,12 +160,12 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.add(y,x)) == 1);
         EXPECT_TRUE(mf.convertOut(mf.subtract(y,x)) == 3);
         EXPECT_TRUE(mf.convertOut(mf.subtract(x,y)) == modulus - 3);
-        EXPECT_TRUE(mf.getCanonicalForm(mf.add(x,y)) ==
-                                        mf.getCanonicalForm(mf.convertIn(1)));
-        EXPECT_TRUE(mf.getUnityValue() == mf.getCanonicalForm(mf.convertIn(1)));
-        EXPECT_TRUE(mf.getZeroValue() == mf.getCanonicalForm(mf.convertIn(0)));
+        EXPECT_TRUE(mf.getCanonicalValue(mf.add(x,y)) ==
+                                        mf.getCanonicalValue(mf.convertIn(1)));
+        EXPECT_TRUE(mf.getUnityValue()== mf.getCanonicalValue(mf.convertIn(1)));
+        EXPECT_TRUE(mf.getZeroValue() == mf.getCanonicalValue(mf.convertIn(0)));
         EXPECT_TRUE(mf.getNegativeOneValue() ==
-                  mf.getCanonicalForm(mf.convertIn(static_cast<T>(modulus-1))));
+                 mf.getCanonicalValue(mf.convertIn(static_cast<T>(modulus-1))));
         EXPECT_TRUE(mf.convertOut(mf.multiply(x,y)) == modulus - 2);
         EXPECT_TRUE(mf.convertOut(mf.square(x)) == 1);
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 1)) == 2);

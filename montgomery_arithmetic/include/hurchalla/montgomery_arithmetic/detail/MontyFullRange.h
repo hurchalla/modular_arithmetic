@@ -26,14 +26,11 @@ class MontyFullRange final : public MontyCommonBase<MontyFullRange, T> {
         ::hurchalla::montgomery_arithmetic::MontyFullRange, T>::n_;
     using MontyCommonBase<
         ::hurchalla::montgomery_arithmetic::MontyFullRange, T>::neg_inv_n_;
-    using typename MontyCommonBase<
-        ::hurchalla::montgomery_arithmetic::MontyFullRange, T>::CanonicalValue;
     using V = typename MontyCommonBase<
         ::hurchalla::montgomery_arithmetic::MontyFullRange, T>::MontgomeryValue;
 public:
     using montvalue_type = V;
     using template_param_type = T;
-    using canonical_value_type = CanonicalValue;
 
     explicit MontyFullRange(T modulus) : MontyCommonBase<
         ::hurchalla::montgomery_arithmetic::MontyFullRange, T>(modulus) {}
@@ -60,10 +57,10 @@ public:
         return minimized_result;
     }
 
-    HURCHALLA_FORCE_INLINE CanonicalValue getCanonicalForm(V x) const
+    HURCHALLA_FORCE_INLINE V getCanonicalValue(V x) const
     {
         HPBC_PRECONDITION2(x.get() < n_);
-        return CanonicalValue(x.get());
+        return x;
     }
 
     HURCHALLA_FORCE_INLINE V multiply(V x, V y) const

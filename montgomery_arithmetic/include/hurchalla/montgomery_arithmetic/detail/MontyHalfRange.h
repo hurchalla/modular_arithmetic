@@ -30,14 +30,11 @@ class MontyHalfRange final : public MontyCommonBase<MontyHalfRange, T> {
         ::hurchalla::montgomery_arithmetic::MontyHalfRange, T>::n_;
     using MontyCommonBase<
         ::hurchalla::montgomery_arithmetic::MontyHalfRange, T>::neg_inv_n_;
-    using typename MontyCommonBase<
-        ::hurchalla::montgomery_arithmetic::MontyHalfRange, T>::CanonicalValue;
     using V = typename MontyCommonBase<
         ::hurchalla::montgomery_arithmetic::MontyHalfRange, T>::MontgomeryValue;
 public:
     using montvalue_type = V;
     using template_param_type = T;
-    using canonical_value_type = CanonicalValue;
 
     explicit MontyHalfRange(T modulus) : MontyCommonBase<
         ::hurchalla::montgomery_arithmetic::MontyHalfRange, T>(modulus)
@@ -70,10 +67,10 @@ public:
         return minimized_result;
     }
 
-    HURCHALLA_FORCE_INLINE CanonicalValue getCanonicalForm(V x) const
+    HURCHALLA_FORCE_INLINE V getCanonicalValue(V x) const
     {
         HPBC_PRECONDITION2(x.get() < n_);
-        return CanonicalValue(x.get());
+        return x;
     }
 
     // Aside from the constructor's precondition of modulus < R/2, this

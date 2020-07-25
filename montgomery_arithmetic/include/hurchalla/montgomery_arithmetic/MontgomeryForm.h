@@ -8,7 +8,6 @@
 #include "hurchalla/montgomery_arithmetic/detail/MontgomeryDefault.h"
 #include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
-#include <type_traits>
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
@@ -25,13 +24,22 @@ class MontgomeryForm final {
     static_assert(modular_arithmetic::ma_numeric_limits<U>::digits >=
                   modular_arithmetic::ma_numeric_limits<T>::digits, "");
 public:
-    using T_type = T;
     using MontgomeryValue = typename MontyType::montvalue_type;
-    using CanonicalValue = typename MontyType::canonical_value_type;
-
-    // verify that a CanonicalValue is always usable for a MontgomeryValue.
-    static_assert(std::is_convertible<CanonicalValue, MontgomeryValue>::value, 
-                  "");
+    using T_type = T;
+    class CanonicalValue : public MontgomeryValue {
+        friend MontgomeryForm;
+        explicit CanonicalValue(MontgomeryValue val) : MontgomeryValue(val) {}
+    public:
+        CanonicalValue() : MontgomeryValue() {}
+        friend bool operator==(const CanonicalValue& x, const CanonicalValue& y)
+        {
+            return x.value == y.value;
+        }
+        friend bool operator!=(const CanonicalValue& x, const CanonicalValue& y)
+        {
+            return !(x == y);
+        }
+    };
 
     explicit MontgomeryForm(T modulus) : impl(static_cast<U>(modulus))
     {
@@ -76,39 +84,40 @@ public:
 
     // Returns a unique (canonical) value representing the equivalence class of
     // x modulo the modulus.  You can not directly compare MontgomeryValues, but
-    // you can call getCanonicalForm(), and then use standard equality or
+    // you can call getCanonicalValue(), and then use standard equality or
     // inequality operators to compare the resulting CanonicalValues.
-    CanonicalValue getCanonicalForm(MontgomeryValue x) const
+    CanonicalValue getCanonicalValue(MontgomeryValue x) const
     {
-        return impl.getCanonicalForm(x);
+        MontgomeryValue ret = impl.getCanonicalValue(x);
+        return CanonicalValue(ret);
     }
     // Returns the canonical monty value that represents the type T value 1.
-    // The call is equivalent to getCanonicalForm(convertIn(static_cast<T>(1))),
+    // The call is equivalent to getCanonicalValue(convertIn(static_cast<T>(1)))
     // but it's more efficient (essentially zero cost) and more convenient.
     CanonicalValue getUnityValue() const
     {
-        CanonicalValue ret = impl.getUnityValue();
+        MontgomeryValue ret = impl.getUnityValue();
         HPBC_POSTCONDITION(impl.isCanonical(ret));
-        return ret;
+        return CanonicalValue(ret);
     }
     // Returns the canonical monty value that represents the type T value 0.
-    // The call is equivalent to getCanonicalForm(convertIn(static_cast<T>(0))),
+    // The call is equivalent to getCanonicalValue(convertIn(static_cast<T>(0)))
     // but it's more efficient (essentially zero cost) and more convenient.
     CanonicalValue getZeroValue() const
     {
-        CanonicalValue ret = impl.getZeroValue();
+        MontgomeryValue ret = impl.getZeroValue();
         HPBC_POSTCONDITION(impl.isCanonical(ret));
-        return ret;
+        return CanonicalValue(ret);
     }
     // Returns the canonical monty value that represents the type T value
     // modulus-1 (which equals -1 (mod modulus)).  The call is equivalent to
-    // getCanonicalForm(convertIn(static_cast<T>(modulus - 1))), but it's more
+    // getCanonicalValue(convertIn(static_cast<T>(modulus - 1))), but it's more
     // efficient (essentially zero cost) and more convenient.
     CanonicalValue getNegativeOneValue() const
     {
-        CanonicalValue ret = impl.getNegativeOneValue();
+        MontgomeryValue ret = impl.getNegativeOneValue();
         HPBC_POSTCONDITION(impl.isCanonical(ret));
-        return ret;
+        return CanonicalValue(ret);
     }
 
     // Returns the modular product of (the montgomery values) x and y.
