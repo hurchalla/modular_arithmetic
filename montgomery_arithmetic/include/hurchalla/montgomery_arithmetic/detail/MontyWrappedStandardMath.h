@@ -9,6 +9,7 @@
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
+#include "hurchalla/modular_arithmetic/absolute_value_difference.h"
 #include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
@@ -133,6 +134,15 @@ public:
         namespace ma = hurchalla::modular_arithmetic;
         T result =
           ma::modular_subtraction_prereduced_inputs(x.get(), y.get(), modulus_);
+        HPBC_POSTCONDITION2(isCanonical(V(result)));
+        return V(result);
+    }
+    HURCHALLA_FORCE_INLINE V unordered_subtract(V x, V y) const
+    {
+        HPBC_PRECONDITION2(isCanonical(x));
+        HPBC_PRECONDITION2(isCanonical(y));
+        namespace ma = hurchalla::modular_arithmetic;
+        T result = ma::absolute_value_difference(x.get(), y.get());
         HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }

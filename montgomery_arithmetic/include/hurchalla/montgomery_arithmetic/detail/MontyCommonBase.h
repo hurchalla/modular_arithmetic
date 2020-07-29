@@ -7,6 +7,7 @@
 
 #include "hurchalla/montgomery_arithmetic/detail/negative_inverse_mod_r.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
+#include "hurchalla/modular_arithmetic/absolute_value_difference.h"
 #include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
@@ -144,6 +145,16 @@ public:
 
         HPBC_POSTCONDITION2(isCanonical(V(ret)));
         return V(ret);
+    }
+
+    HURCHALLA_FORCE_INLINE V unordered_subtract(V x, V y) const
+    {
+        HPBC_PRECONDITION2(static_cast<const D*>(this)->isValid(x));
+        HPBC_PRECONDITION2(static_cast<const D*>(this)->isValid(y));
+        namespace ma = hurchalla::modular_arithmetic;
+        T result = ma::absolute_value_difference(x.get(), y.get());
+        HPBC_POSTCONDITION2(static_cast<const D*>(this)->isValid(V(result)));
+        return V(result);
     }
 };
 

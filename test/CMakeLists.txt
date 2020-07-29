@@ -21,15 +21,17 @@ include(GoogleTest)
 
 
 add_executable(test_hurchalla_modular_arithmetic
+               modular_arithmetic/test_absolute_value_difference.cpp
                modular_arithmetic/test_modular_addition.cpp
-               modular_arithmetic/test_modular_subtraction.cpp
                modular_arithmetic/test_modular_addition_with_subtraction.cpp
                modular_arithmetic/test_modular_multiplication.cpp
                modular_arithmetic/test_modular_multiplicative_inverse.cpp
                modular_arithmetic/test_modular_pow.cpp
+               modular_arithmetic/test_modular_subtraction.cpp
+               montgomery_arithmetic/test_MontgomeryForm.cpp
                montgomery_arithmetic/test_negative_inverse_mod_r.cpp
                montgomery_arithmetic/test_unsigned_multiply_to_hilo_product.cpp
-               montgomery_arithmetic/test_MontgomeryForm.cpp)
+               )
 
 EnableMaxWarnings(test_hurchalla_modular_arithmetic)
 

@@ -340,6 +340,13 @@ public:
         HPBC_POSTCONDITION2(0 < result && result <= n_);
         return V(result);
     }
+
+    HURCHALLA_FORCE_INLINE V unordered_subtract(V x, V y) const
+    {
+        // we can't improve efficiency much over plain subtract,
+        // so just delegate to subtract
+        return subtract(x, y);
+    }
 };
 
 

@@ -53,10 +53,15 @@ void test_mf_general_checks(M& mf, typename M::T_type a, typename M::T_type b)
     EXPECT_TRUE(mf.getCanonicalValue(mf.add(x,y)) ==
                              mf.getCanonicalValue(mf.convertIn(reference_sum)));
 
-    EXPECT_TRUE(mf.convertOut(mf.subtract(y,x)) ==
-                        ma::modular_subtraction_prereduced_inputs(b,a,modulus));
-    EXPECT_TRUE(mf.convertOut(mf.subtract(x,y)) ==
-                        ma::modular_subtraction_prereduced_inputs(a,b,modulus));
+
+    T diff1 = ma::modular_subtraction_prereduced_inputs(b,a,modulus);
+    EXPECT_TRUE(mf.convertOut(mf.subtract(y,x)) == diff1);
+    T diff2 = ma::modular_subtraction_prereduced_inputs(a,b,modulus);
+    EXPECT_TRUE(mf.convertOut(mf.subtract(x,y)) == diff2);
+    T us = mf.convertOut(mf.unordered_subtract(x,y));
+    EXPECT_TRUE(us == diff1 || us == diff2);
+    us = mf.convertOut(mf.unordered_subtract(y,x));
+    EXPECT_TRUE(us == diff1 || us == diff2);
 
     EXPECT_TRUE(mf.getUnityValue() == mf.getCanonicalValue(mf.convertIn(1)));
     EXPECT_TRUE(mf.getZeroValue() == mf.getCanonicalValue(mf.convertIn(0)));
@@ -102,6 +107,10 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.add(y,x)) == 4);
         EXPECT_TRUE(mf.convertOut(mf.subtract(y,x)) == 5);
         EXPECT_TRUE(mf.convertOut(mf.subtract(x,y)) == 8);
+        T us = mf.convertOut(mf.unordered_subtract(x,y));
+        EXPECT_TRUE(us == 8 || us == 5);
+        us = mf.convertOut(mf.unordered_subtract(y,x));
+        EXPECT_TRUE(us == 8 || us == 5);
         EXPECT_TRUE(mf.getCanonicalValue(mf.add(x,y)) ==
                                          mf.getCanonicalValue(mf.convertIn(4)));
         EXPECT_TRUE(mf.getUnityValue()== mf.getCanonicalValue(mf.convertIn(1)));
@@ -134,6 +143,10 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.subtract(x,y)) == 2);
         EXPECT_TRUE(mf.getCanonicalValue(mf.subtract(x,y)) ==
                                          mf.getCanonicalValue(mf.convertIn(2)));
+        T us = mf.convertOut(mf.unordered_subtract(x,y));
+        EXPECT_TRUE(us == 1 || us == 2);
+        us = mf.convertOut(mf.unordered_subtract(y,x));
+        EXPECT_TRUE(us == 1 || us == 2);
         EXPECT_TRUE(mf.getUnityValue()== mf.getCanonicalValue(mf.convertIn(1)));
         EXPECT_TRUE(mf.getZeroValue() == mf.getCanonicalValue(mf.convertIn(0)));
         EXPECT_TRUE(mf.getNegativeOneValue() ==
@@ -162,6 +175,10 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.subtract(x,y)) == modulus - 3);
         EXPECT_TRUE(mf.getCanonicalValue(mf.add(x,y)) ==
                                         mf.getCanonicalValue(mf.convertIn(1)));
+        T us = mf.convertOut(mf.unordered_subtract(x,y));
+        EXPECT_TRUE(us == 3 || us == modulus - 3);
+        us = mf.convertOut(mf.unordered_subtract(y,x));
+        EXPECT_TRUE(us == 3 || us == modulus - 3);
         EXPECT_TRUE(mf.getUnityValue()== mf.getCanonicalValue(mf.convertIn(1)));
         EXPECT_TRUE(mf.getZeroValue() == mf.getCanonicalValue(mf.convertIn(0)));
         EXPECT_TRUE(mf.getNegativeOneValue() ==

@@ -167,6 +167,19 @@ public:
     {
         return impl.subtract(x, y);
     }
+
+    // Returns either the modular subtraction x-y, or y-x.  It is unspecified
+    // (and subject to change) which of the two subtractions will be returned
+    // in any given situation.  For cases where you don't care which subtraction
+    // gets performed, you should prefer unordered_subtract() over
+    // this->subtract().  Unordered_subtract() is always at least as efficient
+    // as subtract(), and usually it is more efficient  [in terms of number of
+    // instructions, number of registers used, and possibly also total latency].
+    MontgomeryValue unordered_subtract(MontgomeryValue x,
+                                       MontgomeryValue y) const
+    {
+        return impl.unordered_subtract(x, y);
+    }
 };
 
 
