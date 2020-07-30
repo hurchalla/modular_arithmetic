@@ -85,10 +85,10 @@ void test_unsigned_multiply_to_hilo_product()
 
 namespace {
     TEST(MontgomeryArithmetic, unsigned_multiply_to_hilo_product) {
-        test_unsigned_multiply_to_hilo_product<uint8_t>();
-        test_unsigned_multiply_to_hilo_product<uint16_t>();
-        test_unsigned_multiply_to_hilo_product<uint32_t>();
-        test_unsigned_multiply_to_hilo_product<uint64_t>();
+        test_unsigned_multiply_to_hilo_product<std::uint8_t>();
+        test_unsigned_multiply_to_hilo_product<std::uint16_t>();
+        test_unsigned_multiply_to_hilo_product<std::uint32_t>();
+        test_unsigned_multiply_to_hilo_product<std::uint64_t>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
         test_unsigned_multiply_to_hilo_product<__uint128_t>();
 #endif

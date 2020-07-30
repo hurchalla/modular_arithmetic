@@ -216,6 +216,11 @@ elif [ "${compiler,,}" = "clang" ] || [ "${compiler,,}" = "clang++" ]; then
   cmake_cpp_compiler=-DCMAKE_CXX_COMPILER=clang++
   cmake_c_compiler=-DCMAKE_C_COMPILER=clang
   compiler_name=clang
+elif [ "${compiler,,}" = "clang-3" ] || [ "${compiler,,}" = "clang++-3" ] ||
+     [ "${compiler,,}" = "clang3" ] || [ "${compiler,,}" = "clang++3" ]; then
+  cmake_cpp_compiler=-DCMAKE_CXX_COMPILER=clang++-3.9
+  cmake_c_compiler=-DCMAKE_C_COMPILER=clang-3.9
+  compiler_name=clang3
 elif [ "${compiler,,}" = "clang-6" ] || [ "${compiler,,}" = "clang++-6" ] ||
      [ "${compiler,,}" = "clang6" ] || [ "${compiler,,}" = "clang++6" ]; then
   cmake_cpp_compiler=-DCMAKE_CXX_COMPILER=clang++-6.0
@@ -241,7 +246,7 @@ echo Using build mode $mode ...
 
 
 
-cpp_standard="-std=c++17"
+cpp_standard="-std=c++14"
 
 # A long note about issues setting the C++ standard when using CMake
 # ------------------------------------------------------------------

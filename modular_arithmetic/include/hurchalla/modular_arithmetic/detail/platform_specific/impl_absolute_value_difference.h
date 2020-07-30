@@ -38,8 +38,10 @@ T impl_absolute_value_difference(T a, T b)
 // MSVC doesn't support inline asm so we skip it.
 #if defined(HURCHALLA_ALLOW_INLINE_ASM_ABSDIFF) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
-inline uint32_t impl_absolute_value_difference(uint32_t a, uint32_t b)
+inline
+std::uint32_t impl_absolute_value_difference(std::uint32_t a, std::uint32_t b)
 {
+    using std::uint32_t;
     // Type uint32_t guarantees a>=0 and b>=0.
 
     uint32_t diff = b - a;
@@ -56,8 +58,10 @@ inline uint32_t impl_absolute_value_difference(uint32_t a, uint32_t b)
     return result;
 }
 
-inline uint64_t impl_absolute_value_difference(uint64_t a, uint64_t b)
+inline
+std::uint64_t impl_absolute_value_difference(std::uint64_t a, std::uint64_t b)
 {
+    using std::uint64_t;
     // Type uint64_t guarantees a>=0 and b>=0.
 
     uint64_t diff = b - a;

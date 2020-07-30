@@ -50,14 +50,14 @@ void exhaustive_test_uint8_t();
 void exhaustive_test_uint8_t()
 {
     namespace ma = hurchalla::modular_arithmetic;
-    for (uint8_t modulus = 255; modulus>1; --modulus) {
-        for (uint8_t a=0; a<modulus; ++a) {
-            uint8_t inverse = ma::modular_multiplicative_inverse(a, modulus);
-            if (inverse == 0)
+    for (std::uint8_t modulus = 255; modulus>1; --modulus) {
+        for (std::uint8_t a=0; a<modulus; ++a) {
+            std::uint8_t inv = ma::modular_multiplicative_inverse(a, modulus);
+            if (inv == 0)
                 EXPECT_TRUE(1 < gcd(a, modulus));
             else
-                EXPECT_TRUE(static_cast<uint8_t>(1) ==
-                    ma::modular_multiplication_prereduced_inputs(a, inverse,
+                EXPECT_TRUE(static_cast<std::uint8_t>(1) ==
+                    ma::modular_multiplication_prereduced_inputs(a, inv,
                                                                       modulus));
         }
     }
@@ -226,18 +226,18 @@ namespace {
 
         exhaustive_test_uint8_t();
 
-        test_modular_multiplicative_inverse<uint8_t>();
-        test_modular_multiplicative_inverse<uint16_t>();
-        test_modular_multiplicative_inverse<uint32_t>();
-        test_modular_multiplicative_inverse<uint64_t>();
+        test_modular_multiplicative_inverse<std::uint8_t>();
+        test_modular_multiplicative_inverse<std::uint16_t>();
+        test_modular_multiplicative_inverse<std::uint32_t>();
+        test_modular_multiplicative_inverse<std::uint64_t>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
         test_modular_multiplicative_inverse<__uint128_t>();
 #endif
 
-        test_modular_multiplicative_inverse<int8_t>();
-        test_modular_multiplicative_inverse<int16_t>();
-        test_modular_multiplicative_inverse<int32_t>();
-        test_modular_multiplicative_inverse<int64_t>();
+        test_modular_multiplicative_inverse<std::int8_t>();
+        test_modular_multiplicative_inverse<std::int16_t>();
+        test_modular_multiplicative_inverse<std::int32_t>();
+        test_modular_multiplicative_inverse<std::int64_t>();
 
 // It's a slight hack here to use a macro that tells us whether or not the
 // compiler supports  __uint128_t, when what we really want is to know is

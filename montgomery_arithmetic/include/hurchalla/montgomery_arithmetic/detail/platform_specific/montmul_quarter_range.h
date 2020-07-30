@@ -72,9 +72,10 @@ HURCHALLA_FORCE_INLINE T montmul_quarter_range(T x, T y, T n, T neg_inv_n)
 #if defined(HURCHALLA_ALLOW_INLINE_ASM_MONTMUL) && \
       defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 // This function is an asm version of template function montmul_quarter_range().
-HURCHALLA_FORCE_INLINE uint64_t montmul_quarter_range(uint64_t x, uint64_t y,
-                                                 uint64_t n, uint64_t neg_inv_n)
+HURCHALLA_FORCE_INLINE std::uint64_t montmul_quarter_range(std::uint64_t x,
+                      std::uint64_t y, std::uint64_t n, std::uint64_t neg_inv_n)
 {
+    using std::uint64_t;
     HPBC_PRECONDITION2(n < (static_cast<uint64_t>(1) << 62));
     HPBC_PRECONDITION2(x < 2*n);
     HPBC_PRECONDITION2(y < 2*n);
@@ -86,8 +87,8 @@ HURCHALLA_FORCE_INLINE uint64_t montmul_quarter_range(uint64_t x, uint64_t y,
     uint64_t u_lo = static_cast<uint64_t>(u);         // rax
 
     // montgomery REDC portion.
-    // See montmul_quarter_range<uint64_t>(), and REDC_non_minimized<uint64_t>() in
-    // monty_common.h, for details on what is done here and why it works.
+    // See montmul_quarter_range<uint64_t>(), and REDC_non_minimized<uint64_t>()
+    // in monty_common.h, for details on what is done here and why it works.
     uint64_t result, reg1;
     asm("movq %%rax, %1 \n\t"       /* reg1 = u_lo */
         "imulq %[inv], %%rax \n\t"  /* m = u_lo * neg_inv_n */

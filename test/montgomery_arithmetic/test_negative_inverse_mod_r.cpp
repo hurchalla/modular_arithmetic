@@ -73,15 +73,15 @@ void test_negative_inverse_mod_r()
 
 namespace {
     TEST(MontgomeryArithmetic, negative_inverse_mod_r) {
-        test_negative_inverse_mod_r<uint8_t>();
-        test_negative_inverse_mod_r<uint16_t>();
-        test_negative_inverse_mod_r<uint32_t>();
-        test_negative_inverse_mod_r<uint64_t>();
+        test_negative_inverse_mod_r<std::uint8_t>();
+        test_negative_inverse_mod_r<std::uint16_t>();
+        test_negative_inverse_mod_r<std::uint32_t>();
+        test_negative_inverse_mod_r<std::uint64_t>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
         test_negative_inverse_mod_r<__uint128_t>();
 #endif
 
-        test_inverse_exhaustive<uint8_t>();
-        test_inverse_exhaustive<uint16_t>();
+        test_inverse_exhaustive<std::uint8_t>();
+        test_inverse_exhaustive<std::uint16_t>();
     }
 }

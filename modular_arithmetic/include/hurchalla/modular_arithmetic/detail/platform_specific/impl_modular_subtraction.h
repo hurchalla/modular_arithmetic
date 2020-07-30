@@ -54,9 +54,10 @@ T impl_modular_subtraction_prereduced_inputs(T a, T b, T modulus)
 // MSVC doesn't support inline asm so we skip it.
 #if defined(HURCHALLA_ALLOW_INLINE_ASM_MODSUB) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
-inline uint32_t impl_modular_subtraction_prereduced_inputs(uint32_t a,
-                                                   uint32_t b, uint32_t modulus)
+inline std::uint32_t impl_modular_subtraction_prereduced_inputs(std::uint32_t a,
+                                         std::uint32_t b, std::uint32_t modulus)
 {
+    using std::uint32_t;
     HPBC_PRECONDITION2(modulus>0);
     HPBC_PRECONDITION2(a<modulus);  // uint32_t guarantees a>=0.
     HPBC_PRECONDITION2(b<modulus);  // uint32_t guarantees b>=0.
@@ -80,9 +81,10 @@ inline uint32_t impl_modular_subtraction_prereduced_inputs(uint32_t a,
     return result;
 }
 
-inline uint64_t impl_modular_subtraction_prereduced_inputs(uint64_t a,
-                                                   uint64_t b, uint64_t modulus)
+inline std::uint64_t impl_modular_subtraction_prereduced_inputs(std::uint64_t a,
+                                         std::uint64_t b, std::uint64_t modulus)
 {
+    using std::uint64_t;
     HPBC_PRECONDITION2(modulus>0);
     HPBC_PRECONDITION2(a<modulus);  // uint64_t guarantees a>=0.
     HPBC_PRECONDITION2(b<modulus);  // uint64_t guarantees b>=0.

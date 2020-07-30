@@ -36,7 +36,7 @@
 namespace {
 TEST(ModularArithmetic, modular_addition_with_subtraction) {
     namespace ma = hurchalla::modular_arithmetic;
-    using T = uint8_t;
+    using T = std::uint8_t;
 
     for (T modulus=255; modulus>0; --modulus) {
         for (T a=0; a<modulus; ++a) {

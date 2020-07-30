@@ -141,18 +141,18 @@ void test_modular_subtraction()
 
 namespace {
     TEST(ModularArithmetic, modular_subtraction) {
-        test_modular_subtraction<uint8_t>();
-        test_modular_subtraction<uint16_t>();
-        test_modular_subtraction<uint32_t>();
-        test_modular_subtraction<uint64_t>();
+        test_modular_subtraction<std::uint8_t>();
+        test_modular_subtraction<std::uint16_t>();
+        test_modular_subtraction<std::uint32_t>();
+        test_modular_subtraction<std::uint64_t>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
         test_modular_subtraction<__uint128_t>();
 #endif
 
-        test_modular_subtraction<int8_t>();
-        test_modular_subtraction<int16_t>();
-        test_modular_subtraction<int32_t>();
-        test_modular_subtraction<int64_t>();
+        test_modular_subtraction<std::int8_t>();
+        test_modular_subtraction<std::int16_t>();
+        test_modular_subtraction<std::int32_t>();
+        test_modular_subtraction<std::int64_t>();
 
 // It's a slight hack here to use a macro that tells us whether or not the
 // compiler supports  __uint128_t, when what we really want is to know is

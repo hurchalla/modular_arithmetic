@@ -15,8 +15,7 @@ else()
           -pedantic-errors -Wshadow -Wcast-qual -Wmissing-include-dirs
           -Wnon-virtual-dtor -Wconversion -Wsign-conversion -Wfloat-equal
           -Winvalid-pch -Wuninitialized -Wunused -Wunused-parameter -Wformat=2
-          -Wdisabled-optimization -Wvla -Wundef -Wzero-as-null-pointer-constant
-          -Wmissing-declarations)
+          -Wdisabled-optimization -Wvla -Wundef -Wmissing-declarations)
 
     # clang or gcc
     if((CMAKE_CXX_COMPILER_ID MATCHES "Clang") OR
@@ -26,6 +25,14 @@ else()
                 -Wstack-protector -Wpacked -Wnull-dereference -Wregister
                 -Wold-style-cast -Wdouble-promotion -Wformat-nonliteral
                 -Wmissing-noreturn -Wctor-dtor-privacy -Winline)
+    endif()
+
+    # gcc or clang6.0 (or higher)
+    if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") OR
+               ((CMAKE_CXX_COMPILER_ID MATCHES "Clang") AND
+               (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0)))
+        target_compile_options(${target} PRIVATE
+                -Wzero-as-null-pointer-constant)
     endif()
 
     # clang, or gcc10(or higher)
@@ -44,33 +51,36 @@ else()
         target_compile_options(${target} PRIVATE  -ferror-limit=3
                 -Wcast-align -Wmismatched-tags -Wabstract-vbase-init
                 -Warray-bounds-pointer-arithmetic -Wassign-enum
-                -Watomic-properties -Wauto-import -Wbinary-literal
-                -Wc++14-compat-pedantic -Wc++14-extensions
-                -Wc++17-compat-pedantic -Wc++17-extensions -Wclass-varargs
-                -Wcomma -Wconditional-uninitialized -Wconsumed
-                -Wcuda-compat -Wdeprecated
-                -Wduplicate-enum -Wformat-non-iso -Wformat-pedantic -Wgcc-compat
-                -Wgnu -Wheader-hygiene -Widiomatic-parentheses
-                -Wimplicitly-unsigned-literal
-                -Winconsistent-missing-destructor-override -Wloop-analysis
-                -Wmicrosoft -Wmissing-variable-declarations -Wnewline-eof
-                -Wnon-gcc -Wnonportable-system-include-path
+                -Watomic-properties -Wauto-import -Wc++14-compat-pedantic
+                -Wc++14-extensions -Wclass-varargs -Wcomma
+                -Wconditional-uninitialized -Wconsumed -Wcuda-compat
+                -Wdeprecated -Wduplicate-enum -Wformat-non-iso -Wformat-pedantic
+                -Wgcc-compat -Wgnu -Wheader-hygiene -Widiomatic-parentheses
+                -Wimplicitly-unsigned-literal -Wloop-analysis -Wmicrosoft
+                -Wmissing-variable-declarations -Wnewline-eof -Wnon-gcc
+                -Wnonportable-system-include-path
                 -Wnullable-to-nonnull-conversion -Wopenmp-clauses -Wover-aligned
                 -Wpedantic-core-features -Wpointer-arith
-                -Wpointer-to-int-cast -Wpragma-pack -Wpragmas
-                -Wprofile-instr-missing -Wredundant-parens -Wreserved-id-macro
+                -Wpointer-to-int-cast -Wpragmas -Wreserved-id-macro
                 -Wreserved-user-defined-literal -Wretained-language-linkage
-                -Wshadow-all -Wshift-sign-overflow -Wsigned-enum-bitfield
-                -Wsource-uses-openmp -Wspir-compat -Wstatic-in-inline
-                -Wstrict-selector-match -Wswitch-enum
-                -Wtautological-constant-in-range-compare -Wthread-safety
+                -Wshadow-all -Wshift-sign-overflow
+                -Wsource-uses-openmp -Wstatic-in-inline
+                -Wstrict-selector-match -Wswitch-enum -Wthread-safety
                 -Wthread-safety-negative -Wundefined-func-template
                 -Wundefined-reinterpret-cast -Wunguarded-availability
                 -Wunnamed-type-template-args -Wunreachable-code-aggressive
                 -Wunsupported-dll-base-class-template
                 -Wunused-exception-parameter -Wunused-member-function
-                -Wunused-template -Wvector-conversion
-                -Wwritable-strings)
+                -Wvector-conversion -Wwritable-strings)
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0)
+            target_compile_options(${target} PRIVATE
+                -Wbinary-literal -Wc++17-compat-pedantic -Wc++17-extensions
+                -Winconsistent-missing-destructor-override -Wpragma-pack
+                -Wprofile-instr-missing -Wredundant-parens
+                -Wsigned-enum-bitfield -Wspir-compat
+                -Wtautological-constant-in-range-compare -Wunused-template
+                )
+        endif()
         # gtest has problems with -Wcovered-switch-default and
         # -Wused-but-marked-unused, so we don't use them.
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)

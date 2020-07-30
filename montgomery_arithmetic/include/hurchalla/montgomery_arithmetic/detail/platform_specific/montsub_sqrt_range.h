@@ -82,9 +82,10 @@ HURCHALLA_FORCE_INLINE T montsub_sqrt_range(T a, T b, T n)
 #if defined(HURCHALLA_ALLOW_INLINE_ASM_MODSUB) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 // This function is an asm version of the template montsub_sqrt_range()
-HURCHALLA_FORCE_INLINE uint64_t montsub_sqrt_range(uint64_t a, uint64_t b,
-                                                                     uint64_t n)
+HURCHALLA_FORCE_INLINE std::uint64_t montsub_sqrt_range(std::uint64_t a,
+                                               std::uint64_t b, std::uint64_t n)
 {
+    using std::uint64_t;
     HPBC_PRECONDITION2(n > 0);
     // See the discussion in the above template function regarding the next
     // preconditions, which allow a==0 and/or b==0 so long as we don't have the

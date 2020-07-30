@@ -147,18 +147,18 @@ void test_modular_multiplication()
 
 namespace {
     TEST(ModularArithmetic, modular_multiplication) {
-        test_modular_multiplication<uint8_t>();
-        test_modular_multiplication<uint16_t>();
-        test_modular_multiplication<uint32_t>();
-        test_modular_multiplication<uint64_t>();
+        test_modular_multiplication<std::uint8_t>();
+        test_modular_multiplication<std::uint16_t>();
+        test_modular_multiplication<std::uint32_t>();
+        test_modular_multiplication<std::uint64_t>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
         test_modular_multiplication<__uint128_t>();
 #endif
 
-        test_modular_multiplication<int8_t>();
-        test_modular_multiplication<int16_t>();
-        test_modular_multiplication<int32_t>();
-        test_modular_multiplication<int64_t>();
+        test_modular_multiplication<std::int8_t>();
+        test_modular_multiplication<std::int16_t>();
+        test_modular_multiplication<std::int32_t>();
+        test_modular_multiplication<std::int64_t>();
 
 // It's a slight hack here to use a macro that tells us whether or not the
 // compiler supports  __uint128_t, when what we really want is to know is

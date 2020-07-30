@@ -109,24 +109,24 @@ HURCHALLA_FORCE_INLINE T umult_to_hilo_product(T* pLowProduct, T u, T v)
 // clang/icc/gcc is generally quite good.
 // GCC for ARM seems to make the worst generated asm, but it's not so bad as to
 // make inline asm seem worthwhile.
-HURCHALLA_FORCE_INLINE uint8_t impl_unsigned_multiply_to_hilo_product(
-                                     uint8_t* pLowProduct, uint8_t u, uint8_t v)
+HURCHALLA_FORCE_INLINE std::uint8_t impl_unsigned_multiply_to_hilo_product(
+                      std::uint8_t* pLowProduct, std::uint8_t u, std::uint8_t v)
 {
     // Note we could have used 'T2 = unsigned int' since 'int' is >= 16bit.
-    using T2 = uint16_t;
+    using T2 = std::uint16_t;
     return umult_to_hilo_product<decltype(u),T2>(pLowProduct, u, v);
 }
-HURCHALLA_FORCE_INLINE uint16_t impl_unsigned_multiply_to_hilo_product(
-                                  uint16_t* pLowProduct, uint16_t u, uint16_t v)
+HURCHALLA_FORCE_INLINE std::uint16_t impl_unsigned_multiply_to_hilo_product(
+                   std::uint16_t* pLowProduct, std::uint16_t u, std::uint16_t v)
 {
-    using T2 = uint32_t;
+    using T2 = std::uint32_t;
     return umult_to_hilo_product<decltype(u),T2>(pLowProduct, u, v);
 }
 // --------------------------------------------------------------------------
-HURCHALLA_FORCE_INLINE uint32_t impl_unsigned_multiply_to_hilo_product(
-                                  uint32_t* pLowProduct, uint32_t u, uint32_t v)
+HURCHALLA_FORCE_INLINE std::uint32_t impl_unsigned_multiply_to_hilo_product(
+                   std::uint32_t* pLowProduct, std::uint32_t u, std::uint32_t v)
 {
-    using T2 = uint64_t;
+    using T2 = std::uint64_t;
     return umult_to_hilo_product<decltype(u),T2>(pLowProduct, u, v);
 }
 // Note for MSVC: 'uint32_t' functions using intrinsics don't improve the asm
@@ -144,9 +144,10 @@ HURCHALLA_FORCE_INLINE uint32_t impl_unsigned_multiply_to_hilo_product(
 
 // MSVC + x64
 #if defined(_MSC_VER) && defined(HURCHALLA_TARGET_ISA_X86_64)
-HURCHALLA_FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
-                                  uint64_t* pLowProduct, uint64_t u, uint64_t v)
+HURCHALLA_FORCE_INLINE std::uint64_t impl_unsigned_multiply_to_hilo_product(
+                   std::uint64_t* pLowProduct, std::uint64_t u, std::uint64_t v)
 {
+    using std::uint64_t;
     uint64_t highProduct;
     *pLowProduct = _umul128(u, v, &highProduct);
     if (HPBC_POSTCONDITION3_MACRO_IS_ACTIVE) {
@@ -159,9 +160,10 @@ HURCHALLA_FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
 
 // MSVC + ARM64
 #elif defined(_MSC_VER) && defined(_M_ARM64)
-HURCHALLA_FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
-                                  uint64_t* pLowProduct, uint64_t u, uint64_t v)
+HURCHALLA_FORCE_INLINE std::uint64_t impl_unsigned_multiply_to_hilo_product(
+                   std::uint64_t* pLowProduct, std::uint64_t u, std::uint64_t v)
 {
+    using std::uint64_t;
     uint64_t highProduct = __umulh(u, v);
     *pLowProduct = u*v;
     if (HPBC_POSTCONDITION3_MACRO_IS_ACTIVE) {
@@ -173,8 +175,8 @@ HURCHALLA_FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
 }
 
 #elif (HURCHALLA_COMPILER_HAS_UINT128_T())
-HURCHALLA_FORCE_INLINE uint64_t impl_unsigned_multiply_to_hilo_product(
-                                  uint64_t* pLowProduct, uint64_t u, uint64_t v)
+HURCHALLA_FORCE_INLINE std::uint64_t impl_unsigned_multiply_to_hilo_product(
+                   std::uint64_t* pLowProduct, std::uint64_t u, std::uint64_t v)
 {
     using T2 = __uint128_t;
     return umult_to_hilo_product<decltype(u),T2>(pLowProduct, u, v);

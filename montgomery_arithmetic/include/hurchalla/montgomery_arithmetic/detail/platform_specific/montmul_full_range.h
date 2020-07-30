@@ -52,9 +52,10 @@ HURCHALLA_FORCE_INLINE T montmul_full_range(T x, T y, T n, T neg_inv_n)
 #if defined(HURCHALLA_ALLOW_INLINE_ASM_MONTMUL) && \
       defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 // This function is an asm version of the template function montmul_full_range()
-HURCHALLA_FORCE_INLINE uint64_t montmul_full_range(uint64_t x, uint64_t y,
-                                                 uint64_t n, uint64_t neg_inv_n)
+HURCHALLA_FORCE_INLINE std::uint64_t montmul_full_range(std::uint64_t x,
+                      std::uint64_t y, std::uint64_t n, std::uint64_t neg_inv_n)
 {
+    using std::uint64_t;
     HPBC_PRECONDITION2(x < n);
     HPBC_PRECONDITION2(y < n);
 

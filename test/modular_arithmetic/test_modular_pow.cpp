@@ -154,18 +154,18 @@ void test_modular_pow()
 
 namespace {
     TEST(ModularArithmetic, modular_pow) {
-        test_modular_pow<uint8_t>();
-        test_modular_pow<uint16_t>();
-        test_modular_pow<uint32_t>();
-        test_modular_pow<uint64_t>();
+        test_modular_pow<std::uint8_t>();
+        test_modular_pow<std::uint16_t>();
+        test_modular_pow<std::uint32_t>();
+        test_modular_pow<std::uint64_t>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
         test_modular_pow<__uint128_t>();
 #endif
 
-        test_modular_pow<int8_t>();
-        test_modular_pow<int16_t>();
-        test_modular_pow<int32_t>();
-        test_modular_pow<int64_t>();
+        test_modular_pow<std::int8_t>();
+        test_modular_pow<std::int16_t>();
+        test_modular_pow<std::int32_t>();
+        test_modular_pow<std::int64_t>();
 
 // It's a slight hack here to use a macro that tells us whether or not the
 // compiler supports  __uint128_t, when what we really want is to know is
@@ -179,10 +179,10 @@ namespace {
     TEST(ModularArithmetic, modular_pow_large_exponents) {
         namespace ma = hurchalla::modular_arithmetic;
         // test a couple large exponent cases
-        uint32_t base = 81452;
-        uint32_t exponent = 113;
-        uint32_t modulus = 2951486173u;
-        uint32_t result = ma::modular_pow(base, exponent, modulus);
+        std::uint32_t base = 81452;
+        std::uint32_t exponent = 113;
+        std::uint32_t modulus = 2951486173u;
+        std::uint32_t result = ma::modular_pow(base, exponent, modulus);
         EXPECT_TRUE(result == brute_modular_pow(base, exponent, modulus));
 
         base = 81451;

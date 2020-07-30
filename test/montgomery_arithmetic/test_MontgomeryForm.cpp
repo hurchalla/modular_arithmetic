@@ -96,7 +96,7 @@ void test_MontgomeryForm()
     using V = typename M::MontgomeryValue;
 
     // Try a basic test case first that is valid for all possible Monty types,
-    // even M == MontySqrtRange<uint8_t>.
+    // even M == MontySqrtRange<std::uint8_t>.
     {
         T modulus = 13;
         M mf(modulus);
@@ -244,10 +244,10 @@ template <template<class> class M>
 void test_custom_monty()
 {
     namespace mont = hurchalla::montgomery_arithmetic;
-    test_MontgomeryForm<mont::MontgomeryForm<uint8_t, M<uint8_t>>>();
-    test_MontgomeryForm<mont::MontgomeryForm<uint16_t, M<uint16_t>>>();
-    test_MontgomeryForm<mont::MontgomeryForm<uint32_t, M<uint32_t>>>();
-    test_MontgomeryForm<mont::MontgomeryForm<uint64_t, M<uint64_t>>>();
+    test_MontgomeryForm<mont::MontgomeryForm<std::uint8_t, M<std::uint8_t>>>();
+    test_MontgomeryForm<mont::MontgomeryForm<std::uint16_t,M<std::uint16_t>>>();
+    test_MontgomeryForm<mont::MontgomeryForm<std::uint32_t,M<std::uint32_t>>>();
+    test_MontgomeryForm<mont::MontgomeryForm<std::uint64_t,M<std::uint64_t>>>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
     test_MontgomeryForm<mont::MontgomeryForm<__uint128_t, M<__uint128_t>>>();
 #endif
@@ -258,17 +258,17 @@ namespace {
     TEST(MontgomeryArithmetic, MontyDefault) {
         namespace ma = hurchalla::modular_arithmetic;
         namespace mont = hurchalla::montgomery_arithmetic;
-        test_MontgomeryForm<mont::MontgomeryForm<uint8_t>>();
-        test_MontgomeryForm<mont::MontgomeryForm<uint16_t>>();
-        test_MontgomeryForm<mont::MontgomeryForm<uint32_t>>();
-        test_MontgomeryForm<mont::MontgomeryForm<uint64_t>>();
+        test_MontgomeryForm<mont::MontgomeryForm<std::uint8_t>>();
+        test_MontgomeryForm<mont::MontgomeryForm<std::uint16_t>>();
+        test_MontgomeryForm<mont::MontgomeryForm<std::uint32_t>>();
+        test_MontgomeryForm<mont::MontgomeryForm<std::uint64_t>>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
         test_MontgomeryForm<mont::MontgomeryForm<__uint128_t>>();
 #endif
-        test_MontgomeryForm<mont::MontgomeryForm<int8_t>>();
-        test_MontgomeryForm<mont::MontgomeryForm<int16_t>>();
-        test_MontgomeryForm<mont::MontgomeryForm<int32_t>>();
-        test_MontgomeryForm<mont::MontgomeryForm<int64_t>>();
+        test_MontgomeryForm<mont::MontgomeryForm<std::int8_t>>();
+        test_MontgomeryForm<mont::MontgomeryForm<std::int16_t>>();
+        test_MontgomeryForm<mont::MontgomeryForm<std::int32_t>>();
+        test_MontgomeryForm<mont::MontgomeryForm<std::int64_t>>();
 // It's a slight hack here to use a macro that tells us whether or not the
 // compiler supports  __uint128_t, when what we really want is to know is
 // whether we can use __int128_t.  Nevertheless in practice, if we have

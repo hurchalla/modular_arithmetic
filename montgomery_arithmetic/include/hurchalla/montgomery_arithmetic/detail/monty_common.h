@@ -407,14 +407,14 @@ HURCHALLA_FORCE_INLINE T impl_montout_non_minimized(T x, T n, T neg_inv_n)
 #endif
 
 #if HURCHALLA_TARGET_BIT_WIDTH >= 16
-HURCHALLA_FORCE_INLINE uint8_t impl_montmul_non_minimized(bool& ovf, uint8_t x,
-                                        uint8_t y, uint8_t n, uint8_t neg_inv_n)
+HURCHALLA_FORCE_INLINE std::uint8_t impl_montmul_non_minimized(bool& ovf,
+         std::uint8_t x, std::uint8_t y, std::uint8_t n, std::uint8_t neg_inv_n)
 {
     // Precondition: Assuming theoretical unlimited precision standard
     // multiplication, this function requires  x*y < n*R.
     namespace ma = hurchalla::modular_arithmetic;
-    using T = uint8_t;
-    using T2 = uint16_t;
+    using T = std::uint8_t;
+    using T2 = std::uint16_t;
     T result = typecast_montmul_non_minimized<T, T2>(ovf, x, y, n, neg_inv_n);
 
     // typecast_montmul_non_minimized Postcondition #8 guarantees that
@@ -433,11 +433,11 @@ HURCHALLA_FORCE_INLINE uint8_t impl_montmul_non_minimized(bool& ovf, uint8_t x,
     // version of impl_montmul_non_minimized.
     return result;
 }
-HURCHALLA_FORCE_INLINE
-uint8_t impl_montout_non_minimized(uint8_t x, uint8_t n, uint8_t neg_inv_n)
+HURCHALLA_FORCE_INLINE std::uint8_t impl_montout_non_minimized(std::uint8_t x,
+                                         std::uint8_t n, std::uint8_t neg_inv_n)
 {
-    using T = uint8_t;
-    using T2 = uint16_t;
+    using T = std::uint8_t;
+    using T2 = std::uint16_t;
     bool ovf;
     T y = static_cast<T>(1);
     // Having y == 1 satisfies typecast_montmul_non_minimized's precondition
@@ -464,20 +464,20 @@ uint8_t impl_montout_non_minimized(uint8_t x, uint8_t n, uint8_t neg_inv_n)
 #endif
 
 #if HURCHALLA_TARGET_BIT_WIDTH >= 32
-HURCHALLA_FORCE_INLINE uint16_t impl_montmul_non_minimized(bool& ovf,
-                         uint16_t x, uint16_t y, uint16_t n, uint16_t neg_inv_n)
+HURCHALLA_FORCE_INLINE std::uint16_t impl_montmul_non_minimized(bool& ovf,
+     std::uint16_t x, std::uint16_t y, std::uint16_t n, std::uint16_t neg_inv_n)
 {
-    using T = uint16_t;
-    using T2 = uint32_t;
+    using T = std::uint16_t;
+    using T2 = std::uint32_t;
     T result = typecast_montmul_non_minimized<T, T2>(ovf, x, y, n, neg_inv_n);
     // Postconditions are the same as for the uint8_t overload of this function.
     return result;
 }
-HURCHALLA_FORCE_INLINE
-uint16_t impl_montout_non_minimized(uint16_t x, uint16_t n, uint16_t neg_inv_n)
+HURCHALLA_FORCE_INLINE std::uint16_t impl_montout_non_minimized(std::uint16_t x,
+                                       std::uint16_t n, std::uint16_t neg_inv_n)
 {
-    using T = uint16_t;
-    using T2 = uint32_t;
+    using T = std::uint16_t;
+    using T2 = std::uint32_t;
     bool ovf;
     T y = static_cast<T>(1);
     T result = typecast_montmul_non_minimized<T, T2>(ovf, x, y, n, neg_inv_n);
@@ -488,20 +488,20 @@ uint16_t impl_montout_non_minimized(uint16_t x, uint16_t n, uint16_t neg_inv_n)
 #endif
 
 #if HURCHALLA_TARGET_BIT_WIDTH >= 64
-HURCHALLA_FORCE_INLINE uint32_t impl_montmul_non_minimized(bool& ovf,
-                         uint32_t x, uint32_t y, uint32_t n, uint32_t neg_inv_n)
+HURCHALLA_FORCE_INLINE std::uint32_t impl_montmul_non_minimized(bool& ovf,
+     std::uint32_t x, std::uint32_t y, std::uint32_t n, std::uint32_t neg_inv_n)
 {
-    using T = uint32_t;
-    using T2 = uint64_t;
+    using T = std::uint32_t;
+    using T2 = std::uint64_t;
     T result = typecast_montmul_non_minimized<T, T2>(ovf, x, y, n, neg_inv_n);
     // Postconditions are the same as for the uint8_t overload of this function.
     return result;
 }
-HURCHALLA_FORCE_INLINE
-uint32_t impl_montout_non_minimized(uint32_t x, uint32_t n, uint32_t neg_inv_n)
+HURCHALLA_FORCE_INLINE std::uint32_t impl_montout_non_minimized(std::uint32_t x,
+                                       std::uint32_t n, std::uint32_t neg_inv_n)
 {
-    using T = uint32_t;
-    using T2 = uint64_t;
+    using T = std::uint32_t;
+    using T2 = std::uint64_t;
     bool ovf;
     T y = static_cast<T>(1);
     T result = typecast_montmul_non_minimized<T, T2>(ovf, x, y, n, neg_inv_n);

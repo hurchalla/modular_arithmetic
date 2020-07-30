@@ -89,18 +89,18 @@ void test_absolute_value_difference()
 
 namespace {
     TEST(ModularArithmetic, absolute_value_difference) {
-        test_absolute_value_difference<uint8_t>();
-        test_absolute_value_difference<uint16_t>();
-        test_absolute_value_difference<uint32_t>();
-        test_absolute_value_difference<uint64_t>();
+        test_absolute_value_difference<std::uint8_t>();
+        test_absolute_value_difference<std::uint16_t>();
+        test_absolute_value_difference<std::uint32_t>();
+        test_absolute_value_difference<std::uint64_t>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
         test_absolute_value_difference<__uint128_t>();
 #endif
 
-        test_absolute_value_difference<int8_t>();
-        test_absolute_value_difference<int16_t>();
-        test_absolute_value_difference<int32_t>();
-        test_absolute_value_difference<int64_t>();
+        test_absolute_value_difference<std::int8_t>();
+        test_absolute_value_difference<std::int16_t>();
+        test_absolute_value_difference<std::int32_t>();
+        test_absolute_value_difference<std::int64_t>();
 
 // It's a slight hack here to use a macro that tells us whether or not the
 // compiler supports  __uint128_t, when what we really want is to know is
