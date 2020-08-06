@@ -214,7 +214,7 @@ inline std::uint32_t impl_modular_multiplication_prereduced_inputs(
     __asm__ ("mull %3\n\t"
              "divl %4"
              : "=&d"(result), "=&a"(dummy)
-             : "1"(a), "r"(b), "r"(modulus)
+             : "1"(a), "g"(b), "r"(modulus)
              : "cc");
     HPBC_POSTCONDITION2((uint64_t)result ==
                         (uint64_t)a*(uint64_t)b % (uint64_t)modulus);
@@ -279,7 +279,7 @@ inline std::uint64_t impl_modular_multiplication_prereduced_inputs(
     __asm__ ("mulq %3\n\t"
              "divq %4"
              : "=&d"(result), "=&a"(dummy)
-             : "1"(a), "r"(b), "r"(modulus)
+             : "1"(a), "g"(b), "r"(modulus)
              : "cc");
     HPBC_POSTCONDITION3(result == slow_modular_multiplication(a, b, modulus));
     return result;

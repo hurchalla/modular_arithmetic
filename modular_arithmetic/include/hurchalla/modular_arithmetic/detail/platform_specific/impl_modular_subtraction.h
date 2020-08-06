@@ -34,10 +34,16 @@ T impl_modular_subtraction_prereduced_inputs(T a, T b, T modulus)
     //   result without any problem of overflow.  So we can and should use:
     //   result = (a < b) ? a-b+modulus : a-b
 
-    // we calculate diff here to encourage the compiler to hoist it out of a
-    // loop (assuming this function is inlined inside a loop).
+
+#if 1    // ---Preferred implementation (low uop count and low register use)---
+    T diff = static_cast<T>(a - b);
+    T result = (a < b) ? static_cast<T>(modulus + diff) : diff;
+#else    // ---Non-preferred implementation (though potential lower latency)---
+    // diff gets calculated in a way that encourages the compiler to hoist it
+    // out of a loop (assuming this function is inlined inside a loop).
     T diff = static_cast<T>(modulus - b);
     T result = (a < b) ? static_cast<T>(a + diff) : static_cast<T>(a - b);
+#endif
 
     HPBC_POSTCONDITION2(0<=result && result<modulus);
     return result;
@@ -62,18 +68,42 @@ inline std::uint32_t impl_modular_subtraction_prereduced_inputs(std::uint32_t a,
     HPBC_PRECONDITION2(a<modulus);  // uint32_t guarantees a>=0.
     HPBC_PRECONDITION2(b<modulus);  // uint32_t guarantees b>=0.
 
+#if 1    // ---Preferred implementation (low uop count and low register use)---
+
+    // Note: we want to make sure the LEA instruction doesn't use RBP/EBP or R13
+    // for the base register, since that would necessitate a slower form of LEA
+    // that has an extra 2 cycles latency and half the throughput of the fast
+    // form.  We prevent this by using the "U" constraint which allows only RAX,
+    // RCX, RDX, R8, R9, R10, R11 for the Microsoft x64 calling convention, and
+    // allows only RAX, RCX, RDX, RSI, RDI, R8, R9, R10, R11 for the System V
+    // AMD64 calling convention.  ICC (intel compiler) and clang don't support
+    // "U", so we use "abcdSD" for them (allowing rax, rbx, rcx, rdx, rsi, rdi).
+    uint32_t result;
+    __asm__ ("subl %[b], %[a] \n\t"         /* tmp = a - b */
+             "leal (%q[a], %q[m]), %1 \n\t" /* result = tmp + modulus */
+             "cmovael %[a], %1 \n\t"        /* result = (a>=b) ? tmp : result */
+#  if defined(__INTEL_COMPILER) || defined(__clang__)
+                 : [a]"+&abcdSD"(a), "=r"(result)
+#  else
+                 : [a]"+&U"(a), "=r"(result)
+#  endif
+             : [b]"g"(b), [m]"r"(modulus)
+             : "cc");
+
+#else    // ---Non-preferred implementation (though potential lower latency)---
+
     // By calculating diff outside of the __asm__, we allow the compiler to loop
     // hoist diff, if this function is inlined into a loop.
     // https://en.wikipedia.org/wiki/Loop-invariant_code_motion
     uint32_t diff = modulus - b;
     uint32_t tmp = a + diff;
-
     uint32_t result;
     __asm__ ("subl %[b], %0 \n\t"      /* result = a - b */
              "cmovbl %[tmp], %0 \n\t"  /* result = (a < b) ? tmp : result */
              : "=&r"(result)
-             : "0"(a), [b]"r"(b), [tmp]"r"(tmp)
+             : "0"(a), [b]"g"(b), [tmp]"r"(tmp)
              : "cc");
+#endif
 
     HPBC_POSTCONDITION2(result<modulus);  // uint32_t guarantees result>=0.
     HPBC_POSTCONDITION2(result ==
@@ -89,18 +119,36 @@ inline std::uint64_t impl_modular_subtraction_prereduced_inputs(std::uint64_t a,
     HPBC_PRECONDITION2(a<modulus);  // uint64_t guarantees a>=0.
     HPBC_PRECONDITION2(b<modulus);  // uint64_t guarantees b>=0.
 
+#if 1    // ---Preferred implementation (low uop count and low register use)---
+
+    // Note: the issues and solutions with LEA and RBP/EBP/R13 are the same here
+    // as for the uint32_t version of this function above.
+    uint64_t result;
+    __asm__ ("subq %[b], %[a] \n\t"         /* tmp = a - b */
+             "leaq (%[a], %[m]), %1 \n\t"   /* result = tmp + modulus */
+             "cmovaeq %[a], %1 \n\t"        /* result = (a>=b) ? tmp : result */
+#  if defined(__INTEL_COMPILER) || defined(__clang__)
+                 : [a]"+&abcdSD"(a), "=r"(result)
+#  else
+                 : [a]"+&U"(a), "=r"(result)
+#  endif
+             : [b]"g"(b), [m]"r"(modulus)
+             : "cc");
+
+#else    // ---Non-preferred implementation (though potential lower latency)---
+
     // By calculating diff outside of the __asm__, we allow the compiler to loop
     // hoist diff, if this function is inlined into a loop.
     // https://en.wikipedia.org/wiki/Loop-invariant_code_motion
     uint64_t diff = modulus - b;
     uint64_t tmp = a + diff;
-
     uint64_t result;
     __asm__ ("subq %[b], %0 \n\t"      /* result = a - b */
              "cmovbq %[tmp], %0 \n\t"  /* result = (a < b) ? tmp : result */
              : "=&r"(result)
-             : "0"(a), [b]"r"(b), [tmp]"r"(tmp)
+             : "0"(a), [b]"g"(b), [tmp]"r"(tmp)
              : "cc");
+#endif
 
     HPBC_POSTCONDITION2(result<modulus);  // uint64_t guarantees result>=0.
     HPBC_POSTCONDITION2(result ==

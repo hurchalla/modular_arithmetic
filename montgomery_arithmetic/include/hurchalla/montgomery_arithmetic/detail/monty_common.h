@@ -205,7 +205,7 @@ T REDC_non_minimized(bool& ovf, T u_hi, T u_lo, T n, T neg_inv_n)
     // Since  ovf = (t_hi < u_hi),  ovf must be false.
     // From the comments preceding Postcondition #1, we know q == ovf*R + t_hi
     // and q < 2*n.  Since we have ovf == false, q == t_hi, and thus t_hi < 2*n.
-    // [ These findings were inspired by ideas in section 5 of "Montgomery's
+    // [ These comments were inspired by ideas in section 5 of "Montgomery's
     // Multiplication Technique: How to Make It Smaller and Faster", at
     // https://www.comodo.com/resources/research/cryptography/CDW_CHES_99.ps ]
     if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {

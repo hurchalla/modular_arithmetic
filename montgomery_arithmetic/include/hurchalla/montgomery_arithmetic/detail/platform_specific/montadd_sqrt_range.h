@@ -91,7 +91,7 @@ HURCHALLA_FORCE_INLINE std::uint64_t montadd_sqrt_range(std::uint64_t a,
     __asm__ ("subq %[tmp], %0 \n\t"     /* tmp2 = a - tmp */
              "cmovbeq %[sum], %0 \n\t"  /* result = (a<=tmp) ? sum : tmp2 */
              : "=&r"(result)
-             : "0"(a), [tmp]"r"(tmp), [sum]"r"(sum)
+             : "0"(a), [tmp]"g"(tmp), [sum]"r"(sum)
              : "cc");
 
     HPBC_POSTCONDITION2(0 < result && result <= n);

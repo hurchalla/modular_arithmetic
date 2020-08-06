@@ -68,7 +68,7 @@ HURCHALLA_FORCE_INLINE std::uint64_t montmul_full_range(std::uint64_t x,
     // montgomery REDC portion.
     // See montmul_full_range<uint64_t>(), and REDC_non_minimized<uint64_t>() in
     // monty_common.h, for details on what is done here and why it works.
-    uint64_t result, reg1;
+    uint64_t rrax, rrdx, reg1;
     asm("movq %%rax, %1 \n\t"       /* reg1 = u_lo */
         "imulq %[inv], %%rax \n\t"  /* m = u_lo * neg_inv_n */
         "mulq %[n] \n\t"            /* mn_hilo = m * n */
@@ -77,13 +77,13 @@ HURCHALLA_FORCE_INLINE std::uint64_t montmul_full_range(std::uint64_t x,
           "negq %1 \n\t"            /* u_lo = -u_lo. Sets carry = (u_lo != 0) */
         "movl %%eax, %k1 \n\t"      /* reg1 = 0.  The CPU will zero the upper half too.  For the k modifier see https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html#x86Operandmodifiers */
         "adcq %[uhi], %%rdx \n\t"   /* t_hi = addcarry(u_hi, mn_hi) */
-        "cmovaeq %[n], %1 \n\t"     /* reg1 = (t_hi >= u_hi) ? n : 0 */
-        "subq %[n], %%rdx \n\t"     /* rdx = t_hi - n */
-        "cmovbq %1, %%rax \n\t"     /* rax = (t_hi < n) ? reg1 : 0 */
-        "addq %%rdx, %%rax \n\t"    /* result = rax + rdx */
-        : "=&a"(result), "=&r"(reg1)
-        : "0"(u_lo), [uhi]"r"(u_hi), [n]"r"(n), [inv]"r"(neg_inv_n)
-        : "rdx", "cc");
+        "cmovaeq %[n], %%rax \n\t"  /* rax = (t_hi >= u_hi) ? n : 0 */
+        "subq %[n], %%rdx \n\t"     /* rrdx = t_hi - n */
+        "cmovaeq %1, %%rax \n\t"    /* rrax = (t_hi >= n) ? 0 : rax */
+        : "=&a"(rrax), "=&r"(reg1), "=&d"(rrdx)
+        : "0"(u_lo), [uhi]"r"(u_hi), [n]"r"(n), [inv]"rm"(neg_inv_n)
+        : "cc");
+    uint64_t result = rrax + rrdx;   // let compiler choose between add/lea
 
     HPBC_POSTCONDITION2(result < n);
     HPBC_POSTCONDITION2(result ==

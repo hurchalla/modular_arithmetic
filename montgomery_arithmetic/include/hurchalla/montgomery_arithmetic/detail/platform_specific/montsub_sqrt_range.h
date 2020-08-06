@@ -59,13 +59,17 @@ HURCHALLA_FORCE_INLINE T montsub_sqrt_range(T a, T b, T n)
     //   result without any problem of overflow.  So we can and should use:
     //   result = (a <= b) ? a-b+n : a-b
 
-    // we calculate diff here to encourage the compiler to hoist it out of a
-    // loop (assuming this function is inlined inside a loop).
+#if 1    // ---Preferred implementation (low uop count and low register use)---
+    T diff = static_cast<T>(a - b);
+    T result = (a <= b) ? static_cast<T>(diff + n) : diff;
+#else    // ---Non-preferred implementation (though potential lower latency)---
+    // diff gets calculated in a way that encourages the compiler to hoist it
+    // out of a loop (assuming this function is inlined inside a loop).
     T diff = static_cast<T>(n - b);
-
     T tmp = static_cast<T>(a + diff);
     T tmp2 = static_cast<T>(a - b);
     T result = (a <= b) ? tmp : tmp2;
+#endif
 
     HPBC_POSTCONDITION2(0 < result && result <= n);
     return result;
@@ -94,18 +98,36 @@ HURCHALLA_FORCE_INLINE std::uint64_t montsub_sqrt_range(std::uint64_t a,
     HPBC_PRECONDITION2(a <= n);  // 0 <= a is guaranteed by uint64_t
     HPBC_PRECONDITION2(!(a == 0 && b == n));
 
+#if 1    // ---Preferred implementation (low uop count and low register use)---
+
+    // Note: the issues and solutions with LEA and RBP/EBP/R13 are the same here
+    // as described in impl_modular_subtraction.h
+    uint64_t result;
+    __asm__ ("subq %[b], %[a] \n\t"        /* tmp = a - b */
+             "leaq (%[a], %[n]), %1 \n\t"  /* result = tmp + n */
+             "cmovaq %[a], %1 \n\t"        /* result = (a>b) ? tmp : result */
+#  if defined(__INTEL_COMPILER) || defined(__clang__)
+                 : [a]"+&abcdSD"(a), "=r"(result)
+#  else
+                 : [a]"+&U"(a), "=r"(result)
+#  endif
+             : [b]"g"(b), [n]"r"(n)
+             : "cc");
+
+#else    // ---Non-preferred implementation (though potential lower latency)---
+
     // By calculating diff outside of the __asm__, we allow the compiler to loop
     // hoist diff, if this function is inlined into a loop.
     // https://en.wikipedia.org/wiki/Loop-invariant_code_motion
     uint64_t diff = n - b;
     uint64_t tmp = a + diff;
-
     uint64_t result;
     __asm__ ("subq %[b], %0 \n\t"       /* result = a - b */
              "cmovbeq %[tmp], %0 \n\t"  /* result = (a <= b) ? tmp : result */
              : "=&r"(result)
-             : "0"(a), [b]"r"(b), [tmp]"r"(tmp)
+             : "0"(a), [b]"g"(b), [tmp]"r"(tmp)
              : "cc");
+#endif
 
     HPBC_POSTCONDITION2(0 < result && result <= n);
     HPBC_POSTCONDITION2(result == montsub_sqrt_range<uint64_t>(a, b, n));

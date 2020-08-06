@@ -62,7 +62,7 @@ inline std::uint32_t impl_modular_addition_prereduced_inputs(std::uint32_t a,
     __asm__ ("subl %[tmp], %0 \n\t"    /* tmp2 = a - tmp */
              "cmovbl %[sum], %0 \n\t"  /* result = (a<tmp) ? sum : tmp2 */
              : "=&r"(result)
-             : "0"(a), [tmp]"r"(tmp), [sum]"r"(sum)
+             : "0"(a), [tmp]"g"(tmp), [sum]"r"(sum)
              : "cc");
 
     HPBC_POSTCONDITION2(result<modulus);  // uint32_t guarantees result>=0.
@@ -88,7 +88,7 @@ inline std::uint64_t impl_modular_addition_prereduced_inputs(std::uint64_t a,
     __asm__ ("subq %[tmp], %0 \n\t"    /* tmp2 = a - tmp */
              "cmovbq %[sum], %0 \n\t"  /* result = (a<tmp) ? sum : tmp2 */
              : "=&r"(result)
-             : "0"(a), [tmp]"r"(tmp), [sum]"r"(sum)
+             : "0"(a), [tmp]"g"(tmp), [sum]"r"(sum)
              : "cc");
 
     HPBC_POSTCONDITION2(result<modulus);  // uint64_t guarantees result>=0.
