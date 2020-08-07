@@ -103,30 +103,32 @@ HURCHALLA_FORCE_INLINE std::uint64_t montsub_sqrt_range(std::uint64_t a,
     // Note: the issues and solutions with LEA and RBP/EBP/R13 are the same here
     // as described in impl_modular_subtraction.h
     uint64_t result;
-    __asm__ ("subq %[b], %[a] \n\t"        /* tmp = a - b */
-             "leaq (%[a], %[n]), %1 \n\t"  /* result = tmp + n */
-             "cmovaq %[a], %1 \n\t"        /* result = (a>b) ? tmp : result */
+    uint64_t tmp = a;  // in C++ we prefer not to overwrite an input (a)
+    __asm__ ("subq %[b], %[tmp] \n\t"            /* tmp = a - b */
+             "leaq (%[tmp], %[n]), %[res] \n\t"  /* res = tmp + n */
+             "cmovaq %[tmp], %[res] \n\t"        /* res = (a>b) ? tmp : res */
 #  if defined(__INTEL_COMPILER) || defined(__clang__)
-                 : [a]"+&abcdSD"(a), "=r"(result)
+                 : [res]"=r"(result), [tmp]"+&abcdSD"(tmp)
 #  else
-                 : [a]"+&U"(a), "=r"(result)
+                 : [res]"=r"(result), [tmp]"+&UabcdSD"(tmp)
 #  endif
-             : [b]"g"(b), [n]"r"(n)
+             : [b]"rm"(b), [n]"r"(n)
              : "cc");
 
 #else    // ---Non-preferred implementation (though potential lower latency)---
 
-    // By calculating diff outside of the __asm__, we allow the compiler to loop
-    // hoist diff, if this function is inlined into a loop.
+    // By calculating diff outside of the __asm__, we allow the compiler to
+    // potentially loop hoist diff, if this function is inlined into a loop.
     // https://en.wikipedia.org/wiki/Loop-invariant_code_motion
     uint64_t diff = n - b;
     uint64_t tmp = a + diff;
-    uint64_t result;
-    __asm__ ("subq %[b], %0 \n\t"       /* result = a - b */
-             "cmovbeq %[tmp], %0 \n\t"  /* result = (a <= b) ? tmp : result */
-             : "=&r"(result)
-             : "0"(a), [b]"g"(b), [tmp]"r"(tmp)
+    uint64_t tmp2 = a;  // in C++ we prefer not to overwrite an input (a)
+    __asm__ ("subq %[b], %[tmp2] \n\t"       /* tmp2 = a - b */
+             "cmovbeq %[tmp], %[tmp2] \n\t"  /* tmp2 = (a <= b) ? tmp : tmp2 */
+             : [tmp2]"+&r"(tmp2)
+             : [b]"rm"(b), [tmp]"r"(tmp)
              : "cc");
+    uint64_t result = tmp2;
 #endif
 
     HPBC_POSTCONDITION2(0 < result && result <= n);

@@ -205,16 +205,17 @@ inline std::uint32_t impl_modular_multiplication_prereduced_inputs(
 {
     using std::uint32_t; using std::uint64_t;
     // gnu/AT&T style inline asm
-    // [input operands]:  EAX = a
-    // mull %3:           EDX:EAX = EAX*b; high-order bits of the product in EDX
-    // divl %4:           (quotient EAX, remainder EDX) = EDX:EAX/modulus
+    // [inout operands]:  EAX = tmp  (inout lets us safely overwrite EAX)
+    // mull %[b]:         EDX:EAX = EAX*b; high-order bits of the product in EDX
+    // divl %[m]:         (quotient EAX, remainder EDX) = EDX:EAX/modulus
     // [output operands]: result = EDX
     // [clobber list]:    both mull and divl clobber the FLAGS register ["cc"]
-    uint32_t result, dummy;
-    __asm__ ("mull %3\n\t"
-             "divl %4"
-             : "=&d"(result), "=&a"(dummy)
-             : "1"(a), "g"(b), "r"(modulus)
+    uint32_t result;
+    uint32_t tmp = a;  // in C++ we prefer not to overwrite an input (a)
+    __asm__ ("mull %[b] \n\t"
+             "divl %[m] \n\t"
+             : "=&d"(result), "+&a"(tmp)
+             : [b]"rm"(b), [m]"rm"(modulus)
              : "cc");
     HPBC_POSTCONDITION2((uint64_t)result ==
                         (uint64_t)a*(uint64_t)b % (uint64_t)modulus);
@@ -270,16 +271,17 @@ inline std::uint64_t impl_modular_multiplication_prereduced_inputs(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
 {
     using std::uint64_t;
-    // [input operands]:  RAX = a
-    // mulq %3:           RDX:RAX = RAX*b; high-order bits of the product in RDX
-    // divq %4:           (quotient RAX, remainder RDX) = RDX:RAX/modulus
+    // [inout operands]:  RAX = tmp  (inout lets us safely overwrite RAX)
+    // mulq %[b]:         RDX:RAX = RAX*b; high-order bits of the product in RDX
+    // divq %[m]:         (quotient RAX, remainder RDX) = RDX:RAX/modulus
     // [output operands]: result = RDX
     // [clobber list]:    both mulq and divq clobber the FLAGS register ["cc"]
-    uint64_t result, dummy;
-    __asm__ ("mulq %3\n\t"
-             "divq %4"
-             : "=&d"(result), "=&a"(dummy)
-             : "1"(a), "g"(b), "r"(modulus)
+    uint64_t result;
+    uint64_t tmp = a;  // in C++ we prefer not to overwrite an input (a)
+    __asm__ ("mulq %[b] \n\t"
+             "divq %[m] \n\t"
+             : "=&d"(result), "+&a"(tmp)
+             : [b]"rm"(b), [m]"rm"(modulus)
              : "cc");
     HPBC_POSTCONDITION3(result == slow_modular_multiplication(a, b, modulus));
     return result;

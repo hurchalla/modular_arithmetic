@@ -89,17 +89,19 @@ HURCHALLA_FORCE_INLINE std::uint64_t montmul_quarter_range(std::uint64_t x,
     // montgomery REDC portion.
     // See montmul_quarter_range<uint64_t>(), and REDC_non_minimized<uint64_t>()
     // in monty_common.h, for details on what is done here and why it works.
-    uint64_t result, reg1;
+    uint64_t rrax = u_lo;
+    uint64_t dummy;
     asm("movq %%rax, %1 \n\t"       /* reg1 = u_lo */
         "imulq %[inv], %%rax \n\t"  /* m = u_lo * neg_inv_n */
         "mulq %[n] \n\t"            /* mn_hilo = m * n */
         /* "addq %1, %%rax \n\t" */ /* rax = u_lo + mn_lo. Sets carry, sum==0 */
-          "movq %[uhi], %%rax \n\t"
-          "negq %1 \n\t"            /* Sets carry to u_lo!=0. Carry eqls above*/
+          "movq %[uhi], %%rax \n\t" /* rax = u_hi */
+          "negq %1 \n\t"            /* Sets carry to u_lo!=0 (same as above) */
         "adcq %%rdx, %%rax \n\t"   /* t_hi = addcarry(u_hi, mn_hi) */
-        : "=&a"(result), "=&r"(reg1)
-        : "0"(u_lo), [uhi]"r"(u_hi), [n]"r"(n), [inv]"r"(neg_inv_n)
+        : "+&a"(rrax), "=&r"(dummy)
+        : [uhi]"r"(u_hi), [n]"rm"(n), [inv]"rm"(neg_inv_n)
         : "rdx", "cc");
+    uint64_t result = rrax;
 
     HPBC_POSTCONDITION2(result < 2*n);
     HPBC_POSTCONDITION2(result ==

@@ -45,13 +45,13 @@ std::uint32_t impl_absolute_value_difference(std::uint32_t a, std::uint32_t b)
     // Type uint32_t guarantees a>=0 and b>=0.
 
     uint32_t diff = b - a;
-
-    uint32_t result;
-    __asm__ ("subl %[b], %0 \n\t"       /* result = a - b */
-             "cmovbl %[diff], %0 \n\t"  /* result = (a < b) ? diff : result */
-             : "=&r"(result)
-             : "0"(a), [b]"r"(b), [diff]"r"(diff)
+    uint32_t tmp = a;  // in C++ we prefer not to overwrite an input (a)
+    __asm__ ("subl %[b], %[tmp] \n\t"       /* tmp = a - b */
+             "cmovbl %[diff], %[tmp] \n\t"  /* tmp = (a < b) ? diff : tmp */
+             : [tmp]"+&r"(tmp)
+             : [b]"r"(b), [diff]"r"(diff)
              : "cc");
+    uint32_t result = tmp;
 
     HPBC_POSTCONDITION2(result<=a || result<=b);
     HPBC_POSTCONDITION2(result== impl_absolute_value_difference<uint32_t>(a,b));
@@ -65,13 +65,13 @@ std::uint64_t impl_absolute_value_difference(std::uint64_t a, std::uint64_t b)
     // Type uint64_t guarantees a>=0 and b>=0.
 
     uint64_t diff = b - a;
-
-    uint64_t result;
-    __asm__ ("subq %[b], %0 \n\t"       /* result = a - b */
-             "cmovbq %[diff], %0 \n\t"  /* result = (a < b) ? diff : result */
-             : "=&r"(result)
-             : "0"(a), [b]"r"(b), [diff]"r"(diff)
+    uint64_t tmp = a;  // in C++ we prefer not to overwrite an input (a)
+    __asm__ ("subq %[b], %[tmp] \n\t"       /* tmp = a - b */
+             "cmovbq %[diff], %[tmp] \n\t"  /* tmp = (a < b) ? diff : tmp */
+             : [tmp]"+&r"(tmp)
+             : [b]"r"(b), [diff]"r"(diff)
              : "cc");
+    uint64_t result = tmp;
 
     HPBC_POSTCONDITION2(result<=a || result<=b);
     HPBC_POSTCONDITION2(result== impl_absolute_value_difference<uint64_t>(a,b));
