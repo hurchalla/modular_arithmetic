@@ -140,17 +140,21 @@ public:
         // This is a slightly optimized version of Algorithm 14.76, from
         // Applied Handbook of Cryptography- http://cacr.uwaterloo.ca/hac/
         // See also: hurchalla/modular_arithmetic/internal/impl_modular_pow.h
-        MontgomeryValue result;
-        if (exponent & static_cast<T>(1))
-            result = base;
-        else
-            result = impl.getUnityValue();
+        MontgomeryValue result = (exponent & static_cast<T>(1)) ?
+                                                    base : impl.getUnityValue();
         while (exponent > static_cast<T>(1))
         {
             exponent = static_cast<T>(exponent >> static_cast<T>(1));
             base = impl.multiply(base, base);
-            if (exponent & static_cast<T>(1))
-                result = impl.multiply(result, base);
+            // The multiply above is a loop carried dependency.  Thus, a second
+            // loop carried dependency with the same length can be essentially
+            // free due to instruction level parallelism, so long as it does not
+            // introduce any branch mispredictions.
+            // So we will always compute the second multiply, instead of
+            // conditionally computing it, and we will encourage the compiler to
+            // use a (branchless) conditional move instruction.
+            MontgomeryValue tmp = impl.multiply(result, base);
+            result = (exponent & static_cast<T>(1)) ? tmp : result;
         }
         return result;
     }
@@ -169,12 +173,10 @@ public:
     }
 
     // Returns either the modular subtraction x-y, or y-x.  It is unspecified
-    // (and subject to change) which of the two subtractions will be returned
-    // in any given situation.  For cases where you don't care which subtraction
-    // gets performed, you should prefer unordered_subtract() over
-    // this->subtract().  Unordered_subtract() is always at least as efficient
-    // as subtract(), and usually it is more efficient  [in terms of number of
-    // instructions, number of registers used, and possibly also total latency].
+    // which of the two subtractions will be returned.  For situations where you
+    // don't care which subtraction gets performed, unordered_subtract() will
+    // usually perform slightly better than this->subtract() [in terms of number
+    // of instructions, number of registers used, and possibly total latency].
     MontgomeryValue unordered_subtract(MontgomeryValue x,
                                        MontgomeryValue y) const
     {
