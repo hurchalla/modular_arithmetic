@@ -156,6 +156,17 @@ public:
         HPBC_POSTCONDITION2(static_cast<const D*>(this)->isValid(V(result)));
         return V(result);
     }
+
+    HURCHALLA_FORCE_INLINE V subtract_canonical_value(V x, V y) const
+    {
+        HPBC_PRECONDITION2(isCanonical(y));
+        HPBC_PRECONDITION2(y.get() < n_); // isCanonical() should guarantee this
+        HPBC_PRECONDITION2(static_cast<const D*>(this)->isValid(x));
+        namespace ma = hurchalla::modular_arithmetic;
+        T z = ma::modular_subtraction_prereduced_inputs(x.get(), y.get(), n_);
+        HPBC_POSTCONDITION2(static_cast<const D*>(this)->isValid(V(z)));
+        return V(z);
+    }
 };
 
 

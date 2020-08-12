@@ -341,6 +341,13 @@ public:
         return V(result);
     }
 
+    HURCHALLA_FORCE_INLINE V subtract_canonical_value(V x, V y) const
+    {
+        // All montgomery values are canonical for this class, so we just
+        // delegate to subtract.
+        return subtract(x, y);
+    }
+
     HURCHALLA_FORCE_INLINE V unordered_subtract(V x, V y) const
     {
         // we can't improve efficiency much over plain subtract,

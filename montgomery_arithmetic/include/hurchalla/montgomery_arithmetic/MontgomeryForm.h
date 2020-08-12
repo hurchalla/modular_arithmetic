@@ -26,6 +26,7 @@ class MontgomeryForm final {
 public:
     using MontgomeryValue = typename MontyType::montvalue_type;
     using T_type = T;
+
     class CanonicalValue : public MontgomeryValue {
         friend MontgomeryForm;
         explicit CanonicalValue(MontgomeryValue val) : MontgomeryValue(val) {}
@@ -170,6 +171,15 @@ public:
     MontgomeryValue subtract(MontgomeryValue x, MontgomeryValue y) const
     {
         return impl.subtract(x, y);
+    }
+
+    // Returns the modular difference of the montgomery value x minus the
+    // canonical value y.  Note that this function is slightly more efficient
+    // than the overloaded subtract function that takes two MontgomeryValues,
+    // though the results are congruent.
+    MontgomeryValue subtract(MontgomeryValue x, CanonicalValue y) const
+    {
+        return impl.subtract_canonical_value(x, y);
     }
 
     // Returns either the modular subtraction x-y, or y-x.  It is unspecified

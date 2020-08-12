@@ -68,8 +68,8 @@ public:
         HPBC_PRECONDITION2(x.get() < n_);
         HPBC_PRECONDITION2(y.get() < n_);
 
-        T result = montmul_full_range(x.get(), y.get(), n_, neg_inv_n_);
-        // montmul_full_range()'s postcondition guarantees the following
+        T result = montmul_fullrange(x.get(), y.get(), n_, neg_inv_n_);
+        // montmul_fullrange()'s postcondition guarantees the following
         HPBC_POSTCONDITION2(result < n_);
 
         return V(result);
