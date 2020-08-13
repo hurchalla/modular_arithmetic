@@ -8,10 +8,18 @@
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
-struct InplaceLowlatencyTag {};
-struct OutofplaceLowlatencyTag {};
-struct InplaceLowuopsTag {};
-struct OutofplaceLowuopsTag {};
+struct PrivateInplaceTag {};
+struct PrivateOutofplaceTag {};
+
+struct InplaceLowlatencyTag : public PrivateInplaceTag {};
+struct OutofplaceLowlatencyTag : public PrivateOutofplaceTag {};
+struct InplaceLowuopsTag : public PrivateInplaceTag {};
+struct OutofplaceLowuopsTag : public PrivateOutofplaceTag {};
+
+
+struct FullrangeTag {};
+struct HalfrangeTag {};
+struct QuarterrangeTag {};
 
 
 }} // end namespace

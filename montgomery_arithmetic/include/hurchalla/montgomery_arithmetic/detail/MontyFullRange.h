@@ -6,6 +6,7 @@
 
 
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/montmul_full_range.h"
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/detail/monty_common.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
@@ -67,11 +68,10 @@ public:
     {
         HPBC_PRECONDITION2(x.get() < n_);
         HPBC_PRECONDITION2(y.get() < n_);
-
-        T result = montmul_fullrange(x.get(), y.get(), n_, neg_inv_n_);
-        // montmul_fullrange()'s postcondition guarantees the following
+        T result = impl_montmul<T, FullrangeTag>(x.get(), y.get(), n_,
+                                                                    neg_inv_n_);
+        // FullrangeTag montgomery type obeys the following
         HPBC_POSTCONDITION2(result < n_);
-
         return V(result);
     }
 

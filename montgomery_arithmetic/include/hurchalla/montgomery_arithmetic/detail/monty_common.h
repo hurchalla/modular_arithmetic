@@ -44,8 +44,7 @@ namespace detail_monty_common {
 // This function's name is "REDC_non_minimized" to reflect the fact that the
 // value it returns is not minimized to the minimum residual class mod n. (see
 // the starred* comment under Postcondition #1 for more info).
-template <typename T>
-HURCHALLA_FORCE_INLINE
+template <typename T> HURCHALLA_FORCE_INLINE
 T REDC_non_minimized(bool& ovf, T u_hi, T u_lo, T n, T neg_inv_n)
 {
     namespace ma = hurchalla::modular_arithmetic;
@@ -231,8 +230,7 @@ T REDC_non_minimized(bool& ovf, T u_hi, T u_lo, T n, T neg_inv_n)
 //    T t_hi = static_cast<T>(t >> ma::ma_numeric_limits<T>::digits);
 //    return t_hi;
 // }
-template <typename T, typename T2>
-HURCHALLA_FORCE_INLINE
+template <typename T, typename T2> HURCHALLA_FORCE_INLINE
 T REDC_non_minimized2(bool& ovf, T2 u_input, T ulo_input, T n, T neg_inv_n)
 {
     namespace ma = hurchalla::modular_arithmetic;
@@ -478,8 +476,8 @@ struct MontFunctionsCommon< T, typename std::enable_if<
                                                   : result;
         HPBC_POSTCONDITION2(minimized_result < n);
     }
-    // Note that these postconditions are the same as the template function
-    // version of impl_montmul_non_minimized.
+    // Note that these postconditions are exactly the same as the postconditions
+    // from this function in MontFunctionsCommon's primary (default) template.
     return result;
   }
 
@@ -519,8 +517,8 @@ struct MontFunctionsCommon< T, typename std::enable_if<
                                                   : result;
         HPBC_POSTCONDITION2(minimized_result < n);
     }
-    // Note that these postconditions are the same as the template function
-    // version of impl_montfmsub_non_minimized.
+    // Note that these postconditions are exactly the same as the postconditions
+    // from this function in MontFunctionsCommon's primary (default) template.
     return result;
   }
 
@@ -544,8 +542,8 @@ struct MontFunctionsCommon< T, typename std::enable_if<
         T minimized_result = (result >= n) ? static_cast<T>(result-n) : result;
         HPBC_POSTCONDITION2(minimized_result < n);
     }
-    // Note that these postconditions are the same as the template function
-    // version of impl_montout_non_minimized.
+    // Note that these postconditions are exactly the same as the postconditions
+    // from this function in MontFunctionsCommon's primary (default) template.
     return result;
   }
 };
@@ -562,8 +560,7 @@ struct MontFunctionsCommon< T, typename std::enable_if<
 
 // Multiplies two mongomery values x and y, and returns their non-minimized
 // (mod n) montgomery product.
-template <typename T>
-HURCHALLA_FORCE_INLINE
+template <typename T> HURCHALLA_FORCE_INLINE
 T montmul_non_minimized(bool& ovf, T x, T y, T n, T neg_inv_n)
 {
     // Precondition: Assuming theoretical unlimited precision standard
@@ -589,8 +586,7 @@ T montmul_non_minimized(bool& ovf, T x, T y, T n, T neg_inv_n)
 
 // Multiplies two mongomery values x and y, and then subtracts the montgomery
 // value z and returns the non-minimized result.  z must satisfy 0 <= z < n.
-template <typename T>
-HURCHALLA_FORCE_INLINE
+template <typename T> HURCHALLA_FORCE_INLINE
 T montfmsub_non_minimized(bool& ovf, T x, T y, T z, T n, T neg_inv_n)
 {
     // Precondition: Assuming theoretical unlimited precision standard

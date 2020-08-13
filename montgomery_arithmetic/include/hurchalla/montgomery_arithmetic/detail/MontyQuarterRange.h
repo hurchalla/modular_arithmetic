@@ -6,6 +6,7 @@
 
 
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/montmul_quarter_range.h"
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/detail/monty_common.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
@@ -81,10 +82,11 @@ public:
         HPBC_PRECONDITION2(x.get() < 2*n_);
         HPBC_PRECONDITION2(y.get() < 2*n_);
         // Since we have a class precondition that our modulus n_ < R/4,  we are
-        // able to satisfy the preconditions to call montmul_quarter_range().
+        // able to satisfy impl_montmul<T, QuarterrangeTag>()'s preconditions.
 
-        T result = montmul_quarter_range(x.get(), y.get(), n_, neg_inv_n_);
-        // montmul_quarter_range()'s postcondition guarantees the following
+        T result = impl_montmul<T, QuarterrangeTag>(x.get(), y.get(), n_,
+                                                                    neg_inv_n_);
+        // QuarterrangeTag montgomery type obeys the following
         HPBC_POSTCONDITION2(result < 2*n_);
 
         return V(result);
