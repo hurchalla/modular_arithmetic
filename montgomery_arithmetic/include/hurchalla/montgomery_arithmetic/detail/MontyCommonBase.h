@@ -5,7 +5,12 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_COMMON_BASE_H_INCLUDED
 
 
+#include "hurchalla/montgomery_arithmetic/optimization_tag_structs.h"
+#include "hurchalla/montgomery_arithmetic/detail/monty_common.h"
 #include "hurchalla/montgomery_arithmetic/detail/negative_inverse_mod_r.h"
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/MontHelper.h"
+#include "hurchalla/modular_arithmetic/modular_addition.h"
+#include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/modular_arithmetic/absolute_value_difference.h"
 #include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
@@ -92,8 +97,16 @@ private:
         return rModN;
     }
 
+protected:
+    // intended for use in preconditions/postconditions
+    HURCHALLA_FORCE_INLINE bool isValid(V x) const
+    {
+        T em = static_cast<const D*>(this)->getExtendedModulus();
+        return (x.get() < em);
+    }
+
 public:
-    // intended for use in postconditions/preconditions
+    // intended for use in preconditions/postconditions
     HURCHALLA_FORCE_INLINE bool isCanonical(V x) const
     {
         V cfx = static_cast<const D*>(this)->getCanonicalValue(x);
@@ -101,7 +114,7 @@ public:
         // Derived must be implemented to respect this.
         HPBC_INVARIANT2((0 <= x.get() && x.get() < n_) ? x.get() == cfx.get() :
                                                          x.get() != cfx.get());
-        bool good = static_cast<const D*>(this)->isValid(x);
+        bool good = isValid(x);
         return (x.get() == cfx.get() && good);
     }
 
@@ -109,7 +122,16 @@ public:
 
     HURCHALLA_FORCE_INLINE V convertIn(T a) const
     {
-        return static_cast<const D*>(this)->multiply(V(a), V(r_squared_mod_n_));
+        return multiply(V(a), V(r_squared_mod_n_), OutofplaceLowlatencyTag());
+    }
+
+    HURCHALLA_FORCE_INLINE T convertOut(V x) const
+    {
+        HPBC_PRECONDITION2(isValid(x));
+        T result = montout(x.get(), n_, neg_inv_n_, typename D::MontyTag());
+        // montout() postcondition guarantees result < n_
+        HPBC_POSTCONDITION2(result < n_);
+        return result;
     }
 
     HURCHALLA_FORCE_INLINE V getUnityValue() const
@@ -147,25 +169,116 @@ public:
         return V(ret);
     }
 
-    HURCHALLA_FORCE_INLINE V unordered_subtract(V x, V y) const
+    HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
-        HPBC_PRECONDITION2(static_cast<const D*>(this)->isValid(x));
-        HPBC_PRECONDITION2(static_cast<const D*>(this)->isValid(y));
+        HPBC_PRECONDITION2(isValid(x));
+        HPBC_PRECONDITION2(isValid(y));
+        T em = static_cast<const D*>(this)->getExtendedModulus();
         namespace ma = hurchalla::modular_arithmetic;
-        T result = ma::absolute_value_difference(x.get(), y.get());
-        HPBC_POSTCONDITION2(static_cast<const D*>(this)->isValid(V(result)));
-        return V(result);
+        T z = ma::modular_addition_prereduced_inputs(x.get(), y.get(), em);
+        HPBC_PRECONDITION2(isValid(V(z)));
+        return V(z);
+    }
+
+    HURCHALLA_FORCE_INLINE V add_canonical_value(V x, V y) const
+    {
+        HPBC_PRECONDITION2(isValid(x));
+        HPBC_PRECONDITION2(isCanonical(y));
+        HPBC_PRECONDITION2(y.get() < n_); // isCanonical() should guarantee this
+        T z = MontHelper<T>::modadd_canonical_second_addend(x.get(), y.get(),
+                                                                            n_);
+        HPBC_PRECONDITION2(isValid(V(z)));
+        return V(z);
+    }
+
+    HURCHALLA_FORCE_INLINE V subtract(V x, V y) const
+    {
+        HPBC_PRECONDITION2(isValid(x));
+        HPBC_PRECONDITION2(isValid(y));
+        T em = static_cast<const D*>(this)->getExtendedModulus();
+        namespace ma = hurchalla::modular_arithmetic;
+        T z = ma::modular_subtraction_prereduced_inputs(x.get(), y.get(), em);
+        HPBC_PRECONDITION2(isValid(V(z)));
+        return V(z);
     }
 
     HURCHALLA_FORCE_INLINE V subtract_canonical_value(V x, V y) const
     {
         HPBC_PRECONDITION2(isCanonical(y));
         HPBC_PRECONDITION2(y.get() < n_); // isCanonical() should guarantee this
-        HPBC_PRECONDITION2(static_cast<const D*>(this)->isValid(x));
-        namespace ma = hurchalla::modular_arithmetic;
-        T z = ma::modular_subtraction_prereduced_inputs(x.get(), y.get(), n_);
-        HPBC_POSTCONDITION2(static_cast<const D*>(this)->isValid(V(z)));
+        HPBC_PRECONDITION2(isValid(x));
+        T z = MontHelper<T>::modsub_canonical_subtrahend(x.get(), y.get(), n_);
+        HPBC_POSTCONDITION2(isValid(V(z)));
         return V(z);
+    }
+
+    HURCHALLA_FORCE_INLINE V unordered_subtract(V x, V y) const
+    {
+        HPBC_PRECONDITION2(isValid(x));
+        HPBC_PRECONDITION2(isValid(y));
+        namespace ma = hurchalla::modular_arithmetic;
+        T result = ma::absolute_value_difference(x.get(), y.get());
+        HPBC_POSTCONDITION2(isValid(V(result)));
+        return V(result);
+    }
+
+    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
+    HURCHALLA_FORCE_INLINE V multiply(V x, V y, PTAG) const
+    {
+        HPBC_PRECONDITION2(isValid(x));
+        HPBC_PRECONDITION2(isValid(y));
+        // As a precondition, montmul requires  x*y < n*R.  This will always be
+        // satisfied for all Monty classes known to derive from this class --
+        // For MontyFullRange: its constructor requires modulus < R, which
+        //   means n < R.  Since MontyFullRange's isValid(a) returns (a < n),
+        //   we know by this function's preconditions that x < n and y < n.
+        //   Therefore  x*y < n*n < n*R.
+        // For MontyHalfRange: its constructor requires modulus < R/2, which
+        //   means n < R/2.  Its isValid(a) returns (a < n), so we know by this
+        //   function's preconditions that x < n and y < n.  Thus
+        //   x*y < n*n < n*R/2 < n*R.
+        // For MontyQuarterRange: its constructor requires modulus < R/4, which
+        //   means n < R/4.  Its isValid(a) returns (a < 2*n), so we know by
+        //   this function's preconditions that x < 2*n and y < 2*n.  Thus
+        //   x*y < (2*n)*(2*n) == 4*n*n < 4*n*R/4 == n*R.
+        // For MontySixthRange: its constructor requires modulus < R/6, which
+        //   means n < R/6.  Its isValid(a) returns (a < 2*n), so we know by
+        //   this function's preconditions that x < 2*n and y < 2*n.  Thus
+        //   x*y < (2*n)*(2*n) == 4*n*n < 4*n*R/6 == (2/3)*n*R < n*R.
+        T result = montmul(x.get(), y.get(), n_, neg_inv_n_,
+                                                typename D::MontyTag(), PTAG());
+        HPBC_PRECONDITION2(isValid(V(result)));
+        return V(result);
+    }
+
+    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
+    HURCHALLA_FORCE_INLINE V fmsub(V x, V y, V z, PTAG) const
+    {
+        HPBC_PRECONDITION2(isValid(x));
+        HPBC_PRECONDITION2(isValid(y));
+        HPBC_PRECONDITION2(isCanonical(z));
+        HPBC_PRECONDITION2(z.get() < n_); // isCanonical() should guarantee this
+        // As a precondition, montfmsub requires  x*y < n*R.  See multiply() for
+        // why this will always be satisfied.
+        T result = montfmsub(x.get(), y.get(), z.get(), n_, neg_inv_n_,
+                                                typename D::MontyTag(), PTAG());
+        HPBC_PRECONDITION2(isValid(V(result)));
+        return V(result);
+    }
+
+    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
+    HURCHALLA_FORCE_INLINE V fmadd(V x, V y, V z, PTAG) const
+    {
+        HPBC_PRECONDITION2(isValid(x));
+        HPBC_PRECONDITION2(isValid(y));
+        HPBC_PRECONDITION2(isCanonical(z));
+        HPBC_PRECONDITION2(z.get() < n_); // isCanonical() should guarantee this
+        // As a precondition, montfmadd requires  x*y < n*R.  See multiply() for
+        // why this will always be satisfied.
+        T result = montfmadd(x.get(), y.get(), z.get(), n_, neg_inv_n_,
+                                                typename D::MontyTag(), PTAG());
+        HPBC_PRECONDITION2(isValid(V(result)));
+        return V(result);
     }
 };
 

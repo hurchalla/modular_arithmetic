@@ -2,7 +2,7 @@
 // by the file "LICENSE.TXT" in the root of this repository ---
 
 
-// We'll define HURCHALLA_ALLOW_INLINE_ASM_MODSUB here in order to make modular
+// We'll define HURCHALLA_ALLOW_INLINE_ASM_ALL here in order to make modular
 // subtraction use an inline asm function version if it is available.
 // Internally, this inline asm function will also call the generic template
 // function version of modular subtraction inside a postcondition, in order to
@@ -10,8 +10,8 @@
 // must be enabled for this check to occur - the easiest way to ensure
 // postconditions are enabled is to undefine NDEBUG, which is why we undef
 // NDEBUG here too.
-#undef HURCHALLA_ALLOW_INLINE_ASM_MODSUB
-#define HURCHALLA_ALLOW_INLINE_ASM_MODSUB 1
+#undef HURCHALLA_ALLOW_INLINE_ASM_ALL
+#define HURCHALLA_ALLOW_INLINE_ASM_ALL 1
 #undef NDEBUG
 
 

@@ -5,6 +5,9 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_COMMON_H_INCLUDED
 
 
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/RedcLargeR.h"
+#include "hurchalla/montgomery_arithmetic/detail/RedcSmallR.h"
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/MontHelper.h"
 #include "hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/montgomery_arithmetic/detail/safely_promote_unsigned.h"
 #include "hurchalla/montgomery_arithmetic/detail/sized_uint.h"
@@ -31,402 +34,96 @@ namespace detail_monty_common {
 // -----------------
 
 
-// This function implements the REDC algorithm as described at
-// https://en.wikipedia.org/wiki/Montgomery_modular_multiplication#The_REDC_algorithm
-// We use the variable name "u" instead of "T" (from the link above) since
-// "T" in C++ is conventionally reserved for use as a template parameter name.
-// We also use "n" instead of "N", and "neg_inv_n" instead of "N′" (N with a
-// prime symbol).  The constant "R" remains the same, and represents the value
-// R = 2^(ma::ma_numeric_limits<T>::digits).  As an example, if T is uint64_t,
-// then R = 2^64.
-// The comments below explain additional changes from the wikipedia article.
-//
-// This function's name is "REDC_non_minimized" to reflect the fact that the
-// value it returns is not minimized to the minimum residual class mod n. (see
-// the starred* comment under Postcondition #1 for more info).
-template <typename T> HURCHALLA_FORCE_INLINE
-T REDC_non_minimized(bool& ovf, T u_hi, T u_lo, T n, T neg_inv_n)
-{
-    namespace ma = hurchalla::modular_arithmetic;
-    static_assert(ma::ma_numeric_limits<T>::is_integer, "");
-    static_assert(!(ma::ma_numeric_limits<T>::is_signed), "");
-    static_assert(ma::ma_numeric_limits<T>::is_modulo, "");
-    // We require T is at least as large as unsigned int.
-    // If T is a smaller type than that, we'll need a different function that
-    // will be both more efficient, and protected from surprises and undefined
-    // behavior from the tricky unsigned integral promotion rules in C++.  See
-    // https://jeffhurchalla.com/2019/01/16/c-c-surprises-and-undefined-behavior-due-to-unsigned-integer-promotion/
-    static_assert(ma::ma_numeric_limits<T>::digits >=
-                  ma::ma_numeric_limits<unsigned int>::digits, "");
-
-    // assert(n * neg_inv_n ≡ -1 (mod R))
-    HPBC_PRECONDITION2(n * neg_inv_n == static_cast<T>(0) - static_cast<T>(1));
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(n > 1);
-
-    // We require the precondition  u < n*R.  Or  u == u_hi*R + u_lo < n*R.
-    // If u_hi < n:  then u_hi+1 <= n, and u_hi*R + R <= n*R.  Since u_lo < R,
-    //   u == u_hi*R + u_lo < u_hi*R + R <= n*R.  We would have  u < n*R, and
-    //   so u_hi < n is always sufficient to satisfy the precondition.
-    // If u_hi >= n:  then u_hi*R >= n*R, and u == u_hi*R + u_lo >= n*R, which
-    //   fails the precondition.
-    // Thus u_hi < n is sufficient and necessary to satisfy the precondition.
-    HPBC_PRECONDITION2(u_hi < n);
-
-    T m = u_lo * neg_inv_n;  // computes  m = (u * neg_inv_n) % R
-
-    T mn_lo;
-    T mn_hi = unsigned_multiply_to_hilo_product(&mn_lo, m, n);
-
-    // mn = m*n.  Since m=(u_lo*neg_inv_n)%R, we know m < R, and thus  mn < R*n.
-    // Therefore mn == mn_hi*R + mn_lo < R*n, and mn_hi*R < R*n - mn_lo <= R*n,
-    // and thus  mn_hi < n.
-        // *** Assertion #1 ***
-    HPBC_ASSERT2(mn_hi < n);
-    // Since mn_hi < n and n <= R-1,  mn_hi < R-1, or  mn_hi <= R-2.
-    // (Note: R-2 == static_cast<T>(0) - static_cast<T>(2))
-        // *** Assertion #2 ***  (mn_hi <= R-2)
-    HPBC_ASSERT2(mn_hi <= static_cast<T>(0) - static_cast<T>(2));
-
-    // Compute (u + mn)/R :
-
-    T t_hi = u_hi + mn_hi;   // computes  t_hi = (u_hi + mn_hi) % R
-
-    // We do not need to explicitly perform the low part addition (u_lo + mn_lo)
-    // because the REDC algorithm guarantees (u_lo + mn_lo) % R == 0.  The only
-    // question we have is whether (u_lo + mn_lo) has a carry to the high part.
-    HPBC_ASSERT2(u_lo + mn_lo == 0);
-    // This low part addition will always carry over into the high part of the
-    // sum, unless u_lo and mn_lo are both equal to 0.  Thus, if u_lo != 0, this
-    // addition carries.  If u_lo == 0, then since mn_lo < R, we know  mn_lo
-    // would need to equal 0 in order to have the low part addition == 0.  Thus,
-    // if (u_lo == 0), this addition will not carry.
-    // To know if we carry, we simply check (u_lo != 0):
-    t_hi += (u_lo != 0);
-    // The above computed additions were t_hi = (u_hi + mn_hi + (u_lo != 0)) % R
-    // Let  sum = u_hi + mn_hi + (u_lo != 0).  We know (u_lo != 0) <= 1, and
-    // assertion #2 shows mn_hi <= R-2, so  sum <= u_hi + R-2 + 1 == u_hi + R-1.
-    // Or more simply, sum < u_hi + R.  For some integer k>=0, t_hi + k*R == sum
-    // Assume k>=2:  then t_hi + 2*R <= t_hi + k*R == sum < u_hi + R.  More
-    // simply, t_hi + R < u_hi.  But since u_hi < R, this means t_hi < 0  which
-    // is impossible.  Therefore k<2, and thus k==0 or k==1.
-    // If k==1, then  t_hi + R == sum < u_hi + R,  or more simply, t_hi < u_hi.
-    // If k==0, then  t_hi == sum == u_hi + mn_hi + (u_lo != 0).  Since
-    // mn_hi >= 0 and (u_lo != 0) >= 0,  we would have  t_hi >= u_hi.
-    // The contrapositives of these show: if t_hi < u_hi then k!=0, and if
-    // t_hi >= u_hi then k!=1.  Since k== 0 or 1,  t_hi < u_hi implies k==1, and
-    // t_hi >= u_hi  implies k==0.  This means we can get the value of k using
-    // the conditional  k = (t_hi < u_hi).
-    // We can view k as an overflow or carry flag for the computed additions in
-    // t_hi (we would view the carry as going to a "super high" part of 't').
-    // Thus,  bool overflow = k = (t_hi < u_hi)
-    ovf = (t_hi < u_hi);
-
-    // The precondition  u < n*R, along with assertion #1 of  mn < n*R,  show
-    // that  u + mn < 2*n*R, and thus  t = u + mn < 2*n*R, or  t < 2*n*R.
-    // We know t == ovf*R*R + t_hi*R + t_lo, and since we know  t_lo == 0,
-    // t == ovf*R*R + t_hi*R.  We need the value q = t/R == ovf*R + t_hi, and
-    // since t < 2*n*R, q = t/R < 2*n.  Our desired final result will need to
-    // satisfy 0 <= result < n, so we will subtract n from q if q >= n.  Since
-    // q < 2*n, we know  q - n < n, showing that a single subtraction at most
-    // might be needed to compute the final result.
-    // If ovf == 0:
-    //   We would know  q = t/R == ovf*R + t_hi == t_hi.  We can't know if we
-    //   would have q = t_hi >= n, so we would need to test for it.  If true,
-    //   we would perform the subtraction t_hi - n  to get the final result.
-    //   Otherwise  t_hi < n  and thus  t_hi  is the final result.
-    // If ovf == 1:
-    //   We would know  q = t/R == ovf*R + t_hi == R + t_hi.  Since R > n,
-    //   we would have  q = R + t_hi > n.  Thus we would need to do a single
-    //   subtraction (as proven above) to get the final result.  We would have
-    //   result = R + t_hi - n.  Since R + t_hi - n == q - n < n < R  and
-    //   since trivially we can see that  R + t_hi - n > 0,  we know 
-    //   R + t_hi - n == (R + t_hi - n)%R == (t_hi - n)%R,  which we can compute
-    //   with type T variables by  result = t_hi - n  (since type T arithmetic
-    //   is implicitly mod R).
-    // All this translates into -
-    //
-    // Postcondition #1 -
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T minimized_result = (ovf || t_hi >= n) ? (t_hi - n) : t_hi;
-        HPBC_POSTCONDITION2(minimized_result < n);
-    }
-    // * Aside from this postcondition, we do not actually compute the final
-    // minimized residual mod n result, because some Montgomery Forms are
-    // constrained in ways that allow simpler and more efficient computation of
-    // the minimized result.  For example, in some forms, ovf is always false.
-    // We allow the Montgomery Form calling this function to compute its final
-    // minimized result in a potentially more efficient manner.
-
-
-    // Postcondition #2 - If u_hi == 0, then ovf == false.
-    // ---------------------------------------------------
-    // Since ovf = (t_hi < u_hi),  u_hi == 0 would mean ovf = (t_hi < 0), which
-    // is always false.
-    HPBC_POSTCONDITION2((u_hi == 0) ? ovf == false : true);
-
-    // Postcondition #3 - If u_hi == 0 and u_lo < n, then t_hi < n.
-    // ------------------------------------------------------------
-    // By definition, m*n == mn_hi*R + mn_lo, and since m is type T,  m <= R-1.
-    // Thus mn_hi*R + mn_lo == m*n <= (R-1)*n.  Adding u_lo to both sides we get
-    // mn_hi*R + (mn_lo + u_lo) <= (R-1)*n + u_lo.  We know from comments above
-    // that if (u_lo == 0), then (u_lo + mn_lo) == 0, and if (u_lo != 0), then
-    // (u_lo + mn_lo) == R.  Thus, (u_lo + mn_lo) == (u_lo != 0)*R.  And so
-    // mn_hi*R + (u_lo != 0)*R == mn_hi*R + (mn_lo + u_lo) <= (R-1)*n + u_lo.
-    // This note specifies  u_lo < n, and so we know  u_lo <= n-1, and thus,
-    // mn_hi*R + (u_lo != 0)*R <= (R-1)*n + n-1 == R*n - 1.  Therefore,
-    // mn_hi*R + (u_lo != 0)*R < R*n.  Dividing by R,  mn_hi + (u_lo != 0) < n.
-    // We know that  t_hi = (u_hi + mn_hi + (u_lo != 0)) % R.  Since this case
-    // specifies u_hi == 0, we know  t_hi = (mn_hi + (u_lo != 0)) % R.  And
-    // since we know  0 <= mn_hi + (u_lo != 0) < n < R,  we would have
-    // t_hi == mn_hi + (u_lo != 0),  and thus,  t_hi < n.
-    HPBC_POSTCONDITION2((u_hi == 0 && u_lo < n) ? t_hi < n : true);
-
-    // Postcondition #4 - If n < R/2, then ovf == false  and  t_hi < 2*n.
-    // ------------------------------------------------------------------
-    // By definition, m*n == mn_hi*R + mn_lo.  This case specifies n < R/2, and
-    // since m is type T, we know m < R.  Thus, mn_hi*R + mn_lo == m*n < R*R/2.
-    // We know  mn_hi*R <= mn_hi*R + mn_lo < R*R/2, and thus  mn_hi < R/2,  and
-    // by extension  mn_hi <= R/2 - 1.  We know (u_lo != 0) <= 1, and by this
-    // function's precondition of (u_hi < n) we know  u_hi < n <= R/2 - 1.  Thus
-    // u_hi + mn_hi + (u_lo != 0) <= (R/2 - 1) + (R/2 - 1) + 1 == R-1.  And thus
-    // 0 <= u_hi + mn_hi + (u_lo != 0) <= R-1 < R.  This lets us see that
-    // t_hi = (u_hi + mn_hi + (u_lo != 0)) % R == u_hi + mn_hi + (u_lo != 0).
-    // We know t_hi == u_hi + mn_hi + (u_lo != 0) >= u_hi, and so  t_hi >= u_hi.
-    // Since  ovf = (t_hi < u_hi),  ovf must be false.
-    // From the comments preceding Postcondition #1, we know q == ovf*R + t_hi
-    // and q < 2*n.  Since we have ovf == false, q == t_hi, and thus t_hi < 2*n.
-    // [ These comments were inspired by ideas in section 5 of "Montgomery's
-    // Multiplication Technique: How to Make It Smaller and Faster", at
-    // https://www.comodo.com/resources/research/cryptography/CDW_CHES_99.ps ]
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T Rdiv2 = static_cast<T>(1) << (ma::ma_numeric_limits<T>::digits - 1);
-        HPBC_POSTCONDITION2((n < Rdiv2) ? (ovf == false && t_hi < 2*n) : true);
-    }
-
-    // return the non-minimized result
-    return t_hi;
-}
-
-
-// This function is intended for use when T is smaller than the ALU's native bit
-// width.  It is based on the REDC algorithm, but it does not minimize the
-// output result.  See
-//   https://en.wikipedia.org/wiki/Montgomery_modular_multiplication#The_REDC_algorithm
-// Precondition: with theoretical unlimited precision standard multiplication,
-//   we require  u < n*R.  The constant R represents the value
-//   R = 2^(ma::ma_numeric_limits<T>::digits).
-// Returns: the non-minimized montgomery product.
-// Implmentation: this function is a safer and generic version of the following-
-// uint32_t redc_non_minimized(bool& ovf, uint64_t u, uint32_t n,
-//                                                           uint32_t neg_inv_n)
-// {
-//    using T = uint32_t;
-//    using T2 = uint64_t;
-//    T m = static_cast<T>(u) * neg_inv_n;
-//    T2 mn = static_cast<T2>(m) * static_cast<T2>(n);
-//    T2 t = u + mn;
-//    ovf = (t < u);
-//    T t_hi = static_cast<T>(t >> ma::ma_numeric_limits<T>::digits);
-//    return t_hi;
-// }
-template <typename T, typename T2> HURCHALLA_FORCE_INLINE
-T REDC_non_minimized2(bool& ovf, T2 u_input, T ulo_input, T n, T neg_inv_n)
-{
-    namespace ma = hurchalla::modular_arithmetic;
-    static_assert(ma::ma_numeric_limits<T>::is_integer, "");
-    static_assert(!(ma::ma_numeric_limits<T>::is_signed), "");
-    static_assert(ma::ma_numeric_limits<T>::is_modulo, "");
-
-    static_assert(ma::ma_numeric_limits<T2>::is_integer, "");
-    static_assert(!(ma::ma_numeric_limits<T2>::is_signed), "");
-    static_assert(ma::ma_numeric_limits<T2>::is_modulo, "");
-
-    static_assert(ma::ma_numeric_limits<T2>::digits ==
-                  2 * ma::ma_numeric_limits<T>::digits, "");
-
-    // For casts, we want to use types that are protected from surprises and
-    // undefined behavior due to the unsigned integral promotion rules in C++.
-    // https://jeffhurchalla.com/2019/01/16/c-c-surprises-and-undefined-behavior-due-to-unsigned-integer-promotion/
-    using V = typename safely_promote_unsigned<T>::type;
-    using V2 = typename safely_promote_unsigned<T2>::type;
-    static_assert(ma::ma_numeric_limits<V>::is_modulo, "");
-    static_assert(ma::ma_numeric_limits<V2>::is_modulo, "");
-
-    static constexpr int bit_width_T = ma::ma_numeric_limits<T>::digits;
-    static constexpr V2 R = static_cast<V2>(1) << bit_width_T;
-
-    // assert(n * neg_inv_n ≡ -1 (mod R))
-    HPBC_PRECONDITION2(
-                static_cast<T>(static_cast<V>(n) * static_cast<V>(neg_inv_n)) ==
-                static_cast<T>(static_cast<V>(0) - static_cast<V>(1))
-                );
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(n > 1);
-
-    V2 u = static_cast<V2>(u_input);
-    HPBC_PRECONDITION2(u < static_cast<V2>(n) * R);
-
-    T m = static_cast<T>(static_cast<V>(ulo_input) * static_cast<V>(neg_inv_n));
-    V2 mn = static_cast<V2>(m) * static_cast<V2>(n);
-
-    T2 t = static_cast<T2>(u + mn);
-    ovf = (static_cast<V2>(t) < u);
-
-    T t_hi = static_cast<T>(static_cast<V2>(t) >> bit_width_T);
-
-    // For the same reason as REDC_non_minimized(), we do not compute the final
-    // minimized result, aside from this postcondition.
-    // Postcondition #5
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T minimized_result = (ovf || t_hi >= n) ? static_cast<T>(t_hi-n) : t_hi;
-        HPBC_POSTCONDITION2(minimized_result < n);
-    }
-
-    // Postcondition #6 - If u < R, then ovf == false.
-    // ---------------------------------------------------
-    // We know mn <= (R-1)*(R-1).  For this case, u < R, so  u <= R-1.
-    // And so u + mn <= (R-1) + ((R-1)*(R-1)) == (R-1)*R < R*R.  Since we also
-    // know  u + mn >= 0, we know  0 <= u + mn < R*R, and thus
-    // (u + mn) == (u + mn) % (R*R).  Therefore since t = (u + mn) % (R*R),
-    // t == u + mn, and thus t >= u.  This means ovf = (t < u) must be false.
-    HPBC_POSTCONDITION2((u < R) ? ovf == false : true);
-
-    // Postcondition #7 - If u < n, then t_hi < n.
-    // ------------------------------------------------------
-    // For this case, u < n, so  u <= n-1.  Since m is type T,  m <= R-1.  Thus
-    // u + m*n <= (n-1) + (R-1)*n == R*n - 1,  and thus  u + m*n < R*n < R*R.
-    // Using similar reasoning to Postcondition #6, we therefore know
-    // t = (u + mn) % (R*R) == (u + mn),  and since  u + m*n < R*n,  t < R*n.
-    // Since t_hi = t/R (which divides evenly), we know
-    // t_hi = t/R < (R*n)/R == n, and thus,  t_hi < n.
-    HPBC_POSTCONDITION2((u < n) ? t_hi < n : true);
-
-    // Postcondition #8 - If n < R/2, then ovf == false  and  t_hi < 2*n.
-    // ------------------------------------------------------------------
-    // Since m is type T we know m < R, and since mn = m*n,  mn < R*n.  Adding
-    // this with the function precondition u < n*R, we get  u + mn < 2*R*n.
-    // Since this case specifies n < R/2, we have  u + mn < 2*R*R/2 == R*R.
-    // Using similar reasoning to Postcondition #6, we therefore know
-    // t = (u + mn) % (R*R) == (u + mn).  Thus t >= u.  Therefore  ovf = (t < u)
-    // must be false.
-    // We've already shown u + mn < 2*R*n, and since t == (u + mn), we therefore
-    // know  t < 2*R*n.  Since t_hi = t/R (which divides evenly), we know
-    // t_hi = t/R < (2*R*n)/R == 2*n, and thus,  t_hi < 2*n.
-    // [ This finding was inspired by ideas in section 5 of "Montgomery's
-    // Multiplication Technique: How to Make It Smaller and Faster", at
-    // https://www.comodo.com/resources/research/cryptography/CDW_CHES_99.ps ]
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T Rdiv2 = static_cast<T>(1) << (ma::ma_numeric_limits<T>::digits - 1);
-        HPBC_POSTCONDITION2((n < Rdiv2) ?
-                       (ovf == false && t_hi < static_cast<T>(2)*n) : true);
-    }
-
-    // return the non-minimized result
-    return t_hi;
-}
-
-
-
-
 // default (primary) template
 template <typename T, class Enable = void>
 struct MontFunctionsCommon
 {
-  // Multiplies two mongomery values x and y.
-  // Returns the non-minimized (mod n) montgomery product.
-  static HURCHALLA_FORCE_INLINE T mul_non_minimized(bool& ovf, T x, T y, T n,
-                                                                    T neg_inv_n)
+  static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
+  static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
+  static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
+
+  template <class MTAG, class PTAG>
+  static HURCHALLA_FORCE_INLINE
+  T mul(T x, T y, T n, T neg_inv_n, MTAG, PTAG)
   {
     T u_lo;
     T u_hi = unsigned_multiply_to_hilo_product(&u_lo, x, y);
     // Precondition: Assuming theoretical unlimited precision standard
     // multiplication, this function requires  u = x*y < n*R.
     // Having u_hi < n is sufficient and necessary to satisfy our requirement of
-    // x*y == u < n*R.  See REDC_non_minimized() for proof.
+    // x*y == u < n*R.  See REDC_non_minimized() in RedcLargeR.h for proof.
     HPBC_PRECONDITION2(u_hi < n);
 
-    T result = REDC_non_minimized(ovf, u_hi, u_lo, n, neg_inv_n);
-
-    // REDC_non_minimized Postcondition #4 guarantees that if n < R/2, then
-    // ovf == false  and  result < 2*n.
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        namespace ma = hurchalla::modular_arithmetic;
-        T Rdiv2 = static_cast<T>(1) << (ma::ma_numeric_limits<T>::digits - 1);
-        HPBC_POSTCONDITION2((n < Rdiv2) ? (ovf==false && result<2*n) : true);
-    }
-    // REDC_non_minimized Postcondition #1 guarantees the following
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T minimized_result = (ovf || result >= n) ? (result - n) : result;
-        HPBC_POSTCONDITION2(minimized_result < n);
-    }
+    T result = RedcLargeR<T>::REDC(u_hi, u_lo, n, neg_inv_n, MTAG(), PTAG());
+    // Postcondition: result is a valid montgomery value for the montgomery type
+    // associated with MTAG
     return result;
   }
 
-
-  // Multiplies two mongomery values x and y, and then subtracts z from the
-  // product.  Returns the non-minimized (mod n) montgomery product.
-  static HURCHALLA_FORCE_INLINE T fmsub_non_minimized(bool& ovf, T x, T y, T z,
-                                                               T n, T neg_inv_n)
+  template <class MTAG, class PTAG>
+  static HURCHALLA_FORCE_INLINE
+  T fmsub(T x, T y, T z, T n, T neg_inv_n, MTAG, PTAG)
   {
-    HPBC_PRECONDITION2(z < n);
+    HPBC_PRECONDITION2(z < n);  // z must be canonical (0 <= z < n)
     T u_lo;
     T u_hi = unsigned_multiply_to_hilo_product(&u_lo, x, y);
     // Precondition: Assuming theoretical unlimited precision standard
     // multiplication, this function requires  u = x*y < n*R.
     // Having u_hi < n is sufficient and necessary to satisfy our requirement of
-    // x*y == u < n*R.  See REDC_non_minimized() for proof.
+    // x*y == u < n*R.  See REDC_non_minimized() in RedcLargeR.h for proof.
     HPBC_PRECONDITION2(u_hi < n);
 
-    // TODO proof of correctness, showing that performing the modular subtraction
-    // prior to the REDC will always give the same results as performing the REDC
-    // and then the modular subtraction.
+    // TODO proof of correctness, showing that performing the modular sub prior
+    // to the REDC will always give the same results as performing the REDC and
+    // then the modular subtraction.
     // The following calculations should execute in parallel with the first two
     // multiplies in REDC_non_minimized(), since those mutiplies do not depend
     // on these calculations.  (Instruction level parallelism)
-    T diff = u_hi - z;
-    T diff2 = diff + n;
-    T u_hi2 = (u_hi >= z) ? diff : diff2;
+    T diff = MontHelper<T>::modsub_canonical_subtrahend(u_hi, z, n);
+    // modsub_canonical_subtrahend()'s postcondition guarantees diff is a valid
+    // montgomery value for any MTAG
+    T result = RedcLargeR<T>::REDC(diff, u_lo, n, neg_inv_n, MTAG(), PTAG());
 
-    T result = REDC_non_minimized(ovf, u_hi2, u_lo, n, neg_inv_n);
-
-    // REDC_non_minimized Postcondition #4 guarantees that if n < R/2, then
-    // ovf == false  and  result < 2*n.
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        namespace ma = hurchalla::modular_arithmetic;
-        T Rdiv2 = static_cast<T>(1) << (ma::ma_numeric_limits<T>::digits - 1);
-        HPBC_POSTCONDITION2((n < Rdiv2) ? (ovf==false && result<2*n) : true);
-    }
-    // REDC_non_minimized Postcondition #1 guarantees the following
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T minimized_result = (ovf || result >= n) ? (result - n) : result;
-        HPBC_POSTCONDITION2(minimized_result < n);
-    }
+    // Postcondition: result is a valid montgomery value for the montgomery type
+    // associated with MTAG
     return result;
   }
 
-
-  // Converts the montgomery value 'x' to a non-minimized (mod n) standard
-  // integer.
-  static HURCHALLA_FORCE_INLINE T convertout_non_minimized(T x,T n, T neg_inv_n)
+  template <class MTAG, class PTAG>
+  static HURCHALLA_FORCE_INLINE
+  T fmadd(T x, T y, T z, T n, T neg_inv_n, MTAG, PTAG)
   {
-    T u_hi = static_cast<T>(0);
-    T u_lo = x;
-    bool ovf;
-    // Having u_hi == 0 satisfies REDC_non_minimized's precondition that u < n*R
+    HPBC_PRECONDITION2(z < n);  // z must be canonical (0 <= z < n)
+    T u_lo;
+    T u_hi = unsigned_multiply_to_hilo_product(&u_lo, x, y);
+    // Precondition: Assuming theoretical unlimited precision standard
+    // multiplication, this function requires  u = x*y < n*R.
+    // Having u_hi < n is sufficient and necessary to satisfy our requirement of
+    // x*y == u < n*R.  See REDC_non_minimized() in RedcLargeR.h for proof.
+    HPBC_PRECONDITION2(u_hi < n);
 
-    T result = REDC_non_minimized(ovf, u_hi, u_lo, n, neg_inv_n);
-    // REDC_non_minimized Postcondition #2 guarantees ovf==false, since u_hi==0.
-    HPBC_ASSERT2(ovf == false);
+    // TODO proof of correctness, showing that performing the modular add prior
+    // to the REDC will always give the same results as performing the REDC and
+    // then the modular addition.
+    // The following calculations should execute in parallel with the first two
+    // multiplies in REDC_non_minimized(), since those mutiplies do not depend
+    // on these calculations.  (Instruction level parallelism)
+    T sum = MontHelper<T>::modadd_canonical_second_addend(u_hi, z, n);
+    // modadd_canonical_second_addend()'s postcondition guarantees sum is a
+    // valid montgomery value for any MTAG.
+    T result = RedcLargeR<T>::REDC(sum, u_lo, n, neg_inv_n, MTAG(), PTAG());
 
-    // REDC_non_minimized Postcondition #3 guarantees the following, for u_hi==0
-    HPBC_POSTCONDITION2((x < n) ? result < n : true);
-    // REDC_non_minimized Postcondition #1 guarantees the following, since ovf
-    // is false:
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T minimized_result = (result >= n) ? (result - n) : result;
-        HPBC_POSTCONDITION2(minimized_result < n);
-    }
+    // Postcondition: result is a valid montgomery value for the montgomery type
+    // associated with MTAG
+    return result;
+  }
+
+  template <class MTAG>
+  static HURCHALLA_FORCE_INLINE
+  T convert_out(T x, T n, T neg_inv_n, MTAG)
+  {
+    T result = RedcLargeR<T>::convert_out(x, n, neg_inv_n, MTAG());
+    HPBC_POSTCONDITION2(result < n);
     return result;
   }
 };
@@ -454,96 +151,91 @@ struct MontFunctionsCommon< T, typename std::enable_if<
   static_assert(!(modular_arithmetic::ma_numeric_limits<T2>::is_signed), "");
   static_assert(modular_arithmetic::ma_numeric_limits<T2>::is_modulo, "");
 
-  static HURCHALLA_FORCE_INLINE T mul_non_minimized(bool& ovf, T x, T y, T n,
-                                                                    T neg_inv_n)
+  template <class MTAG, class PTAG>
+  static HURCHALLA_FORCE_INLINE
+  T mul(T x, T y, T n, T neg_inv_n, MTAG, PTAG)
   {
-    // Precondition: Assuming theoretical unlimited precision standard
-    // multiplication, this function requires  u = x*y < n*R.
-
     T2 u = static_cast<T2>(static_cast<T2>(x) * static_cast<T2>(y));
-    T result=REDC_non_minimized2<T,T2>(ovf, u, static_cast<T>(u), n, neg_inv_n);
+    // Precondition: Assuming theoretical unlimited precision standard
+    // multiplication, this function requires  u = x*y < n*R, or equivalently:
+    HPBC_PRECONDITION2(u < (static_cast<T2>(n)
+                            << std::numeric_limits<T>::digits));
 
-    // REDC_non_minimized2 Postcondition #8 guarantees that if n < R/2, then
-    // ovf == false  and  result < 2*n.
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        namespace ma = hurchalla::modular_arithmetic;
-        T Rdiv2 = static_cast<T>(1) << (ma::ma_numeric_limits<T>::digits - 1);
-        HPBC_POSTCONDITION2((n < Rdiv2) ? (ovf==false && result<2*n) : true);
-    }
-    // REDC_non_minimized2 Postcondition #5 guarantees the following
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T minimized_result = (ovf || result >= n) ? static_cast<T>(result - n)
-                                                  : result;
-        HPBC_POSTCONDITION2(minimized_result < n);
-    }
-    // Note that these postconditions are exactly the same as the postconditions
-    // from this function in MontFunctionsCommon's primary (default) template.
+    T u_lo = static_cast<T>(u);
+    T result = RedcSmallR<T>::REDC(u, u_lo, n, neg_inv_n, MTAG(), PTAG());
+    // Postcondition: result is a valid montgomery value for the montgomery type
+    // associated with MTAG
     return result;
   }
 
-
-  static HURCHALLA_FORCE_INLINE T fmsub_non_minimized(bool& ovf, T x, T y, T z,
-                                                               T n, T neg_inv_n)
+  template <class MTAG, class PTAG>
+  static HURCHALLA_FORCE_INLINE
+  T fmsub(T x, T y, T z, T n, T neg_inv_n, MTAG, PTAG)
   {
-    // Precondition: Assuming theoretical unlimited precision standard
-    // multiplication, this function requires  u = x*y < n*R.
-    HPBC_PRECONDITION2(z < n);
-
+    HPBC_PRECONDITION2(z < n);  // z must be canonical (0 <= z < n)
     T2 u = static_cast<T2>(static_cast<T2>(x) * static_cast<T2>(y));
+    static constexpr int bit_width_T = std::numeric_limits<T>::digits;
+    // Precondition: Assuming theoretical unlimited precision standard
+    // multiplication, this function requires  u = x*y < n*R, or equivalently:
+    HPBC_PRECONDITION2(u < (static_cast<T2>(n) << bit_width_T));
 
+    // TODO proof of correctness, showing that performing the modular sub prior
+    // to the REDC will always give the same results as performing the REDC and
+    // then the modular subtraction.
     // The following calculations should execute in parallel with the first two
     // multiplies in REDC_non_minimized2(), since those mutiplies do not depend
     // on these calculations.  (Instruction level parallelism)
-    T2 zR = static_cast<T2>(z) << std::numeric_limits<T>::digits;
-    T2 nR = static_cast<T2>(n) << std::numeric_limits<T>::digits;
-    T2 diff = u - zR;
-    T2 diff2 = diff + nR;
-    T2 u2 = (u >= zR) ? diff : diff2;
+    T2 zR = static_cast<T2>(static_cast<T2>(z) << bit_width_T);
+    T2 nR = static_cast<T2>(static_cast<T2>(n) << bit_width_T);
+    T2 u2 = MontHelper<T2>::modsub_canonical_subtrahend(u, zR, nR);
     // the low bits should be unchanged between u2 and u.
     HPBC_ASSERT2(static_cast<T>(u2) == static_cast<T>(u));
 
-    T result = REDC_non_minimized2<T, T2>(ovf, u2, static_cast<T>(u), n,
-                                                                     neg_inv_n);
-    // REDC_non_minimized2 Postcondition #8 guarantees that if n < R/2, then
-    // ovf == false  and  result < 2*n.
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        namespace ma = hurchalla::modular_arithmetic;
-        T Rdiv2 = static_cast<T>(1) << (ma::ma_numeric_limits<T>::digits - 1);
-        HPBC_POSTCONDITION2((n < Rdiv2) ? (ovf==false && result<2*n) : true);
-    }
-    // REDC_non_minimized2 Postcondition #5 guarantees the following
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T minimized_result = (ovf || result >= n) ? static_cast<T>(result - n)
-                                                  : result;
-        HPBC_POSTCONDITION2(minimized_result < n);
-    }
-    // Note that these postconditions are exactly the same as the postconditions
-    // from this function in MontFunctionsCommon's primary (default) template.
+    T u_lo = static_cast<T>(u);
+    T result = RedcSmallR<T>::REDC(u2, u_lo, n, neg_inv_n, MTAG(), PTAG());
+
+    // Postcondition: result is a valid montgomery value for the montgomery type
+    // associated with MTAG
     return result;
   }
 
-
-  static HURCHALLA_FORCE_INLINE T convertout_non_minimized(T x,T n, T neg_inv_n)
+  template <class MTAG, class PTAG>
+  static HURCHALLA_FORCE_INLINE
+  T fmadd(T x, T y, T z, T n, T neg_inv_n, MTAG, PTAG)
   {
-    bool ovf;
-    // Setting u=x satisfies REDC_non_minimized2's precondition that u<n*R,
-    // since u = x < R < n*R.
-    T2 u = static_cast<T2>(x);
-    T result=REDC_non_minimized2<T,T2>(ovf, u, static_cast<T>(u), n, neg_inv_n);
-    // REDC_non_minimized2 Postcondition #6 guarantees that since u < R,
-    // ovf == false.
-    HPBC_ASSERT2(ovf == false);
+    HPBC_PRECONDITION2(z < n);  // z must be canonical (0 <= z < n)
+    T2 u = static_cast<T2>(static_cast<T2>(x) * static_cast<T2>(y));
+    static constexpr int bit_width_T = std::numeric_limits<T>::digits;
+    // Precondition: Assuming theoretical unlimited precision standard
+    // multiplication, this function requires  u = x*y < n*R, or equivalently:
+    HPBC_PRECONDITION2(u < (static_cast<T2>(n) << bit_width_T));
 
-    // REDC_non_minimized2 Postcondition #7 guarantees the following, since u==x
-    HPBC_POSTCONDITION2((x < n) ? result < n : true);
-    // REDC_non_minimized2 Postcondition #5 guarantees the following, since we
-    // know ovf == false:
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T minimized_result = (result >= n) ? static_cast<T>(result-n) : result;
-        HPBC_POSTCONDITION2(minimized_result < n);
-    }
-    // Note that these postconditions are exactly the same as the postconditions
-    // from this function in MontFunctionsCommon's primary (default) template.
+    // TODO proof of correctness, showing that performing the modular add prior
+    // to the REDC will always give the same results as performing the REDC and
+    // then the modular addition.
+    // The following calculations should execute in parallel with the first two
+    // multiplies in REDC_non_minimized2(), since those mutiplies do not depend
+    // on these calculations.  (Instruction level parallelism)
+    T2 zR = static_cast<T2>(static_cast<T2>(z) << bit_width_T);
+    T2 nR = static_cast<T2>(static_cast<T2>(n) << bit_width_T);
+    T2 u2 = MontHelper<T2>::modadd_canonical_second_addend(u, zR, nR);
+    // the low bits should be unchanged between u2 and u.
+    HPBC_ASSERT2(static_cast<T>(u2) == static_cast<T>(u));
+
+    T u_lo = static_cast<T>(u);
+    T result = RedcSmallR<T>::REDC(u2, u_lo, n, neg_inv_n, MTAG(), PTAG());
+
+    // Postcondition: result is a valid montgomery value for the montgomery type
+    // associated with MTAG
+    return result;
+  }
+
+  template <class MTAG>
+  static HURCHALLA_FORCE_INLINE
+  T convert_out(T x, T n, T neg_inv_n, MTAG)
+  {
+    T result = RedcSmallR<T>::convert_out(x, n, neg_inv_n, MTAG());
+    HPBC_POSTCONDITION2(result < n);
     return result;
   }
 };
@@ -552,78 +244,72 @@ struct MontFunctionsCommon< T, typename std::enable_if<
 } // end namespace detail_monty_common
 
 
-
 // ----------------
 // Public Functions
 // ----------------
 
 
-// Multiplies two mongomery values x and y, and returns their non-minimized
-// (mod n) montgomery product.
-template <typename T> HURCHALLA_FORCE_INLINE
-T montmul_non_minimized(bool& ovf, T x, T y, T n, T neg_inv_n)
+// Multiplies two mongomery values x and y.
+// Returns the product as a montgomery value.
+template <typename T, class MTAG, class PTAG>
+HURCHALLA_FORCE_INLINE
+T montmul(T x, T y, T n, T neg_inv_n, MTAG, PTAG)
 {
     // Precondition: Assuming theoretical unlimited precision standard
     // multiplication, this function requires  x*y < n*R.  (The constant R
     // represents the value R = 2^(ma::ma_numeric_limits<T>::digits))
-    namespace dmc = detail_monty_common;
-
-    T result = dmc::MontFunctionsCommon<T>::mul_non_minimized(ovf, x, y, n,
-                                                                     neg_inv_n);
-    // All versions of mul_non_minimized guarantee these postconditions
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        namespace ma = hurchalla::modular_arithmetic;
-        T Rdiv2 = static_cast<T>(1) << (ma::ma_numeric_limits<T>::digits - 1);
-        HPBC_POSTCONDITION2((n < Rdiv2) ? (ovf==false && result<2*n) : true);
-    }
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T minimized_result = (ovf || result >= n) ? static_cast<T>(result - n)
-                                                  : result;
-        HPBC_POSTCONDITION2(minimized_result < n);
-    }
+    T result = detail_monty_common::MontFunctionsCommon<T>::
+                                        mul(x, y, n, neg_inv_n, MTAG(), PTAG());
+    // Postcondition: result is a valid montgomery value for the montgomery type
+    // associated with MTAG
     return result;
 }
 
-// Multiplies two mongomery values x and y, and then subtracts the montgomery
-// value z and returns the non-minimized result.  z must satisfy 0 <= z < n.
-template <typename T> HURCHALLA_FORCE_INLINE
-T montfmsub_non_minimized(bool& ovf, T x, T y, T z, T n, T neg_inv_n)
+// Multiplies two mongomery values x and y, and then subtracts montgomery
+// value z from the product.  Returns the resulting montgomery value.
+template <typename T, class MTAG, class PTAG>
+HURCHALLA_FORCE_INLINE
+T montfmsub(T x, T y, T z, T n, T neg_inv_n, MTAG, PTAG)
 {
-    // Precondition: Assuming theoretical unlimited precision standard
-    // multiplication, this function requires  x*y < n*R.  (The constant R
-    // represents the value R = 2^(ma::ma_numeric_limits<T>::digits))
+    // Precondition #1: z must be canonical (i.e. 0 <= z < n).
     HPBC_PRECONDITION2(z < n);
-    namespace dmc = detail_monty_common;
+    // Precondition #2: Assuming theoretical unlimited precision standard
+    // multiplication, this function requires  x*y < n*R.  (The constant R
+    // represents the value R = 2^(ma::ma_numeric_limits<T>::digits))
 
-    T result = dmc::MontFunctionsCommon<T>::fmsub_non_minimized(ovf, x, y, z, n,
-                                                                     neg_inv_n);
-    // All versions of fmsub_non_minimized guarantee these postconditions
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        namespace ma = hurchalla::modular_arithmetic;
-        T Rdiv2 = static_cast<T>(1) << (ma::ma_numeric_limits<T>::digits - 1);
-        HPBC_POSTCONDITION2((n < Rdiv2) ? (ovf==false && result<2*n) : true);
-    }
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T minimized_result = (ovf || result >= n) ? static_cast<T>(result - n)
-                                                  : result;
-        HPBC_POSTCONDITION2(minimized_result < n);
-    }
+    T result = detail_monty_common::MontFunctionsCommon<T>::
+                                   fmsub(x, y, z, n, neg_inv_n, MTAG(), PTAG());
+    // Postcondition: result is a valid montgomery value for the montgomery type
+    // associated with MTAG
     return result;
 }
 
-// Converts the montgomery value 'x' to a non-minimized (mod n) standard integer
-template <typename T>
-HURCHALLA_FORCE_INLINE T montout_non_minimized(T x, T n, T neg_inv_n)
+// Multiplies two mongomery values x and y, and then adds montgomery
+// value z to the product.  Returns the resulting montgomery value.
+template <typename T, class MTAG, class PTAG>
+HURCHALLA_FORCE_INLINE
+T montfmadd(T x, T y, T z, T n, T neg_inv_n, MTAG, PTAG)
 {
-    namespace dmc = detail_monty_common;
-    T result = dmc::MontFunctionsCommon<T>::convertout_non_minimized(x, n,
-                                                                     neg_inv_n);
-    // All versions of convertout_non_minimized guarantee these postconditions
-    HPBC_POSTCONDITION2((x < n) ? result < n : true);
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T minimized_result = (result >= n) ? static_cast<T>(result-n) : result;
-        HPBC_POSTCONDITION2(minimized_result < n);
-    }
+    // Precondition #1: z must be canonical (i.e. 0 <= z < n).
+    HPBC_PRECONDITION2(z < n);
+    // Precondition #2: Assuming theoretical unlimited precision standard
+    // multiplication, this function requires  x*y < n*R.  (The constant R
+    // represents the value R = 2^(ma::ma_numeric_limits<T>::digits))
+
+    T result = detail_monty_common::MontFunctionsCommon<T>::
+                                   fmadd(x, y, z, n, neg_inv_n, MTAG(), PTAG());
+    // Postcondition: result is a valid montgomery value for the montgomery type
+    // associated with MTAG
+    return result;
+}
+
+template <typename T, class MTAG>
+HURCHALLA_FORCE_INLINE
+T montout(T x, T n, T neg_inv_n, MTAG)
+{
+    T result = detail_monty_common::MontFunctionsCommon<T>::
+                                           convert_out(x, n, neg_inv_n, MTAG());
+    HPBC_POSTCONDITION2(result < n);
     return result;
 }
 

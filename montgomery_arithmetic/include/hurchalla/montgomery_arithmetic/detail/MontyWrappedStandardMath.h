@@ -107,7 +107,8 @@ public:
         return V(static_cast<T>(modulus_ - static_cast<T>(1)));
     }
 
-    HURCHALLA_FORCE_INLINE V multiply(V x, V y) const
+    template <class PTAG>   // Performance TAG (ignored by this class)
+    HURCHALLA_FORCE_INLINE V multiply(V x, V y, PTAG) const
     {
         HPBC_PRECONDITION2(isCanonical(x));
         HPBC_PRECONDITION2(isCanonical(y));
@@ -117,6 +118,40 @@ public:
         HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
+    template <class PTAG>   // Performance TAG (ignored by this class)
+    HURCHALLA_FORCE_INLINE V fmsub(V x, V y, V z, PTAG) const
+    {
+        HPBC_PRECONDITION2(isCanonical(x));
+        HPBC_PRECONDITION2(isCanonical(y));
+        HPBC_PRECONDITION2(isCanonical(z));
+        V product = multiply(x, y, PTAG());
+        V result = subtract(product, z);
+        HPBC_POSTCONDITION2(isCanonical(result));
+        return result;
+    }
+    template <class PTAG>   // Performance TAG (ignored by this class)
+    HURCHALLA_FORCE_INLINE V fmadd(V x, V y, V z, PTAG) const
+    {
+        HPBC_PRECONDITION2(isCanonical(x));
+        HPBC_PRECONDITION2(isCanonical(y));
+        HPBC_PRECONDITION2(isCanonical(z));
+        V product = multiply(x, y, PTAG());
+        V result = add(product, z);
+        HPBC_POSTCONDITION2(isCanonical(result));
+        return result;
+    }
+    template <class PTAG>   // Performance TAG (ignored by this class)
+    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, PTAG) const
+    {
+        HPBC_PRECONDITION2(isCanonical(x));
+        HPBC_PRECONDITION2(isCanonical(y));
+        HPBC_PRECONDITION2(isCanonical(z));
+        V sum = add(x, y);
+        V result = multiply(sum, z, PTAG());
+        HPBC_POSTCONDITION2(isCanonical(result));
+        return result;
+    }
+
     HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
         HPBC_PRECONDITION2(isCanonical(x));
@@ -127,6 +162,10 @@ public:
         HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
+    HURCHALLA_FORCE_INLINE V add_canonical_value(V x, V y) const
+    {
+        return add(x, y);
+    }
     HURCHALLA_FORCE_INLINE V subtract(V x, V y) const
     {
         HPBC_PRECONDITION2(isCanonical(x));
@@ -136,6 +175,10 @@ public:
           ma::modular_subtraction_prereduced_inputs(x.get(), y.get(), modulus_);
         HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
+    }
+    HURCHALLA_FORCE_INLINE V subtract_canonical_value(V x, V y) const
+    {
+        return subtract(x, y);
     }
     HURCHALLA_FORCE_INLINE V unordered_subtract(V x, V y) const
     {

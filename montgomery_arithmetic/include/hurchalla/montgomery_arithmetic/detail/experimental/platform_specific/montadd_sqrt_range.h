@@ -74,7 +74,7 @@ HURCHALLA_FORCE_INLINE T montadd_sqrt_range(T a, T b, T n)
 // argument type(s).
 
 
-#if defined(HURCHALLA_ALLOW_INLINE_ASM_MODADD) && \
+#if defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 // This function is an asm version of the template montadd_sqrt_range()
 HURCHALLA_FORCE_INLINE std::uint64_t montadd_sqrt_range(std::uint64_t a,

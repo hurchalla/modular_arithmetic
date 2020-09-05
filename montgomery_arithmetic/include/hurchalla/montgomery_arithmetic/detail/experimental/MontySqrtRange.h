@@ -5,8 +5,10 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_SQRT_RANGE_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/detail/platform_specific/montadd_sqrt_range.h"
-#include "hurchalla/montgomery_arithmetic/detail/platform_specific/montsub_sqrt_range.h"
+#include "hurchalla/montgomery_arithmetic/optimization_tag_structs.h"
+#include "hurchalla/montgomery_arithmetic/detail/monty_tag_structs.h"
+#include "hurchalla/montgomery_arithmetic/detail/experimental/platform_specific/montadd_sqrt_range.h"
+#include "hurchalla/montgomery_arithmetic/detail/experimental/platform_specific/montsub_sqrt_range.h"
 #include "hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/montgomery_arithmetic/detail/safely_promote_unsigned.h"
 #include "hurchalla/montgomery_arithmetic/detail/negative_inverse_mod_r.h"
@@ -27,11 +29,14 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // For discussion purposes, let R = 2^(ma_numeric_limits<T>::digits).  For
 // example if T is uint64_t, then R = 2^64.
 //
-// This function is based on REDC_non_minimized() from monty_common.h.  It is
-// altered to omit calculations that are not needed, given the preconditions of
-// n < sqrt(R), and 0 < x <= n, and 0 < y <= n.
+// This function is based on REDC_non_minimized() from RedcLargeR.h.  It is
+// altered to omit calculations that are not needed, given its preconditions of
+// n < sqrt(R), and u < R (i.e. u_hi == 0).  The precondition of u_hi == 0 is
+// expressed simply by the lack of a u_hi parameter; u_hi is implicitly treated
+// as zero inside this function.
+
 template <typename T>
-HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
+HURCHALLA_FORCE_INLINE T msr_REDC_non_minimized(T u_lo, T n, T neg_inv_n)
 {
     namespace ma = hurchalla::modular_arithmetic;
     static_assert(ma::ma_numeric_limits<T>::is_integer, "");
@@ -44,14 +49,12 @@ HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
     using V = typename safely_promote_unsigned<T>::type;
     static_assert(ma::ma_numeric_limits<V>::is_modulo, "");
 
-    static constexpr int bit_width_T = ma::ma_numeric_limits<T>::digits;
-    static_assert(bit_width_T % 2 == 0, "");   // bit_width_T divisible by 2
-    // MontySqrtRange requires  modulus < sqrt(R)
-    static constexpr T sqrtR = static_cast<T>(1) << (bit_width_T / 2);
-    HPBC_PRECONDITION2(1 < n && n < sqrtR);
+    HPBC_PRECONDITION2(n > 1);
     HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(0 < x && x <= n);
-    HPBC_PRECONDITION2(0 < y && y <= n);
+    HPBC_PRECONDITION2(u_lo != 0);
+    // Implicitly, u_hi == 0.  And thus u = (u_hi*R + u_lo) == u_lo < R.  Since
+    // we have the precondition n > 1, u < R < n*R, which satisfies the basic
+    // requirement of montgomery REDC that u < n*R.
 
     // assert(n * neg_inv_n ≡ -1 (mod R))
     HPBC_PRECONDITION2(
@@ -59,14 +62,8 @@ HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
                 static_cast<T>(static_cast<V>(0) - static_cast<V>(1))
                 );
 
-    // Since n < sqrtR, and x <= n and y <= n,  x*y <= n*n < sqrtR*sqrtR == R.
-    // We have x*y < R, and since n>1, x*y < R < R*n.  Thus we've satisfied the
-    // basic requirement for montgomery multiplication that u = x*y < n*R.
-    // Since u = x*y < R, we have  u_lo = (x*y)%R == x*y, and u_hi == 0.
-    V u_lo = static_cast<V>(x) * static_cast<V>(y);
-
     // compute  m = (u * neg_inv_n) % R
-    T m = static_cast<T>(u_lo * static_cast<V>(neg_inv_n));
+    T m = static_cast<T>(static_cast<V>(u_lo) * static_cast<V>(neg_inv_n));
 
     T mn_lo;
     T mn_hi = unsigned_multiply_to_hilo_product(&mn_lo, m, n);
@@ -74,7 +71,6 @@ HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
     // mn = m*n.  Since m=(u_lo*neg_inv_n)%R, we know m < R, and thus  mn < R*n.
     // Therefore mn == mn_hi*R + mn_lo < R*n, and mn_hi*R < R*n - mn_lo <= R*n,
     // and thus  mn_hi < n.
-    
     // *** Assertion #1 ***
     HPBC_ASSERT2(mn_hi < n);
 
@@ -86,9 +82,8 @@ HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
     HPBC_ASSERT2(static_cast<T>(u_lo + mn_lo) == static_cast<T>(0));
     // REDC_non_minimized() would normally next calculate
     // t_hi += (u_lo != 0);
-    // However, we know  u_lo = (x*y)%R, and we proved  u_lo == x*y < R.  Since
-    // our preconditions specify x>0 and y>0, we know  x*y > 0.  Thus  u_lo > 0,
-    // or more specifically, u_lo != 0.  The calculation of t_hi simplifies to
+    // However, we have know by precondition that u_lo != 0.  The calculation of
+    // t_hi simplifies to
     t_hi = static_cast<T>(t_hi + static_cast<T>(1));
 
     // REDC_non_minimized() would normally next calculate
@@ -99,17 +94,52 @@ HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
     // The discussion prior to Assertion #1 proves that mn_hi < n, and therefore
     // 0 < mn_hi + 1 < n + 1.  Since t_hi = mn_hi + 1, we know  0 < t_hi <= n.
     HPBC_POSTCONDITION2(0 < t_hi && t_hi <= n);
-    // From REDC_non_minimized() we have the postcondition:
+    // From REDC_non_minimized()'s Postcondition #1, we know
     //   T minimized_result = (ovf || t_hi >= n) ? (t_hi - n) : t_hi;
     //   HPBC_POSTCONDITION2(minimized_result < n);
-    // since  ovf == false  and  0 < t_hi <= n,  we can simplify this to
+    // Since  ovf == false  and  0 < t_hi <= n,  we can simplify this to
     if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
         T minimized_result = (t_hi == n) ? static_cast<T>(0) : t_hi;
         HPBC_POSTCONDITION2(minimized_result < n);
     }
 
+    // From REDC_non_minimized() Postcondition #3, we know
+    //    HPBC_POSTCONDITION2((u_hi == 0 && u_lo < n) ? t_hi < n : true);
+    // Since u_hi == 0, we can simplify this to
+    HPBC_POSTCONDITION2((u_lo < n) ? t_hi < n : true);
+
     // return the non-minimized result
     return t_hi;
+}
+
+
+template <typename T>
+HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
+{
+    namespace ma = hurchalla::modular_arithmetic;
+    static_assert(ma::ma_numeric_limits<T>::is_integer, "");
+    static_assert(!(ma::ma_numeric_limits<T>::is_signed), "");
+    static_assert(ma::ma_numeric_limits<T>::is_modulo, "");
+    // As in msr_REDC_non_minimized(), protect against undefined behavior:
+    using V = typename safely_promote_unsigned<T>::type;
+    static_assert(ma::ma_numeric_limits<V>::is_modulo, "");
+
+    static constexpr int bit_width_T = ma::ma_numeric_limits<T>::digits;
+    static_assert(bit_width_T % 2 == 0, "");   // bit_width_T divisible by 2
+    // MontySqrtRange requires  modulus < sqrt(R)
+    static constexpr T sqrtR = static_cast<T>(1) << (bit_width_T / 2);
+    HPBC_PRECONDITION2(1 < n && n < sqrtR);
+    HPBC_PRECONDITION2(n % 2 == 1);
+    HPBC_PRECONDITION2(0 < x && x <= n);
+    HPBC_PRECONDITION2(0 < y && y <= n);
+
+    // Since n < sqrtR, and x <= n and y <= n,  x*y <= n*n < sqrtR*sqrtR == R.
+    // We have x*y < R, so x*y will fit in type T without overflow.
+    T u_lo = static_cast<T>(static_cast<V>(x) * static_cast<V>(y));
+    T result = msr_REDC_non_minimized(u_lo, n, neg_inv_n);
+
+    HPBC_POSTCONDITION2(0 < result && result <= n);
+    return result;
 }
 
 
@@ -117,16 +147,13 @@ HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
 // MontySqrtRange uses optimizations based on input and output V values being
 // 0 < val <= n_, and on modulus < sqrtR.
 // These restrictions allow us to implement a more efficient version of the REDC
-// algorithm  (in the function msr_montmul_non_minimized()), by omitting some
+// algorithm  (in the function msr_REDC_non_minimized()), by omitting some
 // conditionals and calculations that would normally be needed.
 
 // The class member variable names are based on the webpage
 // https://en.wikipedia.org/wiki/Montgomery_modular_multiplication
-//
-// For discussion purposes, let R = 2^(ma_numeric_limits<T>::digits).  For
-// example if T is uint64_t, then R = 2^64.
 template <typename T>
-class MontySqrtRange final {
+class MontySqrtRange {
 public:
     class MontgomeryValue {
         friend MontySqrtRange;
@@ -234,7 +261,8 @@ public:
         // separately, with  a*R (mod n) ≡ 0*R (mod n) ≡ 0 (mod n) ≡ n (mod n).
         V result;
         HURCHALLA_LIKELY_IF (a > 0)
-            result = multiply(V(a), V(r_squared_mod_n_));
+            result = multiply(V(a), V(r_squared_mod_n_),
+                                                     OutofplaceLowlatencyTag());
         else
             result = V(n_);
         HPBC_POSTCONDITION2(0 < result.get() && result.get() <= n_);
@@ -278,10 +306,9 @@ public:
     {
         HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
 
-        T y = static_cast<T>(1);
-        T prod = msr_montmul_non_minimized(x.get(), y, n_, neg_inv_n_);
+        T prod = msr_REDC_non_minimized(x.get(), n_, neg_inv_n_);
 
-        // msr_montmul_non_minimized() postconditions guarantee the following
+        // msr_REDC_non_minimized() postconditions guarantee the following
         HPBC_POSTCONDITION2(0 < prod && prod <= n_);
 
         T minimized_result;
@@ -299,7 +326,8 @@ public:
         return x;
     }
 
-    HURCHALLA_FORCE_INLINE V multiply(V x, V y) const
+    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
+    HURCHALLA_FORCE_INLINE V multiply(V x, V y, PTAG) const
     {
         HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
         HPBC_PRECONDITION2(0 < y.get() && y.get() <= n_);
@@ -341,6 +369,13 @@ public:
         return V(result);
     }
 
+    HURCHALLA_FORCE_INLINE V unordered_subtract(V x, V y) const
+    {
+        // we can't improve efficiency much over plain subtract,
+        // so just delegate to subtract
+        return subtract(x, y);
+    }
+
     HURCHALLA_FORCE_INLINE V subtract_canonical_value(V x, V y) const
     {
         // All montgomery values are canonical for this class, so we just
@@ -348,11 +383,88 @@ public:
         return subtract(x, y);
     }
 
-    HURCHALLA_FORCE_INLINE V unordered_subtract(V x, V y) const
+    HURCHALLA_FORCE_INLINE V add_canonical_value(V x, V y) const
     {
-        // we can't improve efficiency much over plain subtract,
-        // so just delegate to subtract
-        return subtract(x, y);
+        // All montgomery values are canonical for this class, so we just
+        // delegate to add.
+        return add(x, y);
+    }
+
+    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
+    HURCHALLA_FORCE_INLINE V fmadd(V x, V y, V z, PTAG) const
+    {
+        HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
+        HPBC_PRECONDITION2(0 < y.get() && y.get() <= n_);
+
+        // Unfortunately for MontySqrtRange, it's not possible to get anything
+        // more than perhaps a small efficiency advantage from a fused
+        // multiply/add - in principle the small advantage could come from
+        // inserting into (a copy of) msr_REDC_non_minimized() a modular add of
+        // 'z' with 1 which occurs during the multiplications - thus the modular
+        // add by 1 would not increase the latency.  The addition by 1 at the
+        // end of (the copy of) msr_REDC_non_minimized() would be removed and
+        // replaced with this->add(z_plus_one, REDC_result).  The REDC_result
+        // would be 0 <= REDC_result < n, which is invalid for add(), so some
+        // details would need to be worked out.
+        // In the end this would decrease latency by 1 cycle compared to using
+        // a combination of multiply() followed by add().  It would likely
+        // increase the number of uops, which is not ideal.
+        // Certainly for now, we will just implement fmadd as a wrapper of
+        // multiply() followed by add().  If MontySqrtRange seems to be
+        // beneficial enough, we can consider implementing the optimization
+        // discussed here.
+
+        V prod = multiply(x, y, PTAG());
+        V sum = add(prod, z);
+
+        HPBC_POSTCONDITION2(0 < sum.get() && sum.get() <= n_);
+        // Since 0 < sum <= n, we don't want to reduce mod n;  sum is in the
+        // canonical form required by most of the class functions.
+        return sum;
+    }
+
+    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
+    HURCHALLA_FORCE_INLINE V fmsub(V x, V y, V z, PTAG) const
+    {
+        HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
+        HPBC_PRECONDITION2(0 < y.get() && y.get() <= n_);
+
+        // See the optimization discussion inside fmadd() - it applies here too.
+        V prod = multiply(x, y, PTAG());
+        V diff = subtract(prod, z);
+
+        HPBC_POSTCONDITION2(0 < diff.get() && diff.get() <= n_);
+        // Since 0 < diff <= n, we don't want to reduce mod n;  diff is in the
+        // canonical form required by most of the class functions.
+        return diff;
+    }
+
+    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
+    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, PTAG) const
+    {
+        HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
+        HPBC_PRECONDITION2(0 < y.get() && y.get() <= n_);
+        HPBC_PRECONDITION2(0 < z.get() && z.get() <= n_);
+
+        // Unfortunately for MontySqrtRange, it's not possible to do a simple
+        // add of sum=x+y prior to multiplying, since the sum might be greater
+        // than n_, and that would break a precondition for calling
+        // msr_montmul_non_minimized().  Instead we must do a modular addition
+        // to get the sum, which means famul() simply wraps this class's add
+        // and multiply functions.
+        // [Future(?) Note: A hypothetical MontySqrtRangeDiv2 class (requiring
+        // modulus < sqrt(R)/2) could provide the optimization of using a simple
+        // addition rather than a modular addition: this hypothetical class
+        // would have a montmul function that required a*b<R, and using a simple
+        // addition  a=(x+y) <= modulus+modulus == 2*modulus, and letting
+        // b = z <= modulus, we would have
+        // a*b <= 2*modulus*modulus < 2*sqrt(R)*sqrt(R)/4 == R/2, which would
+        // satisfy the hypothetical class's montmul requirement.]
+        V sum = add(x, y);
+        V result = multiply(sum, z, PTAG());
+
+        HPBC_POSTCONDITION2(0 < result.get() && result.get() <= n_);
+        return result;
     }
 };
 

@@ -43,7 +43,7 @@ T impl_modular_addition_prereduced_inputs(T a, T b, T modulus)
 
 
 // MSVC doesn't support inline asm, so we skip it.
-#if defined(HURCHALLA_ALLOW_INLINE_ASM_MODADD) && \
+#if defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 inline std::uint32_t impl_modular_addition_prereduced_inputs(std::uint32_t a,
                                          std::uint32_t b, std::uint32_t modulus)
@@ -60,11 +60,11 @@ inline std::uint32_t impl_modular_addition_prereduced_inputs(std::uint32_t a,
     uint32_t sum = a + b;
     uint32_t tmp2 = a;  // in C++ we prefer not to overwrite an input (a)
     __asm__ ("subl %[tmp], %[tmp2] \n\t"    /* tmp2 = a - tmp */
-             "cmovbl %[sum], %[tmp2] \n\t"  /* tmp2 = (a<tmp) ? sum : tmp2 */
-             : [tmp2]"+&r"(tmp2)
-             : [tmp]"rm"(tmp), [sum]"r"(sum)
+             "cmovael %[tmp2], %[sum] \n\t"  /* sum = (a>=tmp) ? tmp2 : sum */
+             : [tmp2]"+&r"(tmp2), [sum]"+r"(sum)
+             : [tmp]"rm"(tmp)
              : "cc");
-    uint32_t result = tmp2;
+    uint32_t result = sum;
 
     HPBC_POSTCONDITION2(result<modulus);  // uint32_t guarantees result>=0.
     HPBC_POSTCONDITION2(result ==
@@ -87,11 +87,11 @@ inline std::uint64_t impl_modular_addition_prereduced_inputs(std::uint64_t a,
     uint64_t sum = a + b;
     uint64_t tmp2 = a;  // in C++ we prefer not to overwrite an input (a)
     __asm__ ("subq %[tmp], %[tmp2] \n\t"    /* tmp2 = a - tmp */
-             "cmovbq %[sum], %[tmp2] \n\t"  /* tmp2 = (a<tmp) ? sum : tmp2 */
-             : [tmp2]"+&r"(tmp2)
-             : [tmp]"rm"(tmp), [sum]"r"(sum)
+             "cmovaeq %[tmp2], %[sum] \n\t"  /* sum = (a>=tmp) ? tmp2 : sum */
+             : [tmp2]"+&r"(tmp2), [sum]"+r"(sum)
+             : [tmp]"rm"(tmp)
              : "cc");
-    uint64_t result = tmp2;
+    uint64_t result = sum;
 
     HPBC_POSTCONDITION2(result<modulus);  // uint64_t guarantees result>=0.
     HPBC_POSTCONDITION2(result ==

@@ -36,7 +36,7 @@ T impl_absolute_value_difference(T a, T b)
 
 
 // MSVC doesn't support inline asm so we skip it.
-#if defined(HURCHALLA_ALLOW_INLINE_ASM_ABSDIFF) && \
+#if defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 inline
 std::uint32_t impl_absolute_value_difference(std::uint32_t a, std::uint32_t b)

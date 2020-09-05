@@ -33,6 +33,7 @@ namespace detail_nimr {
     #endif
 
     // This is the generalized Dumas algorithm for the negative inverse (mod R).
+    // TODO:
     // I haven't yet published my generalized form of the Dumas algorithm, but
     // the Dumas algorithm comes from  https://arxiv.org/abs/1209.6626
     // The closest information available at the moment is from Marc Reynolds at

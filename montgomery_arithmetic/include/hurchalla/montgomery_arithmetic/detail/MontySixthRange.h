@@ -1,11 +1,12 @@
 // --- This file is distributed under the MIT Open Source License, as detailed
 // by the file "LICENSE.TXT" in the root of this repository ---
 
-#ifndef HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_QUARTER_RANGE_H_INCLUDED
-#define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_QUARTER_RANGE_H_INCLUDED
+#ifndef HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_SIXTH_RANGE_H_INCLUDED
+#define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_SIXTH_RANGE_H_INCLUDED
 
 
 #include "hurchalla/montgomery_arithmetic/detail/monty_tag_structs.h"
+#include "hurchalla/montgomery_arithmetic/detail/monty_common.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
 #include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
@@ -21,34 +22,35 @@ namespace hurchalla { namespace montgomery_arithmetic {
 
 // Let the theoretical constant R = 2^(ma_numeric_limits<T>::digits).
 template <typename T>
-class MontyQuarterRange : public MontyCommonBase<MontyQuarterRange, T> {
+class MontySixthRange : public MontyCommonBase<MontySixthRange, T> {
     static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
     static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
     static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
     using BC = MontyCommonBase<
-                      ::hurchalla::montgomery_arithmetic::MontyQuarterRange, T>;
+                        ::hurchalla::montgomery_arithmetic::MontySixthRange, T>;
     using BC::n_;
     using BC::neg_inv_n_;
     using V = typename BC::MontgomeryValue;
 public:
     using montvalue_type = V;
     using template_param_type = T;
-    using MontyTag = QuarterrangeTag;
+    using MontyTag = SixthrangeTag;
 
-    explicit MontyQuarterRange(T modulus) : BC(modulus)
+    explicit MontySixthRange(T modulus) : BC(modulus)
     {
-        // MontyQuarterRange requires  modulus < R/4
-        T Rdiv4 = static_cast<T>(static_cast<T>(1) <<
-                        (modular_arithmetic::ma_numeric_limits<T>::digits - 2));
-        HPBC_PRECONDITION2(modulus < Rdiv4);
+        // MontySixthRange requires  modulus < R/6
+        T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
+                        (modular_arithmetic::ma_numeric_limits<T>::digits - 1));
+        T Rdiv6 = static_cast<T>(Rdiv2 / 3);
+        HPBC_PRECONDITION2(modulus < Rdiv6);
     }
-    MontyQuarterRange(const MontyQuarterRange&) = delete;
-    MontyQuarterRange& operator=(const MontyQuarterRange&) = delete;
+    MontySixthRange(const MontySixthRange&) = delete;
+    MontySixthRange& operator=(const MontySixthRange&) = delete;
 
     static constexpr T max_modulus()
     {
         return static_cast<T>((static_cast<T>(1) <<
-                   (modular_arithmetic::ma_numeric_limits<T>::digits - 2)) - 1);
+                 (modular_arithmetic::ma_numeric_limits<T>::digits - 1))/3 - 1);
     }
 
     HURCHALLA_FORCE_INLINE T getExtendedModulus() const
@@ -71,25 +73,17 @@ public:
         HPBC_PRECONDITION2(y.get() < n_);   // y must be canonical
         HPBC_PRECONDITION2(z.get() < 2*n_);
 
-        // Unfortunately for MontyQuarterRange, it's not possible to do a simple
-        // non-modular add (x+y) prior to the multiply by z, since the sum might
-        // be greater than 2*n_.  Having a sum > 2*n_ would break a precondition
-        // for calling multiply, which requires  a*b < n_*R.  To see why, let
-        // a = sum = x+y, and let b = z.  This gives us
-        // a*b == (x+y)*z < (2*n_ + n_)*2*n_ == 6*n_*n_.  Our class
-        // constructor requires modulus < R/4, and so we know n_ < R/4.  Thus we
-        // would have  a*b == 6*n_*n_ < 6*n_*(R/4) == (3/2)*n_*R.  This result
-        // of  a*b < (3/2)*n_*R  is insufficient to guarantee that we would
-        // satisfy the multiply requirement of  a*b < n_*R.
-        // Instead we will use modular addition to get the sum, which results in
-        // sum < 2*n_ (this guarantees we satisfy  a*b < n_*R).
-        // Due to the need for modular addition, famul() just wraps this class's
-        // add_canonical_value and multiply functions.
-        V sum = BC::add_canonical_value(x, y);
-        V result = BC::multiply(sum, z, PTAG());
+        // x+y won't overflow:  we know  x < 2*n_ < 2*R/6  and  y < n_ < R/6,
+        // so  x + y < 2*R/6 + R/6 == R/2.
+        T sum = static_cast<T>(x.get() + y.get());
+        // As a precondition, montmul requires  sum*z < n_*R.  This will always
+        // be satisfied:  we know  sum = x+y < R/2  and  z < 2*n_.  Therefore
+        // sum*z < (R/2)*(2*n_) == n_*R.
+        T result = montmul(sum, z.get(), n_, neg_inv_n_, SixthrangeTag(),
+                                                                        PTAG());
 
-        HPBC_POSTCONDITION2(result.get() < 2*n_);
-        return result;
+        HPBC_POSTCONDITION2(result < 2*n_);
+        return V(result);
     }
 };
 

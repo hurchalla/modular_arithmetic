@@ -145,18 +145,6 @@
 #  undef HURCHALLA_DISALLOW_INLINE_ASM_MODMUL
 #  undef HURCHALLA_ALLOW_INLINE_ASM_MODMUL
 #  define HURCHALLA_ALLOW_INLINE_ASM_MODMUL 1
-
-#  undef HURCHALLA_ALLOW_INLINE_ASM_MODADD
-#  define HURCHALLA_ALLOW_INLINE_ASM_MODADD 1
-
-#  undef HURCHALLA_ALLOW_INLINE_ASM_MODSUB
-#  define HURCHALLA_ALLOW_INLINE_ASM_MODSUB 1
-
-#  undef HURCHALLA_ALLOW_INLINE_ASM_ABSDIFF
-#  define HURCHALLA_ALLOW_INLINE_ASM_ABSDIFF 1
-
-#  undef HURCHALLA_ALLOW_INLINE_ASM_MONTMUL
-#  define HURCHALLA_ALLOW_INLINE_ASM_MONTMUL 1
 #else
    // By default, enable the inline asm modmult unless explicitly disallowed.
    // The x86 asm version is many times faster than the non-asm version, and for

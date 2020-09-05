@@ -5,12 +5,9 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_HALF_RANGE_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/detail/platform_specific/montmul_half_range.h"
-#include "hurchalla/montgomery_arithmetic/detail/platform_specific/optimization_tag_structs.h"
+#include "hurchalla/montgomery_arithmetic/detail/monty_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/detail/monty_common.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
-#include "hurchalla/modular_arithmetic/modular_addition.h"
-#include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
@@ -23,29 +20,27 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // calls montmul_half_range() rather than montmul_full_range().
 // [The theoretical constant R = 2^(ma_numeric_limits<T>::digits).]
 template <typename T>
-class MontyHalfRange final : public MontyCommonBase<MontyHalfRange, T> {
+class MontyHalfRange : public MontyCommonBase<MontyHalfRange, T> {
     static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
     static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
     static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
-    using MontyCommonBase<
-        ::hurchalla::montgomery_arithmetic::MontyHalfRange, T>::n_;
-    using MontyCommonBase<
-        ::hurchalla::montgomery_arithmetic::MontyHalfRange, T>::neg_inv_n_;
-    using V = typename MontyCommonBase<
-        ::hurchalla::montgomery_arithmetic::MontyHalfRange, T>::MontgomeryValue;
+    using BC = MontyCommonBase<
+                         ::hurchalla::montgomery_arithmetic::MontyHalfRange, T>;
+    using BC::n_;
+    using BC::neg_inv_n_;
+    using V = typename BC::MontgomeryValue;
 public:
     using montvalue_type = V;
     using template_param_type = T;
+    using MontyTag = HalfrangeTag;
 
-    explicit MontyHalfRange(T modulus) : MontyCommonBase<
-        ::hurchalla::montgomery_arithmetic::MontyHalfRange, T>(modulus)
+    explicit MontyHalfRange(T modulus) : BC(modulus)
     {
         // MontyHalfRange requires  modulus < R/2
         T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
                         (modular_arithmetic::ma_numeric_limits<T>::digits - 1));
         HPBC_PRECONDITION2(modulus < Rdiv2);
     }
-
     MontyHalfRange(const MontyHalfRange&) = delete;
     MontyHalfRange& operator=(const MontyHalfRange&) = delete;
 
@@ -55,18 +50,7 @@ public:
                    (modular_arithmetic::ma_numeric_limits<T>::digits - 1)) - 1);
     }
 
-    HURCHALLA_FORCE_INLINE bool isValid(V x) const { return (x.get() < n_); }
-
-    HURCHALLA_FORCE_INLINE T convertOut(V x) const
-    {
-        HPBC_PRECONDITION2(x.get() < n_);
-        T a = montout_non_minimized(x.get(), n_, neg_inv_n_);
-        // montout_non_minimized() postconditions guarantee that since x < n_,
-        // a < n_.  Thus 'a' is already minimized.
-        T minimized_result = a;
-        HPBC_POSTCONDITION2(minimized_result < n_);
-        return minimized_result;
-    }
+    HURCHALLA_FORCE_INLINE T getExtendedModulus() const { return n_; }
 
     HURCHALLA_FORCE_INLINE V getCanonicalValue(V x) const
     {
@@ -74,37 +58,22 @@ public:
         return x;
     }
 
-    // Aside from the constructor's precondition of modulus < R/2, this
-    // function is the only thing that differs from class MontyFullRange.
-    HURCHALLA_FORCE_INLINE V multiply(V x, V y) const
+    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
+    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, PTAG) const
     {
         HPBC_PRECONDITION2(x.get() < n_);
         HPBC_PRECONDITION2(y.get() < n_);
-        T result = impl_montmul<T, HalfrangeTag>(x.get(), y.get(), n_,
-                                                                    neg_inv_n_);
-        // HalfrangeTag montgomery type obeys the following
+        HPBC_PRECONDITION2(z.get() < n_);
+
+        // x+y won't overflow:  x<n_<R/2 and y<n_<R/2, so  x+y < R/2 + R/2 == R.
+        T sum = static_cast<T>(x.get() + y.get());
+        // As a precondition, montmul requires  sum*z < n_*R.  This will always
+        // be satisfied:  we know  sum = x+y < R  and  z < n_.  Therefore
+        // sum*z < R*n_ == n_*R.
+        T result= montmul(sum, z.get(), n_, neg_inv_n_, HalfrangeTag(), PTAG());
+
         HPBC_POSTCONDITION2(result < n_);
         return V(result);
-    }
-
-    HURCHALLA_FORCE_INLINE V add(V x, V y) const
-    {
-        HPBC_PRECONDITION2(x.get() < n_);
-        HPBC_PRECONDITION2(y.get() < n_);
-        namespace ma = hurchalla::modular_arithmetic;
-        T z = ma::modular_addition_prereduced_inputs(x.get(), y.get(), n_);
-        HPBC_POSTCONDITION2(z < n_);
-        return V(z);
-    }
-
-    HURCHALLA_FORCE_INLINE V subtract(V x, V y) const
-    {
-        HPBC_PRECONDITION2(x.get() < n_);
-        HPBC_PRECONDITION2(y.get() < n_);
-        namespace ma = hurchalla::modular_arithmetic;
-        T z = ma::modular_subtraction_prereduced_inputs(x.get(), y.get(), n_);
-        HPBC_POSTCONDITION2(z < n_);
-        return V(z);
     }
 };
 

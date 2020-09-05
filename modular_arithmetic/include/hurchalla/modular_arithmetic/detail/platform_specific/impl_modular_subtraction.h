@@ -54,7 +54,7 @@ T impl_modular_subtraction_prereduced_inputs(T a, T b, T modulus)
 
 
 // MSVC doesn't support inline asm so we skip it.
-#if defined(HURCHALLA_ALLOW_INLINE_ASM_MODSUB) && \
+#if defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 inline std::uint32_t impl_modular_subtraction_prereduced_inputs(std::uint32_t a,
                                          std::uint32_t b, std::uint32_t modulus)
@@ -67,22 +67,22 @@ inline std::uint32_t impl_modular_subtraction_prereduced_inputs(std::uint32_t a,
     // Note: we want to make sure the LEA instruction doesn't use RBP/EBP or R13
     // for the base register, since that would necessitate a slower form of LEA
     // that has an extra 2 cycles latency and half the throughput of the fast
-    // form.  We prevent this by using the "U" constraint which allows only RAX,
-    // RCX, RDX, RSI, RDI, R8, R9, R10, R11 for the System V AMD64 calling
-    // convention, and allows only RAX, RCX, RDX, R8, R9, R10, R11 for the
-    // Microsoft x64 convention.  ICC (intel compiler) and clang don't support
-    // "U", so we use "abcdSD" for them (allowing rax, rbx, rcx, rdx, rsi, rdi).
-    uint32_t dummy;
-    uint32_t result = a;  // in C++ we prefer not to overwrite an input (a)
-    __asm__ ("subl %[b], %[res] \n\t"              /* res = a - b */
-             "leal (%q[res], %q[m]), %[tmp] \n\t"  /* tmp = res + modulus */
-             "cmovbl %[tmp], %[res] \n\t"          /* res = (a<b) ? tmp : res */
+    // form.  We prevent this by using the "U" constraint, which allows  RAX,
+    // RCX, RDX, RSI, RDI, R8, R9, R10, R11  for the System V AMD64 calling
+    // convention, and  RAX, RCX, RDX, R8, R9, R10, R11  for the Microsoft x64
+    // convention.  ICC (intel compiler) and clang don't support "U", so we use
+    // "abcdSD" for them (allowing rax, rbx, rcx, rdx, rsi, rdi).
+    uint32_t tmp = a;  // in C++ we prefer not to overwrite an input (a)
+    uint32_t result;
+    __asm__ ("subl %[b], %[tmp] \n\t"             /* tmp = a - b */
+             "leal (%q[tmp], %q[m]), %[res] \n\t" /* res = tmp + modulus */
+             "cmovael %[tmp], %[res] \n\t"        /* res = (a>=b) ? tmp : res */
 #  if defined(__INTEL_COMPILER) || defined(__clang__)
-                 : [res]"+&abcdSD"(result), [tmp]"=r"(dummy)
+             : [tmp]"+&abcdSD"(tmp), [res]"=r"(result)
 #  else
-                 : [res]"+&UabcdSD"(result), [tmp]"=r"(dummy)
+             : [tmp]"+&UabcdSD"(tmp), [res]"=r"(result)
 #  endif
-             : [b]"rm"(b), [m]"r"(modulus)
+             : [m]"r"(modulus), [b]"rm"(b)
              : "cc");
 
     HPBC_POSTCONDITION2(result<modulus);  // uint32_t guarantees result>=0.
@@ -101,17 +101,17 @@ inline std::uint64_t impl_modular_subtraction_prereduced_inputs(std::uint64_t a,
 
     // Note: the issues and solutions with LEA and RBP/EBP/R13 are the same here
     // as for the uint32_t version of this function above.
-    uint64_t dummy;
-    uint64_t result = a;  // in C++ we prefer not to overwrite an input (a)
-    __asm__ ("subq %[b], %[res] \n\t"            /* res = a - b */
-             "leaq (%[res], %[m]), %[tmp] \n\t"  /* tmp = res + modulus */
-             "cmovbq %[tmp], %[res] \n\t"        /* res = (a<b) ? tmp : res */
+    uint64_t tmp = a;  // in C++ we prefer not to overwrite an input (a)
+    uint64_t result;
+    __asm__ ("subq %[b], %[tmp] \n\t"            /* tmp = a - b */
+             "leaq (%[tmp], %[m]), %[res] \n\t"  /* res = tmp + modulus */
+             "cmovaeq %[tmp], %[res] \n\t"       /* res = (a>=b) ? tmp : res */
 #  if defined(__INTEL_COMPILER) || defined(__clang__)
-                 : [res]"+&abcdSD"(result), [tmp]"=r"(dummy)
+             : [tmp]"+&abcdSD"(tmp), [res]"=r"(result)
 #  else
-                 : [res]"+&UabcdSD"(result), [tmp]"=r"(dummy)
+             : [tmp]"+&UabcdSD"(tmp), [res]"=r"(result)
 #  endif
-             : [b]"rm"(b), [m]"r"(modulus)
+             : [m]"r"(modulus), [b]"rm"(b)
              : "cc");
 
     HPBC_POSTCONDITION2(result<modulus);  // uint64_t guarantees result>=0.

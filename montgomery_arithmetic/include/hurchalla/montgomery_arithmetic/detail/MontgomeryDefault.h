@@ -7,7 +7,7 @@
 
 #include "hurchalla/montgomery_arithmetic/detail/MontyFullRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
-#include "hurchalla/montgomery_arithmetic/detail/MontySqrtRange.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontySixthRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/sized_uint.h"
 #include "hurchalla/modular_arithmetic/traits/extensible_make_unsigned.h"
 #include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
@@ -29,7 +29,7 @@ public:
         typename std::conditional<
             !(std::is_same<typename sized_uint<ubits*2>::type, void>::value)
                 && (ubits*2 <= HURCHALLA_TARGET_BIT_WIDTH),
-            MontySqrtRange<typename sized_uint<ubits*2>::type>,
+            MontySixthRange<typename sized_uint<ubits*2>::type>,
             MontyFullRange<T>
         >::type;
 };
@@ -48,7 +48,7 @@ public:
         typename std::conditional<
             !(std::is_same<typename sized_uint<ubits*2>::type, void>::value)
                 && (ubits*2 <= HURCHALLA_TARGET_BIT_WIDTH),
-            MontySqrtRange<typename sized_uint<ubits*2>::type>,
+            MontySixthRange<typename sized_uint<ubits*2>::type>,
             MontyHalfRange<U>
         >::type;
 };
