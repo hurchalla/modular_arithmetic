@@ -11,11 +11,6 @@
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 
-#if defined(_MSC_VER)
-#  pragma warning(push)
-#  pragma warning(disable : 4127)
-#endif
-
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
@@ -95,10 +90,5 @@ public:
 
 
 }} // end namespace
-
-
-#if defined(_MSC_VER)
-#  pragma warning(pop)
-#endif
 
 #endif

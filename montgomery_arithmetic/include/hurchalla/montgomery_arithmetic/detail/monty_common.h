@@ -17,14 +17,7 @@
 #include <cstdint>
 #include <limits>
 
-#if defined(_MSC_VER)
-#  pragma warning(push)
-#  pragma warning(disable : 4127)
-#  pragma warning(disable : 4309)
-#endif
-
 namespace hurchalla { namespace montgomery_arithmetic {
-
 
 // The public functions are at the bottom of this file.
 
@@ -315,10 +308,5 @@ T montout(T x, T n, T neg_inv_n, MTAG)
 
 
 }} // end namespace
-
-
-#if defined(_MSC_VER)
-#  pragma warning(pop)
-#endif
 
 #endif

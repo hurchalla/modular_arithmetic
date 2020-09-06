@@ -13,8 +13,13 @@
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 
-namespace hurchalla { namespace montgomery_arithmetic {
+#if defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable : 4127)
+#  pragma warning(disable : 4309)
+#endif
 
+namespace hurchalla { namespace montgomery_arithmetic {
 
 namespace detail_redc_small {
 // -----------------
@@ -290,5 +295,9 @@ struct RedcSmallR
 
 }} // end namespace
 
+
+#if defined(_MSC_VER)
+#  pragma warning(pop)
+#endif
 
 #endif

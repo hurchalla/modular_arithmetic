@@ -12,6 +12,11 @@
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
 #include <cstdint>
 
+#if defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable : 4127)
+#endif
+
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
@@ -738,5 +743,10 @@ struct RedcLargeR<std::uint64_t>
 
 
 }} // end namespace
+
+
+#if defined(_MSC_VER)
+#  pragma warning(pop)
+#endif
 
 #endif
