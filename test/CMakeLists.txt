@@ -28,6 +28,7 @@ add_executable(test_hurchalla_modular_arithmetic
                modular_arithmetic/test_modular_multiplicative_inverse.cpp
                modular_arithmetic/test_modular_pow.cpp
                modular_arithmetic/test_modular_subtraction.cpp
+               montgomery_arithmetic/test_inverse_mod_r.cpp
                montgomery_arithmetic/test_MontgomeryForm.cpp
                montgomery_arithmetic/test_negative_inverse_mod_r.cpp
                montgomery_arithmetic/test_unsigned_multiply_to_hilo_product.cpp

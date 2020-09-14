@@ -130,10 +130,10 @@ HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
     static constexpr T sqrtR = static_cast<T>(1) << (bit_width_T / 2);
     HPBC_PRECONDITION2(1 < n && n < sqrtR);
     HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(0 < x && x <= n);
-    HPBC_PRECONDITION2(0 < y && y <= n);
+    HPBC_PRECONDITION2(0 < x && x < sqrtR);
+    HPBC_PRECONDITION2(0 < y && y < sqrtR);
 
-    // Since n < sqrtR, and x <= n and y <= n,  x*y <= n*n < sqrtR*sqrtR == R.
+    // Since x < sqrtR and y < sqrtR,  x*y < sqrtR*sqrtR == R.
     // We have x*y < R, so x*y will fit in type T without overflow.
     T u_lo = static_cast<T>(static_cast<V>(x) * static_cast<V>(y));
     T result = msr_REDC_non_minimized(u_lo, n, neg_inv_n);
@@ -177,8 +177,8 @@ private:
     static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
     static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
     const T n_;   // the modulus
-    const T neg_inv_n_;
     const T r_mod_n_;
+    const T neg_inv_n_;
     const T r_squared_mod_n_;
     using V = MontgomeryValue;
 public:
@@ -186,8 +186,8 @@ public:
     using template_param_type = T;
 
     explicit MontySqrtRange(T modulus) : n_(modulus),
-                             neg_inv_n_(negative_inverse_mod_r(n_)),
                              r_mod_n_(getRModN(n_)),
+                             neg_inv_n_(negative_inverse_mod_r(n_)),
                              r_squared_mod_n_( modular_arithmetic::
                                     modular_multiplication_prereduced_inputs(
                                                        r_mod_n_, r_mod_n_, n_) )
@@ -252,21 +252,50 @@ public:
 
     HURCHALLA_FORCE_INLINE T getModulus() const { return n_; }
 
+    // We require a < sqrtR, which is a bit of a hack since MontgomeryForm class
+    // expects that any T value >= 0 is ok to use as input for convertIn.
+    // Ideally we would address this by renaming this class to something like
+    // MontyDoubleWidth, and allowing all MontgomeryValues for this class to be
+    // any T value >= 0, while setting
+    // T2 = sized_uint<2* ma_numeric_limits<T>::digits>::type, and producing a
+    // compile time error if
+    // ma_numeric_limits<T2>::digits > HURCHALLA_TARGET_BIT_WIDTH.
+    // n_, r_mod_n_, neg_inv_n_, r_squared_mod_n_  would all be type T2, and
+    // most function calls in this class would work with type T2 values, and V
+    // would wrap type T2.  While this all sounds like a big change, it is not-
+    // this class effectively already works like this proposal, with the current
+    // type T playing the role of the proposed T2, and convertIn's precondition
+    // a < sqrtR playing a psuedo-role of the proposed T.
     HURCHALLA_FORCE_INLINE V convertIn(T a) const
     {
+        namespace ma = hurchalla::modular_arithmetic;
+        static constexpr int bitsT = ma::ma_numeric_limits<T>::digits;
+        static_assert(bitsT % 2 == 0, "");
+        static constexpr T sqrtR = static_cast<T>(1) << (bitsT / 2);
+        HPBC_PRECONDITION2(0 <= a && a < sqrtR);
+
+        HPBC_INVARIANT2(1 < n_ && n_ < sqrtR);
         HPBC_INVARIANT2(0 < r_squared_mod_n_ && r_squared_mod_n_ < n_);
-        HPBC_PRECONDITION2(0 <= a && a < n_);
-        // multiply requires valid input values, and 0 is the single possible
-        // invalid value of 'a' for the multiply.  We treat this case a == 0
-        // separately, with  a*R (mod n) ≡ 0*R (mod n) ≡ 0 (mod n) ≡ n (mod n).
-        V result;
-        HURCHALLA_LIKELY_IF (a > 0)
-            result = multiply(V(a), V(r_squared_mod_n_),
-                                                     OutofplaceLowlatencyTag());
-        else
-            result = V(n_);
-        HPBC_POSTCONDITION2(0 < result.get() && result.get() <= n_);
-        return result;
+        // thus:  0 < r_squared_mod_n_ < sqrtR
+        T result;
+        HURCHALLA_LIKELY_IF (a > 0) {
+            // We have  0 < a < sqrtR  and  0 < r_squared_mod_n_ < sqrtR,  which
+            // satisfies the preconditions for msr_montmul_non_minimized().
+            result = msr_montmul_non_minimized(a, r_squared_mod_n_, n_,
+                                                                    neg_inv_n_);
+        } else {
+            HPBC_ASSERT2(a == 0);
+            // We can't use msr_montmul_non_minimized() here, because it
+            // requires nonzero inputs.  We must treat a == 0 as a special case:
+            // a*R (mod n) ≡ 0*R (mod n) ≡ 0 (mod n) ≡ n (mod n).
+            result = n_;
+        }
+
+        // both clauses of the if/else generate
+        HPBC_POSTCONDITION2(0 < result && result <= n_);
+        // Since 0 < result <= n, we don't want to reduce mod n;  result is in
+        // the canonical form required by most of the class functions.
+        return V(result);
     }
 
     HURCHALLA_FORCE_INLINE V getUnityValue() const
@@ -332,6 +361,9 @@ public:
         HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
         HPBC_PRECONDITION2(0 < y.get() && y.get() <= n_);
 
+        // Since we know n < sqrtR  (guaranteed by the constructor),  and x < n
+        // and  y < n,  we have  x < sqrtR  and  y < sqrtR,  which satisfies the
+        // preconditions of msr_montmul_non_minimized().
         T prod = msr_montmul_non_minimized(x.get(), y.get(), n_, neg_inv_n_);
 
         // msr_montmul_non_minimized() postconditions guarantee the following
@@ -448,7 +480,8 @@ public:
 
         // Unfortunately for MontySqrtRange, it's not possible to do a simple
         // add of sum=x+y prior to multiplying, since the sum might be greater
-        // than n_, and that would break a precondition for calling
+        // than sqrtR (e.g. when n is very close to sqrtR and x and n are both
+        // very close to n), and that would break a precondition for calling
         // msr_montmul_non_minimized().  Instead we must do a modular addition
         // to get the sum, which means famul() simply wraps this class's add
         // and multiply functions.

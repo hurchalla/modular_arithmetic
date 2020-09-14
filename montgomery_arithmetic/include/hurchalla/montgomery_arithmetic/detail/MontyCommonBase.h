@@ -56,13 +56,13 @@ private:
     using V = MontgomeryValue;
 protected:
     const T n_;   // the modulus
-    const T neg_inv_n_;
     const T r_mod_n_;
+    const T neg_inv_n_;
     const T r_squared_mod_n_;
 
     explicit MontyCommonBase(T modulus) : n_(modulus),
-                              neg_inv_n_(negative_inverse_mod_r(n_)),
                               r_mod_n_(getRModN(n_)),
+                              neg_inv_n_(negative_inverse_mod_r(n_)),
                               r_squared_mod_n_( modular_arithmetic::
                                   modular_multiplication_prereduced_inputs(
                                                        r_mod_n_, r_mod_n_, n_) )
@@ -122,7 +122,15 @@ public:
 
     HURCHALLA_FORCE_INLINE V convertIn(T a) const
     {
-        return multiply(V(a), V(r_squared_mod_n_), OutofplaceLowlatencyTag());
+        HPBC_INVARIANT2(r_squared_mod_n_ < n_);
+        // As a precondition, montmul requires  a * r_squared_mod_n < n*R.  This
+        // will always be satisfied-  we know from the invariant above that
+        // r_squared_mod_n < n.  Since a is a type T variable, we know a < R.
+        // Therefore,  a * r_squared_mod_n < n * R.
+        T result = montmul(a, r_squared_mod_n_, n_, neg_inv_n_,
+                             typename D::MontyTag(), OutofplaceLowlatencyTag());
+        HPBC_POSTCONDITION2(isValid(V(result)));
+        return V(result);
     }
 
     HURCHALLA_FORCE_INLINE T convertOut(V x) const

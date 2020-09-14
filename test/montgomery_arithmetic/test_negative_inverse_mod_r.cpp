@@ -15,7 +15,7 @@
 #endif
 
 template <typename T>
-void test_single_inverse(T a)
+void test_single_negative_inverse(T a)
 {
     namespace mont = hurchalla::montgomery_arithmetic;
     using U = typename mont::safely_promote_unsigned<T>::type;
@@ -32,7 +32,7 @@ void test_single_inverse(T a)
 
 
 template <typename T>
-void test_inverse_exhaustive()
+void test_negative_inverse_exhaustive()
 {
     namespace ma = hurchalla::modular_arithmetic;
     T tmax = ma::ma_numeric_limits<T>::max();
@@ -40,8 +40,8 @@ void test_inverse_exhaustive()
     T oddmax = (evenmax != tmax) ? tmax : static_cast<T>(tmax - 1);
 
     for (T a=oddmax; a>1; a=static_cast<T>(a-2))
-        test_single_inverse(a);
-    test_single_inverse(static_cast<T>(1));
+        test_single_negative_inverse(a);
+    test_single_negative_inverse(static_cast<T>(1));
 }
 
 
@@ -56,18 +56,18 @@ void test_negative_inverse_mod_r()
 
     // negative_inverse_mod_r's preconditions require input a is odd.
 
-    test_single_inverse(static_cast<T>(1));
-    test_single_inverse(static_cast<T>(3));
-    test_single_inverse(static_cast<T>(5));
-    test_single_inverse(static_cast<T>(7));
+    test_single_negative_inverse(static_cast<T>(1));
+    test_single_negative_inverse(static_cast<T>(3));
+    test_single_negative_inverse(static_cast<T>(5));
+    test_single_negative_inverse(static_cast<T>(7));
 
-    test_single_inverse(static_cast<T>(oddmax));
-    test_single_inverse(static_cast<T>(oddmax - 2));
-    test_single_inverse(static_cast<T>(oddmax - 4));
+    test_single_negative_inverse(static_cast<T>(oddmax));
+    test_single_negative_inverse(static_cast<T>(oddmax - 2));
+    test_single_negative_inverse(static_cast<T>(oddmax - 4));
 
-    test_single_inverse(static_cast<T>(oddhalfmax));
-    test_single_inverse(static_cast<T>(oddhalfmax + 2));
-    test_single_inverse(static_cast<T>(oddhalfmax - 2));
+    test_single_negative_inverse(static_cast<T>(oddhalfmax));
+    test_single_negative_inverse(static_cast<T>(oddhalfmax + 2));
+    test_single_negative_inverse(static_cast<T>(oddhalfmax - 2));
 }
 
 
@@ -81,7 +81,7 @@ namespace {
         test_negative_inverse_mod_r<__uint128_t>();
 #endif
 
-        test_inverse_exhaustive<std::uint8_t>();
-        test_inverse_exhaustive<std::uint16_t>();
+        test_negative_inverse_exhaustive<std::uint8_t>();
+        test_negative_inverse_exhaustive<std::uint16_t>();
     }
 }

@@ -466,6 +466,15 @@ namespace {
 
     TEST(MontgomeryArithmetic, MontySqrtRange) {
         namespace mont = hurchalla::montgomery_arithmetic;
-        test_custom_monty<mont::MontySqrtRange>();
+        test_MontgomeryForm<mont::MontgomeryForm<std::uint8_t,
+                                        mont::MontySqrtRange<std::uint16_t>>>();
+        test_MontgomeryForm<mont::MontgomeryForm<std::uint16_t,
+                                        mont::MontySqrtRange<std::uint32_t>>>();
+        test_MontgomeryForm<mont::MontgomeryForm<std::uint32_t,
+                                        mont::MontySqrtRange<std::uint64_t>>>();
+#if HURCHALLA_COMPILER_HAS_UINT128_T()
+        test_MontgomeryForm<mont::MontgomeryForm<std::uint64_t,
+                                          mont::MontySqrtRange<__uint128_t>>>();
+#endif
     }
 }

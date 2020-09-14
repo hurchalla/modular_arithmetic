@@ -77,8 +77,11 @@ public:
 
     HURCHALLA_FORCE_INLINE V convertIn(T a) const
     {
-        HPBC_PRECONDITION2(0 <= a && a < modulus_);
-        return V(a);
+        HPBC_PRECONDITION2(0 <= a);
+        HURCHALLA_LIKELY_IF (a < modulus_)
+            return V(a);
+        else
+            return V(static_cast<T>(a % modulus_));
     }
     HURCHALLA_FORCE_INLINE T convertOut(V x) const
     {

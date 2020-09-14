@@ -67,11 +67,10 @@ public:
     T getModulus() const { return static_cast<T>(impl.getModulus()); }
 
     // Returns the converted value of the standard number 'a' into monty form.
-    // Requires 0 <= a < modulus.
+    // Requires a >= 0.
     MontgomeryValue convertIn(T a) const
     {
         HPBC_PRECONDITION(a >= 0);
-        HPBC_PRECONDITION(a < static_cast<T>(impl.getModulus()));
         return impl.convertIn(static_cast<U>(a));
     }
 
