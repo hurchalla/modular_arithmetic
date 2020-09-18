@@ -3,7 +3,7 @@ Modular Arithmetic library for C++
 
 ## Design goals
 
-A flexible and rock solid library for modular arithmetic of up to 128 bit types, that exceeds the performance of any known solutions.  Larger than 128 bit types are usable also but not optimized.
+A flexible and rock solid library for modular arithmetic of native types, achieving best known performance.  Performance should be reasonably good but not optimal, for double the native bit width, e.g. for 128 bit types.  Larger than 128 bit types are permissible; however a library like GMP is likely to provide much better performance at such sizes.
 
 ## Status
 
