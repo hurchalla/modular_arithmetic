@@ -9,13 +9,13 @@ namespace hurchalla { namespace montgomery_arithmetic {
 
 
 struct FullrangeTag {};
-struct HalfrangeTag {};
-struct QuarterrangeTag {};
+// any function for FullrangeTag will work fine for HalfrangeTag, so we
+// inherit from FullrangeTag.
+struct HalfrangeTag : public FullrangeTag {};
 
+struct QuarterrangeTag {};
 // any function for QuarterrangeTag will work fine for SixthrangeTag, so we
 // inherit from QuarterrangeTag.
-// (HalfrangeTag could inherit from FullrangeTag for similar reasons, but it
-// always has its own functions since it can be optimized better than Full.)
 struct SixthrangeTag : public QuarterrangeTag {};
 
 
@@ -27,6 +27,7 @@ struct SixthrangeTag : public QuarterrangeTag {};
 // The name "Halfrange" signifies that the modulus must be less than R/2, where
 // R = 2^(ma_numeric_limits<T>::digits).  For example, if T is uint64_t then
 // R = 2^64 and R/2 == 2^63, and thus it would require  modulus < 2^63.
+//
 //
 // The name "Quarterrange" signifies that the modulus must be less than R/4,
 // where  R = 2^(ma_numeric_limits<T>::digits).  For example, if T is uint64_t

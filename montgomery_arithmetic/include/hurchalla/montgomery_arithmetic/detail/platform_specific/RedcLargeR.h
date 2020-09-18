@@ -360,7 +360,7 @@ struct RedcLargeR<std::uint64_t>
 {
   using T = std::uint64_t;
 
-  // This version should have: cycles latency 11, fused uops 12
+  // This version should have: cycles latency 9, fused uops 11
   static HURCHALLA_FORCE_INLINE
   T REDC(T u_hi, T u_lo, T n, T neg_inv_n, FullrangeTag, InplaceLowlatencyTag)
   {
@@ -373,17 +373,18 @@ struct RedcLargeR<std::uint64_t>
     // this function, putting u_lo in rax.
     // This asm implements DefaultRedcLargeR<uint64_t>::REDC(...FullrangeTag)
     // Thus, the algorithm should be correct for the same reasons given there.
+#if 0
+// old implementation, based closely on DefaultRedcLargeR<uint64_t>::REDC
+// It should have: cycles latency 11, fused uops 12
     T rrax = u_lo;
     T rrdx, dummy;
     __asm__ (
         "movq %%rax, %[tmp] \n\t"   /* tmp = u_lo */
         "imulq %[inv], %%rax \n\t"  /* m = u_lo * neg_inv_n */
         "mulq %[n] \n\t"            /* mn_hilo = m * n */
-        /* "addq %[tmp], %%rax \n\t" */ /* rax=u_lo+mn_lo. Sets carry, rax==0 */
           "xorl %%eax, %%eax \n\t"  /* rax = 0.  CPU will zero upper half too */
           "negq %[tmp] \n\t"        /* Sets carry to (u_lo != 0) */
         "adcq %[uhi], %%rdx \n\t"   /* t_hi = addcarry(u_hi, mn_hi) */
-        /* "movl %%eax, %k[tmp] \n\t" */  /* tmp = 0.  The CPU will zero the upper half too.  For the k modifier see https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html#x86Operandmodifiers */
         "cmovaeq %[n], %%rax \n\t"  /* rax = (t_hi >= u_hi) ? n : 0 */
           "xorl %k[tmp], %k[tmp] \n\t"  /* tmp = 0.  The CPU will zero the upper half too.  For the k modifier see https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html#x86Operandmodifiers */
         "subq %[n], %%rdx \n\t"     /* rdx = t_hi - n */
@@ -392,6 +393,70 @@ struct RedcLargeR<std::uint64_t>
         : [uhi]"r"(u_hi), [n]"r"(n), [inv]"rm"(neg_inv_n)
         : "cc");
     T result = rrax + rrdx;   // let compiler choose between add/lea
+#else
+// optimization of the above implementation
+// It should have: cycles latency 9, fused uops 11
+    T rrax = u_lo;
+    T uhi = u_hi;
+    T rrdx, dummy;
+    __asm__ (
+        "movq %%rax, %[tmp] \n\t"   /* tmp = u_lo */
+        "imulq %[inv], %%rax \n\t"  /* m = u_lo * neg_inv_n */
+        "mulq %[n] \n\t"            /* mn_hilo = m * n */
+          "movq %[thi], %%rax \n\t" /* rax = u_hi */
+          "subq %[n], %%rax \n\t"   /* rax = u_hi - n */
+        /* note that since by precondition we know u_hi < n, we know
+           rax= u_hi-n < 0 (interpreting all values as mathematical integers) */
+          "negq %[tmp] \n\t"        /* Sets carry to (u_lo != 0) */
+        "adcq %%rdx, %[thi] \n\t"   /* t_hi = addcarry(u_hi, mn_hi) */
+
+        /* We know from REDC_non_minimized's Assertion #1 that  mn_hi < n,
+           and by definition, 0 <= boolean(u_lo!=0) <= 1; therefore
+           mn_hi + boolean(u_lo!=0) < n+1,  or  mn_hi + boolean(u_lo!=0) <= n.
+           We also know mn_hi >= 0, since it's type T,  giving us
+           0 <= mn_hi + boolean(u_lo!=0) <= n.
+           This function has the precondition  0 <= u_hi < n,  and therefore for
+           the purpose of discussion if we treat all variables/values as
+           mathematical natural numbers (i.e. signed infinite precision
+           integers), we have  -n <= u_hi-n < 0.  Thus,
+           -n <= (u_hi-n) + mn_hi + boolean(u_lo!=0) < n.  Since we just showed
+           (u_hi-n) is negative, a result of
+           (u_hi-n) + mn_hi + boolean(u_lo!=0) >= 0  would necessarily mean that
+           the entire summation generated a carry.  Likewise, a result of
+           (u_hi-n) + mn_hi + boolean(u_lo!=0) < 0  would necessarily mean that
+           the entire summation did not generate a carry.
+              Therefore, using the contrapositive, if the entire summation
+           generates a carry, we know this would prove that
+           (u_hi-n) + mn_hi + boolean(u_lo!=0) >= 0,  and by extension, that
+           0 <= (u_hi-n) + mn_hi + boolean(u_lo!=0) < n.  By setting
+           rax = u_hi - n,  and setting the CPU's carry_flag = boolean(u_lo!=0),
+           we can perform the entire summation via the instruction
+           sum = addcarry(rax, mn_hi, carry_flag).  This instruction itself sets
+           the carry_flag upon completion:  by the proof we just gave, if the
+           final state of carry_flag == 1, then  0 <= sum < n.
+              By the other contrapositive, if the entire summation does not
+           generate a carry, we know this would prove that
+           (u_hi-n) + mn_hi + boolean(u_lo!=0) < 0,  and by extension, that
+           -n <= (u_hi-n) + mn_hi + boolean(u_lo!=0) < 0.  As in the previous
+           paragraph, we can perform the entire summation via the instruction
+           sum = addcarry(rax, mn_hi, carry_flag), and check the carry_flag that
+           it sets.  If the carry_flag == 0, then  -n <= sum < 0.  Adding n to
+           all parts, we would have 0 <= n + sum < n,  or
+           0 <= u_hi + mn_hi + boolean(u_lo!=0) < n.  We already calculated
+           u_hi + mn_hi + boolean(u_lo!=0)  in the asm sequence above when we
+           set  t_hi = addcarry(u_hi, mn_hi).  We would have the result that
+           0 <= t_hi < n.  Thus for our REDC result, if the carry_flag == 0 we
+           should use t_hi, and if the carry_flag == 1 we should use sum. */
+        "negq %[tmp] \n\t"          /* Sets carry to (u_lo != 0) */
+        "adcq %%rdx, %%rax \n\t"    /* sum = addcarry(rax, mn_hi) */
+        /* if the final state of carry_flag == 0, then move t_hi into rax.
+           Otherwise, keep the sum we just calculated in rax.  */
+        "cmovaeq %[thi], %%rax \n\t"  /* rax = (sum >= rax) ? t_hi : rax */
+        : [thi]"+r"(uhi), "+&a"(rrax), "=&d"(rrdx), [tmp]"=&r"(dummy)
+        : [n]"r"(n), [inv]"rm"(neg_inv_n)
+        : "cc");
+    T result = rrax;
+#endif
     HPBC_ASSERT2(result == detail_redc_large::DefaultRedcLargeR<T>::REDC(
                                      u_hi, u_lo, n, neg_inv_n, FullrangeTag()));
 
@@ -399,7 +464,7 @@ struct RedcLargeR<std::uint64_t>
     return result;
   }
 
-  // This version should have: cycles latency 11, fused uops 11
+  // This version should have: cycles latency 9, fused uops 11
   static HURCHALLA_FORCE_INLINE
   T REDC(T u_hi, T u_lo, T n, T neg_inv_n, FullrangeTag,OutofplaceLowlatencyTag)
   {
@@ -412,6 +477,9 @@ struct RedcLargeR<std::uint64_t>
     // this function, putting u_lo in rax.
     // This asm implements DefaultRedcLargeR<uint64_t>::REDC(...FullrangeTag)
     // Thus, the algorithm should be correct for the same reasons given there.
+#if 0
+// old implementation
+// It should have: cycles latency 11, fused uops 11
     T rrax = u_lo;
     T reg = u_hi;
     T rrdx, dummy;
@@ -419,7 +487,6 @@ struct RedcLargeR<std::uint64_t>
         "movq %%rax, %[tmp] \n\t"   /* tmp = u_lo */
         "imulq %[inv], %%rax \n\t"  /* m = u_lo * neg_inv_n */
         "mulq %[n] \n\t"            /* mn_hilo = m * n */
-        /* "addq %[tmp], %%rax \n\t" */ /* rax=u_lo+mn_lo. Sets carry, rax==0 */
           "xorl %%eax, %%eax \n\t"  /* rax = 0.  CPU will zero upper half too */
           "negq %[tmp] \n\t"        /* Sets carry to (u_lo != 0) */
         "adcq %%rdx, %[reg] \n\t"   /* t_hi = addcarry(u_hi, mn_hi) */
@@ -431,6 +498,28 @@ struct RedcLargeR<std::uint64_t>
         : [n]"r"(n), [inv]"rm"(neg_inv_n)
         : "cc");
     T result = reg;
+#else
+// modification of the FullrangeTag/InplaceLowlatencyTag implementation
+// It should have: cycles latency 9, fused uops 11
+    T rrax = u_lo;
+    T uhi = u_hi;
+    T rrdx, dummy;
+    __asm__ (
+        "movq %%rax, %[tmp] \n\t"     /* tmp = u_lo */
+        "imulq %[inv], %%rax \n\t"    /* m = u_lo * neg_inv_n */
+        "mulq %[n] \n\t"              /* mn_hilo = m * n */
+          "movq %[thi], %%rax \n\t"   /* rax = u_hi */
+          "subq %[n], %%rax \n\t"     /* rax = u_hi - n */
+          "negq %[tmp] \n\t"          /* Sets carry to (u_lo != 0) */
+        "adcq %%rdx, %[thi] \n\t"     /* t_hi = addcarry(u_hi, mn_hi) */
+        "negq %[tmp] \n\t"            /* Sets carry to (u_lo != 0) */
+        "adcq %%rdx, %%rax \n\t"      /* sum = addcarry(rax, mn_hi) */
+        "cmovbq %%rax, %[thi] \n\t"   /* t_hi = (sum < rax) ? rax : t_hi */
+        : [thi]"+r"(uhi), "+&a"(rrax), "=&d"(rrdx), [tmp]"=&r"(dummy)
+        : [n]"r"(n), [inv]"rm"(neg_inv_n)
+        : "cc");
+    T result = uhi;
+#endif
     HPBC_ASSERT2(result == detail_redc_large::DefaultRedcLargeR<T>::REDC(
                                      u_hi, u_lo, n, neg_inv_n, FullrangeTag()));
 
@@ -438,37 +527,7 @@ struct RedcLargeR<std::uint64_t>
     return result;
   }
 
-  // This next version is expected to have:
-  // cycles latency a little over 11 (perhaps ~11.2 on average), fused uops 11.
-  // Note:
-  // The expected latency here is tricky, and depends on mul.  The uops.info
-  // latency figures for the mul instruction suggest that rax will be written by
-  // a uop (as part of the mul) one cycle earlier than a separate uop which
-  // writes rdx - so that rax takes 3 cycles to produce and rdx takes 4 cycles.
-  // My testing supports this (I used an asm loop containing mul, with each loop
-  // iteration dependent upon either rax or rdx produced by the previous mul).
-  // Assuming this is indeed true, we should expect a latency of 11 for this
-  // REDC.  However, I consistently measure the corresponding low-latency
-  // version of this function as being roughly 1.5% faster than this (low-uops)
-  // version, using a latency bound loop test on a Haswell CPU, despite the fact
-  // that we would have expected both functions to have the same latency of 11
-  // cycles, and despite both functions containing close to identical assembly
-  // code.  Although such a small difference may often be explained by quirks
-  // in the surrounding assembly, and perhaps alignment, this appears to be a
-  // real performance difference - I see it with surrounding assembly that looks
-  // exactly the same (though of course the contents of the inlined asm function
-  // differ), and with gcc and clang, and when switching the order of the test
-  // loops.  A possible explanation might be found in looking at this function's
-  // asm:  It has a very tight 1 cycle window from when rax gets produced by the
-  // mul, during which the addq can and must execute, in order for both the addq
-  // result and rdx (from the mul) to both be ready at the same time to then be
-  // used by the adcq instruction.  If on occasion addq doesn't execute in the
-  // same cycle in which rax becomes available, on average a fraction of one
-  // cycle of latency would be incurred.  For comparison, the corresponding low
-  // latency version of this function uses xorlq and negq instead of addq, and
-  // it has a roughly 6 cycle window in which it can execute those two
-  // instructions (without incurring extra latency).  This is a guess, and the
-  // true reason may be different - perf or vtune would help.
+  // This version should have: cycles latency 10, fused uops 9
   static HURCHALLA_FORCE_INLINE
   T REDC(T u_hi, T u_lo, T n, T neg_inv_n, FullrangeTag, InplaceLowuopsTag)
   {
@@ -481,6 +540,9 @@ struct RedcLargeR<std::uint64_t>
     // this function, putting u_lo in rax.
     // This asm implements DefaultRedcLargeR<uint64_t>::REDC(...FullrangeTag)
     // Thus, the algorithm should be correct for the same reasons given there.
+#if 0
+// old implementation
+// It should have: cycles latency perhaps ~11.2 on average, fused uops 11.
     T rrax = u_lo;
     T rrdx, dummy;
     __asm__ (
@@ -489,7 +551,6 @@ struct RedcLargeR<std::uint64_t>
         "mulq %[n] \n\t"            /* mn_hilo = m * n */
           "addq %[tmp], %%rax \n\t" /* rax = u_lo + mn_lo. Sets carry, rax==0 */
         "adcq %[uhi], %%rdx \n\t"   /* t_hi = addcarry(u_hi, mn_hi) */
-        /* "movl %%eax, %k[tmp] \n\t" */  /* tmp = 0.  The CPU will zero the upper half too.  For the k modifier see https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html#x86Operandmodifiers */
         "cmovaeq %[n], %%rax \n\t"  /* rax = (t_hi >= u_hi) ? n : 0 */
           "xorl %k[tmp], %k[tmp] \n\t"  /* tmp = 0.  The CPU will zero the upper half too.  For the k modifier see https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html#x86Operandmodifiers */
         "subq %[n], %%rdx \n\t"     /* rdx = t_hi - n */
@@ -498,6 +559,26 @@ struct RedcLargeR<std::uint64_t>
         : [uhi]"r"(u_hi), [n]"r"(n), [inv]"rm"(neg_inv_n)
         : "cc");
     T result = rrax + rrdx;   // let compiler choose between add/lea
+#else
+// modification of the FullrangeTag/InplaceLowlatencyTag implementation
+// It should have: cycles latency 10, fused uops 9
+    T rrax = u_lo;
+    T uhi = u_hi;
+    T rrdx, dummy;
+    __asm__ (
+        "movq %%rax, %[tmp] \n\t"   /* tmp = u_lo */
+        "imulq %[inv], %%rax \n\t"  /* m = u_lo * neg_inv_n */
+        "mulq %[n] \n\t"            /* mn_hilo = m * n */
+          "subq %[n], %[thi] \n\t"  /* thi = u_hi - n */
+        "negq %[tmp] \n\t"          /* Sets carry to (u_lo != 0) */
+        "adcq %[thi], %%rdx \n\t"   /* rdx = addcarry(thi, mn_hi) */
+        "leaq (%%rdx, %[n]), %%rax \n\t"
+        "cmovbq %%rdx, %%rax \n\t"  /* rax = (rdx < thi) ? rdx : rax */
+        : [thi]"+&r"(uhi), "+&a"(rrax), "=&d"(rrdx), [tmp]"=&r"(dummy)
+        : [n]"r"(n), [inv]"rm"(neg_inv_n)
+        : "cc");
+    T result = rrax;
+#endif
     HPBC_ASSERT2(result == detail_redc_large::DefaultRedcLargeR<T>::REDC(
                                      u_hi, u_lo, n, neg_inv_n, FullrangeTag()));
 
@@ -505,10 +586,7 @@ struct RedcLargeR<std::uint64_t>
     return result;
   }
 
-  // This version is expected to have:
-  // cycles latency a little over 11 (~11.2 on average), fused uops 10.
-  // See the comment for the FullrangeTag/InplaceLowuopsTag version of this
-  // function above, for details on why expected latency has a fractional value.
+  // This version should have: cycles latency 10, fused uops 9
   static HURCHALLA_FORCE_INLINE
   T REDC(T u_hi, T u_lo, T n, T neg_inv_n, FullrangeTag, OutofplaceLowuopsTag)
   {
@@ -521,6 +599,9 @@ struct RedcLargeR<std::uint64_t>
     // this function, putting u_lo in rax.
     // This asm implements DefaultRedcLargeR<uint64_t>::REDC(...FullrangeTag)
     // Thus, the algorithm should be correct for the same reasons given there.
+#if 0
+// old implementation
+// It should have: cycles latency perhaps ~11.2 on average, fused uops 10.
     T rrax = u_lo;
     T reg = u_hi;
     T rrdx, dummy;
@@ -538,6 +619,26 @@ struct RedcLargeR<std::uint64_t>
         : [n]"r"(n), [inv]"rm"(neg_inv_n)
         : "cc");
     T result = reg;
+#else
+// modification of the FullrangeTag/InplaceLowuopsTag implementation
+// It should have: cycles latency 10, fused uops 9
+    T rrax = u_lo;
+    T uhi = u_hi;
+    T rrdx, res;
+    __asm__ (
+        "movq %%rax, %[tmp] \n\t"   /* tmp = u_lo */
+        "imulq %[inv], %%rax \n\t"  /* m = u_lo * neg_inv_n */
+        "mulq %[n] \n\t"            /* mn_hilo = m * n */
+          "subq %[n], %[thi] \n\t"  /* thi = u_hi - n */
+        "negq %[tmp] \n\t"          /* Sets carry to (u_lo != 0) */
+        "adcq %[thi], %%rdx \n\t"   /* rdx = addcarry(thi, mn_hi) */
+        "leaq (%%rdx, %[n]), %[tmp] \n\t"
+        "cmovbq %%rdx, %[tmp] \n\t"  /* tmp = (rdx < thi) ? rdx : tmp */
+        : [thi]"+&r"(uhi), "+&a"(rrax), "=&d"(rrdx), [tmp]"=&r"(res)
+        : [n]"r"(n), [inv]"rm"(neg_inv_n)
+        : "cc");
+    T result = res;
+#endif
     HPBC_ASSERT2(result == detail_redc_large::DefaultRedcLargeR<T>::REDC(
                                      u_hi, u_lo, n, neg_inv_n, FullrangeTag()));
 
@@ -545,6 +646,17 @@ struct RedcLargeR<std::uint64_t>
     return result;
   }
 
+
+
+#if 0
+// old implementation
+// This is disabled (by #if 0) because the FullrangeTag function versions above
+// offer equal or better performance both for latency and fused uops (we are
+// unable to improve upon the results by optimizing for the HalfrangeTag's
+// restriction of the modulus size).  Since struct HalfrangeTag inherits from
+// FullrangeTag, any call using HalfrangeTag will match to the FullrangeTag
+// function versions above, now that I have disabled these functions that have a
+// HalfrangeTag parameter type.
 
 
   // Note: PrivateInplaceTag covers InplaceLowlatencyTag and InplaceLowuopsTag.
@@ -635,6 +747,7 @@ struct RedcLargeR<std::uint64_t>
     HPBC_POSTCONDITION2(result < n);
     return result;
   }
+#endif
 
 
 
@@ -724,7 +837,7 @@ struct RedcLargeR<std::uint64_t>
 
 
 
-  // For now, I don't plan to write an x86_64 asm version for convert_out().
+  // For now, I have no plan to write an x86_64 asm version for convert_out().
   // Compilers seem to generate ok code from the default C++ implementation, and
   // this is also probably unlikely to be used in performance critical loops.
   template <class MTAG>
