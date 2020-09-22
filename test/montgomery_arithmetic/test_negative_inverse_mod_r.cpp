@@ -2,7 +2,7 @@
 // by the file "LICENSE.TXT" in the root of this repository ---
 
 
-#include "hurchalla/montgomery_arithmetic/detail/negative_inverse_mod_r.h"
+#include "hurchalla/montgomery_arithmetic/detail/experimental/negative_inverse_mod_r.h"
 #include "hurchalla/montgomery_arithmetic/detail/safely_promote_unsigned.h"
 #include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "gtest/gtest.h"

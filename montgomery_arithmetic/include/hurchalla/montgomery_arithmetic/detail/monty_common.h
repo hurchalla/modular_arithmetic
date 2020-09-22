@@ -37,17 +37,17 @@ struct MontFunctionsCommon
 
   template <class MTAG, class PTAG>
   static HURCHALLA_FORCE_INLINE
-  T mul(T x, T y, T n, T neg_inv_n, MTAG, PTAG)
+  T mul(T x, T y, T n, T inv_n, MTAG, PTAG)
   {
     T u_lo;
     T u_hi = unsigned_multiply_to_hilo_product(&u_lo, x, y);
     // Precondition: Assuming theoretical unlimited precision standard
     // multiplication, this function requires  u = x*y < n*R.
     // Having u_hi < n is sufficient and necessary to satisfy our requirement of
-    // x*y == u < n*R.  See REDC_non_minimized() in RedcLargeR.h for proof.
+    // x*y == u < n*R.  See REDC_non_finalized() in RedcLargeR.h for proof.
     HPBC_PRECONDITION2(u_hi < n);
 
-    T result = RedcLargeR<T>::REDC(u_hi, u_lo, n, neg_inv_n, MTAG(), PTAG());
+    T result = RedcLargeR<T>::REDC(u_hi, u_lo, n, inv_n, MTAG(), PTAG());
     // Postcondition: result is a valid montgomery value for the montgomery type
     // associated with MTAG
     return result;
@@ -55,7 +55,7 @@ struct MontFunctionsCommon
 
   template <class MTAG, class PTAG>
   static HURCHALLA_FORCE_INLINE
-  T fmsub(T x, T y, T z, T n, T neg_inv_n, MTAG, PTAG)
+  T fmsub(T x, T y, T z, T n, T inv_n, MTAG, PTAG)
   {
     HPBC_PRECONDITION2(z < n);  // z must be canonical (0 <= z < n)
     T u_lo;
@@ -63,19 +63,19 @@ struct MontFunctionsCommon
     // Precondition: Assuming theoretical unlimited precision standard
     // multiplication, this function requires  u = x*y < n*R.
     // Having u_hi < n is sufficient and necessary to satisfy our requirement of
-    // x*y == u < n*R.  See REDC_non_minimized() in RedcLargeR.h for proof.
+    // x*y == u < n*R.  See REDC_non_finalized() in RedcLargeR.h for proof.
     HPBC_PRECONDITION2(u_hi < n);
 
     // TODO proof of correctness, showing that performing the modular sub prior
     // to the REDC will always give the same results as performing the REDC and
     // then the modular subtraction.
     // The following calculations should execute in parallel with the first two
-    // multiplies in REDC_non_minimized(), since those mutiplies do not depend
+    // multiplies in REDC_non_finalized(), since those mutiplies do not depend
     // on these calculations.  (Instruction level parallelism)
     T diff = MontHelper<T>::modsub_canonical_subtrahend(u_hi, z, n);
     // modsub_canonical_subtrahend()'s postcondition guarantees diff is a valid
     // montgomery value for any MTAG
-    T result = RedcLargeR<T>::REDC(diff, u_lo, n, neg_inv_n, MTAG(), PTAG());
+    T result = RedcLargeR<T>::REDC(diff, u_lo, n, inv_n, MTAG(), PTAG());
 
     // Postcondition: result is a valid montgomery value for the montgomery type
     // associated with MTAG
@@ -84,7 +84,7 @@ struct MontFunctionsCommon
 
   template <class MTAG, class PTAG>
   static HURCHALLA_FORCE_INLINE
-  T fmadd(T x, T y, T z, T n, T neg_inv_n, MTAG, PTAG)
+  T fmadd(T x, T y, T z, T n, T inv_n, MTAG, PTAG)
   {
     HPBC_PRECONDITION2(z < n);  // z must be canonical (0 <= z < n)
     T u_lo;
@@ -92,30 +92,29 @@ struct MontFunctionsCommon
     // Precondition: Assuming theoretical unlimited precision standard
     // multiplication, this function requires  u = x*y < n*R.
     // Having u_hi < n is sufficient and necessary to satisfy our requirement of
-    // x*y == u < n*R.  See REDC_non_minimized() in RedcLargeR.h for proof.
+    // x*y == u < n*R.  See REDC_non_finalized() in RedcLargeR.h for proof.
     HPBC_PRECONDITION2(u_hi < n);
 
     // TODO proof of correctness, showing that performing the modular add prior
     // to the REDC will always give the same results as performing the REDC and
     // then the modular addition.
     // The following calculations should execute in parallel with the first two
-    // multiplies in REDC_non_minimized(), since those mutiplies do not depend
+    // multiplies in REDC_non_finalized(), since those mutiplies do not depend
     // on these calculations.  (Instruction level parallelism)
     T sum = MontHelper<T>::modadd_canonical_second_addend(u_hi, z, n);
     // modadd_canonical_second_addend()'s postcondition guarantees sum is a
     // valid montgomery value for any MTAG.
-    T result = RedcLargeR<T>::REDC(sum, u_lo, n, neg_inv_n, MTAG(), PTAG());
+    T result = RedcLargeR<T>::REDC(sum, u_lo, n, inv_n, MTAG(), PTAG());
 
     // Postcondition: result is a valid montgomery value for the montgomery type
     // associated with MTAG
     return result;
   }
 
-  template <class MTAG>
   static HURCHALLA_FORCE_INLINE
-  T convert_out(T x, T n, T neg_inv_n, MTAG)
+  T convert_out(T x, T n, T inv_n)
   {
-    T result = RedcLargeR<T>::convert_out(x, n, neg_inv_n, MTAG());
+    T result = RedcLargeR<T>::convert_out(x, n, inv_n);
     HPBC_POSTCONDITION2(result < n);
     return result;
   }
@@ -146,7 +145,7 @@ struct MontFunctionsCommon< T, typename std::enable_if<
 
   template <class MTAG, class PTAG>
   static HURCHALLA_FORCE_INLINE
-  T mul(T x, T y, T n, T neg_inv_n, MTAG, PTAG)
+  T mul(T x, T y, T n, T inv_n, MTAG, PTAG)
   {
     T2 u = static_cast<T2>(static_cast<T2>(x) * static_cast<T2>(y));
     // Precondition: Assuming theoretical unlimited precision standard
@@ -155,7 +154,7 @@ struct MontFunctionsCommon< T, typename std::enable_if<
                             << std::numeric_limits<T>::digits));
 
     T u_lo = static_cast<T>(u);
-    T result = RedcSmallR<T>::REDC(u, u_lo, n, neg_inv_n, MTAG(), PTAG());
+    T result = RedcSmallR<T>::REDC(u, u_lo, n, inv_n, MTAG(), PTAG());
     // Postcondition: result is a valid montgomery value for the montgomery type
     // associated with MTAG
     return result;
@@ -163,7 +162,7 @@ struct MontFunctionsCommon< T, typename std::enable_if<
 
   template <class MTAG, class PTAG>
   static HURCHALLA_FORCE_INLINE
-  T fmsub(T x, T y, T z, T n, T neg_inv_n, MTAG, PTAG)
+  T fmsub(T x, T y, T z, T n, T inv_n, MTAG, PTAG)
   {
     HPBC_PRECONDITION2(z < n);  // z must be canonical (0 <= z < n)
     T2 u = static_cast<T2>(static_cast<T2>(x) * static_cast<T2>(y));
@@ -176,7 +175,7 @@ struct MontFunctionsCommon< T, typename std::enable_if<
     // to the REDC will always give the same results as performing the REDC and
     // then the modular subtraction.
     // The following calculations should execute in parallel with the first two
-    // multiplies in REDC_non_minimized2(), since those mutiplies do not depend
+    // multiplies in REDC_non_finalized2(), since those mutiplies do not depend
     // on these calculations.  (Instruction level parallelism)
     T2 zR = static_cast<T2>(static_cast<T2>(z) << bit_width_T);
     T2 nR = static_cast<T2>(static_cast<T2>(n) << bit_width_T);
@@ -185,7 +184,7 @@ struct MontFunctionsCommon< T, typename std::enable_if<
     HPBC_ASSERT2(static_cast<T>(u2) == static_cast<T>(u));
 
     T u_lo = static_cast<T>(u);
-    T result = RedcSmallR<T>::REDC(u2, u_lo, n, neg_inv_n, MTAG(), PTAG());
+    T result = RedcSmallR<T>::REDC(u2, u_lo, n, inv_n, MTAG(), PTAG());
 
     // Postcondition: result is a valid montgomery value for the montgomery type
     // associated with MTAG
@@ -194,7 +193,7 @@ struct MontFunctionsCommon< T, typename std::enable_if<
 
   template <class MTAG, class PTAG>
   static HURCHALLA_FORCE_INLINE
-  T fmadd(T x, T y, T z, T n, T neg_inv_n, MTAG, PTAG)
+  T fmadd(T x, T y, T z, T n, T inv_n, MTAG, PTAG)
   {
     HPBC_PRECONDITION2(z < n);  // z must be canonical (0 <= z < n)
     T2 u = static_cast<T2>(static_cast<T2>(x) * static_cast<T2>(y));
@@ -207,7 +206,7 @@ struct MontFunctionsCommon< T, typename std::enable_if<
     // to the REDC will always give the same results as performing the REDC and
     // then the modular addition.
     // The following calculations should execute in parallel with the first two
-    // multiplies in REDC_non_minimized2(), since those mutiplies do not depend
+    // multiplies in REDC_non_finalized2(), since those mutiplies do not depend
     // on these calculations.  (Instruction level parallelism)
     T2 zR = static_cast<T2>(static_cast<T2>(z) << bit_width_T);
     T2 nR = static_cast<T2>(static_cast<T2>(n) << bit_width_T);
@@ -216,18 +215,17 @@ struct MontFunctionsCommon< T, typename std::enable_if<
     HPBC_ASSERT2(static_cast<T>(u2) == static_cast<T>(u));
 
     T u_lo = static_cast<T>(u);
-    T result = RedcSmallR<T>::REDC(u2, u_lo, n, neg_inv_n, MTAG(), PTAG());
+    T result = RedcSmallR<T>::REDC(u2, u_lo, n, inv_n, MTAG(), PTAG());
 
     // Postcondition: result is a valid montgomery value for the montgomery type
     // associated with MTAG
     return result;
   }
 
-  template <class MTAG>
   static HURCHALLA_FORCE_INLINE
-  T convert_out(T x, T n, T neg_inv_n, MTAG)
+  T convert_out(T x, T n, T inv_n)
   {
-    T result = RedcSmallR<T>::convert_out(x, n, neg_inv_n, MTAG());
+    T result = RedcSmallR<T>::convert_out(x, n, inv_n);
     HPBC_POSTCONDITION2(result < n);
     return result;
   }
@@ -246,13 +244,13 @@ struct MontFunctionsCommon< T, typename std::enable_if<
 // Returns the product as a montgomery value.
 template <typename T, class MTAG, class PTAG>
 HURCHALLA_FORCE_INLINE
-T montmul(T x, T y, T n, T neg_inv_n, MTAG, PTAG)
+T montmul(T x, T y, T n, T inv_n, MTAG, PTAG)
 {
     // Precondition: Assuming theoretical unlimited precision standard
     // multiplication, this function requires  x*y < n*R.  (The constant R
     // represents the value R = 2^(ma::ma_numeric_limits<T>::digits))
     T result = detail_monty_common::MontFunctionsCommon<T>::
-                                        mul(x, y, n, neg_inv_n, MTAG(), PTAG());
+                                        mul(x, y, n, inv_n, MTAG(), PTAG());
     // Postcondition: result is a valid montgomery value for the montgomery type
     // associated with MTAG
     return result;
@@ -262,7 +260,7 @@ T montmul(T x, T y, T n, T neg_inv_n, MTAG, PTAG)
 // value z from the product.  Returns the resulting montgomery value.
 template <typename T, class MTAG, class PTAG>
 HURCHALLA_FORCE_INLINE
-T montfmsub(T x, T y, T z, T n, T neg_inv_n, MTAG, PTAG)
+T montfmsub(T x, T y, T z, T n, T inv_n, MTAG, PTAG)
 {
     // Precondition #1: z must be canonical (i.e. 0 <= z < n).
     HPBC_PRECONDITION2(z < n);
@@ -271,7 +269,7 @@ T montfmsub(T x, T y, T z, T n, T neg_inv_n, MTAG, PTAG)
     // represents the value R = 2^(ma::ma_numeric_limits<T>::digits))
 
     T result = detail_monty_common::MontFunctionsCommon<T>::
-                                   fmsub(x, y, z, n, neg_inv_n, MTAG(), PTAG());
+                                   fmsub(x, y, z, n, inv_n, MTAG(), PTAG());
     // Postcondition: result is a valid montgomery value for the montgomery type
     // associated with MTAG
     return result;
@@ -281,7 +279,7 @@ T montfmsub(T x, T y, T z, T n, T neg_inv_n, MTAG, PTAG)
 // value z to the product.  Returns the resulting montgomery value.
 template <typename T, class MTAG, class PTAG>
 HURCHALLA_FORCE_INLINE
-T montfmadd(T x, T y, T z, T n, T neg_inv_n, MTAG, PTAG)
+T montfmadd(T x, T y, T z, T n, T inv_n, MTAG, PTAG)
 {
     // Precondition #1: z must be canonical (i.e. 0 <= z < n).
     HPBC_PRECONDITION2(z < n);
@@ -290,18 +288,18 @@ T montfmadd(T x, T y, T z, T n, T neg_inv_n, MTAG, PTAG)
     // represents the value R = 2^(ma::ma_numeric_limits<T>::digits))
 
     T result = detail_monty_common::MontFunctionsCommon<T>::
-                                   fmadd(x, y, z, n, neg_inv_n, MTAG(), PTAG());
+                                   fmadd(x, y, z, n, inv_n, MTAG(), PTAG());
     // Postcondition: result is a valid montgomery value for the montgomery type
     // associated with MTAG
     return result;
 }
 
-template <typename T, class MTAG>
+template <typename T>
 HURCHALLA_FORCE_INLINE
-T montout(T x, T n, T neg_inv_n, MTAG)
+T montout(T x, T n, T inv_n)
 {
-    T result = detail_monty_common::MontFunctionsCommon<T>::
-                                           convert_out(x, n, neg_inv_n, MTAG());
+    T result =
+          detail_monty_common::MontFunctionsCommon<T>::convert_out(x, n, inv_n);
     HPBC_POSTCONDITION2(result < n);
     return result;
 }

@@ -176,9 +176,8 @@ public:
 
     // Returns the modular product of (the montgomery values) x and y.
     // Usually you don't want to specify PTAG (just accept the default).  For
-    // advanced use: PTAG can be InplaceLowlatencyTag, OutofplaceLowlatencyTag,
-    // InplaceLowuopsTag, or OutofplaceLowuopsTag.
-    template <class PTAG = OutofplaceLowlatencyTag>
+    // advanced use: PTAG can be LowlatencyTag or LowuopsTag
+    template <class PTAG = LowlatencyTag>
     MontgomeryValue multiply(MontgomeryValue x, MontgomeryValue y) const
     {
         return impl.multiply(x, y, PTAG());
@@ -197,7 +196,7 @@ public:
         while (exponent > static_cast<T>(1))
         {
             exponent = static_cast<T>(exponent >> static_cast<T>(1));
-            base = multiply<OutofplaceLowuopsTag>(base, base);
+            base = multiply<LowuopsTag>(base, base);
             // The multiply above is a loop carried dependency.  Thus, a second
             // loop carried dependency with the same length can be essentially
             // free due to instruction level parallelism, so long as it does not
@@ -205,7 +204,11 @@ public:
             // So we will always compute the second multiply, instead of
             // conditionally computing it, and we will encourage the compiler to
             // use a (branchless) conditional move instruction.
-            MontgomeryValue tmp= multiply<OutofplaceLowlatencyTag>(result,base);
+            // We use lowlatencyTag below because the "result" loop carried
+            // dependency depends upon both multiply and a conditional move,
+            // whereas "base" above depends only on multiply and thus is tagged
+            // for lowuops since it is less likely to be a latency bottleneck.
+            MontgomeryValue tmp = multiply<LowlatencyTag>(result, base);
             result = (exponent & static_cast<T>(1)) ? tmp : result;
         }
         return result;
@@ -222,9 +225,8 @@ public:
     // are unable to reuse z), but even in that situation this function will
     // likely have lower latency.
     // Usually you don't want to specify PTAG (just accept the default).  For
-    // advanced use: PTAG can be InplaceLowlatencyTag, OutofplaceLowlatencyTag,
-    // InplaceLowuopsTag, or OutofplaceLowuopsTag.
-    template <class PTAG = OutofplaceLowlatencyTag>
+    // advanced use: PTAG can be LowlatencyTag or LowuopsTag
+    template <class PTAG = LowlatencyTag>
     MontgomeryValue fmsub(MontgomeryValue x, MontgomeryValue y,
                                                          CanonicalValue z) const
     {
@@ -248,9 +250,8 @@ public:
     // fmsub inside the loop.  You should not make this change if you are unable
     // to reuse z (i.e. don't negate z alongside every call to fmsub).
     // Usually you don't want to specify PTAG (just accept the default).  For
-    // advanced use: PTAG can be InplaceLowlatencyTag, OutofplaceLowlatencyTag,
-    // InplaceLowuopsTag, or OutofplaceLowuopsTag.
-    template <class PTAG = OutofplaceLowlatencyTag>
+    // advanced use: PTAG can be LowlatencyTag or LowuopsTag
+    template <class PTAG = LowlatencyTag>
     MontgomeryValue fmadd(MontgomeryValue x, MontgomeryValue y,
                                                          CanonicalValue z) const
     {
@@ -273,9 +274,8 @@ public:
     // equivalent; see the comments above fmadd for why you should perform
     // negate outside of a loop.
     // Usually you don't want to specify PTAG (just accept the default).  For
-    // advanced use: PTAG can be InplaceLowlatencyTag, OutofplaceLowlatencyTag,
-    // InplaceLowuopsTag, or OutofplaceLowuopsTag.
-    template <class PTAG = OutofplaceLowlatencyTag>
+    // advanced use: PTAG can be LowlatencyTag or LowuopsTag
+    template <class PTAG = LowlatencyTag>
     MontgomeryValue famul(MontgomeryValue x, CanonicalValue y,
                                                         MontgomeryValue z) const
     {

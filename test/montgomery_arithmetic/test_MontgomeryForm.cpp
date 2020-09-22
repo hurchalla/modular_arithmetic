@@ -37,13 +37,9 @@ void test_multiply_variants(const M& mf, typename M::MontgomeryValue x,
     namespace ma = hurchalla::montgomery_arithmetic;
     EXPECT_TRUE(mf.convertOut(mf.multiply(x, y)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-      mf.template multiply<ma::InplaceLowlatencyTag>(x,y)) == expected_result);
+      mf.template multiply<ma::LowlatencyTag>(x,y)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-      mf.template multiply<ma::OutofplaceLowlatencyTag>(x,y))==expected_result);
-    EXPECT_TRUE(mf.convertOut(
-      mf.template multiply<ma::InplaceLowuopsTag>(x,y)) == expected_result);
-    EXPECT_TRUE(mf.convertOut(
-      mf.template multiply<ma::OutofplaceLowuopsTag>(x,y)) == expected_result);
+      mf.template multiply<ma::LowuopsTag>(x,y)) == expected_result);
 }
 
 template <typename M>
@@ -54,13 +50,9 @@ void test_fmadd_variants(const M& mf, typename M::MontgomeryValue x,
     namespace ma = hurchalla::montgomery_arithmetic;
     EXPECT_TRUE(mf.convertOut(mf.fmadd(x, y, zc)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-       mf.template fmadd<ma::InplaceLowlatencyTag>(x,y,zc)) == expected_result);
+       mf.template fmadd<ma::LowlatencyTag>(x,y,zc)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-      mf.template fmadd<ma::OutofplaceLowlatencyTag>(x,y,zc))==expected_result);
-    EXPECT_TRUE(mf.convertOut(
-       mf.template fmadd<ma::InplaceLowuopsTag>(x,y,zc)) == expected_result);
-    EXPECT_TRUE(mf.convertOut(
-       mf.template fmadd<ma::OutofplaceLowuopsTag>(x,y,zc)) == expected_result);
+      mf.template fmadd<ma::LowuopsTag>(x,y,zc))==expected_result);
 }
 
 template <typename M>
@@ -71,13 +63,9 @@ void test_fmsub_variants(const M& mf, typename M::MontgomeryValue x,
     namespace ma = hurchalla::montgomery_arithmetic;
     EXPECT_TRUE(mf.convertOut(mf.fmsub(x, y, zc)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-       mf.template fmsub<ma::InplaceLowlatencyTag>(x,y,zc)) == expected_result);
+       mf.template fmsub<ma::LowlatencyTag>(x,y,zc)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-      mf.template fmsub<ma::OutofplaceLowlatencyTag>(x,y,zc))==expected_result);
-    EXPECT_TRUE(mf.convertOut(
-       mf.template fmsub<ma::InplaceLowuopsTag>(x,y,zc)) == expected_result);
-    EXPECT_TRUE(mf.convertOut(
-       mf.template fmsub<ma::OutofplaceLowuopsTag>(x,y,zc)) == expected_result);
+      mf.template fmsub<ma::LowuopsTag>(x,y,zc))==expected_result);
 }
 
 template <typename M>
@@ -88,13 +76,9 @@ void test_famul_variants(const M& mf, typename M::MontgomeryValue x,
     namespace ma = hurchalla::montgomery_arithmetic;
     EXPECT_TRUE(mf.convertOut(mf.famul(x, yc, z)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-       mf.template famul<ma::InplaceLowlatencyTag>(x,yc,z)) == expected_result);
+       mf.template famul<ma::LowlatencyTag>(x,yc,z)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-      mf.template famul<ma::OutofplaceLowlatencyTag>(x,yc,z))==expected_result);
-    EXPECT_TRUE(mf.convertOut(
-       mf.template famul<ma::InplaceLowuopsTag>(x,yc,z)) == expected_result);
-    EXPECT_TRUE(mf.convertOut(
-       mf.template famul<ma::OutofplaceLowuopsTag>(x,yc,z)) == expected_result);
+      mf.template famul<ma::LowuopsTag>(x,yc,z))==expected_result);
 }
 
 

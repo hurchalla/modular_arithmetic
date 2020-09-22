@@ -8,16 +8,12 @@
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
-// private optimization tags intended only for use by the implementation
+// private optimization tag intended only for use by the implementation
 struct PrivateAnyTag {};
-struct PrivateInplaceTag : public PrivateAnyTag {};
-struct PrivateOutofplaceTag : public PrivateAnyTag {};
 
 // public optimization tags
-struct InplaceLowlatencyTag : public PrivateInplaceTag {};
-struct OutofplaceLowlatencyTag : public PrivateOutofplaceTag {};
-struct InplaceLowuopsTag : public PrivateInplaceTag {};
-struct OutofplaceLowuopsTag : public PrivateOutofplaceTag {};
+struct LowlatencyTag : public PrivateAnyTag {};
+struct LowuopsTag : public PrivateAnyTag {};
 
 
 }} // end namespace

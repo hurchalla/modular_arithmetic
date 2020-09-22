@@ -22,7 +22,6 @@ class MontyFullRange : public MontyCommonBase<MontyFullRange, T> {
     using BC = MontyCommonBase<
                          ::hurchalla::montgomery_arithmetic::MontyFullRange, T>;
     using BC::n_;
-    using BC::neg_inv_n_;
     using V = typename BC::MontgomeryValue;
 public:
     using montvalue_type = V;

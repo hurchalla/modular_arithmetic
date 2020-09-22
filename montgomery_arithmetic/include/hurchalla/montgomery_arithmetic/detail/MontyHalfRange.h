@@ -27,7 +27,7 @@ class MontyHalfRange : public MontyCommonBase<MontyHalfRange, T> {
     using BC = MontyCommonBase<
                          ::hurchalla::montgomery_arithmetic::MontyHalfRange, T>;
     using BC::n_;
-    using BC::neg_inv_n_;
+    using BC::inv_n_;
     using V = typename BC::MontgomeryValue;
 public:
     using montvalue_type = V;
@@ -70,7 +70,7 @@ public:
         // As a precondition, montmul requires  sum*z < n_*R.  This will always
         // be satisfied:  we know  sum = x+y < R  and  z < n_.  Therefore
         // sum*z < R*n_ == n_*R.
-        T result= montmul(sum, z.get(), n_, neg_inv_n_, HalfrangeTag(), PTAG());
+        T result = montmul(sum, z.get(), n_, inv_n_, HalfrangeTag(), PTAG());
 
         HPBC_POSTCONDITION2(result < n_);
         return V(result);

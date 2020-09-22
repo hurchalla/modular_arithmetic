@@ -7,7 +7,7 @@
 
 #include "hurchalla/montgomery_arithmetic/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/detail/monty_common.h"
-#include "hurchalla/montgomery_arithmetic/detail/negative_inverse_mod_r.h"
+#include "hurchalla/montgomery_arithmetic/detail/inverse_mod_r.h"
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/MontHelper.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
@@ -57,12 +57,12 @@ private:
 protected:
     const T n_;   // the modulus
     const T r_mod_n_;
-    const T neg_inv_n_;
+    const T inv_n_;
     const T r_squared_mod_n_;
 
     explicit MontyCommonBase(T modulus) : n_(modulus),
                               r_mod_n_(getRModN(n_)),
-                              neg_inv_n_(negative_inverse_mod_r(n_)),
+                              inv_n_(inverse_mod_r(n_)),
                               r_squared_mod_n_( modular_arithmetic::
                                   modular_multiplication_prereduced_inputs(
                                                        r_mod_n_, r_mod_n_, n_) )
@@ -127,8 +127,8 @@ public:
         // will always be satisfied-  we know from the invariant above that
         // r_squared_mod_n < n.  Since a is a type T variable, we know a < R.
         // Therefore,  a * r_squared_mod_n < n * R.
-        T result = montmul(a, r_squared_mod_n_, n_, neg_inv_n_,
-                             typename D::MontyTag(), OutofplaceLowlatencyTag());
+        T result = montmul(a, r_squared_mod_n_, n_, inv_n_,
+                                       typename D::MontyTag(), LowlatencyTag());
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
@@ -136,7 +136,7 @@ public:
     HURCHALLA_FORCE_INLINE T convertOut(V x) const
     {
         HPBC_PRECONDITION2(isValid(x));
-        T result = montout(x.get(), n_, neg_inv_n_, typename D::MontyTag());
+        T result = montout(x.get(), n_, inv_n_);
         // montout() postcondition guarantees result < n_
         HPBC_POSTCONDITION2(result < n_);
         return result;
@@ -253,8 +253,8 @@ public:
         //   means n < R/6.  Its isValid(a) returns (a < 2*n), so we know by
         //   this function's preconditions that x < 2*n and y < 2*n.  Thus
         //   x*y < (2*n)*(2*n) == 4*n*n < 4*n*R/6 == (2/3)*n*R < n*R.
-        T result = montmul(x.get(), y.get(), n_, neg_inv_n_,
-                                                typename D::MontyTag(), PTAG());
+        T result = montmul(x.get(), y.get(), n_, inv_n_, typename D::MontyTag(),
+                                                                        PTAG());
         HPBC_PRECONDITION2(isValid(V(result)));
         return V(result);
     }
@@ -268,7 +268,7 @@ public:
         HPBC_PRECONDITION2(z.get() < n_); // isCanonical() should guarantee this
         // As a precondition, montfmsub requires  x*y < n*R.  See multiply() for
         // why this will always be satisfied.
-        T result = montfmsub(x.get(), y.get(), z.get(), n_, neg_inv_n_,
+        T result = montfmsub(x.get(), y.get(), z.get(), n_, inv_n_,
                                                 typename D::MontyTag(), PTAG());
         HPBC_PRECONDITION2(isValid(V(result)));
         return V(result);
@@ -283,7 +283,7 @@ public:
         HPBC_PRECONDITION2(z.get() < n_); // isCanonical() should guarantee this
         // As a precondition, montfmadd requires  x*y < n*R.  See multiply() for
         // why this will always be satisfied.
-        T result = montfmadd(x.get(), y.get(), z.get(), n_, neg_inv_n_,
+        T result = montfmadd(x.get(), y.get(), z.get(), n_, inv_n_,
                                                 typename D::MontyTag(), PTAG());
         HPBC_PRECONDITION2(isValid(V(result)));
         return V(result);

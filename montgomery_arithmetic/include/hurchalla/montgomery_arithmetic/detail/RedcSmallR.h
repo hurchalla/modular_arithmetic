@@ -28,25 +28,25 @@ namespace detail_redc_small {
 
 
 // This function is intended for use when T is smaller than the ALU's native bit
-// width.  It corresponds precisely with RedcLargeR.h's function
-// detail_redc_large::REDC_non_minimized() [which is intended for T greater than
+// width.  It corresponds precisely to RedcLargeR.h's function
+// detail_redc_large::REDC_non_finalized() [which is intended for T greater than
 // or equal to the ALU native bit width].  This function is based on the REDC
-// algorithm, but it does not minimize the output result.  See
-//   https://en.wikipedia.org/wiki/Montgomery_modular_multiplication#The_REDC_algorithm
+// alternate algorithm (using the positive inverse mod R) - see README_REDC.md.
+// However, this function does not finalize the output result, and so it does
+// not perform the complete REDC by itself.
 // Precondition: with theoretical unlimited precision standard multiplication,
 //   we require  u < n*R.  The constant R represents the value
 //   R = 2^(ma::ma_numeric_limits<T>::digits).
-// Returns: the non-minimized montgomery product.
+// Returns: the non-finalized montgomery product.
 // Implementation: this function is a safer, generic version of the following-
-// uint32_t redc_non_minimized(bool& ovf, uint64_t u, uint32_t n,
-//                                                           uint32_t neg_inv_n)
+// uint32_t redc_non_finalized(bool& ovf, uint64_t u, uint32_t n, uint32_t invn)
 // {
 //    using T = uint32_t;
 //    using T2 = uint64_t;
-//    T m = static_cast<T>(u) * neg_inv_n;
+//    T m = static_cast<T>(u) * invn;
 //    T2 mn = static_cast<T2>(m) * static_cast<T2>(n);
-//    T2 t = u + mn;
-//    ovf = (t < u);
+//    T2 t = u - mn;
+//    ovf = (u < mn);
 //    T t_hi = static_cast<T>(t >> ma::ma_numeric_limits<T>::digits);
 //    return t_hi;
 // }
@@ -64,7 +64,7 @@ namespace detail_redc_small {
 // This instruction level parallelism scenario occurs with fmsub() (which calls
 // this function), and with fmadd().
 template <typename T, typename T2> HURCHALLA_FORCE_INLINE
-T REDC_non_minimized2(bool& ovf, T2 u_input, T ulo_input, T n, T neg_inv_n)
+T REDC_non_finalized2(bool& ovf, T2 u_input, T ulo_input, T n, T inv_n)
 {
     namespace ma = hurchalla::modular_arithmetic;
     static_assert(ma::ma_numeric_limits<T>::is_integer, "");
@@ -89,74 +89,40 @@ T REDC_non_minimized2(bool& ovf, T2 u_input, T ulo_input, T n, T neg_inv_n)
     static constexpr int bit_width_T = ma::ma_numeric_limits<T>::digits;
     static constexpr V2 R = static_cast<V2>(1) << bit_width_T;
 
-    // assert(n * neg_inv_n ≡ -1 (mod R))
+    // assert(n * inv_n ≡ 1 (mod R))
     HPBC_PRECONDITION2(
-                static_cast<T>(static_cast<V>(n) * static_cast<V>(neg_inv_n)) ==
-                static_cast<T>(static_cast<V>(0) - static_cast<V>(1))
-                );
+                static_cast<T>(static_cast<V>(n) * static_cast<V>(inv_n)) == 1);
     HPBC_PRECONDITION2(n % 2 == 1);
     HPBC_PRECONDITION2(n > 1);
 
     V2 u = static_cast<V2>(u_input);
     HPBC_PRECONDITION2(u < static_cast<V2>(n) * R);
 
-    T m = static_cast<T>(static_cast<V>(ulo_input) * static_cast<V>(neg_inv_n));
+    T m = static_cast<T>(static_cast<V>(ulo_input) * static_cast<V>(inv_n));
     V2 mn = static_cast<V2>(m) * static_cast<V2>(n);
 
-    T2 t = static_cast<T2>(u + mn);
-    ovf = (static_cast<V2>(t) < u);
+    T2 t = static_cast<T2>(u - mn);
+    ovf = (u < mn);
 
     T t_hi = static_cast<T>(static_cast<V2>(t) >> bit_width_T);
 
-    // For the same reasons given in Postcondition #1 in RedcLargeR.h's function
-    // detail_redc_large::REDC_non_minimized(), we do not compute the final
-    // minimized result, aside from here in this postcondition.
     // Postcondition #1
+    // ----------------
+    // See the proof above Postcondition #1 in RedcLargeR.h's function
+    // detail_redc_large::REDC_non_finalized() for proof of this postcondition.
+    // For the same reasons given in Postcondition #1 in RedcLargeR.h, we never
+    // compute the finalized result, aside from within this postcondition.
     if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T minimized_result = (ovf || t_hi >= n) ? static_cast<T>(t_hi-n) : t_hi;
-        HPBC_POSTCONDITION2(minimized_result < n);
+        T finalized_result = (ovf) ? static_cast<T>(t_hi + n) : t_hi;
+        HPBC_POSTCONDITION2(finalized_result < n);
     }
-
-    // Postcondition #2 - If u < R, then ovf == false.
-    // ---------------------------------------------------
-    // We know mn <= (R-1)*(R-1).  For this case, u < R, so  u <= R-1.
-    // And so u + mn <= (R-1) + ((R-1)*(R-1)) == (R-1)*R < R*R.  Since we also
-    // know  u + mn >= 0, we know  0 <= u + mn < R*R, and thus
-    // (u + mn) == (u + mn) % (R*R).  Therefore since t = (u + mn) % (R*R),
-    // t == u + mn, and thus t >= u.  This means ovf = (t < u) must be false.
-    HPBC_POSTCONDITION2((u < R) ? ovf == false : true);
-
-    // Postcondition #3 - If u < n, then t_hi < n.
-    // ------------------------------------------------------
-    // For this case, u < n, so  u <= n-1.  Since m is type T,  m <= R-1.  Thus
-    // u + m*n <= (n-1) + (R-1)*n == R*n - 1,  and thus  u + m*n < R*n < R*R.
-    // Using similar reasoning to Postcondition #2, we therefore know
-    // t = (u + mn) % (R*R) == (u + mn),  and since  u + m*n < R*n,  t < R*n.
-    // Since t_hi = t/R (which divides evenly), we know
-    // t_hi = t/R < (R*n)/R == n, and thus,  t_hi < n.
-    HPBC_POSTCONDITION2((u < n) ? t_hi < n : true);
-
-    // Postcondition #4 - If n < R/2, then ovf == false  and  t_hi < 2*n.
-    // ------------------------------------------------------------------
-    // Since m is type T we know m < R, and since mn = m*n,  mn < R*n.  Adding
-    // this with the function precondition u < n*R, we get  u + mn < 2*R*n.
-    // Since this case specifies n < R/2, we have  u + mn < 2*R*R/2 == R*R.
-    // Using similar reasoning to Postcondition #2, we therefore know
-    // t = (u + mn) % (R*R) == (u + mn).  Thus t >= u.  Therefore  ovf = (t < u)
-    // must be false.
-    // We've already shown u + mn < 2*R*n, and since t == (u + mn), we therefore
-    // know  t < 2*R*n.  Since t_hi = t/R (which divides evenly), we know
-    // t_hi = t/R < (2*R*n)/R == 2*n, and thus,  t_hi < 2*n.
-    // [ This finding was inspired by ideas in section 5 of "Montgomery's
-    // Multiplication Technique: How to Make It Smaller and Faster", at
-    // https://www.comodo.com/resources/research/cryptography/CDW_CHES_99.ps ]
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T Rdiv2 = static_cast<T>(1) << (ma::ma_numeric_limits<T>::digits - 1);
-        HPBC_POSTCONDITION2((n < Rdiv2) ?
-                       (ovf == false && t_hi < static_cast<T>(2)*n) : true);
-    }
-
-    // return the non-minimized result
+    // Postcondition #2:  If  n < R/2,  then  0 < t_hi + n < 2*n
+    // ---------------------------------------------------------
+    // See the proof accompanying Postcondition #2 in RedcLargeR.h's function
+    // detail_redc_large::REDC_non_finalized() for proof of this postcondition.
+    HPBC_POSTCONDITION2((n < R/2) ? (0 < static_cast<T>(t_hi + n)) &&
+                                    (static_cast<T>(t_hi + n) < 2*n) : true);
+    // return the non-finalized result
     return t_hi;
 }
 
@@ -184,44 +150,25 @@ struct RedcSmallR
   static_assert(modular_arithmetic::ma_numeric_limits<T2>::is_modulo, "");
 
   // Regarding function parameters u and u_lo, see the implementation note for
-  // REDC_non_minimized2().
+  // REDC_non_finalized2().
 
   static HURCHALLA_FORCE_INLINE
-  T REDC(T2 u, T u_lo, T n, T neg_inv_n, FullrangeTag, PrivateAnyTag)
+  T REDC(T2 u, T u_lo, T n, T inv_n, FullrangeTag, PrivateAnyTag)
   {
     bool ovf;
     using namespace detail_redc_small;
-    T thi = REDC_non_minimized2<T,T2>(ovf, u, u_lo, n, neg_inv_n);
-    // We know the following from REDC_non_minimized2()'s Postcondition #1
-    T minimized_result = (ovf || thi >= n) ? static_cast<T>(thi - n) : thi;
-    HPBC_POSTCONDITION2(minimized_result < n);
-    return minimized_result;
+    T thi = REDC_non_finalized2<T,T2>(ovf, u, u_lo, n, inv_n);
+    // We know the following from REDC_non_finalized2()'s Postcondition #1
+    T finalized_result = (ovf) ? static_cast<T>(thi + n) : thi;
+    HPBC_POSTCONDITION2(finalized_result < n);
+    return finalized_result;
   }
+  // Since HalfrangeTag inherits from FullrangeTag, it will argument match to
+  // the FullrangeTag function above.  I don't see any way to improve upon
+  // the FullrangeTag function with a dedicated version for HalfrangeTag.
 
   static HURCHALLA_FORCE_INLINE
-  T REDC(T2 u, T u_lo, T n, T neg_inv_n, HalfrangeTag, PrivateAnyTag)
-  {
-    if (HPBC_PRECONDITION2_MACRO_IS_ACTIVE) {
-        // HalfrangeTag has the precondition requirement that n < R/2 (see
-        // MontyHalfRange for more on this).
-        T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
-                        (modular_arithmetic::ma_numeric_limits<T>::digits - 1));
-        HPBC_PRECONDITION2(n < Rdiv2);
-    }
-    bool ovf;
-    using namespace detail_redc_small;
-    T thi = REDC_non_minimized2<T,T2>(ovf, u, u_lo, n, neg_inv_n);
-    // Since we have the precondition n < R/2, we know from
-    // REDC_non_minimized2()'s Postcondition #4 that ovf is false.
-    HPBC_ASSERT2(ovf == false);
-    // Since ovf == false, REDC_non_minimized2()'s Postcondition #1 guarantees
-    T minimized_result = (thi >= n) ? static_cast<T>(thi - n) : thi;
-    HPBC_POSTCONDITION2(minimized_result < n);
-    return minimized_result;
-  }
-
-  static HURCHALLA_FORCE_INLINE
-  T REDC(T2 u, T u_lo, T n, T neg_inv_n, QuarterrangeTag, PrivateAnyTag)
+  T REDC(T2 u, T u_lo, T n, T inv_n, QuarterrangeTag, PrivateAnyTag)
   {
     if (HPBC_PRECONDITION2_MACRO_IS_ACTIVE) {
         // QuarterrangeTag has the precondition requirement that n < R/4 (see
@@ -232,63 +179,39 @@ struct RedcSmallR
     }
     bool ovf;
     using namespace detail_redc_small;
-    T non_min_result = REDC_non_minimized2<T,T2>(ovf, u, u_lo, n, neg_inv_n);
+    T thi = REDC_non_finalized2<T, T2>(ovf, u, u_lo, n, inv_n);
     // Since we have the precondition n < R/4, we know from
-    // REDC_non_minimized2's Postcondition #4 that ovf is false and result < 2*n
-    HPBC_ASSERT2(ovf == false);
-    HPBC_POSTCONDITION2(non_min_result < 2*n);
+    // REDC_non_finalized2's Postcondition #2 that  0 < thi + n < 2*n.
+    HPBC_POSTCONDITION2(0 < static_cast<T>(thi + n) &&
+                                                 static_cast<T>(thi + n) < 2*n);
     // MontyQuarterRange (and hence QuarterrangeTag) allows any montgomery
-    // values that satisfy 0 <= value < 2*n, so this result doesn't need to be
-    // further reduced.
-    return non_min_result;
+    // values that satisfy 0 <= value < 2*n, thus it's safe to return thi + n.
+    return static_cast<T>(thi + n);
   }
+  // Since SixthrangeTag inherits from QuarterrangeTag, it will argument match
+  // to the QuarterrangeTag function above.
 
 
-  // Converts the montgomery value 'x' to a minimized (mod n) standard integer
+  // In principle we could change this file to use the older REDC_non_minimized2
+  // (see older git commits of this file) and thereby achieve slightly improved
+  // performance for convert_out with FullrangeTag and HalfrangeTag.  See the
+  // convert_out discussion in RedcLargeR.h for details.  But since convert_out
+  // typically isn't used in performance critical loops, I have elected not to
+  // re-introducing/re-enabling the old REDC function.  It seems very unlikely
+  // that this function matters enough to be worth that added complexity.
   static HURCHALLA_FORCE_INLINE
-  T convert_out(T x, T n, T neg_inv_n, FullrangeTag)
-  {
-    // MontyFullRange (and MontyHalfRange) values are always < n
-    HPBC_PRECONDITION2(x < n);
-    T2 u = static_cast<T2>(x);
-    // u = x satisfies REDC_non_minimized2's precondition requiring u < n*R,
-    // since u = x < n < R < n*R.
-    bool ovf;
-    using namespace detail_redc_small;
-    T thi = REDC_non_minimized2<T,T2>(ovf, u, static_cast<T>(u), n, neg_inv_n);
-    // Since we have u < R and u < n, we know from REDC_non_minimized2's
-    // Postcondition #2 that ovf == false, and from Postcondition #3 that
-    // thi < n.
-    HPBC_ASSERT2(ovf == false && thi < n);
-    // Combining this with REDC_non_minimized2's Postcondition #1 gives us
-    T minimized_result = thi;
-    HPBC_POSTCONDITION2(minimized_result < n);
-    return minimized_result;
-  }
-
-  static HURCHALLA_FORCE_INLINE
-  T convert_out(T x, T n, T neg_inv_n, HalfrangeTag)
-  {
-    // The implementations for Halfrange and Fullrange should be the exact same.
-    return convert_out(x, n, neg_inv_n, FullrangeTag());
-  }
-
-  static HURCHALLA_FORCE_INLINE
-  T convert_out(T x, T n, T neg_inv_n, QuarterrangeTag)
+  T convert_out(T x, T n, T inv_n)
   {
     T2 u = static_cast<T2>(x);
-    // u = x satisfies REDC_non_minimized2's precondition requiring u < n*R,
+    // u = x satisfies REDC_non_finalized2's precondition requiring u < n*R,
     // since u = x < R < n*R.
     bool ovf;
     using namespace detail_redc_small;
-    T thi = REDC_non_minimized2<T,T2>(ovf, u, static_cast<T>(u), n, neg_inv_n);
-    // Since we have u < R, we know from REDC_non_minimized2's
-    // Postcondition #2 that ovf is false.
-    HPBC_ASSERT2(ovf == false);
-    // Given that ovf==false, REDC_non_minimized2's Postcondition #1 guarantees
-    T minimized_result = (thi >= n) ? static_cast<T>(thi - n) : thi;
-    HPBC_POSTCONDITION2(minimized_result < n);
-    return minimized_result;
+    T thi = REDC_non_finalized2(ovf, u, static_cast<T>(u), n, inv_n);
+    // REDC_non_finalized2()'s Postcondition #1 guarantees the following
+    T finalized_result = (ovf) ? static_cast<T>(thi + n) : thi;
+    HPBC_POSTCONDITION2(finalized_result < n);
+    return finalized_result;
   }
 };
 
