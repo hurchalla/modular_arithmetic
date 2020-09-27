@@ -103,7 +103,7 @@ inline uint64_t REDC_alternate(uint64_t T_hi, uint64_t T_lo, uint64_t N,
         "leaq (%[Thi], %[N]), %%rax \n\t" /* rax = T_hi + N */
         "subq %%rdx, %%rax \n\t"          /* rax = rax - mN_hi */
         "subq %%rdx, %[Thi] \n\t"         /* t_hi = T_hi - mN_hi */
-        "cmovbq %%rax, %[Thi] \n\t"       /* t_hi = (T_hi&gt;mN_hi) ? rax : t_hi */
+        "cmovbq %%rax, %[Thi] \n\t"       /* t_hi = (T_hi&lt;mN_hi) ? rax : t_hi */
         : [Thi]"+&bcSD"(Thi), "+&a"(rrax), "=&d"(rrdx)
         : [N]"r"(N), [inv]"r"(invN)
         : "cc");
