@@ -6,8 +6,9 @@
 
 
 #include "hurchalla/montgomery_arithmetic/optimization_tag_structs.h"
-#include "hurchalla/montgomery_arithmetic/detail/monty_common.h"
+#include "hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/montgomery_arithmetic/detail/inverse_mod_r.h"
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/Redc.h"
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/MontHelper.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
@@ -123,12 +124,18 @@ public:
     HURCHALLA_FORCE_INLINE V convertIn(T a) const
     {
         HPBC_INVARIANT2(r_squared_mod_n_ < n_);
-        // As a precondition, montmul requires  a * r_squared_mod_n < n*R.  This
+        // As a precondition, REDC requires  a * r_squared_mod_n < n*R.  This
         // will always be satisfied-  we know from the invariant above that
         // r_squared_mod_n < n.  Since a is a type T variable, we know a < R.
         // Therefore,  a * r_squared_mod_n < n * R.
-        T result = montmul(a, r_squared_mod_n_, n_, inv_n_,
-                                       typename D::MontyTag(), LowlatencyTag());
+        T u_lo;
+        T u_hi = unsigned_multiply_to_hilo_product(&u_lo, a, r_squared_mod_n_);
+        // u_hi < n  guarantees we had  a * r_squared_mod_n == u < n*R.  See
+        // REDC_non_finalized() in Redc.h for proof.
+        HPBC_PRECONDITION2(u_hi < n_);
+
+        T result = REDC(u_hi, u_lo, n_, inv_n_, typename D::MontyTag(),
+                                                               LowlatencyTag());
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
@@ -136,8 +143,9 @@ public:
     HURCHALLA_FORCE_INLINE T convertOut(V x) const
     {
         HPBC_PRECONDITION2(isValid(x));
-        T result = montout(x.get(), n_, inv_n_);
-        // montout() postcondition guarantees result < n_
+        T u_hi = 0;
+        T u_lo = x.get();
+        T result= REDC(u_hi, u_lo, n_, inv_n_, FullrangeTag(), LowlatencyTag());
         HPBC_POSTCONDITION2(result < n_);
         return result;
     }
@@ -184,7 +192,7 @@ public:
         T em = static_cast<const D*>(this)->getExtendedModulus();
         namespace ma = hurchalla::modular_arithmetic;
         T z = ma::modular_addition_prereduced_inputs(x.get(), y.get(), em);
-        HPBC_PRECONDITION2(isValid(V(z)));
+        HPBC_POSTCONDITION2(isValid(V(z)));
         return V(z);
     }
 
@@ -195,7 +203,7 @@ public:
         HPBC_PRECONDITION2(y.get() < n_); // isCanonical() should guarantee this
         T z = MontHelper<T>::modadd_canonical_second_addend(x.get(), y.get(),
                                                                             n_);
-        HPBC_PRECONDITION2(isValid(V(z)));
+        HPBC_POSTCONDITION2(isValid(V(z)));
         return V(z);
     }
 
@@ -206,7 +214,7 @@ public:
         T em = static_cast<const D*>(this)->getExtendedModulus();
         namespace ma = hurchalla::modular_arithmetic;
         T z = ma::modular_subtraction_prereduced_inputs(x.get(), y.get(), em);
-        HPBC_PRECONDITION2(isValid(V(z)));
+        HPBC_POSTCONDITION2(isValid(V(z)));
         return V(z);
     }
 
@@ -235,7 +243,7 @@ public:
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isValid(y));
-        // As a precondition, montmul requires  x*y < n*R.  This will always be
+        // As a precondition, REDC requires  x*y < n*R.  This will always be
         // satisfied for all Monty classes known to derive from this class --
         // For MontyFullRange: its constructor requires modulus < R, which
         //   means n < R.  Since MontyFullRange's isValid(a) returns (a < n),
@@ -253,12 +261,20 @@ public:
         //   means n < R/6.  Its isValid(a) returns (a < 2*n), so we know by
         //   this function's preconditions that x < 2*n and y < 2*n.  Thus
         //   x*y < (2*n)*(2*n) == 4*n*n < 4*n*R/6 == (2/3)*n*R < n*R.
-        T result = montmul(x.get(), y.get(), n_, inv_n_, typename D::MontyTag(),
-                                                                        PTAG());
-        HPBC_PRECONDITION2(isValid(V(result)));
+        T u_lo;
+        T u_hi = unsigned_multiply_to_hilo_product(&u_lo, x.get(), y.get());
+        // u_hi < n  guarantees we had  x*y == u < n*R.  See
+        // REDC_non_finalized() in Redc.h for proof.
+        HPBC_PRECONDITION2(u_hi < n_);
+
+        T result = REDC(u_hi, u_lo, n_, inv_n_, typename D::MontyTag(), PTAG());
+
+        HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
 
+    // Multiplies two mongomery values x and y, and then subtracts montgomery
+    // value z from the product.  Returns the resulting montgomery value.
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
     HURCHALLA_FORCE_INLINE V fmsub(V x, V y, V z, PTAG) const
     {
@@ -266,14 +282,32 @@ public:
         HPBC_PRECONDITION2(isValid(y));
         HPBC_PRECONDITION2(isCanonical(z));
         HPBC_PRECONDITION2(z.get() < n_); // isCanonical() should guarantee this
-        // As a precondition, montfmsub requires  x*y < n*R.  See multiply() for
-        // why this will always be satisfied.
-        T result = montfmsub(x.get(), y.get(), z.get(), n_, inv_n_,
-                                                typename D::MontyTag(), PTAG());
-        HPBC_PRECONDITION2(isValid(V(result)));
+        T u_lo;
+        T u_hi = unsigned_multiply_to_hilo_product(&u_lo, x.get(), y.get());
+        // Precondition: Assuming theoretical unlimited precision standard
+        // multiplication, REDC requires  u = x*y < n*R.  See multiply() for why
+        // this function will always satisfy the requirement.
+        // u_hi < n  guarantees we had  x*y == u < n*R.  See
+        // REDC_non_finalized() in Redc.h for proof.
+        HPBC_PRECONDITION2(u_hi < n_);
+
+        // TODO proof of correctness, showing that performing the modular sub
+        // prior to the REDC will always give the same results as performing the
+        // REDC and then the modular subtraction.
+        // The following calculations should execute in parallel with the first
+        // two multiplies in REDC(), since those mutiplies do not depend on
+        // these calculations.  (Instruction level parallelism)
+        T diff = modular_arithmetic::modular_subtraction_prereduced_inputs(u_hi,
+                                                                   z.get(), n_);
+        HPBC_ASSERT2(diff < n_);
+        T result = REDC(diff, u_lo, n_, inv_n_, typename D::MontyTag(), PTAG());
+
+        HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
 
+    // Multiplies two mongomery values x and y, and then adds montgomery
+    // value z to the product.  Returns the resulting montgomery value.
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
     HURCHALLA_FORCE_INLINE V fmadd(V x, V y, V z, PTAG) const
     {
@@ -281,11 +315,27 @@ public:
         HPBC_PRECONDITION2(isValid(y));
         HPBC_PRECONDITION2(isCanonical(z));
         HPBC_PRECONDITION2(z.get() < n_); // isCanonical() should guarantee this
-        // As a precondition, montfmadd requires  x*y < n*R.  See multiply() for
-        // why this will always be satisfied.
-        T result = montfmadd(x.get(), y.get(), z.get(), n_, inv_n_,
-                                                typename D::MontyTag(), PTAG());
-        HPBC_PRECONDITION2(isValid(V(result)));
+        T u_lo;
+        T u_hi = unsigned_multiply_to_hilo_product(&u_lo, x.get(), y.get());
+        // Precondition: Assuming theoretical unlimited precision standard
+        // multiplication, REDC requires  u = x*y < n*R.  See multiply() for why
+        // this function will always satisfy the requirement.
+        // u_hi < n  guarantees we had  x*y == u < n*R.  See
+        // REDC_non_finalized() in Redc.h for proof.
+        HPBC_PRECONDITION2(u_hi < n_);
+
+        // TODO proof of correctness, showing that performing the modular add
+        // prior to the REDC will always give the same results as performing the
+        // REDC and then the modular addition.
+        // The following calculations should execute in parallel with the first
+        // two multiplies in REDC(), since those mutiplies do not depend on
+        // these calculations.  (Instruction level parallelism)
+        T sum = modular_arithmetic::modular_addition_prereduced_inputs(u_hi,
+                                                                   z.get(), n_);
+        HPBC_ASSERT2(sum < n_);
+        T result = REDC(sum, u_lo, n_, inv_n_, typename D::MontyTag(), PTAG());
+
+        HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
 };

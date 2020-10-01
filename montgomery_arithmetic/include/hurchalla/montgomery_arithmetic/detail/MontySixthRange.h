@@ -6,8 +6,9 @@
 
 
 #include "hurchalla/montgomery_arithmetic/detail/monty_tag_structs.h"
-#include "hurchalla/montgomery_arithmetic/detail/monty_common.h"
+#include "hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/Redc.h"
 #include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
@@ -74,7 +75,13 @@ public:
         // As a precondition, montmul requires  sum*z < n_*R.  This will always
         // be satisfied:  we know  sum = x+y < R/2  and  z < 2*n_.  Therefore
         // sum*z < (R/2)*(2*n_) == n_*R.
-        T result = montmul(sum, z.get(), n_, inv_n_, SixthrangeTag(), PTAG());
+        T u_lo;
+        T u_hi = unsigned_multiply_to_hilo_product(&u_lo, sum, z.get());
+        // u_hi < n  guarantees we had  sum*z == u < n*R.  See
+        // REDC_non_finalized() in Redc.h for proof.
+        HPBC_ASSERT2(u_hi < n_);
+
+        T result = REDC(u_hi, u_lo, n_, inv_n_, SixthrangeTag(), PTAG());
 
         HPBC_POSTCONDITION2(result < 2*n_);
         return V(result);

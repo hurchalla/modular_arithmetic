@@ -29,11 +29,12 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // For discussion purposes, let R = 2^(ma_numeric_limits<T>::digits).  For
 // example if T is uint64_t, then R = 2^64.
 //
-// This function is based on REDC_non_minimized() from RedcLargeR.h.  It is
-// altered to omit calculations that are not needed, given its preconditions of
-// n < sqrt(R), and u < R (i.e. u_hi == 0).  The precondition of u_hi == 0 is
-// expressed simply by the lack of a u_hi parameter; u_hi is implicitly treated
-// as zero inside this function.
+// This function is based on REDC_non_minimized() in https://github.com/hurchalla/modular_arithmetic/blob/66281af1639031b04bdaf9b916e5d5638d3ded25/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/platform_specific/RedcLargeR.h#L44
+// It is an adaptation of REDC_non_minimized that omits calculations that are
+// not needed, given this function's preconditions of n < sqrt(R), and u < R
+// (i.e. u_hi == 0).  The precondition of u_hi == 0 is expressed simply by the
+// lack of a u_hi parameter; u_hi is implicitly treated as zero inside this
+// function.
 
 template <typename T>
 HURCHALLA_FORCE_INLINE T msr_REDC_non_minimized(T u_lo, T n, T neg_inv_n)

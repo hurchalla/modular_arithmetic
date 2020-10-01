@@ -19,7 +19,7 @@ namespace hurchalla { namespace modular_arithmetic {
 // never use more total registers (it will likely use less) than modular
 // addition.
 //   In favor of addition, you can generally expect that the assembly for
-// modular addition will never have higher total latency (it will likely be
+// modular addition will never have higher total latency (it will possibly be
 // lower) than modular subtraction.
 //    This comparison is written based on the performance of x86 architecture.
 // If possible, these relative performance characteristic will be maintained

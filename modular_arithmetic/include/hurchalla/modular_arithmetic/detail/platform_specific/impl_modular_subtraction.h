@@ -46,6 +46,43 @@ T impl_modular_subtraction_prereduced_inputs(T a, T b, T modulus)
 }
 
 
+// Implementation note: if the compiler generates optimal assembly/machine code,
+// then the above function will have 3 cycles latency (on x86).  One cycle for
+// the subtraction, one for the addition, and finally one for a cmov
+// (corresponding to the ternary operator in the C++ code).
+// In principle we could create an alternative modular_subtraction function
+// which has only 2 cycles latency in ideal situations (and 3 cycles in non-
+// ideal situations) but that requires as many as two extra uops.  This
+// alternative and sometimes lower latency code looks like this:
+//    T diff = n - b;
+//    T tmp = a + diff;           // ideally a LEA instruction
+//    a = a - b;
+//    tmp = (a >= b) ? a : tmp;   // ideally a CMOVAE instruction
+// If the modular_subtraction function is called from within a loop, and b
+// remains unchanged throughout the loop, then the compiler will ideally loop-
+// hoist the "diff = n - b" outside of the loop, if we assume that the modulus
+// n is also constant throughout the loop (which is extremely likely).
+// The  a+diff  and  a-b  can run in parallel in the same cycle, and if the
+// ternary operator is implemented via CMOVAE, then this means the
+// modular_subtraction function would have 2 cycles total latency.  But this
+// requires that the compiler is able to loop hoist the  diff = n-b,  so this is
+// the ideal situation mentioned above in this note.  If the compiler can't loop
+// hoist the calculation of diff (presumably because b does not remain constant
+// throughout a loop), then it would have 3 cycles latency and would need 5 uops
+// (including one uop to copy n to another register prior to the calculation of
+// diff).  In contrast the current function  has 3 cycles latency and needs 3
+// uops, but can not take advantage of potential loop hoisting to reduce the
+// latency to 2.
+// I do not believe it is worth the added complexity to offer the alternative
+// version of modular_subtraction discussed in this note.  If someone is writing
+// code that needs a low latency modular_subtraction within a loop where loop
+// hoisting would be applicable, then an option usable right now is to do a
+// modular negate of b outside the loop, and then use modular_addition inside
+// the loop, because modular_addition *does* take advantage of the potential of
+// loop hoisting to lower the total latency to 2 cycles.
+
+
+
 // ----------------------------------------------------------------------------
 // Non-template function overloads.  By C++ rules, these overloads have first
 // priority for function argument matching - the corresponding template version
