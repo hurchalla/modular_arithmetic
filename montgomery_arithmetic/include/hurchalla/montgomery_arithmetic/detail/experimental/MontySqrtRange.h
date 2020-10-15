@@ -413,14 +413,22 @@ public:
     {
         // All montgomery values are canonical for this class, so we just
         // delegate to subtract.
-        return subtract(x, y);
+        V z = subtract(x, y);
+        // subtract returns a result such that 0 < result <= n.  Thus our
+        // result z satisfies:
+        HPBC_POSTCONDITION2(isCanonical(z));
+        return z;
     }
 
     HURCHALLA_FORCE_INLINE V add_canonical_value(V x, V y) const
     {
         // All montgomery values are canonical for this class, so we just
         // delegate to add.
-        return add(x, y);
+        V z = add(x, y);
+        // add returns a result such that 0 < result <= n.  Thus our
+        // result z satisfies:
+        HPBC_POSTCONDITION2(isCanonical(z));
+        return z;
     }
 
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
@@ -496,6 +504,34 @@ public:
         // satisfy the hypothetical class's montmul requirement.]
         V sum = add(x, y);
         V result = multiply(sum, z, PTAG());
+
+        HPBC_POSTCONDITION2(0 < result.get() && result.get() <= n_);
+        return result;
+    }
+
+    // For MontySqrtRange, simply delegating to other functions is already the
+    // optimal implementation of famulIsZero().
+    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
+    HURCHALLA_FORCE_INLINE V famulIsZero(V x, V y, V z, bool& isZero,PTAG) const
+    {
+        HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
+        HPBC_PRECONDITION2(0 < y.get() && y.get() <= n_);
+        HPBC_PRECONDITION2(0 < z.get() && z.get() <= n_);
+
+        V result = famul(x, y, z, PTAG());
+        isZero = (getCanonicalValue(result).get() == getZeroValue().get());
+
+        HPBC_POSTCONDITION2(0 < result.get() && result.get() <= n_);
+        return result;
+    }
+    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
+    HURCHALLA_FORCE_INLINE V multiplyIsZero(V x, V y, bool& isZero, PTAG) const
+    {
+        HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
+        HPBC_PRECONDITION2(0 < y.get() && y.get() <= n_);
+
+        V result = multiply(x, y, PTAG());
+        isZero = (getCanonicalValue(result).get() == getZeroValue().get());
 
         HPBC_POSTCONDITION2(0 < result.get() && result.get() <= n_);
         return result;

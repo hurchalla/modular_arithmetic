@@ -160,7 +160,20 @@ public:
         MontgomeryValue ret = impl.subtract_canonical_value(x, y);
         HPBC_POSTCONDITION2(getCanonicalValue(ret) ==
                getCanonicalValue(subtract(x, static_cast<MontgomeryValue>(y))));
+        // all implementations of subtract_canonical_value() guarantee:
+        HPBC_POSTCONDITION2(impl.isCanonical(x) ? impl.isCanonical(ret) : true);
         return ret;
+    }
+
+    // Returns either the modular subtraction x-y, or y-x.  It is unspecified
+    // which of the two subtractions will be returned.  For situations where you
+    // don't care which subtraction gets performed, unordered_subtract() will
+    // usually perform slightly better than this->subtract() [in terms of number
+    // of instructions, number of registers used, and possibly total latency].
+    MontgomeryValue unordered_subtract(MontgomeryValue x,
+                                       MontgomeryValue y) const
+    {
+        return impl.unordered_subtract(x, y);
     }
 
     // Returns the modular negation of the montgomery value x.
@@ -171,7 +184,10 @@ public:
     // Returns the modular negation of the canonical value x.
     CanonicalValue negate(CanonicalValue x) const
     {
-        return subtract(getZeroValue(), x);
+        MontgomeryValue ret = subtract(getZeroValue(), x);
+        // Since both getZeroValue() and x are canonical, subtract() guarantees:
+        HPBC_POSTCONDITION2(impl.isCanonical(ret));
+        return CanonicalValue(ret);
     }
 
     // Returns the modular product of (the montgomery values) x and y.
@@ -285,15 +301,35 @@ public:
         return ret;
     }
 
-    // Returns either the modular subtraction x-y, or y-x.  It is unspecified
-    // which of the two subtractions will be returned.  For situations where you
-    // don't care which subtraction gets performed, unordered_subtract() will
-    // usually perform slightly better than this->subtract() [in terms of number
-    // of instructions, number of registers used, and possibly total latency].
-    MontgomeryValue unordered_subtract(MontgomeryValue x,
-                                       MontgomeryValue y) const
+    // "Fused add-multiply, with test for result congruent to zero":
+    // This peculiar function is an optimization that is useful for Pollard-rho
+    // factorization, though perhaps it might be useful elsewhere too.
+    // The operation's results are identical to
+    //    MontgomeryValue result = famul(x, y, z);
+    //    bool isZero = (getCanonicalValue(result) == getZeroValue());
+    // However, for certain Monty Types (MontyQuarterRange and MontySixthRange),
+    // this function can compute the boolean isZero more efficiently.
+    template <class PTAG = LowlatencyTag>
+    MontgomeryValue famulIsZero(MontgomeryValue x, CanonicalValue y,
+                                          MontgomeryValue z, bool& isZero) const
     {
-        return impl.unordered_subtract(x, y);
+        MontgomeryValue ret = impl.famulIsZero(x, y, z, isZero, PTAG());
+        HPBC_POSTCONDITION2(getCanonicalValue(ret) ==
+                                             getCanonicalValue(famul(x, y, z)));
+        HPBC_POSTCONDITION2(isZero == (getCanonicalValue(ret)==getZeroValue()));
+        return ret;
+    }
+    // "Multiply, with test for result congruent to zero".  See comments on
+    // famulIsZero() for rationale.
+    template <class PTAG = LowlatencyTag>
+    MontgomeryValue multiplyIsZero(MontgomeryValue x, MontgomeryValue y,
+                                                             bool& isZero) const
+    {
+        MontgomeryValue ret = impl.multiplyIsZero(x, y, isZero, PTAG());
+        HPBC_POSTCONDITION2(getCanonicalValue(ret) ==
+                                             getCanonicalValue(multiply(x, y)));
+        HPBC_POSTCONDITION2(isZero == (getCanonicalValue(ret)==getZeroValue()));
+        return ret;
     }
 };
 

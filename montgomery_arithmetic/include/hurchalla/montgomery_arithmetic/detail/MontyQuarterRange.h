@@ -82,7 +82,46 @@ public:
         V sum = BC::add_canonical_value(x, y);
         V result = BC::multiply(sum, z, PTAG());
 
-        HPBC_POSTCONDITION2(result.get() < 2*n_);
+        // multiply's postcondition guarantees the following for this monty type
+        HPBC_POSTCONDITION2(0 < result.get() && result.get() < 2*n_);
+        return result;
+    }
+
+    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
+    HURCHALLA_FORCE_INLINE V famulIsZero(V x, V y, V z, bool& isZero,PTAG) const
+    {
+        HPBC_PRECONDITION2(x.get() < 2*n_);
+        HPBC_PRECONDITION2(y.get() < n_);   // y must be canonical
+        HPBC_PRECONDITION2(z.get() < 2*n_);
+
+        V result = famul(x, y, z, PTAG());
+        // The canonical zeroValue == (0*R)%n_ == 0.  The equivalence class for
+        // zeroValue therefore is composed of values that satisfy  0 + m*n_,
+        // where m is any integer.  Since famul()'s postcondition guarantees
+        // 0 < result < 2*n, the only result that can belong to zeroValue's
+        // equivalence class is result == n_.
+        // Note: other functions like add() or sub() have return results in the
+        // range of 0 <= result < 2*n, and so our postcondition of 0 < result is
+        // particular to multiply().  It is not a general invariant property of
+        // montgomery values for this monty type.
+        isZero = (result.get() == n_);
+
+        HPBC_POSTCONDITION2(0 < result.get() && result.get() < 2*n_);
+        return result;
+    }
+    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
+    HURCHALLA_FORCE_INLINE V multiplyIsZero(V x, V y, bool& isZero, PTAG) const
+    {
+        HPBC_PRECONDITION2(x.get() < 2*n_);
+        HPBC_PRECONDITION2(y.get() < 2*n_);
+
+        V result = BC::multiply(x, y, PTAG());
+        // multiply()'s postcondition guarantees 0 < result < 2*n.  Thus as
+        // shown in famulIsZero()'s comments, the only result value that can
+        // belong to the zero value equivalence class is result == n_.
+        isZero = (result.get() == n_);
+
+        HPBC_POSTCONDITION2(0 < result.get() && result.get() < 2*n_);
         return result;
     }
 };

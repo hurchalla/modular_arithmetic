@@ -8,6 +8,7 @@
 #include "hurchalla/montgomery_arithmetic/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/montgomery_arithmetic/detail/inverse_mod_r.h"
+#include "hurchalla/montgomery_arithmetic/detail/monty_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/Redc.h"
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/MontHelper.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
@@ -17,6 +18,8 @@
 #include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
+#include <type_traits>
+#include <algorithm>
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
@@ -203,6 +206,10 @@ public:
         HPBC_PRECONDITION2(y.get() < n_); // isCanonical() should guarantee this
         T z = MontHelper<T>::modadd_canonical_second_addend(x.get(), y.get(),
                                                                             n_);
+        // modadd_canonical_second_addend guarantees that z <= std::max(x, n-1).
+        // Thus if x < n, then z < n.  Or in other words, if x is canonical,
+        // then z is canonical.
+        HPBC_POSTCONDITION2(isCanonical(x) ? isCanonical(V(z)) : true);
         HPBC_POSTCONDITION2(isValid(V(z)));
         return V(z);
     }
@@ -224,6 +231,10 @@ public:
         HPBC_PRECONDITION2(y.get() < n_); // isCanonical() should guarantee this
         HPBC_PRECONDITION2(isValid(x));
         T z = MontHelper<T>::modsub_canonical_subtrahend(x.get(), y.get(), n_);
+        // modsub_canonical_subtrahend guarantees that z <= std::max(x, n-1).
+        // Thus if x < n, then z < n.  Or in other words, if x is canonical,
+        // then z is canonical.
+        HPBC_POSTCONDITION2(isCanonical(x) ? isCanonical(V(z)) : true);
         HPBC_POSTCONDITION2(isValid(V(z)));
         return V(z);
     }
@@ -269,6 +280,11 @@ public:
 
         T result = REDC(u_hi, u_lo, n_, inv_n_, typename D::MontyTag(), PTAG());
 
+        // REDC's postconditions guarantee the following:
+        HPBC_POSTCONDITION2(
+            (std::is_same<typename D::MontyTag, QuarterrangeTag>::value ||
+             std::is_same<typename D::MontyTag, SixthrangeTag>::value) ?
+            0 < result && result < 2*n_ : true);
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }

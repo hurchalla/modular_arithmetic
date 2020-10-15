@@ -40,6 +40,18 @@ void test_multiply_variants(const M& mf, typename M::MontgomeryValue x,
       mf.template multiply<ma::LowlatencyTag>(x,y)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
       mf.template multiply<ma::LowuopsTag>(x,y)) == expected_result);
+
+    typename M::MontgomeryValue result;
+    bool isZero;
+    result = mf.multiplyIsZero(x, y, isZero);
+    EXPECT_TRUE(mf.convertOut(result) == expected_result &&
+                 isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
+    result = mf.template multiplyIsZero<ma::LowlatencyTag>(x, y, isZero);
+    EXPECT_TRUE(mf.convertOut(result) == expected_result &&
+                 isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
+    result = mf.template multiplyIsZero<ma::LowuopsTag>(x, y, isZero);
+    EXPECT_TRUE(mf.convertOut(result) == expected_result &&
+                 isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
 }
 
 template <typename M>
@@ -79,6 +91,16 @@ void test_famul_variants(const M& mf, typename M::MontgomeryValue x,
        mf.template famul<ma::LowlatencyTag>(x,yc,z)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
       mf.template famul<ma::LowuopsTag>(x,yc,z))==expected_result);
+
+    bool isZero;
+    EXPECT_TRUE(mf.convertOut(mf.famulIsZero(x, yc, z, isZero)) ==
+                                                               expected_result);
+    EXPECT_TRUE(mf.convertOut(
+       mf.template famulIsZero<ma::LowlatencyTag>(x, yc, z, isZero)) ==
+                                                               expected_result);
+    EXPECT_TRUE(mf.convertOut(
+       mf.template famulIsZero<ma::LowuopsTag>(x, yc, z, isZero)) ==
+                                                               expected_result);
 }
 
 
@@ -232,6 +254,20 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 8)) == 9);
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 11)) == 6);
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 12)) == 1);
+
+        // test to see if famulIsZero and multiplyIsZero set isZero correctly
+        C zero = mf.getZeroValue();
+        C one = mf.getUnityValue();
+        bool isZero;
+        EXPECT_TRUE(mf.getCanonicalValue(mf.famulIsZero(one,zero,one,isZero)) ==
+                    one && isZero == false);
+        EXPECT_TRUE(mf.getCanonicalValue(mf.famulIsZero(one,one,zero,isZero)) ==
+                    zero && isZero == true);
+
+        EXPECT_TRUE(mf.getCanonicalValue(mf.multiplyIsZero(one,one,isZero)) ==
+                    one && isZero == false);
+        EXPECT_TRUE(mf.getCanonicalValue(mf.multiplyIsZero(one,zero,isZero)) ==
+                    zero && isZero == true);
     }
 
     // try tests with the smallest possible modulus
@@ -340,6 +376,8 @@ void test_MontgomeryForm()
         T a=5; T b=6;
         test_mf_general_checks(mf, a, b, c);
         a=0; b=7;
+        test_mf_general_checks(mf, a, b, c);
+        a=10; b=0;
         test_mf_general_checks(mf, a, b, c);
         a=0; b=0;
         test_mf_general_checks(mf, a, b, c);

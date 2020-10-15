@@ -155,6 +155,28 @@ public:
         return result;
     }
 
+    template <class PTAG>   // Performance TAG (ignored by this class)
+    HURCHALLA_FORCE_INLINE V famulIsZero(V x, V y, V z, bool& isZero,PTAG) const
+    {
+        HPBC_PRECONDITION2(isCanonical(x));
+        HPBC_PRECONDITION2(isCanonical(y));
+        HPBC_PRECONDITION2(isCanonical(z));
+        V result = famul(x, y, z, PTAG());
+        isZero = (getCanonicalValue(result).get() == getZeroValue().get());
+        HPBC_POSTCONDITION2(isCanonical(result));
+        return result;
+    }
+    template <class PTAG>   // Performance TAG (ignored by this class)
+    HURCHALLA_FORCE_INLINE V multiplyIsZero(V x, V y, bool& isZero, PTAG) const
+    {
+        HPBC_PRECONDITION2(isCanonical(x));
+        HPBC_PRECONDITION2(isCanonical(y));
+        V result = multiply(x, y, PTAG());
+        isZero = (getCanonicalValue(result).get() == getZeroValue().get());
+        HPBC_POSTCONDITION2(isCanonical(result));
+        return result;
+    }
+
     HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
         HPBC_PRECONDITION2(isCanonical(x));
@@ -167,7 +189,9 @@ public:
     }
     HURCHALLA_FORCE_INLINE V add_canonical_value(V x, V y) const
     {
-        return add(x, y);
+        V z = add(x, y);
+        HPBC_POSTCONDITION2(isCanonical(z));  // add() guarantees this
+        return z;
     }
     HURCHALLA_FORCE_INLINE V subtract(V x, V y) const
     {
@@ -181,7 +205,9 @@ public:
     }
     HURCHALLA_FORCE_INLINE V subtract_canonical_value(V x, V y) const
     {
-        return subtract(x, y);
+        V z = subtract(x, y);
+        HPBC_POSTCONDITION2(isCanonical(z));  // subtract() guarantees this
+        return z;
     }
     HURCHALLA_FORCE_INLINE V unordered_subtract(V x, V y) const
     {

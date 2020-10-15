@@ -75,6 +75,34 @@ public:
         HPBC_POSTCONDITION2(result.get() < n_);
         return result;
     }
+
+    // For MontyFullRange, simply delegating to other functions is already the
+    // optimal implementation for famulIsZero() and multiplyIsZero().
+    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
+    HURCHALLA_FORCE_INLINE V famulIsZero(V x, V y, V z, bool& isZero,PTAG) const
+    {
+        HPBC_PRECONDITION2(x.get() < n_);
+        HPBC_PRECONDITION2(y.get() < n_);
+        HPBC_PRECONDITION2(z.get() < n_);
+
+        V result = famul(x, y, z, PTAG());
+        isZero = (getCanonicalValue(result).get() == BC::getZeroValue().get());
+
+        HPBC_POSTCONDITION2(result.get() < n_);
+        return result;
+    }
+    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
+    HURCHALLA_FORCE_INLINE V multiplyIsZero(V x, V y, bool& isZero, PTAG) const
+    {
+        HPBC_PRECONDITION2(x.get() < n_);
+        HPBC_PRECONDITION2(y.get() < n_);
+
+        V result = BC::multiply(x, y, PTAG());
+        isZero = (getCanonicalValue(result).get() == BC::getZeroValue().get());
+
+        HPBC_POSTCONDITION2(result.get() < n_);
+        return result;
+    }
 };
 
 

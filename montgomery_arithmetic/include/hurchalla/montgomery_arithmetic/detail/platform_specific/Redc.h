@@ -100,16 +100,19 @@ T REDC_non_finalized(bool& ovf, T u_hi, T u_lo, T n, T inv_n)
         // *** Assertion #1 ***
     HPBC_ASSERT2(mn_hi < n);
 
-    // Compute (u - mn)/R :
-    T t_hi = static_cast<T>(u_hi - mn_hi);   // t_hi = (u_hi - mn_hi) % R
+    // The REDC algorithm from README_REDC.md assures us that (u - mn) is
+    // divisible by R.  Compute (u - mn)/R  (and we can note that a negative
+    // result in C++ will wrap around to a large value, very similar to two's
+    // complement representation of a negative value) :
+    T t_hi = static_cast<T>(u_hi - mn_hi);   // t_hi = (u_hi - mn_hi) mod R
 
-    ovf = (u_hi < mn_hi);    // lets us know if the subtraction overflowed
+    ovf = (u_hi < mn_hi);    // tells us if the subtraction wrapped/overflowed
 
     // We do not need to explicitly perform the low part subtraction
     // (u_lo - mn_lo), because the REDC algorithm guarantees
-    // (u_lo - mn_lo) % R == 0.  Since both u_lo < R and mn_lo < R, this means
-    // that u_lo == mn_lo, and thus (u_lo - mn_lo) will never generate a borrow/
-    // carry.  We will simply ignore this low part subtraction.
+    // (u_lo - mn_lo) mod R == 0.  Since 0 <= u_lo < R and 0 <= mn_lo < R, this
+    // means that u_lo == mn_lo, and thus (u_lo - mn_lo) will never generate a
+    // borrow/carry.  We will simply ignore this low part subtraction.
         // *** Assertion #2 ***
     HPBC_ASSERT2(u_lo == mn_lo);
 
@@ -299,8 +302,10 @@ struct Redc<std::uint64_t>
     // Calling DefaultRedc::REDC will give us optimal code (we're relying upon
     // modular_subtract_prereduced_inputs() being optimized for low uops - which
     // it is, at least at the time of writing this)
-    return detail_redc::DefaultRedc<T>::REDC(
+    T result = detail_redc::DefaultRedc<T>::REDC(
                                           u_hi, u_lo, n, inv_n, FullrangeTag());
+    HPBC_POSTCONDITION2(result < n);
+    return result;
   }
 
   // We don't need a dedicated REDC function for HalfrangeTag since
@@ -312,8 +317,10 @@ struct Redc<std::uint64_t>
   {
     // DefaultRedc's REDC for QuarterrangeTag should already be optimal for use
     // here, regardless of whether we prefer low uops or low latency
-    return detail_redc::DefaultRedc<T>::REDC(
+    T result = detail_redc::DefaultRedc<T>::REDC(
                                        u_hi, u_lo, n, inv_n, QuarterrangeTag());
+    HPBC_POSTCONDITION2(0 < result && result < 2*n);
+    return result;
   }
 
   // We don't need a dedicated REDC function for SixthrangeTag since
@@ -333,7 +340,13 @@ struct Redc<std::uint64_t>
 template <typename T, class MTAG, class PTAG>
 HURCHALLA_FORCE_INLINE T REDC(T u_hi, T u_lo, T n, T inv_n, MTAG, PTAG)
 {
-    return detail_redc::Redc<T>::REDC(u_hi, u_lo, n, inv_n, MTAG(), PTAG());
+    T result = detail_redc::Redc<T>::REDC(u_hi, u_lo, n, inv_n, MTAG(), PTAG());
+    HPBC_POSTCONDITION2(
+        (std::is_same<MTAG, FullrangeTag>::value ||
+         std::is_same<MTAG, HalfrangeTag>::value) ?
+        result < n :
+        0 < result && result < 2*n);
+    return result;
 }
 
 
