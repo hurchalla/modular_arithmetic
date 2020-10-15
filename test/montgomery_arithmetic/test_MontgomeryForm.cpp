@@ -92,15 +92,17 @@ void test_famul_variants(const M& mf, typename M::MontgomeryValue x,
     EXPECT_TRUE(mf.convertOut(
       mf.template famul<ma::LowuopsTag>(x,yc,z))==expected_result);
 
+    typename M::MontgomeryValue result;
     bool isZero;
-    EXPECT_TRUE(mf.convertOut(mf.famulIsZero(x, yc, z, isZero)) ==
-                                                               expected_result);
-    EXPECT_TRUE(mf.convertOut(
-       mf.template famulIsZero<ma::LowlatencyTag>(x, yc, z, isZero)) ==
-                                                               expected_result);
-    EXPECT_TRUE(mf.convertOut(
-       mf.template famulIsZero<ma::LowuopsTag>(x, yc, z, isZero)) ==
-                                                               expected_result);
+    result = mf.famulIsZero(x, yc, z, isZero);
+    EXPECT_TRUE(mf.convertOut(result) == expected_result &&
+                 isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
+    result = mf.template famulIsZero<ma::LowlatencyTag>(x, yc, z, isZero);
+    EXPECT_TRUE(mf.convertOut(result) == expected_result &&
+                 isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
+    result = mf.template famulIsZero<ma::LowuopsTag>(x, yc, z, isZero);
+    EXPECT_TRUE(mf.convertOut(result) == expected_result &&
+                 isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
 }
 
 
@@ -121,6 +123,19 @@ void test_mf_general_checks(M& mf, typename M::T_type a, typename M::T_type b,
     C xc = mf.getCanonicalValue(x);
     C yc = mf.getCanonicalValue(y);
     C zc = mf.getCanonicalValue(z);
+
+    EXPECT_TRUE(mf.getCanonicalValue(mf.negate(x)) ==
+                mf.getCanonicalValue(mf.subtract(mf.getZeroValue(), x)));
+    EXPECT_TRUE(mf.getCanonicalValue(mf.negate(y)) ==
+                mf.getCanonicalValue(mf.subtract(mf.getZeroValue(), y)));
+    EXPECT_TRUE(mf.getCanonicalValue(mf.negate(z)) ==
+                mf.getCanonicalValue(mf.subtract(mf.getZeroValue(), z)));
+    EXPECT_TRUE(mf.getCanonicalValue(mf.negate(xc)) ==
+                mf.getCanonicalValue(mf.subtract(mf.getZeroValue(), xc)));
+    EXPECT_TRUE(mf.getCanonicalValue(mf.negate(yc)) ==
+                mf.getCanonicalValue(mf.subtract(mf.getZeroValue(), yc)));
+    EXPECT_TRUE(mf.getCanonicalValue(mf.negate(zc)) ==
+                mf.getCanonicalValue(mf.subtract(mf.getZeroValue(), zc)));
 
     T reference_sum = ma::modular_addition_prereduced_inputs(a,b,modulus);
     EXPECT_TRUE(mf.convertOut(mf.add(x,y)) == reference_sum);
@@ -254,6 +269,11 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 8)) == 9);
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 11)) == 6);
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 12)) == 1);
+
+        EXPECT_TRUE(mf.convertOut(mf.negate(x)) == 7);
+        EXPECT_TRUE(mf.convertOut(mf.negate(xc)) == 7);
+        EXPECT_TRUE(mf.convertOut(mf.negate(y)) == 2);
+        EXPECT_TRUE(mf.convertOut(mf.negate(yc)) == 2);
 
         // test to see if famulIsZero and multiplyIsZero set isZero correctly
         C zero = mf.getZeroValue();
