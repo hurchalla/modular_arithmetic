@@ -30,7 +30,7 @@ namespace detail_redc {
 // Generic Montgomery REDC algorithm
 
 // This function implements the REDC algorithm as described at
-// hurchalla/montgomery_arithmetic/detail/README_REDC.md.
+// https://github.com/hurchalla/modular_arithmetic/blob/master/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/platform_specific/README_REDC.md
 // This is an alternate version of the REDC algorithm, that differs in small but
 // important ways from Peter Montgomery's original 1985 paper "Modular
 // multiplication without trial division".  For our purposes, the most important

@@ -48,7 +48,7 @@ We can now write our alternate REDC algorithm:
 #### Why It Matters
 On the surface, the alternate REDC algorithm and the traditional 1985 version look very similar.  However, they differ in important ways when implemented, with the result that the alternate version is significantly simpler and more efficient.  Primarily the implementation advantage arises from the alternate version's use of <span class="nowrap">(<i>T</i> &#8722; <i>mN</i>)</span> verses the traditional version's use of <span class="nowrap">(<i>T</i> + <i>mN</i>).</span>  &nbsp;&nbsp;<i>mN</i> is calculated differently in the two versions: for the alternate version, <span class="nowrap"><i>T</i> &#8722; <i>mN</i> &equiv; 0 (mod <i>R</i>),</span> and for the traditional version, <span class="nowrap"><i>T</i> + <i>mN</i> &equiv; 0 (mod <i>R</i>).</span>  So for the former implementation, the low half bits of the subtraction will always equal 0 and will never generate a borrow/carry.  For the latter implementation, the low half bits of the addition will always equal 0, and will always generate a carry unless both <i>T</i> and <i>mN</i> equal 0.  This exception for <i>T</i> and <i>mN</i> equaling 0 means that the carry must always be calculated for the traditional version (usually by performing the low part addition), and then an add-with-carry instruction (or its equivalent) must be used to sum the high part of the addition.  In contrast, the alternate algorithm's low part subtraction <span class="nowrap"><i>T</i> &#8722; <i>mN</i></span> can be completely ignored and omitted from its implementation, because we can prove it never has any effect on the rest of the algorithm - the result of the low part subtraction is always zero and it never generates a borrow/carry.  A further difference between the two algorithm versions' implementations is that the traditional version usually has two conditionals that must be checked: possible overflow on <span class="nowrap"><i>t &lArr; T</i> + <i>mN</i>,</span> and <span class="nowrap"><i>t</i> &ge; <i>N</i>;</span>  in contrast, the alternate version has only one conditional check: <span class="nowrap"><i>t</i> &lt; 0,</span> which is itself an overflow check.
 
-It may be easiest to see the differences by comparing assembly code.  We'll look at two x86_64 inline assembly C functions, implementing the traditional REDC and the alternate REDC for a 64 bit unsigned type.</br></br>
+It may be easiest to see the differences by comparing assembly code.  We'll look at two x86_64 inline assembly C functions, implementing the traditional REDC and the alternate REDC for a 64 bit unsigned integer type.</br></br>
 
 #### x86_64 Assembly Implementations
 
@@ -82,7 +82,7 @@ inline uint64_t REDC_traditional(uint64_t T_hi, uint64_t T_lo, uint64_t N,
 
 </br>
 
-The code above is decent but not completely ideal.  Our absolute ideal would be very fast code that is perfectly expressible in standard C (using no inline asm at all).  If we used only standard C, we can see above that we would face obstacles to achieving best performance due to the conditional moves and the add-carry; those instructions don't exist in C.  We could use C compiler idioms to help the compiler, such as the ternary operator (which typically translates into a conditional move), but we still will find none of the major compilers (gcc, clang, MSVC, icc) produce optimal assembly from a standard C version of our function.  This isn't necessarily a major problem, since we can of course use the inline asm, but we should note that some compilers don't support inline asm (MSVC) and also that inline asm is unusually bug prone.  I can give you comfortable assurances that I'm skilled at writing high quality inline asm, but you would be wise to be skeptical of this and of any inline asm you see.  Unit tests of inline asm are far less helpful than you would think, potentially producing false negatives caused by the particular register choices your compiler happens to make for code surrounding your inline asm under test.  There are reasonable arguments to be made for simply [banning inline asm](https://gcc.gnu.org/wiki/DontUseInlineAsm) from your projects.
+The code above is decent but not completely ideal.  Our absolute ideal would be very fast code that is perfectly expressible in standard C (using no inline asm at all).  If we used only standard C, we can see above that we would face obstacles to achieving best performance due to the conditional moves and the add-carry; those instructions don't exist in C.  We could use C compiler idioms to help the compiler, such as the ternary operator (which typically translates into a conditional move), but we still will find none of the major compilers (gcc, clang, MSVC, icc) produce optimal assembly from a standard C version of our function.  This isn't necessarily a major problem, since we can of course use the inline asm, but we should note that some compilers don't support inline asm (MSVC 64bit) and also that inline asm is unusually bug prone.  I can give you comfortable assurances that I'm skilled at writing high quality inline asm, but you would be wise to be skeptical of this and of any inline asm you see.  Unit tests of inline asm are far less helpful than you would think, potentially producing false negatives caused by the particular register choices your compiler happens to make for code surrounding your inline asm under test.  There are reasonable arguments to be made for simply [banning inline asm](https://gcc.gnu.org/wiki/DontUseInlineAsm) from your projects.
 
 We'll briefly note that we can rewrite the inline asm above and thereby [improve the traditional REDC](https://github.com/hurchalla/modular_arithmetic/blob/master/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/experimental/README_REDC_supplement.md).  However, in nearly all respects the alternate REDC will provide an even greater improvement, so this is mentioned for curiosity sake, or for the case that you happen to want a drop-in replacement for an existing traditional REDC function.
 
@@ -96,7 +96,6 @@ inline uint64_t REDC_alternate(uint64_t T_hi, uint64_t T_lo, uint64_t N,
     assert(T_hi < N);   // REDC requires T < NR, and this enforces it.
     uint64_t rrax = T_lo;
     uint64_t Thi = T_hi;
-    uint64_t rrdx, tmp;
     __asm__ (
         "imulq %[inv], %%rax \n\t"        /* m = T_lo * invN */
         "mulq %[N] \n\t"                  /* mN = m * N */
@@ -104,9 +103,9 @@ inline uint64_t REDC_alternate(uint64_t T_hi, uint64_t T_lo, uint64_t N,
         "subq %%rdx, %%rax \n\t"          /* rax = rax - mN_hi */
         "subq %%rdx, %[Thi] \n\t"         /* t_hi = T_hi - mN_hi */
         "cmovbq %%rax, %[Thi] \n\t"       /* t_hi = (T_hi&lt;mN_hi) ? rax : t_hi */
-        : [Thi]"+&bcSD"(Thi), "+&a"(rrax), "=&d"(rrdx)
+        : [Thi]"+&bcSD"(Thi), "+&a"(rrax)
         : [N]"r"(N), [inv]"r"(invN)
-        : "cc");
+        : "rdx", "cc");
     return Thi;
 }
 </pre>

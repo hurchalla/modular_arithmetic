@@ -45,6 +45,13 @@ public:
                    (modular_arithmetic::ma_numeric_limits<T>::digits - 2)) - 1);
     }
 
+    HURCHALLA_FORCE_INLINE bool isValidRedcResult(T x) const
+    {
+        // REDC() guarantees its return result satisfies 0 < result < 2*n for
+        // QuarterrangeTag (and thus MontyQuarterRange)
+        return 0 < x && x < 2*n_;
+    }
+
     HURCHALLA_FORCE_INLINE T getExtendedModulus() const
     {
         return static_cast<T>(2*n_);
@@ -82,7 +89,8 @@ public:
         V sum = BC::add_canonical_value(x, y);
         V result = BC::multiply(sum, z, PTAG());
 
-        // multiply's postcondition guarantees the following for this monty type
+        // multiply()'s postcondition guarantees isValidRedcResult(result) ==
+        // true, and this class's isValidRedcResult() returns (0 < result < 2*n)
         HPBC_POSTCONDITION2(0 < result.get() && result.get() < 2*n_);
         return result;
     }
@@ -116,9 +124,10 @@ public:
         HPBC_PRECONDITION2(y.get() < 2*n_);
 
         V result = BC::multiply(x, y, PTAG());
-        // multiply()'s postcondition guarantees 0 < result < 2*n.  Thus as
-        // shown in famulIsZero()'s comments, the only result value that can
-        // belong to the zero value equivalence class is result == n_.
+        // multiply()'s postcondition guarantees isValidRedcResult(result) ==
+        // true, and this class's isValidRedcResult() returns (0 < result < 2n),
+        // Thus as shown in famulIsZero()'s comments, the only result value that
+        // can belong to the zero value equivalence class is result == n.
         isZero = (result.get() == n_);
 
         HPBC_POSTCONDITION2(0 < result.get() && result.get() < 2*n_);

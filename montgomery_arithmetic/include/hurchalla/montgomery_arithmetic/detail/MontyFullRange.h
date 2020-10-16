@@ -39,6 +39,10 @@ public:
            modular_arithmetic::ma_numeric_limits<T>::max();
     }
 
+    // REDC() guarantees its return result satisfies result < n for
+    // FullrangeTag (and thus MontyFullRange)
+    HURCHALLA_FORCE_INLINE bool isValidRedcResult(T x) const { return x < n_; }
+
     HURCHALLA_FORCE_INLINE T getExtendedModulus() const { return n_; }
 
     HURCHALLA_FORCE_INLINE V getCanonicalValue(V x) const

@@ -8,7 +8,6 @@
 #include "hurchalla/montgomery_arithmetic/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/montgomery_arithmetic/detail/inverse_mod_r.h"
-#include "hurchalla/montgomery_arithmetic/detail/monty_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/Redc.h"
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/MontHelper.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
@@ -18,8 +17,6 @@
 #include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
 #include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
 #include "hurchalla/programming_by_contract/programming_by_contract.h"
-#include <type_traits>
-#include <algorithm>
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
@@ -280,11 +277,8 @@ public:
 
         T result = REDC(u_hi, u_lo, n_, inv_n_, typename D::MontyTag(), PTAG());
 
-        // REDC's postconditions guarantee the following:
         HPBC_POSTCONDITION2(
-            (std::is_same<typename D::MontyTag, QuarterrangeTag>::value ||
-             std::is_same<typename D::MontyTag, SixthrangeTag>::value) ?
-            0 < result && result < 2*n_ : true);
+                        static_cast<const D*>(this)->isValidRedcResult(result));
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
