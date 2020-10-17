@@ -312,8 +312,9 @@ public:
     // The operation's results are identical to
     //    MontgomeryValue result = famul(x, y, z);
     //    bool isZero = (getCanonicalValue(result) == getZeroValue());
-    // However, for certain Monty Types (MontyQuarterRange and MontySixthRange),
-    // this function can compute the boolean isZero more efficiently.
+    // Note on the optimization: for certain Monty Types (MontyQuarterRange and
+    // MontySixthRange), setting isZero via delegation to a lower level (as we
+    // do here) lets us avoid an extra conditional move for getCanonicalValue().
     template <class PTAG = LowlatencyTag>
     MontgomeryValue famulIsZero(MontgomeryValue x, CanonicalValue y,
                                           MontgomeryValue z, bool& isZero) const
