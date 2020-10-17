@@ -356,24 +356,6 @@ public:
         return x;
     }
 
-    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V multiply(V x, V y, PTAG) const
-    {
-        HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
-        HPBC_PRECONDITION2(0 < y.get() && y.get() <= n_);
-
-        // Since we know n < sqrtR  (guaranteed by the constructor),  and x < n
-        // and  y < n,  we have  x < sqrtR  and  y < sqrtR,  which satisfies the
-        // preconditions of msr_montmul_non_minimized().
-        T prod = msr_montmul_non_minimized(x.get(), y.get(), n_, neg_inv_n_);
-
-        // msr_montmul_non_minimized() postconditions guarantee the following
-        HPBC_POSTCONDITION2(0 < prod && prod <= n_);
-        // Since 0 < prod <= n, we don't want to reduce mod n;  prod is in the
-        // canonical form required by most of the class functions.
-        return V(prod);
-    }
-
     HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
         T a = x.get();
@@ -432,6 +414,25 @@ public:
     }
 
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
+    HURCHALLA_FORCE_INLINE V multiply(V x, V y, bool& isZero, PTAG) const
+    {
+        HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
+        HPBC_PRECONDITION2(0 < y.get() && y.get() <= n_);
+
+        // Since we know n < sqrtR  (guaranteed by the constructor),  and x < n
+        // and  y < n,  we have  x < sqrtR  and  y < sqrtR,  which satisfies the
+        // preconditions of msr_montmul_non_minimized().
+        T prod = msr_montmul_non_minimized(x.get(), y.get(), n_, neg_inv_n_);
+        isZero = (getCanonicalValue(V(prod)).get() == getZeroValue().get());
+
+        // msr_montmul_non_minimized() postconditions guarantee the following
+        HPBC_POSTCONDITION2(0 < prod && prod <= n_);
+        // Since 0 < prod <= n, we don't want to reduce mod n;  prod is in the
+        // canonical form required by most of the class functions.
+        return V(prod);
+    }
+
+    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
     HURCHALLA_FORCE_INLINE V fmadd(V x, V y, V z, PTAG) const
     {
         HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
@@ -455,7 +456,8 @@ public:
         // beneficial enough, we can consider implementing the optimization
         // discussed here.
 
-        V prod = multiply(x, y, PTAG());
+        bool isZero;
+        V prod = multiply(x, y, isZero, PTAG());
         V sum = add(prod, z);
 
         HPBC_POSTCONDITION2(0 < sum.get() && sum.get() <= n_);
@@ -471,7 +473,8 @@ public:
         HPBC_PRECONDITION2(0 < y.get() && y.get() <= n_);
 
         // See the optimization discussion inside fmadd() - it applies here too.
-        V prod = multiply(x, y, PTAG());
+        bool isZero;
+        V prod = multiply(x, y, isZero, PTAG());
         V diff = subtract(prod, z);
 
         HPBC_POSTCONDITION2(0 < diff.get() && diff.get() <= n_);
@@ -481,7 +484,7 @@ public:
     }
 
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, PTAG) const
+    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, bool& isZero, PTAG) const
     {
         HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
         HPBC_PRECONDITION2(0 < y.get() && y.get() <= n_);
@@ -503,35 +506,7 @@ public:
         // a*b <= 2*modulus*modulus < 2*sqrt(R)*sqrt(R)/4 == R/2, which would
         // satisfy the hypothetical class's montmul requirement.]
         V sum = add(x, y);
-        V result = multiply(sum, z, PTAG());
-
-        HPBC_POSTCONDITION2(0 < result.get() && result.get() <= n_);
-        return result;
-    }
-
-    // For MontySqrtRange, simply delegating to other functions is already the
-    // optimal implementation of famulIsZero().
-    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V famulIsZero(V x, V y, V z, bool& isZero,PTAG) const
-    {
-        HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
-        HPBC_PRECONDITION2(0 < y.get() && y.get() <= n_);
-        HPBC_PRECONDITION2(0 < z.get() && z.get() <= n_);
-
-        V result = famul(x, y, z, PTAG());
-        isZero = (getCanonicalValue(result).get() == getZeroValue().get());
-
-        HPBC_POSTCONDITION2(0 < result.get() && result.get() <= n_);
-        return result;
-    }
-    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V multiplyIsZero(V x, V y, bool& isZero, PTAG) const
-    {
-        HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
-        HPBC_PRECONDITION2(0 < y.get() && y.get() <= n_);
-
-        V result = multiply(x, y, PTAG());
-        isZero = (getCanonicalValue(result).get() == getZeroValue().get());
+        V result = multiply(sum, z, isZero, PTAG());
 
         HPBC_POSTCONDITION2(0 < result.get() && result.get() <= n_);
         return result;

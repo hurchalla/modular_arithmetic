@@ -39,10 +39,6 @@ public:
            modular_arithmetic::ma_numeric_limits<T>::max();
     }
 
-    // REDC() guarantees its return result satisfies result < n for
-    // FullrangeTag (and thus MontyFullRange)
-    HURCHALLA_FORCE_INLINE bool isValidRedcResult(T x) const { return x < n_; }
-
     HURCHALLA_FORCE_INLINE T getExtendedModulus() const { return n_; }
 
     HURCHALLA_FORCE_INLINE V getCanonicalValue(V x) const
@@ -52,7 +48,7 @@ public:
     }
 
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, PTAG) const
+    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, bool& isZero, PTAG) const
     {
         HPBC_PRECONDITION2(x.get() < n_);
         HPBC_PRECONDITION2(y.get() < n_);
@@ -74,35 +70,7 @@ public:
         // sum < n_.  Due to the need for modular addition, famul() just wraps
         // this class's add_canonical_value and multiply functions.
         V sum = BC::add_canonical_value(x, y);
-        V result = BC::multiply(sum, z, PTAG());
-
-        HPBC_POSTCONDITION2(result.get() < n_);
-        return result;
-    }
-
-    // For MontyFullRange, simply delegating to other functions is already the
-    // optimal implementation for famulIsZero() and multiplyIsZero().
-    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V famulIsZero(V x, V y, V z, bool& isZero,PTAG) const
-    {
-        HPBC_PRECONDITION2(x.get() < n_);
-        HPBC_PRECONDITION2(y.get() < n_);
-        HPBC_PRECONDITION2(z.get() < n_);
-
-        V result = famul(x, y, z, PTAG());
-        isZero = (getCanonicalValue(result).get() == BC::getZeroValue().get());
-
-        HPBC_POSTCONDITION2(result.get() < n_);
-        return result;
-    }
-    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V multiplyIsZero(V x, V y, bool& isZero, PTAG) const
-    {
-        HPBC_PRECONDITION2(x.get() < n_);
-        HPBC_PRECONDITION2(y.get() < n_);
-
-        V result = BC::multiply(x, y, PTAG());
-        isZero = (getCanonicalValue(result).get() == BC::getZeroValue().get());
+        V result = BC::multiply(sum, z, isZero, PTAG());
 
         HPBC_POSTCONDITION2(result.get() < n_);
         return result;

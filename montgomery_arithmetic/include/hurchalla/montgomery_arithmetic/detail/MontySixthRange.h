@@ -49,13 +49,6 @@ public:
                  (modular_arithmetic::ma_numeric_limits<T>::digits - 1))/3 - 1);
     }
 
-    HURCHALLA_FORCE_INLINE bool isValidRedcResult(T x) const
-    {
-        // REDC() guarantees its return result satisfies 0 < result < 2*n for
-        // SixthrangeTag (and thus MontySixthRange)
-        return 0 < x && x < 2*n_;
-    }
-
     HURCHALLA_FORCE_INLINE T getExtendedModulus() const
     {
         return static_cast<T>(2*n_);
@@ -70,7 +63,7 @@ public:
     }
 
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, PTAG) const
+    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, bool& isZero, PTAG) const
     {
         HPBC_PRECONDITION2(x.get() < 2*n_);
         HPBC_PRECONDITION2(y.get() < n_);   // y must be canonical
@@ -79,60 +72,25 @@ public:
         // x+y won't overflow:  we know  x < 2*n_ < 2*R/6  and  y < n_ < R/6,
         // so  x + y < 2*R/6 + R/6 == R/2.
         T sum = static_cast<T>(x.get() + y.get());
-        // As a precondition, montmul requires  sum*z < n_*R.  This will always
+        // As a precondition, REDC requires  sum*z < n_*R.  This will always
         // be satisfied:  we know  sum = x+y < R/2  and  z < 2*n_.  Therefore
         // sum*z < (R/2)*(2*n_) == n_*R.
+        // Though we would now like to call BC::multiply(sum, z, isZero), we
+        // can't because sum<R/2 does not satisfy its precondition of sum < n_.
+        // Instead we mostly replicate BC::multiply()) here, and we know from
+        // above that we will be able to safely call REDC
         T u_lo;
         T u_hi = unsigned_multiply_to_hilo_product(&u_lo, sum, z.get());
-        // u_hi < n  guarantees we had  sum*z == u < n*R.  See
-        // REDC_non_finalized() in Redc.h for proof.
+        // u_hi < n  implies that  sum*z == u < n*R.  See REDC_non_finalized()
+        // in Redc.h for proof.
         HPBC_ASSERT2(u_hi < n_);
-
         T result = REDC(u_hi, u_lo, n_, inv_n_, SixthrangeTag(), PTAG());
+        isZero = isZeroRedcResult(result, n_, SixthrangeTag());
 
-        // multiply()'s postcondition guarantees isValidRedcResult(result) ==
-        // true, and this class's isValidRedcResult() returns (0 < result < 2*n)
-        HPBC_POSTCONDITION2(0 < result && result < 2*n_);
+        HPBC_POSTCONDITION2(isZero ==
+              (getCanonicalValue(V(result)).get() == BC::getZeroValue().get()));
+        HPBC_POSTCONDITION2(result < 2*n_);  //REDC guarantees for SixthrangeTag
         return V(result);
-    }
-
-    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V famulIsZero(V x, V y, V z, bool& isZero,PTAG) const
-    {
-        HPBC_PRECONDITION2(x.get() < 2*n_);
-        HPBC_PRECONDITION2(y.get() < n_);   // y must be canonical
-        HPBC_PRECONDITION2(z.get() < 2*n_);
-
-        V result = famul(x, y, z, PTAG());
-        // The canonical zeroValue == (0*R)%n_ == 0.  The equivalence class for
-        // zeroValue therefore is composed of values that satisfy  0 + m*n_,
-        // where m is any integer.  Since famul()'s postcondition guarantees
-        // 0 < result < 2*n, the only result that can belong to zeroValue's
-        // equivalence class is result == n_.
-        // Note: other functions like add() or sub() have return results in the
-        // range of 0 <= result < 2*n, and so our postcondition of 0 < result is
-        // particular to multiply().  It is not a general invariant property of
-        // montgomery values for this monty type.
-        isZero = (result.get() == n_);
-
-        HPBC_POSTCONDITION2(0 < result.get() && result.get() < 2*n_);
-        return result;
-    }
-    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V multiplyIsZero(V x, V y, bool& isZero, PTAG) const
-    {
-        HPBC_PRECONDITION2(x.get() < 2*n_);
-        HPBC_PRECONDITION2(y.get() < 2*n_);
-
-        V result = BC::multiply(x, y, PTAG());
-        // multiply()'s postcondition guarantees isValidRedcResult(result) ==
-        // true, and this class's isValidRedcResult() returns (0 < result < 2n),
-        // Thus as shown in famulIsZero()'s comments, the only result value that
-        // can belong to the zero value equivalence class is result == n.
-        isZero = (result.get() == n_);
-
-        HPBC_POSTCONDITION2(0 < result.get() && result.get() < 2*n_);
-        return result;
     }
 };
 

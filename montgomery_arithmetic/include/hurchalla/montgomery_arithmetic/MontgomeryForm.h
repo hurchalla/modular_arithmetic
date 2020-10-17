@@ -79,8 +79,7 @@ public:
     T convertOut(MontgomeryValue x) const
     {
         T a = static_cast<T>(impl.convertOut(x));
-        HPBC_POSTCONDITION(a >= 0);
-        HPBC_POSTCONDITION(a < static_cast<T>(impl.getModulus()));
+        HPBC_POSTCONDITION(0 <= a && a < static_cast<T>(impl.getModulus()));
         return a;
     }
 
@@ -99,7 +98,7 @@ public:
     CanonicalValue getUnityValue() const
     {
         MontgomeryValue ret = impl.getUnityValue();
-        HPBC_POSTCONDITION(impl.isCanonical(ret));
+        HPBC_ASSERT(impl.isCanonical(ret));
         return CanonicalValue(ret);
     }
     // Returns the canonical monty value that represents the type T value 0.
@@ -108,7 +107,7 @@ public:
     CanonicalValue getZeroValue() const
     {
         MontgomeryValue ret = impl.getZeroValue();
-        HPBC_POSTCONDITION(impl.isCanonical(ret));
+        HPBC_ASSERT(impl.isCanonical(ret));
         return CanonicalValue(ret);
     }
     // Returns the canonical monty value that represents the type T value
@@ -118,7 +117,7 @@ public:
     CanonicalValue getNegativeOneValue() const
     {
         MontgomeryValue ret = impl.getNegativeOneValue();
-        HPBC_POSTCONDITION(impl.isCanonical(ret));
+        HPBC_ASSERT(impl.isCanonical(ret));
         return CanonicalValue(ret);
     }
 
@@ -138,7 +137,7 @@ public:
     MontgomeryValue add(MontgomeryValue x, CanonicalValue y) const
     {
         MontgomeryValue ret = impl.add_canonical_value(x, y);
-        HPBC_POSTCONDITION2(getCanonicalValue(ret) ==
+        HPBC_ASSERT(getCanonicalValue(ret) ==
                     getCanonicalValue(add(x, static_cast<MontgomeryValue>(y))));
         return ret;
     }
@@ -158,10 +157,10 @@ public:
     MontgomeryValue subtract(MontgomeryValue x, CanonicalValue y) const
     {
         MontgomeryValue ret = impl.subtract_canonical_value(x, y);
-        HPBC_POSTCONDITION2(getCanonicalValue(ret) ==
+        HPBC_ASSERT(getCanonicalValue(ret) ==
                getCanonicalValue(subtract(x, static_cast<MontgomeryValue>(y))));
         // all implementations of subtract_canonical_value() guarantee:
-        HPBC_POSTCONDITION2(impl.isCanonical(x) ? impl.isCanonical(ret) : true);
+        HPBC_ASSERT(impl.isCanonical(x) ? impl.isCanonical(ret) : true);
         return ret;
     }
 
@@ -186,7 +185,7 @@ public:
     {
         MontgomeryValue ret = subtract(getZeroValue(), x);
         // Since both getZeroValue() and x are canonical, subtract() guarantees:
-        HPBC_POSTCONDITION2(impl.isCanonical(ret));
+        HPBC_ASSERT(impl.isCanonical(ret));
         return CanonicalValue(ret);
     }
 
@@ -196,7 +195,10 @@ public:
     template <class PTAG = LowlatencyTag>
     MontgomeryValue multiply(MontgomeryValue x, MontgomeryValue y) const
     {
-        return impl.multiply(x, y, PTAG());
+        // note: the compiler should remove isZero calculations during dead code
+        // elimination; isZero is unused here and impl.multiply is forced inline
+        bool isZero;
+        return impl.multiply(x, y, isZero, PTAG());
     }
 
     // Calculates and returns the modular exponentiation of the montgomery value
@@ -247,7 +249,7 @@ public:
                                                          CanonicalValue z) const
     {
         MontgomeryValue ret = impl.fmsub(x, y, z, PTAG());
-        HPBC_POSTCONDITION2(getCanonicalValue(ret) ==
+        HPBC_POSTCONDITION(getCanonicalValue(ret) ==
                                 getCanonicalValue(subtract(multiply(x, y), z)));
         return ret;
     }
@@ -272,7 +274,7 @@ public:
                                                          CanonicalValue z) const
     {
         MontgomeryValue ret = impl.fmadd(x, y, z, PTAG());
-        HPBC_POSTCONDITION2(getCanonicalValue(ret) ==
+        HPBC_POSTCONDITION(getCanonicalValue(ret) ==
                                      getCanonicalValue(add(multiply(x, y), z)));
         return ret;
     }
@@ -295,8 +297,11 @@ public:
     MontgomeryValue famul(MontgomeryValue x, CanonicalValue y,
                                                         MontgomeryValue z) const
     {
-        MontgomeryValue ret = impl.famul(x, y, z, PTAG());
-        HPBC_POSTCONDITION2(getCanonicalValue(ret) ==
+        // note: the compiler should remove isZero calculations during dead code
+        // elimination; isZero is unused here and impl.famul() is forced inline.
+        bool isZero;
+        MontgomeryValue ret = impl.famul(x, y, z, isZero, PTAG());
+        HPBC_POSTCONDITION(getCanonicalValue(ret) ==
                                      getCanonicalValue(multiply(add(x, y), z)));
         return ret;
     }
@@ -313,10 +318,10 @@ public:
     MontgomeryValue famulIsZero(MontgomeryValue x, CanonicalValue y,
                                           MontgomeryValue z, bool& isZero) const
     {
-        MontgomeryValue ret = impl.famulIsZero(x, y, z, isZero, PTAG());
-        HPBC_POSTCONDITION2(getCanonicalValue(ret) ==
-                                             getCanonicalValue(famul(x, y, z)));
-        HPBC_POSTCONDITION2(isZero == (getCanonicalValue(ret)==getZeroValue()));
+        MontgomeryValue ret = impl.famul(x, y, z, isZero, PTAG());
+        HPBC_POSTCONDITION(getCanonicalValue(ret) ==
+                                     getCanonicalValue(multiply(add(x, y), z)));
+        HPBC_POSTCONDITION(isZero == (getCanonicalValue(ret)==getZeroValue()));
         return ret;
     }
     // "Multiply, with test for result congruent to zero".  See comments on
@@ -325,10 +330,8 @@ public:
     MontgomeryValue multiplyIsZero(MontgomeryValue x, MontgomeryValue y,
                                                              bool& isZero) const
     {
-        MontgomeryValue ret = impl.multiplyIsZero(x, y, isZero, PTAG());
-        HPBC_POSTCONDITION2(getCanonicalValue(ret) ==
-                                             getCanonicalValue(multiply(x, y)));
-        HPBC_POSTCONDITION2(isZero == (getCanonicalValue(ret)==getZeroValue()));
+        MontgomeryValue ret = impl.multiply(x, y, isZero, PTAG());
+        HPBC_POSTCONDITION(isZero == (getCanonicalValue(ret)==getZeroValue()));
         return ret;
     }
 };

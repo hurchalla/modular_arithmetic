@@ -45,13 +45,6 @@ public:
                    (modular_arithmetic::ma_numeric_limits<T>::digits - 2)) - 1);
     }
 
-    HURCHALLA_FORCE_INLINE bool isValidRedcResult(T x) const
-    {
-        // REDC() guarantees its return result satisfies 0 < result < 2*n for
-        // QuarterrangeTag (and thus MontyQuarterRange)
-        return 0 < x && x < 2*n_;
-    }
-
     HURCHALLA_FORCE_INLINE T getExtendedModulus() const
     {
         return static_cast<T>(2*n_);
@@ -66,7 +59,7 @@ public:
     }
 
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, PTAG) const
+    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, bool& isZero, PTAG) const
     {
         HPBC_PRECONDITION2(x.get() < 2*n_);
         HPBC_PRECONDITION2(y.get() < n_);   // y must be canonical
@@ -87,50 +80,9 @@ public:
         // Due to the need for modular addition, famul() just wraps this class's
         // add_canonical_value and multiply functions.
         V sum = BC::add_canonical_value(x, y);
-        V result = BC::multiply(sum, z, PTAG());
+        V result = BC::multiply(sum, z, isZero, PTAG());
 
-        // multiply()'s postcondition guarantees isValidRedcResult(result) ==
-        // true, and this class's isValidRedcResult() returns (0 < result < 2*n)
-        HPBC_POSTCONDITION2(0 < result.get() && result.get() < 2*n_);
-        return result;
-    }
-
-    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V famulIsZero(V x, V y, V z, bool& isZero,PTAG) const
-    {
-        HPBC_PRECONDITION2(x.get() < 2*n_);
-        HPBC_PRECONDITION2(y.get() < n_);   // y must be canonical
-        HPBC_PRECONDITION2(z.get() < 2*n_);
-
-        V result = famul(x, y, z, PTAG());
-        // The canonical zeroValue == (0*R)%n_ == 0.  The equivalence class for
-        // zeroValue therefore is composed of values that satisfy  0 + m*n_,
-        // where m is any integer.  Since famul()'s postcondition guarantees
-        // 0 < result < 2*n, the only result that can belong to zeroValue's
-        // equivalence class is result == n_.
-        // Note: other functions like add() or sub() have return results in the
-        // range of 0 <= result < 2*n, and so our postcondition of 0 < result is
-        // particular to multiply().  It is not a general invariant property of
-        // montgomery values for this monty type.
-        isZero = (result.get() == n_);
-
-        HPBC_POSTCONDITION2(0 < result.get() && result.get() < 2*n_);
-        return result;
-    }
-    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V multiplyIsZero(V x, V y, bool& isZero, PTAG) const
-    {
-        HPBC_PRECONDITION2(x.get() < 2*n_);
-        HPBC_PRECONDITION2(y.get() < 2*n_);
-
-        V result = BC::multiply(x, y, PTAG());
-        // multiply()'s postcondition guarantees isValidRedcResult(result) ==
-        // true, and this class's isValidRedcResult() returns (0 < result < 2n),
-        // Thus as shown in famulIsZero()'s comments, the only result value that
-        // can belong to the zero value equivalence class is result == n.
-        isZero = (result.get() == n_);
-
-        HPBC_POSTCONDITION2(0 < result.get() && result.get() < 2*n_);
+        HPBC_POSTCONDITION2(result.get() < 2*n_);
         return result;
     }
 };

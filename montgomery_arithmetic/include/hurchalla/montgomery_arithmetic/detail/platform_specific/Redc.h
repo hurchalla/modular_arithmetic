@@ -349,6 +349,32 @@ HURCHALLA_FORCE_INLINE T REDC(T u_hi, T u_lo, T n, T inv_n, MTAG, PTAG)
     return result;
 }
 
+template <typename T>
+HURCHALLA_FORCE_INLINE bool isZeroRedcResult(T x, T, FullrangeTag)
+{
+    // The montgomery zero ≡ (0*R) ≡ 0 (mod n).  The equivalence class for zero
+    // therefore is composed of values that satisfy  0 + m*n, where m is any
+    // integer.  Since REDC() guarantees its return result satisfies result < n
+    // for FullrangeTag and HalfrangeTag, its only result that can belong to the
+    // zero equivalence class is result == 0.
+    return x == 0;
+}
+// We don't need a dedicated isZeroRedcResult function for HalfrangeTag since
+// FullrangeTag implementation is correct for it, and HalfrangeTag matches it.
+
+template <typename T>
+HURCHALLA_FORCE_INLINE bool isZeroRedcResult(T x, T n, QuarterrangeTag)
+{
+    // The montgomery zero ≡ (0*R) ≡ 0 (mod n).  The equivalence class for zero
+    // therefore is composed of values that satisfy  0 + m*n, where m is any
+    // integer.  Since REDC() guarantees its return result satisfies
+    // 0 < result < 2*n for QuarterrangeTag and SixthrangeTag, its only result
+    // that can belong to the zero equivalence class is result == n.
+    return x == n;
+}
+// We don't need a dedicated isZeroRedcResult function for SixthrangeTag since
+// QuarterrangeTag implementation is correct for it, and SixthrangeTag matches.
+
 
 }} // end namespace
 

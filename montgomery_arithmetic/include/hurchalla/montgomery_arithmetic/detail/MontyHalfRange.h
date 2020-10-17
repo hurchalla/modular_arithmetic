@@ -16,10 +16,7 @@
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
-// MontyHalfRange is exactly the same as MontyFullRange, except that the
-// constructor has the precondition that modulus < R/2, and in that multiply()
-// calls montmul_half_range() rather than montmul_full_range().
-// [The theoretical constant R = 2^(ma_numeric_limits<T>::digits).]
+// Let the theoretical constant R = 2^(ma_numeric_limits<T>::digits).
 template <typename T>
 class MontyHalfRange : public MontyCommonBase<MontyHalfRange, T> {
     static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
@@ -51,10 +48,6 @@ public:
                    (modular_arithmetic::ma_numeric_limits<T>::digits - 1)) - 1);
     }
 
-    // REDC() guarantees its return result satisfies result < n for
-    // HalfrangeTag (and thus MontyHalfRange)
-    HURCHALLA_FORCE_INLINE bool isValidRedcResult(T x) const { return x < n_; }
-
     HURCHALLA_FORCE_INLINE T getExtendedModulus() const { return n_; }
 
     HURCHALLA_FORCE_INLINE V getCanonicalValue(V x) const
@@ -64,7 +57,7 @@ public:
     }
 
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, PTAG) const
+    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, bool& isZero, PTAG) const
     {
         HPBC_PRECONDITION2(x.get() < n_);
         HPBC_PRECONDITION2(y.get() < n_);
@@ -75,44 +68,22 @@ public:
         // As a precondition, REDC requires  sum*z < n_*R.  This will always
         // be satisfied:  we know  sum = x+y < R  and  z < n_.  Therefore
         // sum*z < R*n_ == n_*R.
+        // Though we would now like to call BC::multiply(sum, z, isZero), we
+        // can't because sum<R does not satisfy its precondition of sum < n_.
+        // Instead we mostly replicate BC::multiply() here, and we know from
+        // above that we will be able to safely call REDC
         T u_lo;
         T u_hi = unsigned_multiply_to_hilo_product(&u_lo, sum, z.get());
-        // u_hi < n  guarantees we had  sum*z == u < n*R.  See
-        // REDC_non_finalized() in Redc.h for proof.
+        // u_hi < n  implies that  sum*z == u < n*R.  See REDC_non_finalized()
+        // in Redc.h for proof.
         HPBC_ASSERT2(u_hi < n_);
-
         T result = REDC(u_hi, u_lo, n_, inv_n_, HalfrangeTag(), PTAG());
+        isZero = isZeroRedcResult(result, n_, HalfrangeTag());
 
+        HPBC_POSTCONDITION2(isZero ==
+              (getCanonicalValue(V(result)).get() == BC::getZeroValue().get()));
         HPBC_POSTCONDITION2(result < n_);
         return V(result);
-    }
-
-    // For MontyHalfRange, simply delegating to other functions is already the
-    // optimal implementation for famulIsZero() and multiplyIsZero().
-    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V famulIsZero(V x, V y, V z, bool& isZero,PTAG) const
-    {
-        HPBC_PRECONDITION2(x.get() < n_);
-        HPBC_PRECONDITION2(y.get() < n_);
-        HPBC_PRECONDITION2(z.get() < n_);
-
-        V result = famul(x, y, z, PTAG());
-        isZero = (getCanonicalValue(result).get() == BC::getZeroValue().get());
-
-        HPBC_POSTCONDITION2(result.get() < n_);
-        return result;
-    }
-    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V multiplyIsZero(V x, V y, bool& isZero, PTAG) const
-    {
-        HPBC_PRECONDITION2(x.get() < n_);
-        HPBC_PRECONDITION2(y.get() < n_);
-
-        V result = BC::multiply(x, y, PTAG());
-        isZero = (getCanonicalValue(result).get() == BC::getZeroValue().get());
-
-        HPBC_POSTCONDITION2(result.get() < n_);
-        return result;
     }
 };
 

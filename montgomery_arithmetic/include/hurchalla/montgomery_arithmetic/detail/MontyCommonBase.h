@@ -246,8 +246,10 @@ public:
         return V(result);
     }
 
+    // Multiplies two montgomery values x and y, and returns the product as a
+    // montgomery value.  Sets isZero to indicate if the product ≡ 0 (mod n).
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V multiply(V x, V y, PTAG) const
+    HURCHALLA_FORCE_INLINE V multiply(V x, V y, bool& isZero, PTAG) const
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isValid(y));
@@ -271,19 +273,21 @@ public:
         //   x*y < (2*n)*(2*n) == 4*n*n < 4*n*R/6 == (2/3)*n*R < n*R.
         T u_lo;
         T u_hi = unsigned_multiply_to_hilo_product(&u_lo, x.get(), y.get());
-        // u_hi < n  guarantees we had  x*y == u < n*R.  See
-        // REDC_non_finalized() in Redc.h for proof.
-        HPBC_PRECONDITION2(u_hi < n_);
+        // u_hi < n  implies that  x*y == u < n*R.  See REDC_non_finalized()
+        // in Redc.h for proof.
+        HPBC_ASSERT2(u_hi < n_);
 
         T result = REDC(u_hi, u_lo, n_, inv_n_, typename D::MontyTag(), PTAG());
+        isZero = isZeroRedcResult(result, n_, typename D::MontyTag());
 
-        HPBC_POSTCONDITION2(
-                        static_cast<const D*>(this)->isValidRedcResult(result));
+        HPBC_POSTCONDITION2(isZero ==
+             (static_cast<const D*>(this)->getCanonicalValue(V(result)).get() ==
+              getZeroValue().get()));
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
 
-    // Multiplies two mongomery values x and y, and then subtracts montgomery
+    // Multiplies two montgomery values x and y, and then subtracts montgomery
     // value z from the product.  Returns the resulting montgomery value.
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
     HURCHALLA_FORCE_INLINE V fmsub(V x, V y, V z, PTAG) const
@@ -294,12 +298,11 @@ public:
         HPBC_PRECONDITION2(z.get() < n_); // isCanonical() should guarantee this
         T u_lo;
         T u_hi = unsigned_multiply_to_hilo_product(&u_lo, x.get(), y.get());
-        // Precondition: Assuming theoretical unlimited precision standard
-        // multiplication, REDC requires  u = x*y < n*R.  See multiply() for why
-        // this function will always satisfy the requirement.
-        // u_hi < n  guarantees we had  x*y == u < n*R.  See
-        // REDC_non_finalized() in Redc.h for proof.
-        HPBC_PRECONDITION2(u_hi < n_);
+        // Assuming theoretical unlimited precision standard multiplication,
+        // REDC requires  u = x*y < n*R.  See multiply() for why this function
+        // will always satisfy the requirement.  u_hi < n guarantees we had
+        // x*y == u < n*R.  See REDC_non_finalized() in Redc.h for proof.
+        HPBC_ASSERT2(u_hi < n_);
 
         // TODO proof of correctness, showing that performing the modular sub
         // prior to the REDC will always give the same results as performing the
@@ -316,7 +319,7 @@ public:
         return V(result);
     }
 
-    // Multiplies two mongomery values x and y, and then adds montgomery
+    // Multiplies two montgomery values x and y, and then adds montgomery
     // value z to the product.  Returns the resulting montgomery value.
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
     HURCHALLA_FORCE_INLINE V fmadd(V x, V y, V z, PTAG) const
@@ -327,12 +330,11 @@ public:
         HPBC_PRECONDITION2(z.get() < n_); // isCanonical() should guarantee this
         T u_lo;
         T u_hi = unsigned_multiply_to_hilo_product(&u_lo, x.get(), y.get());
-        // Precondition: Assuming theoretical unlimited precision standard
-        // multiplication, REDC requires  u = x*y < n*R.  See multiply() for why
-        // this function will always satisfy the requirement.
-        // u_hi < n  guarantees we had  x*y == u < n*R.  See
-        // REDC_non_finalized() in Redc.h for proof.
-        HPBC_PRECONDITION2(u_hi < n_);
+        // Assuming theoretical unlimited precision standard multiplication,
+        // REDC requires  u = x*y < n*R.  See multiply() for why this function
+        // will always satisfy the requirement.  u_hi < n guarantees we had
+        // x*y == u < n*R.  See REDC_non_finalized() in Redc.h for proof.
+        HPBC_ASSERT2(u_hi < n_);
 
         // TODO proof of correctness, showing that performing the modular add
         // prior to the REDC will always give the same results as performing the

@@ -111,13 +111,14 @@ public:
     }
 
     template <class PTAG>   // Performance TAG (ignored by this class)
-    HURCHALLA_FORCE_INLINE V multiply(V x, V y, PTAG) const
+    HURCHALLA_FORCE_INLINE V multiply(V x, V y, bool& isZero, PTAG) const
     {
         HPBC_PRECONDITION2(isCanonical(x));
         HPBC_PRECONDITION2(isCanonical(y));
         namespace ma = hurchalla::modular_arithmetic;
         T result = ma::modular_multiplication_prereduced_inputs(x.get(),
                                                              y.get(), modulus_);
+        isZero = (getCanonicalValue(V(result)).get() == getZeroValue().get());
         HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
@@ -127,7 +128,8 @@ public:
         HPBC_PRECONDITION2(isCanonical(x));
         HPBC_PRECONDITION2(isCanonical(y));
         HPBC_PRECONDITION2(isCanonical(z));
-        V product = multiply(x, y, PTAG());
+        bool isZero;
+        V product = multiply(x, y, isZero, PTAG());
         V result = subtract(product, z);
         HPBC_POSTCONDITION2(isCanonical(result));
         return result;
@@ -138,41 +140,20 @@ public:
         HPBC_PRECONDITION2(isCanonical(x));
         HPBC_PRECONDITION2(isCanonical(y));
         HPBC_PRECONDITION2(isCanonical(z));
-        V product = multiply(x, y, PTAG());
+        bool isZero;
+        V product = multiply(x, y, isZero, PTAG());
         V result = add(product, z);
         HPBC_POSTCONDITION2(isCanonical(result));
         return result;
     }
     template <class PTAG>   // Performance TAG (ignored by this class)
-    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, PTAG) const
+    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, bool& isZero, PTAG) const
     {
         HPBC_PRECONDITION2(isCanonical(x));
         HPBC_PRECONDITION2(isCanonical(y));
         HPBC_PRECONDITION2(isCanonical(z));
         V sum = add(x, y);
-        V result = multiply(sum, z, PTAG());
-        HPBC_POSTCONDITION2(isCanonical(result));
-        return result;
-    }
-
-    template <class PTAG>   // Performance TAG (ignored by this class)
-    HURCHALLA_FORCE_INLINE V famulIsZero(V x, V y, V z, bool& isZero,PTAG) const
-    {
-        HPBC_PRECONDITION2(isCanonical(x));
-        HPBC_PRECONDITION2(isCanonical(y));
-        HPBC_PRECONDITION2(isCanonical(z));
-        V result = famul(x, y, z, PTAG());
-        isZero = (getCanonicalValue(result).get() == getZeroValue().get());
-        HPBC_POSTCONDITION2(isCanonical(result));
-        return result;
-    }
-    template <class PTAG>   // Performance TAG (ignored by this class)
-    HURCHALLA_FORCE_INLINE V multiplyIsZero(V x, V y, bool& isZero, PTAG) const
-    {
-        HPBC_PRECONDITION2(isCanonical(x));
-        HPBC_PRECONDITION2(isCanonical(y));
-        V result = multiply(x, y, PTAG());
-        isZero = (getCanonicalValue(result).get() == getZeroValue().get());
+        V result = multiply(sum, z, isZero, PTAG());
         HPBC_POSTCONDITION2(isCanonical(result));
         return result;
     }
