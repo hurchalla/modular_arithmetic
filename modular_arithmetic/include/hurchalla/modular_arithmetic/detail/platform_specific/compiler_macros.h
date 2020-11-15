@@ -84,7 +84,17 @@
 #  include <cstddef>
 #  include <climits>
    static_assert(sizeof(std::size_t) * CHAR_BIT == HURCHALLA_TARGET_BIT_WIDTH,
-      "[This may be a false positive, but] This error suggests that the preprocessor logic in this header file incorrectly set HURCHALLA_TARGET_BIT_WIDTH.  You can predefine HURCHALLA_TARGET_BIT_WIDTH yourself, or change this file");
+      "[This may be a false positive, but] This error suggests that the "
+      "preprocessor logic in this header file incorrectly set "
+      "HURCHALLA_TARGET_BIT_WIDTH.  You can predefine "
+      "HURCHALLA_TARGET_BIT_WIDTH yourself, or change this file");
+#else
+   // sanity check the predefined value set for HURCHALLA_TARGET_BIT_WIDTH
+#  include <type_traits>
+   static_assert(std::is_integral<decltype(HURCHALLA_TARGET_BIT_WIDTH)>::value
+                 && HURCHALLA_TARGET_BIT_WIDTH > 0,
+      "When you predefine the macro HURCHALLA_TARGET_BIT_WIDTH, it must be a "
+      "positive integer");
 #endif
 
 

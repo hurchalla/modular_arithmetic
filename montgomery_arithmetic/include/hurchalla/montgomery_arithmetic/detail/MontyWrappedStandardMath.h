@@ -36,8 +36,12 @@ public:
 #ifdef __GNUC__
 #  pragma GCC diagnostic pop
 #endif
-    protected:
+        // It's rarely a good idea for a function outside montgomery_arithmetic
+        // namespace to call get(), though there are exceptions to this rule.
+        // If you're not sure if your use case is an exception to the rule, then
+        // almost certainly it isn't.
         T get() const { return value; }
+    protected:
         T value;
     };
 private:

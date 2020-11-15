@@ -246,7 +246,7 @@ echo Using build mode $mode ...
 
 
 
-cpp_standard="-std=c++14"
+cpp_standard="-std=c++11"
 
 # A long note about issues setting the C++ standard when using CMake
 # ------------------------------------------------------------------

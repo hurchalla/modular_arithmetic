@@ -34,22 +34,22 @@ template <typename M>
 void test_multiply_variants(const M& mf, typename M::MontgomeryValue x,
               typename M::MontgomeryValue y, typename M::T_type expected_result)
 {
-    namespace ma = hurchalla::montgomery_arithmetic;
+    namespace mont = hurchalla::montgomery_arithmetic;
     EXPECT_TRUE(mf.convertOut(mf.multiply(x, y)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-      mf.template multiply<ma::LowlatencyTag>(x,y)) == expected_result);
+      mf.template multiply<mont::LowlatencyTag>(x,y)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-      mf.template multiply<ma::LowuopsTag>(x,y)) == expected_result);
+      mf.template multiply<mont::LowuopsTag>(x,y)) == expected_result);
 
     typename M::MontgomeryValue result;
     bool isZero;
     result = mf.multiplyIsZero(x, y, isZero);
     EXPECT_TRUE(mf.convertOut(result) == expected_result &&
                  isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
-    result = mf.template multiplyIsZero<ma::LowlatencyTag>(x, y, isZero);
+    result = mf.template multiplyIsZero<mont::LowlatencyTag>(x, y, isZero);
     EXPECT_TRUE(mf.convertOut(result) == expected_result &&
                  isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
-    result = mf.template multiplyIsZero<ma::LowuopsTag>(x, y, isZero);
+    result = mf.template multiplyIsZero<mont::LowuopsTag>(x, y, isZero);
     EXPECT_TRUE(mf.convertOut(result) == expected_result &&
                  isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
 }
@@ -59,12 +59,12 @@ void test_fmadd_variants(const M& mf, typename M::MontgomeryValue x,
                    typename M::MontgomeryValue y, typename M::CanonicalValue zc,
                    typename M::T_type expected_result)
 {
-    namespace ma = hurchalla::montgomery_arithmetic;
+    namespace mont = hurchalla::montgomery_arithmetic;
     EXPECT_TRUE(mf.convertOut(mf.fmadd(x, y, zc)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-       mf.template fmadd<ma::LowlatencyTag>(x,y,zc)) == expected_result);
+       mf.template fmadd<mont::LowlatencyTag>(x,y,zc)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-      mf.template fmadd<ma::LowuopsTag>(x,y,zc))==expected_result);
+      mf.template fmadd<mont::LowuopsTag>(x,y,zc))==expected_result);
 }
 
 template <typename M>
@@ -72,12 +72,12 @@ void test_fmsub_variants(const M& mf, typename M::MontgomeryValue x,
                    typename M::MontgomeryValue y, typename M::CanonicalValue zc,
                    typename M::T_type expected_result)
 {
-    namespace ma = hurchalla::montgomery_arithmetic;
+    namespace mont = hurchalla::montgomery_arithmetic;
     EXPECT_TRUE(mf.convertOut(mf.fmsub(x, y, zc)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-       mf.template fmsub<ma::LowlatencyTag>(x,y,zc)) == expected_result);
+       mf.template fmsub<mont::LowlatencyTag>(x,y,zc)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-      mf.template fmsub<ma::LowuopsTag>(x,y,zc))==expected_result);
+      mf.template fmsub<mont::LowuopsTag>(x,y,zc))==expected_result);
 }
 
 template <typename M>
@@ -85,22 +85,22 @@ void test_famul_variants(const M& mf, typename M::MontgomeryValue x,
                    typename M::CanonicalValue yc, typename M::MontgomeryValue z,
                    typename M::T_type expected_result)
 {
-    namespace ma = hurchalla::montgomery_arithmetic;
+    namespace mont = hurchalla::montgomery_arithmetic;
     EXPECT_TRUE(mf.convertOut(mf.famul(x, yc, z)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-       mf.template famul<ma::LowlatencyTag>(x,yc,z)) == expected_result);
+       mf.template famul<mont::LowlatencyTag>(x,yc,z)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-      mf.template famul<ma::LowuopsTag>(x,yc,z))==expected_result);
+      mf.template famul<mont::LowuopsTag>(x,yc,z))==expected_result);
 
     typename M::MontgomeryValue result;
     bool isZero;
     result = mf.famulIsZero(x, yc, z, isZero);
     EXPECT_TRUE(mf.convertOut(result) == expected_result &&
                  isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
-    result = mf.template famulIsZero<ma::LowlatencyTag>(x, yc, z, isZero);
+    result = mf.template famulIsZero<mont::LowlatencyTag>(x, yc, z, isZero);
     EXPECT_TRUE(mf.convertOut(result) == expected_result &&
                  isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
-    result = mf.template famulIsZero<ma::LowuopsTag>(x, yc, z, isZero);
+    result = mf.template famulIsZero<mont::LowuopsTag>(x, yc, z, isZero);
     EXPECT_TRUE(mf.convertOut(result) == expected_result &&
                  isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
 }
@@ -153,9 +153,9 @@ void test_mf_general_checks(M& mf, typename M::T_type a, typename M::T_type b,
     T diff2 = ma::modular_subtraction_prereduced_inputs(a,b,modulus);
     EXPECT_TRUE(mf.convertOut(mf.subtract(x,y)) == diff2);
     EXPECT_TRUE(mf.convertOut(mf.subtract(x,yc)) == diff2);
-    T us = mf.convertOut(mf.unordered_subtract(x,y));
+    T us = mf.convertOut(mf.unorderedSubtract(x,y));
     EXPECT_TRUE(us == diff1 || us == diff2);
-    us = mf.convertOut(mf.unordered_subtract(y,x));
+    us = mf.convertOut(mf.unorderedSubtract(y,x));
     EXPECT_TRUE(us == diff1 || us == diff2);
 
     EXPECT_TRUE(mf.getUnityValue() == mf.getCanonicalValue(mf.convertIn(1)));
@@ -209,7 +209,6 @@ void test_mf_general_checks(M& mf, typename M::T_type a, typename M::T_type b,
 template <typename M>
 void test_MontgomeryForm()
 {
-    namespace ma = hurchalla::montgomery_arithmetic;
     using T = typename M::T_type;
     using V = typename M::MontgomeryValue;
     using C = typename M::CanonicalValue;
@@ -233,9 +232,9 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.subtract(x,y)) == 8);
         EXPECT_TRUE(mf.convertOut(mf.subtract(y,xc)) == 5);
         EXPECT_TRUE(mf.convertOut(mf.subtract(x,yc)) == 8);
-        T us = mf.convertOut(mf.unordered_subtract(x,y));
+        T us = mf.convertOut(mf.unorderedSubtract(x,y));
         EXPECT_TRUE(us == 8 || us == 5);
-        us = mf.convertOut(mf.unordered_subtract(y,x));
+        us = mf.convertOut(mf.unorderedSubtract(y,x));
         EXPECT_TRUE(us == 8 || us == 5);
         EXPECT_TRUE(mf.getCanonicalValue(mf.add(x,y)) ==
                                          mf.getCanonicalValue(mf.convertIn(4)));
@@ -310,9 +309,9 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.subtract(x,yc)) == 2);
         EXPECT_TRUE(mf.getCanonicalValue(mf.subtract(x,y)) ==
                                          mf.getCanonicalValue(mf.convertIn(2)));
-        T us = mf.convertOut(mf.unordered_subtract(x,y));
+        T us = mf.convertOut(mf.unorderedSubtract(x,y));
         EXPECT_TRUE(us == 1 || us == 2);
-        us = mf.convertOut(mf.unordered_subtract(y,x));
+        us = mf.convertOut(mf.unorderedSubtract(y,x));
         EXPECT_TRUE(us == 1 || us == 2);
         EXPECT_TRUE(mf.getUnityValue()== mf.getCanonicalValue(mf.convertIn(1)));
         EXPECT_TRUE(mf.getZeroValue() == mf.getCanonicalValue(mf.convertIn(0)));
@@ -362,9 +361,9 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.subtract(x,yc)) == modulus - 3);
         EXPECT_TRUE(mf.getCanonicalValue(mf.add(x,y)) ==
                                         mf.getCanonicalValue(mf.convertIn(1)));
-        T us = mf.convertOut(mf.unordered_subtract(x,y));
+        T us = mf.convertOut(mf.unorderedSubtract(x,y));
         EXPECT_TRUE(us == 3 || us == modulus - 3);
-        us = mf.convertOut(mf.unordered_subtract(y,x));
+        us = mf.convertOut(mf.unorderedSubtract(y,x));
         EXPECT_TRUE(us == 3 || us == modulus - 3);
         EXPECT_TRUE(mf.getUnityValue()== mf.getCanonicalValue(mf.convertIn(1)));
         EXPECT_TRUE(mf.getZeroValue() == mf.getCanonicalValue(mf.convertIn(0)));
@@ -459,7 +458,6 @@ void test_custom_monty()
 
 namespace {
     TEST(MontgomeryArithmetic, MontyDefault) {
-        namespace ma = hurchalla::modular_arithmetic;
         namespace mont = hurchalla::montgomery_arithmetic;
         test_MontgomeryForm<mont::MontgomeryForm<std::uint8_t>>();
         test_MontgomeryForm<mont::MontgomeryForm<std::uint16_t>>();

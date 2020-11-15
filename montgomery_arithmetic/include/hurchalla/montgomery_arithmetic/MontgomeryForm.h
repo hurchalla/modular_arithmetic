@@ -166,10 +166,10 @@ public:
 
     // Returns either the modular subtraction x-y, or y-x.  It is unspecified
     // which of the two subtractions will be returned.  For situations where you
-    // don't care which subtraction gets performed, unordered_subtract() will
+    // don't care which subtraction gets performed, unorderedSubtract() will
     // usually perform slightly better than this->subtract() [in terms of number
     // of instructions, number of registers used, and possibly total latency].
-    MontgomeryValue unordered_subtract(MontgomeryValue x,
+    MontgomeryValue unorderedSubtract(MontgomeryValue x,
                                        MontgomeryValue y) const
     {
         return impl.unordered_subtract(x, y);

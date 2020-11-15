@@ -35,7 +35,10 @@ namespace hurchalla { namespace modular_arithmetic {
 
 // Primary template:
 template <typename T>
-struct ma_numeric_limits : std::numeric_limits<T> {};
+struct ma_numeric_limits : std::numeric_limits<T> {
+    // you'll need to specialize ma_numeric_limits for your type, if you are
+    // getting an error on this template
+};
 
 
 

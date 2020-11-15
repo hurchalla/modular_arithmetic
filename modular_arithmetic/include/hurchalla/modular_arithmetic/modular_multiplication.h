@@ -16,8 +16,7 @@ namespace hurchalla { namespace modular_arithmetic {
 template <typename T>
 T modular_multiplication_prereduced_inputs(T a, T b, T modulus)
 {
-    namespace ma = hurchalla::modular_arithmetic;
-    static_assert(ma::ma_numeric_limits<T>::is_integer, "");
+    static_assert(ma_numeric_limits<T>::is_integer, "");
     HPBC_PRECONDITION(modulus>0);
     HPBC_PRECONDITION(a>=0 && a<modulus);   // i.e. the input must be prereduced
     HPBC_PRECONDITION(b>=0 && b<modulus);   // i.e. the input must be prereduced
