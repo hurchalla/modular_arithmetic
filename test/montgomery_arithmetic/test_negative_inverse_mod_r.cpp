@@ -3,8 +3,8 @@
 
 
 #include "hurchalla/montgomery_arithmetic/detail/experimental/negative_inverse_mod_r.h"
-#include "hurchalla/montgomery_arithmetic/detail/safely_promote_unsigned.h"
-#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
+#include "hurchalla/util/traits/safely_promote_unsigned.h"
+#include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "gtest/gtest.h"
 #include <cstdint>
 
@@ -18,11 +18,12 @@ template <typename T>
 void test_single_negative_inverse(T a)
 {
     namespace mont = hurchalla::montgomery_arithmetic;
-    using U = typename mont::safely_promote_unsigned<T>::type;
-    T minusOne = static_cast<T>(static_cast<U>(0) - static_cast<U>(1));
+    namespace ut = hurchalla::util;
+    using P = typename ut::safely_promote_unsigned<T>::type;
+    T minusOne = static_cast<T>(static_cast<P>(0) - static_cast<P>(1));
 
     T inv = mont::negative_inverse_mod_r(a);
-    EXPECT_TRUE(static_cast<T>(static_cast<U>(inv) * static_cast<U>(a)) ==
+    EXPECT_TRUE(static_cast<T>(static_cast<P>(inv) * static_cast<P>(a)) ==
                                                                       minusOne);
 }
 
@@ -34,8 +35,8 @@ void test_single_negative_inverse(T a)
 template <typename T>
 void test_negative_inverse_exhaustive()
 {
-    namespace ma = hurchalla::modular_arithmetic;
-    T tmax = ma::ma_numeric_limits<T>::max();
+    namespace ut = hurchalla::util;
+    T tmax = ut::ut_numeric_limits<T>::max();
     T evenmax = static_cast<T>((tmax/2)*2);
     T oddmax = (evenmax != tmax) ? tmax : static_cast<T>(tmax - 1);
 
@@ -48,8 +49,8 @@ void test_negative_inverse_exhaustive()
 template <typename T>
 void test_negative_inverse_mod_r()
 {
-    namespace ma = hurchalla::modular_arithmetic;
-    T tmax = ma::ma_numeric_limits<T>::max();
+    namespace ut = hurchalla::util;
+    T tmax = ut::ut_numeric_limits<T>::max();
     T evenmax = static_cast<T>((tmax/2)*2);
     T oddmax = (evenmax != tmax) ? tmax : static_cast<T>(tmax - 1);
     T oddhalfmax = static_cast<T>((tmax/4)*2 + 1);

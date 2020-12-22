@@ -19,8 +19,8 @@
 
 #include "hurchalla/modular_arithmetic/modular_pow.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
-#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
-#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
+#include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/compiler_macros.h"
 #include "gtest/gtest.h"
 #include <cstdint>
 
@@ -43,6 +43,7 @@ void test_modulus(T modulus)
     static_cast<void>(modulus);
 
     namespace ma = hurchalla::modular_arithmetic;
+    namespace ut = hurchalla::util;
 
     T base = 0;
     T power = 0;
@@ -68,7 +69,7 @@ void test_modulus(T modulus)
     power = 3;
     EXPECT_TRUE(base == ma::modular_pow(base, power, modulus));
 
-    T tmax = ma::ma_numeric_limits<T>::max();
+    T tmax = ut::ut_numeric_limits<T>::max();
     // make power the largest possible even number
     power = static_cast<T>((tmax/2)*2);
     EXPECT_TRUE(static_cast<T>(1) == ma::modular_pow(base, power, modulus));
@@ -100,6 +101,7 @@ template <typename T>
 void test_modular_pow()
 {
     namespace ma = hurchalla::modular_arithmetic;
+    namespace ut = hurchalla::util;
 
     // test with a few basic examples first
     T modulus = 13;
@@ -139,12 +141,12 @@ void test_modular_pow()
     base = 14; power = 3;
     EXPECT_TRUE(static_cast<T>(0) == ma::modular_pow(base, power, modulus));
 
-    modulus = ma::ma_numeric_limits<T>::max();
+    modulus = ut::ut_numeric_limits<T>::max();
     test_modulus(modulus);
     modulus--;
     test_modulus(modulus);
 
-    modulus = ma::ma_numeric_limits<T>::max() / 2;
+    modulus = ut::ut_numeric_limits<T>::max() / 2;
     test_modulus(modulus);
     modulus++;
     test_modulus(modulus);

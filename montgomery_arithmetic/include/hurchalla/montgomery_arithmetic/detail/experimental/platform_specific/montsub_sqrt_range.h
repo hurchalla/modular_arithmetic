@@ -5,9 +5,9 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTSUB_SQRT_RANGE_H_INCLUDED
 
 
-#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
-#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
-#include "hurchalla/programming_by_contract/programming_by_contract.h"
+#include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/compiler_macros.h"
+#include "hurchalla/util/programming_by_contract.h"
 #include <cstdint>
 
 namespace hurchalla { namespace montgomery_arithmetic {
@@ -37,9 +37,9 @@ namespace hurchalla { namespace montgomery_arithmetic {
 template <typename T>
 HURCHALLA_FORCE_INLINE T montsub_sqrt_range(T a, T b, T n)
 {
-    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
-    static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
-    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
+    static_assert(util::ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(util::ut_numeric_limits<T>::is_signed), "");
+    static_assert(util::ut_numeric_limits<T>::is_modulo, "");
     HPBC_PRECONDITION2(n > 0);
     // MontySqrtRange uses input/output values that satisfy 0 < value <= n, but
     // we can relax the precondition here to allow zero values for a or b, even

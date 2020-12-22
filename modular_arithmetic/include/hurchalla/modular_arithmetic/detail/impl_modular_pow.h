@@ -6,10 +6,10 @@
 
 
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
-#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
-#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
-#include "hurchalla/modular_arithmetic/traits/extensible_make_unsigned.h"
-#include "hurchalla/programming_by_contract/programming_by_contract.h"
+#include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/traits/extensible_make_unsigned.h"
+#include "hurchalla/util/compiler_macros.h"
+#include "hurchalla/util/programming_by_contract.h"
 
 namespace hurchalla { namespace modular_arithmetic {
 
@@ -21,12 +21,12 @@ template <typename T>
 HURCHALLA_FORCE_INLINE 
 T impl_modular_pow(T base_t, T exponent_t, T modulus_t)
 {
-   static_assert(ma_numeric_limits<T>::is_integer, "");
+   static_assert(util::ut_numeric_limits<T>::is_integer, "");
    HPBC_PRECONDITION2(modulus_t > 1);
    HPBC_PRECONDITION2(base_t >= 0);
    HPBC_PRECONDITION2(exponent_t >= 0);
 
-   using U = typename extensible_make_unsigned<T>::type;
+   using U = typename util::extensible_make_unsigned<T>::type;
    U base = static_cast<U>(base_t);
    U exponent = static_cast<U>(exponent_t);
    U modulus = static_cast<U>(modulus_t);

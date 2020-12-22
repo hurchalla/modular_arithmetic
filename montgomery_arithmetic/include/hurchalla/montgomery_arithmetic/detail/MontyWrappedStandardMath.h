@@ -10,9 +10,9 @@
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/modular_arithmetic/absolute_value_difference.h"
-#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
-#include "hurchalla/programming_by_contract/programming_by_contract.h"
-#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
+#include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/util/compiler_macros.h"
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
@@ -45,9 +45,9 @@ public:
         T value;
     };
 private:
-    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
-    static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
-    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
+    static_assert(util::ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(util::ut_numeric_limits<T>::is_signed), "");
+    static_assert(util::ut_numeric_limits<T>::is_modulo, "");
     using V = MontgomeryValue;
     T modulus_;
 public:
@@ -63,15 +63,14 @@ public:
 
     static constexpr T max_modulus()
     {
-        return modular_arithmetic::ma_numeric_limits<T>::max();
+        return util::ut_numeric_limits<T>::max();
     }
 
     // intended for use in postconditions/preconditions
     HURCHALLA_FORCE_INLINE bool isCanonical(V x) const
     {
         // this static_assert guarantees 0 <= x.get()
-        static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed),
-                      "");
+        static_assert(!(util::ut_numeric_limits<T>::is_signed), "");
         return (x.get() < modulus_);
     }
     HURCHALLA_FORCE_INLINE T getModulus() const

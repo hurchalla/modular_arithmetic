@@ -6,9 +6,9 @@
 
 
 #include "hurchalla/modular_arithmetic/modular_addition.h"
-#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
-#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
-#include "hurchalla/programming_by_contract/programming_by_contract.h"
+#include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/compiler_macros.h"
+#include "hurchalla/util/programming_by_contract.h"
 #include <cstdint>
 #include <type_traits>
 #if defined(_MSC_VER)
@@ -21,6 +21,18 @@
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wold-style-cast"
 #endif
+
+
+// By default, if an inline asm modmult function is available we use it unless
+// explicitly disallowed via HURCHALLA_DISALLOW_INLINE_ASM_MODMUL.  We do this
+// by default because at least for x86, the asm version is many times faster
+// than the non-asm version, and because the inline asm is relatively simple
+// (though all inline asm is very difficult to verify as correct).
+// Presumably if all inline asm is enabled, asm modmul should not be disallowed.
+#ifdef HURCHALLA_ALLOW_INLINE_ASM_ALL
+#  undef HURCHALLA_DISALLOW_INLINE_ASM_MODMUL
+#endif
+
 
 namespace hurchalla { namespace modular_arithmetic {
 
@@ -52,7 +64,8 @@ Code review notes: Everything appears correct.
 template <typename T>
 T slow_modular_multiplication(T a, T b, T modulus)
 {
-    static_assert(ma_numeric_limits<T>::is_integer, "");
+    namespace ut = hurchalla::util;
+    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
     HPBC_PRECONDITION2(modulus>0);
     HPBC_PRECONDITION2(a>=0 && a<modulus);
     HPBC_PRECONDITION2(b>=0 && b<modulus);
@@ -174,7 +187,7 @@ inline std::uint32_t impl_modular_multiplication_prereduced_inputs(
                         (uint64_t)a*(uint64_t)b % (uint64_t)modulus);
     return result;
 }
-#elif defined(HURCHALLA_ALLOW_INLINE_ASM_MODMUL) && defined(_MSC_VER) && \
+#elif !defined(HURCHALLA_DISALLOW_INLINE_ASM_MODMUL) && defined(_MSC_VER) && \
       defined(HURCHALLA_TARGET_ISA_X86_32)
 // Since this is x86 msvc and we will use inline asm, we must ensure this
 // function doesn't use __fastcall or __vectorcall (see
@@ -197,7 +210,7 @@ inline std::uint32_t __cdecl impl_modular_multiplication_prereduced_inputs(
                         (uint64_t)a*(uint64_t)b % (uint64_t)modulus);
     return result;
 }
-#elif defined(HURCHALLA_ALLOW_INLINE_ASM_MODMUL) && !defined(_MSC_VER) && \
+#elif !defined(HURCHALLA_DISALLOW_INLINE_ASM_MODMUL) && !defined(_MSC_VER) && \
       ( defined(HURCHALLA_TARGET_ISA_X86_64) || \
         defined(HURCHALLA_TARGET_ISA_X86_32) )
 inline std::uint32_t impl_modular_multiplication_prereduced_inputs(
@@ -265,7 +278,7 @@ inline std::uint64_t impl_modular_multiplication_prereduced_inputs(
     HPBC_POSTCONDITION3(result == slow_modular_multiplication(a, b, modulus));
     return result;
 }
-#elif defined(HURCHALLA_ALLOW_INLINE_ASM_MODMUL) && \
+#elif !defined(HURCHALLA_DISALLOW_INLINE_ASM_MODMUL) && \
       defined(HURCHALLA_TARGET_ISA_X86_64)    // inline asm with gnu/AT&T syntax
 inline std::uint64_t impl_modular_multiplication_prereduced_inputs(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)

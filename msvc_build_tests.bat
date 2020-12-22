@@ -29,6 +29,9 @@ type tmp_test_results.txt | find /v "Running main()"
 del tmp_test_results.txt
 if %result% neq 0 exit /b %result%
 
+%build_dir%\Release\test_hurchalla_util.exe
+if %result% neq 0 exit /b %result%
+
 %build_dir%\Release\test_hurchalla_modular_arithmetic.exe
 if %result% neq 0 exit /b %result%
 
@@ -44,6 +47,9 @@ if %result% neq 0 exit /b %result%
 set result=%errorlevel%
 type tmp_test_results.txt | find /v "Running main()"
 del tmp_test_results.txt
+if %result% neq 0 exit /b %result%
+
+%build_dir%\Debug\test_hurchalla_util.exe
 if %result% neq 0 exit /b %result%
 
 %build_dir%\Debug\test_hurchalla_modular_arithmetic.exe

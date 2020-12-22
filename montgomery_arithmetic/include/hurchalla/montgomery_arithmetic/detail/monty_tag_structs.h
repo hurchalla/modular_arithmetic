@@ -25,16 +25,16 @@ struct SixthrangeTag : public QuarterrangeTag {};
 // is representable by its type T.
 //
 // The name "Halfrange" signifies that the modulus must be less than R/2, where
-// R = 2^(ma_numeric_limits<T>::digits).  For example, if T is uint64_t then
+// R = 2^(ut_numeric_limits<T>::digits).  For example, if T is uint64_t then
 // R = 2^64 and R/2 == 2^63, and thus it would require  modulus < 2^63.
 //
 //
 // The name "Quarterrange" signifies that the modulus must be less than R/4,
-// where  R = 2^(ma_numeric_limits<T>::digits).  For example, if T is uint64_t
+// where  R = 2^(ut_numeric_limits<T>::digits).  For example, if T is uint64_t
 // then R = 2^64 and R/4 == 2^62, and thus it would require  modulus < 2^62.
 //
 // The name "Sixthrange" signifies that the modulus must be less than R/6,
-// where  R = 2^(ma_numeric_limits<T>::digits).  For example, if T is uint64_t
+// where  R = 2^(ut_numeric_limits<T>::digits).  For example, if T is uint64_t
 // then R = 2^64 and R/6 == (2^63)/3; thus it would require  modulus < (2^63)/3.
 //
 // Quarterrange and Sixthrange functions require/allow an unusual input range:

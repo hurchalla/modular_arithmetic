@@ -6,12 +6,12 @@
 
 
 #include "hurchalla/montgomery_arithmetic/optimization_tag_structs.h"
-#include "hurchalla/montgomery_arithmetic/detail/safely_promote_unsigned.h"
 #include "hurchalla/montgomery_arithmetic/detail/monty_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
-#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
-#include "hurchalla/programming_by_contract/programming_by_contract.h"
+#include "hurchalla/util/traits/safely_promote_unsigned.h"
+#include "hurchalla/util/compiler_macros.h"
+#include "hurchalla/util/programming_by_contract.h"
 #include <cstdint>
 
 #if defined(_MSC_VER)
@@ -50,7 +50,7 @@ namespace detail_redc {
 // no relation to "T" in the algorithm description.
 // We also use "n" instead of "N", and "inv_n" instead of "N^(-1)" (N with the
 // superscript -1).  The constant "R" remains the same, and represents the value
-// R = 2^(ma::ma_numeric_limits<T>::digits).  As an example, if T is uint64_t,
+// R = 2^(ut::ut_numeric_limits<T>::digits).  As an example, if T is uint64_t,
 // then R = 2^64.
 // This function's name is "REDC_non_finalized" to reflect the fact that the
 // value it returns is not finalized to the least residual class mod n (i.e. so
@@ -59,18 +59,18 @@ namespace detail_redc {
 template <typename T> HURCHALLA_FORCE_INLINE
 T REDC_non_finalized(bool& ovf, T u_hi, T u_lo, T n, T inv_n)
 {
-    namespace ma = hurchalla::modular_arithmetic;
-    static_assert(ma::ma_numeric_limits<T>::is_integer, "");
-    static_assert(!(ma::ma_numeric_limits<T>::is_signed), "");
-    static_assert(ma::ma_numeric_limits<T>::is_modulo, "");
+    namespace ut = hurchalla::util;
+    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut::ut_numeric_limits<T>::is_signed), "");
+    static_assert(ut::ut_numeric_limits<T>::is_modulo, "");
 
     // For casts, we want to use types that are protected from surprises and
     // undefined behavior due to the unsigned integral promotion rules in C++.
     // https://jeffhurchalla.com/2019/01/16/c-c-surprises-and-undefined-behavior-due-to-unsigned-integer-promotion/
-    using V = typename safely_promote_unsigned<T>::type;
-    static_assert(ma::ma_numeric_limits<V>::is_integer, "");
-    static_assert(!(ma::ma_numeric_limits<V>::is_signed), "");
-    static_assert(ma::ma_numeric_limits<V>::is_modulo, "");
+    using P = typename ut::safely_promote_unsigned<T>::type;
+    static_assert(ut::ut_numeric_limits<P>::is_integer, "");
+    static_assert(!(ut::ut_numeric_limits<P>::is_signed), "");
+    static_assert(ut::ut_numeric_limits<P>::is_modulo, "");
 
     // Precondition #1:  We require the precondition  u < n*R.  Or elaborated,
     // u == u_hi*R + u_lo < n*R.
@@ -84,12 +84,12 @@ T REDC_non_finalized(bool& ovf, T u_hi, T u_lo, T n, T inv_n)
 
     // assert(n * inv_n ≡ 1 (mod R))
     HPBC_PRECONDITION2(
-                static_cast<T>(static_cast<V>(n) * static_cast<V>(inv_n)) == 1);
+                static_cast<T>(static_cast<P>(n) * static_cast<P>(inv_n)) == 1);
     HPBC_PRECONDITION2(n % 2 == 1);
     HPBC_PRECONDITION2(n > 1);
 
     // compute  m = (u * inv_n) % R
-    T m = static_cast<T>(static_cast<V>(u_lo) * static_cast<V>(inv_n));
+    T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
 
     T mn_lo;
     T mn_hi = unsigned_multiply_to_hilo_product(&mn_lo, m, n);
@@ -155,7 +155,7 @@ T REDC_non_finalized(bool& ovf, T u_hi, T u_lo, T n, T inv_n)
     // of n, we can only test this postcondition when n < R/2 (any larger value
     // of n would overflow on 2*n).
     if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T Rdiv2 = static_cast<T>(1) << (ma::ma_numeric_limits<T>::digits - 1);
+        T Rdiv2 = static_cast<T>(1) << (ut::ut_numeric_limits<T>::digits - 1);
         HPBC_POSTCONDITION2((n < Rdiv2) ? (0 < static_cast<T>(t_hi + n)) &&
                                        (static_cast<T>(t_hi + n) < 2*n) : true);
     }
@@ -168,17 +168,17 @@ T REDC_non_finalized(bool& ovf, T u_hi, T u_lo, T n, T inv_n)
 template <typename T>
 struct DefaultRedc
 {
-  static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
-  static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
-  static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
+  static_assert(util::ut_numeric_limits<T>::is_integer, "");
+  static_assert(!(util::ut_numeric_limits<T>::is_signed), "");
+  static_assert(util::ut_numeric_limits<T>::is_modulo, "");
 
   static HURCHALLA_FORCE_INLINE
   T REDC(T u_hi, T u_lo, T n, T inv_n, FullrangeTag)
   {
-    using V = typename safely_promote_unsigned<T>::type;
-    static_assert(modular_arithmetic::ma_numeric_limits<V>::is_integer, "");
-    static_assert(!(modular_arithmetic::ma_numeric_limits<V>::is_signed), "");
-    static_assert(modular_arithmetic::ma_numeric_limits<V>::is_modulo, "");
+    using P = typename util::safely_promote_unsigned<T>::type;
+    static_assert(util::ut_numeric_limits<P>::is_integer, "");
+    static_assert(!(util::ut_numeric_limits<P>::is_signed), "");
+    static_assert(util::ut_numeric_limits<P>::is_modulo, "");
     // We could implement this most easily using the code in the postcondition
     // below.  But we will instead elaborate REDC_non_finalized and replace
     // u_hi - mn_hi  with a modular subtraction, since that's effectively what
@@ -186,11 +186,11 @@ struct DefaultRedc
     // optimized modular subtract from modular_subtraction_prereduced_inputs().
     HPBC_PRECONDITION2(u_hi < n);
     HPBC_PRECONDITION2(
-                static_cast<T>(static_cast<V>(n) * static_cast<V>(inv_n)) == 1);
+                static_cast<T>(static_cast<P>(n) * static_cast<P>(inv_n)) == 1);
     HPBC_PRECONDITION2(n % 2 == 1);
     HPBC_PRECONDITION2(n > 1);
 
-    T m = static_cast<T>(static_cast<V>(u_lo) * static_cast<V>(inv_n));
+    T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
     T mn_lo;
     T mn_hi = unsigned_multiply_to_hilo_product(&mn_lo, m, n);
     HPBC_ASSERT2(mn_hi < n);
@@ -217,7 +217,7 @@ struct DefaultRedc
         // QuarterrangeTag has the precondition requirement that n < R/4 (see
         // MontyQuarterRange for more on this).
         T Rdiv4 = static_cast<T>(static_cast<T>(1) <<
-                        (modular_arithmetic::ma_numeric_limits<T>::digits - 2));
+                        (util::ut_numeric_limits<T>::digits - 2));
         HPBC_PRECONDITION2(n < Rdiv4);
     }
     bool ovf;
@@ -240,9 +240,9 @@ struct DefaultRedc
 template <typename T>
 struct Redc
 {
-  static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
-  static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
-  static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
+  static_assert(util::ut_numeric_limits<T>::is_integer, "");
+  static_assert(!(util::ut_numeric_limits<T>::is_signed), "");
+  static_assert(util::ut_numeric_limits<T>::is_modulo, "");
 
   // For MTAGs see monty_tag_structs.h; for PTAGs see optimization_tag_structs.h
   template <class MTAG, class PTAG>

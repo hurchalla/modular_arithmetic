@@ -6,8 +6,8 @@
 
 
 #include "hurchalla/modular_arithmetic/detail/platform_specific/impl_absolute_value_difference.h"
-#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
-#include "hurchalla/programming_by_contract/programming_by_contract.h"
+#include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/programming_by_contract.h"
 
 namespace hurchalla { namespace modular_arithmetic {
 
@@ -15,7 +15,8 @@ namespace hurchalla { namespace modular_arithmetic {
 template <typename T>
 T absolute_value_difference(T a, T b)
 {
-    static_assert(ma_numeric_limits<T>::is_integer, "");
+    namespace ut = hurchalla::util;
+    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
     HPBC_PRECONDITION(a >= 0);
     HPBC_PRECONDITION(b >= 0);
 

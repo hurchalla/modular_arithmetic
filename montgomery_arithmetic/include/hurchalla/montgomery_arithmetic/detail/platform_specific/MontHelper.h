@@ -5,8 +5,8 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONT_HELPER_H_INCLUDED
 
 
-#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
-#include "hurchalla/programming_by_contract/programming_by_contract.h"
+#include "hurchalla/util/compiler_macros.h"
+#include "hurchalla/util/programming_by_contract.h"
 #include <cstdint>
 #include <algorithm>
 

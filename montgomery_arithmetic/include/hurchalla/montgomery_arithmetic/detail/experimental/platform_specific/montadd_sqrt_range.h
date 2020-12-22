@@ -5,9 +5,9 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTADD_SQRT_RANGE_H_INCLUDED
 
 
-#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
-#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
-#include "hurchalla/programming_by_contract/programming_by_contract.h"
+#include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/compiler_macros.h"
+#include "hurchalla/util/programming_by_contract.h"
 #include <cstdint>
 
 namespace hurchalla { namespace montgomery_arithmetic {
@@ -32,16 +32,16 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // and our postconditions ensure we will always provide valid values for
 // MontySqrtRange.
 
-// For discussion purposes, let R = 2^(ma_numeric_limits<T>::digits).  For
+// For discussion purposes, let R = 2^(ut_numeric_limits<T>::digits).  For
 // example if T is uint64_t, then R = 2^64.
 
 
 template <typename T>
 HURCHALLA_FORCE_INLINE T montadd_sqrt_range(T a, T b, T n)
 {
-    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
-    static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
-    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
+    static_assert(util::ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(util::ut_numeric_limits<T>::is_signed), "");
+    static_assert(util::ut_numeric_limits<T>::is_modulo, "");
     HPBC_PRECONDITION2(n > 0);
     HPBC_PRECONDITION2(0 < a && a <= n);
     HPBC_PRECONDITION2(0 < b && b <= n);

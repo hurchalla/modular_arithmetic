@@ -7,18 +7,18 @@
 
 #include "hurchalla/montgomery_arithmetic/detail/monty_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
-#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
-#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
-#include "hurchalla/programming_by_contract/programming_by_contract.h"
+#include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/compiler_macros.h"
+#include "hurchalla/util/programming_by_contract.h"
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
 template <typename T>
 class MontyFullRange : public MontyCommonBase<MontyFullRange, T> {
-    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
-    static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
-    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
+    static_assert(util::ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(util::ut_numeric_limits<T>::is_signed), "");
+    static_assert(util::ut_numeric_limits<T>::is_modulo, "");
     using BC = MontyCommonBase<
                          ::hurchalla::montgomery_arithmetic::MontyFullRange, T>;
     using BC::n_;
@@ -34,9 +34,9 @@ public:
 
     static constexpr T max_modulus()
     {
-        return (modular_arithmetic::ma_numeric_limits<T>::max() % 2 == 0) ?
-           static_cast<T>(modular_arithmetic::ma_numeric_limits<T>::max() - 1) :
-           modular_arithmetic::ma_numeric_limits<T>::max();
+        return (util::ut_numeric_limits<T>::max() % 2 == 0) ?
+                static_cast<T>(util::ut_numeric_limits<T>::max() - 1) :
+                util::ut_numeric_limits<T>::max();
     }
 
     HURCHALLA_FORCE_INLINE T getExtendedModulus() const { return n_; }

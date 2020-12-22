@@ -42,12 +42,8 @@ target_sources(hurchalla_basic_modular_arithmetic INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/modular_multiplicative_inverse.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/modular_pow.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/modular_subtraction.h>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/traits/extensible_make_signed.h>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/traits/extensible_make_unsigned.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/impl_modular_multiplicative_inverse.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/impl_modular_pow.h>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/ma_numeric_limits.h>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/platform_specific/impl_absolute_value_difference.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/platform_specific/impl_modular_addition.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/platform_specific/impl_modular_multiplication.h>
@@ -66,11 +62,11 @@ target_include_directories(hurchalla_basic_modular_arithmetic INTERFACE
 
 include(FetchContent)
 FetchContent_Declare(
-    programming_by_contract
-    GIT_REPOSITORY https://github.com/hurchalla/programming_by_contract.git
+    hurchalla_util
+    GIT_REPOSITORY https://github.com/hurchalla/util.git
     GIT_TAG        master
 )
-FetchContent_MakeAvailable(programming_by_contract)
+FetchContent_MakeAvailable(hurchalla_util)
 
 target_link_libraries(hurchalla_basic_modular_arithmetic
-                      INTERFACE hurchalla_programming_by_contract)
+                      INTERFACE hurchalla_util)

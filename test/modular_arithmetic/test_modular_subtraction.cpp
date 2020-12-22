@@ -16,8 +16,8 @@
 
 
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
-#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
-#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
+#include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/compiler_macros.h"
 #include "gtest/gtest.h"
 #include <cstdint>
 
@@ -97,6 +97,7 @@ template <typename T>
 void test_modular_subtraction()
 {
     namespace ma = hurchalla::modular_arithmetic;
+    namespace ut = hurchalla::util;
 
     // test with a few basic examples first
     T modulus = 13;
@@ -126,12 +127,12 @@ void test_modular_subtraction()
     EXPECT_TRUE(static_cast<T>(0) ==
                       ma::modular_subtraction_prereduced_inputs(a, b, modulus));
 
-    modulus = ma::ma_numeric_limits<T>::max();
+    modulus = ut::ut_numeric_limits<T>::max();
     test_modulus(modulus);
     modulus--;
     test_modulus(modulus);
 
-    modulus = ma::ma_numeric_limits<T>::max() / 2;
+    modulus = ut::ut_numeric_limits<T>::max() / 2;
     test_modulus(modulus);
     modulus++;
     test_modulus(modulus);

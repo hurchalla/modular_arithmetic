@@ -6,8 +6,8 @@
 
 
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/impl_unsigned_multiply_to_hilo_product.h"
-#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
-#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
+#include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/compiler_macros.h"
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
@@ -22,9 +22,9 @@ template <typename T>
 HURCHALLA_FORCE_INLINE
 T unsigned_multiply_to_hilo_product(T* pLowProduct, T a, T b)
 {
-    namespace ma = hurchalla::modular_arithmetic;
-    static_assert(ma::ma_numeric_limits<T>::is_integer, "");
-    static_assert(!(ma::ma_numeric_limits<T>::is_signed), "");
+    namespace ut = hurchalla::util;
+    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut::ut_numeric_limits<T>::is_signed), "");
     // POSTCONDITION: Stores the low-bits portion of the product (a*b) in
     //                *pLowProduct.
     // POSTCONDITION: Returns the high-bits portion of the product (a*b).

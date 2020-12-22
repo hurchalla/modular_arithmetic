@@ -3,7 +3,7 @@
 
 
 #include "hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h"
-#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
+#include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "gtest/gtest.h"
 #include <cstdint>
 
@@ -12,8 +12,8 @@ template <typename T>
 void test_unsigned_multiply_to_hilo_product()
 {
     namespace mont = hurchalla::montgomery_arithmetic;
-    namespace ma = hurchalla::modular_arithmetic;
-    T tmax = ma::ma_numeric_limits<T>::max();
+    namespace ut = hurchalla::util;
+    T tmax = ut::ut_numeric_limits<T>::max();
     T hi, lo, a, b;
 
     a = 5; b = 6;

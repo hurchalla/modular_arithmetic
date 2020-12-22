@@ -5,17 +5,17 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_INVERSE_MODR_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/detail/sized_uint.h"
-#include "hurchalla/montgomery_arithmetic/detail/safely_promote_unsigned.h"
-#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
-#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
-#include "hurchalla/programming_by_contract/programming_by_contract.h"
+#include "hurchalla/util/traits/safely_promote_unsigned.h"
+#include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/sized_uint.h"
+#include "hurchalla/util/compiler_macros.h"
+#include "hurchalla/util/programming_by_contract.h"
 #include <type_traits>
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
-// For discussion purposes, let R = 2^(ma_numeric_limits<T>::digits).  For
+// For discussion purposes, let R = 2^(ut_numeric_limits<T>::digits).  For
 // example if T is uint64_t, then R = 2^64.
 
 
@@ -48,26 +48,26 @@ namespace detail_imr {
     typename std::enable_if<bits<=HURCHALLA_TARGET_BIT_WIDTH, T>::type
     impl_inverse(T a)
     {
-        namespace ma = hurchalla::modular_arithmetic;
-        static_assert(bits == ma::ma_numeric_limits<T>::digits, "");
+        namespace ut = hurchalla::util;
+        static_assert(bits == ut::ut_numeric_limits<T>::digits, "");
         static_assert(std::is_unsigned<T>::value, ""); //T native unsign integer
         HPBC_PRECONDITION2(a % 2 == 1);
 
         // avoid undefined behavior that could result if T is an unsigned type
         // that would be promoted to (signed) 'int'.
-        using U = typename safely_promote_unsigned<T>::type;
-        U b = static_cast<U>(a);
+        using P = typename ut::safely_promote_unsigned<T>::type;
+        P b = static_cast<P>(a);
 
-        U x = (3*b)^2;  // good to 5 bits, but we'll treat it as good to only 4
+        P x = (3*b)^2;  // good to 5 bits, but we'll treat it as good to only 4
         static const constexpr int goodbits = 4;  // must be a power of 2
-        U s = b*x;
-        U y = 1-s;
+        P s = b*x;
+        P y = 1-s;
   
         static_assert((bits/goodbits)*goodbits == bits, "");
         static const constexpr int iterations = log2<bits/goodbits>();
         HURCHALLA_REQUEST_UNROLL_LOOP
         for (int i=0; i<iterations; ++i) {
-            U t = y+1;
+            P t = y+1;
             y = y*y;
             x = x*t;
         }
@@ -82,14 +82,14 @@ namespace detail_imr {
     typename std::enable_if<!(bits<=HURCHALLA_TARGET_BIT_WIDTH), T>::type
     impl_inverse(T a)
     {
+        namespace ut = hurchalla::util;
         static_assert((bits/2)*2 == bits, "");
-        using T2 = typename sized_uint<bits/2>::type;
-        using T3 = typename std::conditional<!(std::is_same<T2,void>::value),
-                                         T2, T>::type;
+        using T2 = typename std::conditional<ut::sized_uint<bits/2>::is_valid,
+                                typename ut::sized_uint<bits/2>::type, T>::type;
         HPBC_PRECONDITION2(a % 2 == 1);
 
         // set x so that the lower ('bits'/2) half of the bits are good.
-        T x = static_cast<T>(impl_inverse<T3, bits/2>(static_cast<T3>(a)));
+        T x = static_cast<T>(impl_inverse<T2, bits/2>(static_cast<T2>(a)));
   
         // use one step of the standard newtons method algorithm for the inverse
         // to double the number of good bits.
@@ -102,17 +102,17 @@ namespace detail_imr {
 template <typename T>
 T inverse_mod_r(T a)
 {
-    namespace ma = hurchalla::modular_arithmetic;
-    static_assert(ma::ma_numeric_limits<T>::is_integer, "");
-    static_assert(!(ma::ma_numeric_limits<T>::is_signed), "");
-    static_assert(ma::ma_numeric_limits<T>::is_modulo, "");
+    namespace ut = hurchalla::util;
+    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut::ut_numeric_limits<T>::is_signed), "");
+    static_assert(ut::ut_numeric_limits<T>::is_modulo, "");
     HPBC_PRECONDITION2(a % 2 == 1);
 
-    T inv = detail_imr::impl_inverse<T, ma::ma_numeric_limits<T>::digits>(a);
+    T inv = detail_imr::impl_inverse<T, ut::ut_numeric_limits<T>::digits>(a);
 
     // guarantee inv*a ≡ 1 (mod R)
-    using U = typename safely_promote_unsigned<T>::type;
-    HPBC_POSTCONDITION2(static_cast<T>(static_cast<U>(inv) * static_cast<U>(a))
+    using P = typename ut::safely_promote_unsigned<T>::type;
+    HPBC_POSTCONDITION2(static_cast<T>(static_cast<P>(inv) * static_cast<P>(a))
                         == static_cast<T>(1));
     return inv;
 }

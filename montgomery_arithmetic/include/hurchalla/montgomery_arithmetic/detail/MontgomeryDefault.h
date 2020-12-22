@@ -8,10 +8,10 @@
 #include "hurchalla/montgomery_arithmetic/detail/MontyFullRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontySixthRange.h"
-#include "hurchalla/montgomery_arithmetic/detail/sized_uint.h"
-#include "hurchalla/modular_arithmetic/traits/extensible_make_unsigned.h"
-#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
-#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
+#include "hurchalla/util/traits/extensible_make_unsigned.h"
+#include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/sized_uint.h"
+#include "hurchalla/util/compiler_macros.h"
 #include <type_traits>
 
 namespace hurchalla { namespace montgomery_arithmetic {
@@ -20,37 +20,33 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // If this primary template is instantiated, then T is an unsigned integral type
 template <typename T, typename Enable = void>
 class MontgomeryDefault {
-    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
-    static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
-    static constexpr int ubits =
-                               modular_arithmetic::ma_numeric_limits<T>::digits;
+    static_assert(util::ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(util::ut_numeric_limits<T>::is_signed), "");
+    static constexpr int ubits = util::ut_numeric_limits<T>::digits;
 public:
-    using type =
-        typename std::conditional<
-            !(std::is_same<typename sized_uint<ubits*2>::type, void>::value)
-                && (ubits*2 <= HURCHALLA_TARGET_BIT_WIDTH),
-            MontySixthRange<typename sized_uint<ubits*2>::type>,
-            MontyFullRange<T>
-        >::type;
+    using type = typename std::conditional<
+                      util::sized_uint<ubits*2>::is_valid
+                                     && (ubits*2 <= HURCHALLA_TARGET_BIT_WIDTH),
+                      MontySixthRange<typename util::sized_uint<ubits*2>::type>,
+                      MontyFullRange<T>
+                 >::type;
 };
 
 // If this partial specialization is instantiated, T is a signed integral type.
 template <typename T>
 class MontgomeryDefault<T, typename std::enable_if<
-                     modular_arithmetic::ma_numeric_limits<T>::is_integer &&
-                     modular_arithmetic::ma_numeric_limits<T>::is_signed>::type>
+                                 util::ut_numeric_limits<T>::is_integer &&
+                                 util::ut_numeric_limits<T>::is_signed>::type>
 {
-    using U = typename modular_arithmetic::extensible_make_unsigned<T>::type;
-    static constexpr int ubits =
-                               modular_arithmetic::ma_numeric_limits<U>::digits;
+    using U = typename util::extensible_make_unsigned<T>::type;
+    static constexpr int ubits = util::ut_numeric_limits<U>::digits;
 public:
-    using type =
-        typename std::conditional<
-            !(std::is_same<typename sized_uint<ubits*2>::type, void>::value)
-                && (ubits*2 <= HURCHALLA_TARGET_BIT_WIDTH),
-            MontySixthRange<typename sized_uint<ubits*2>::type>,
-            MontyHalfRange<U>
-        >::type;
+    using type = typename std::conditional<
+                      util::sized_uint<ubits*2>::is_valid
+                                     && (ubits*2 <= HURCHALLA_TARGET_BIT_WIDTH),
+                      MontySixthRange<typename util::sized_uint<ubits*2>::type>,
+                      MontyHalfRange<U>
+                 >::type;
 };
 
 

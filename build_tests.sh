@@ -98,7 +98,7 @@
 #     intel bin directories as the first entries in the PATH.  Unfortunately
 #     those bin directories contain clang, clang++, gcc, and g++ symbolic links
 #     to (evidently) binaries that the Parallel Studio XE installer put on the
-#     system.  This seems to me to be a very bad choice by intel, because after
+#     system.  This seems to me to be a bad choice by intel, because after
 #     sourcing the compilervars script, the commands gcc, g++, clang, clang++ no
 #     longer refer to any of the gcc or clang compilers that you may have
 #     installed on your system.  Instead these commands will refer to the intel-
@@ -116,13 +116,13 @@
 #     assumes it is already in a subshell, and just sources compilervars.sh if
 #     icc is chosen. ]
 # sudo update-alternatives --config gcc
-#   [ The above problems with compilervars.sh were bad, but there's more.  For
+#   [ The above problems with compilervars.sh weren't my only issues.  For
 #     whatever reason, I have experienced that the intel version of gcc/g++ is
 #     not always the one used after I have sourced compilervars.sh, presumably
 #     because the script altered the PATH variable to place the intel compiler
 #     directories *after* usr/bin where the normal gcc/g++ on my system lies.
-#     This is a problem for icc, because surprisingly, Intel C++ uses and needs
-#     gcc's system includes and standard library: see  https://software.intel.com/content/www/us/en/develop/documentation/cpp-compiler-developer-guide-and-reference/top/compatibility-and-portability/gcc-compatibility-and-interoperability.html
+#     This is a problem for icc, because Intel C++ uses and needs gcc's system
+#     includes and standard library: see  https://software.intel.com/content/www/us/en/develop/documentation/cpp-compiler-developer-guide-and-reference/top/compatibility-and-portability/gcc-compatibility-and-interoperability.html
 #     If icc mistakenly ends up using a version of gcc (for example, the very
 #     latest version of gcc) that is not compatible with icc, then icc may fail
 #     with compile errors that make it pretty obvious it is using your system
@@ -153,7 +153,7 @@
 #     for update-alternatives --config gcc.  For me, that meant g++-7. ]
 #
 # [ I didn't need to run "update-alternatives --config icc" (or icpc), but if
-#   you install multiple versions of icc you'll no doubt need to do run
+#   you install multiple versions of icc, then I expect you'd need to run
 #   update-alternatives for both icc and icpc. ]
 
 
@@ -473,6 +473,8 @@ if [ "$run_tests" = true ]; then
   ./$build_dir/test_ndebug_programming_by_contract --gtest_break_on_failure
   exit_on_failure
   ./$build_dir/test_programming_by_contract --gtest_break_on_failure
+  exit_on_failure
+  ./$build_dir/test_hurchalla_util --gtest_break_on_failure
   exit_on_failure
   ./$build_dir/test_hurchalla_modular_arithmetic --gtest_break_on_failure
   exit_on_failure

@@ -7,8 +7,8 @@
 
 #include "hurchalla/modular_arithmetic/detail/impl_modular_multiplicative_inverse.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
-#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
-#include "hurchalla/programming_by_contract/programming_by_contract.h"
+#include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/programming_by_contract.h"
 
 namespace hurchalla { namespace modular_arithmetic {
 
@@ -20,7 +20,7 @@ namespace hurchalla { namespace modular_arithmetic {
 template <typename T>
 T modular_multiplicative_inverse(T a, T modulus)
 {
-    static_assert(ma_numeric_limits<T>::is_integer, "");
+    static_assert(util::ut_numeric_limits<T>::is_integer, "");
     HPBC_PRECONDITION(a >= 0);
     HPBC_PRECONDITION(modulus > 1);
 

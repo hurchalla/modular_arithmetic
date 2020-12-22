@@ -19,8 +19,8 @@
 
 #include "hurchalla/modular_arithmetic/modular_multiplicative_inverse.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
-#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
-#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
+#include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/compiler_macros.h"
 #include "gtest/gtest.h"
 #include <cstdint>
 
@@ -32,8 +32,8 @@
 template <typename T>
 T gcd(T a, T b)
 {
-    namespace ma = hurchalla::modular_arithmetic;
-    static_assert(ma::ma_numeric_limits<T>::is_integer, "");
+    namespace ut = hurchalla::util;
+    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
     HPBC_PRECONDITION(a >= 0);
     HPBC_PRECONDITION(b >= 0);
 
@@ -68,6 +68,7 @@ template <typename T>
 void test_modulus(T modulus)
 {
     namespace ma = hurchalla::modular_arithmetic;
+    namespace ut = hurchalla::util;
 
     T a = 0;
     EXPECT_TRUE(static_cast<T>(0) ==
@@ -79,7 +80,7 @@ void test_modulus(T modulus)
     EXPECT_TRUE(static_cast<T>(0) ==
                                 ma::modular_multiplicative_inverse(a, modulus));
 
-    T tmax = ma::ma_numeric_limits<T>::max();
+    T tmax = ut::ut_numeric_limits<T>::max();
     if (modulus < tmax) {
         a = static_cast<T>(modulus + 1);
         EXPECT_TRUE(static_cast<T>(1) ==
@@ -140,6 +141,7 @@ template <typename T>
 void test_modular_multiplicative_inverse()
 {
     namespace ma = hurchalla::modular_arithmetic;
+    namespace ut = hurchalla::util;
 
     // test with a few basic examples first
     T modulus = 13;
@@ -208,12 +210,12 @@ void test_modular_multiplicative_inverse()
     EXPECT_TRUE(static_cast<T>(1) ==
                                 ma::modular_multiplicative_inverse(a, modulus));
 
-    modulus = ma::ma_numeric_limits<T>::max();
+    modulus = ut::ut_numeric_limits<T>::max();
     test_modulus(modulus);
     modulus--;
     test_modulus(modulus);
 
-    modulus = ma::ma_numeric_limits<T>::max() / 2;
+    modulus = ut::ut_numeric_limits<T>::max() / 2;
     test_modulus(modulus);
     modulus++;
     test_modulus(modulus);

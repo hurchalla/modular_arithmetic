@@ -31,8 +31,6 @@ target_sources(hurchalla_montgomery_arithmetic INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/montgomery_arithmetic/detail/MontySixthRange.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/montgomery_arithmetic/detail/monty_tag_structs.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/montgomery_arithmetic/detail/MontyWrappedStandardMath.h>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/montgomery_arithmetic/detail/safely_promote_unsigned.h>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/montgomery_arithmetic/detail/sized_uint.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/montgomery_arithmetic/detail/platform_specific/impl_unsigned_multiply_to_hilo_product.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/montgomery_arithmetic/detail/platform_specific/MontHelper.h>
@@ -55,11 +53,11 @@ target_link_libraries(hurchalla_montgomery_arithmetic
 
 include(FetchContent)
 FetchContent_Declare(
-    programming_by_contract
-    GIT_REPOSITORY https://github.com/hurchalla/programming_by_contract.git
+    hurchalla_util
+    GIT_REPOSITORY https://github.com/hurchalla/util.git
     GIT_TAG        master
 )
-FetchContent_MakeAvailable(programming_by_contract)
+FetchContent_MakeAvailable(hurchalla_util)
 
 target_link_libraries(hurchalla_montgomery_arithmetic
-                      INTERFACE hurchalla_programming_by_contract)
+                      INTERFACE hurchalla_util)

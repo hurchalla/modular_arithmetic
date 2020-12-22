@@ -9,19 +9,19 @@
 #include "hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/Redc.h"
-#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
-#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
-#include "hurchalla/programming_by_contract/programming_by_contract.h"
+#include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/compiler_macros.h"
+#include "hurchalla/util/programming_by_contract.h"
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
-// Let the theoretical constant R = 2^(ma_numeric_limits<T>::digits).
+// Let the theoretical constant R = 2^(ut_numeric_limits<T>::digits).
 template <typename T>
 class MontySixthRange : public MontyCommonBase<MontySixthRange, T> {
-    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_integer, "");
-    static_assert(!(modular_arithmetic::ma_numeric_limits<T>::is_signed), "");
-    static_assert(modular_arithmetic::ma_numeric_limits<T>::is_modulo, "");
+    static_assert(util::ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(util::ut_numeric_limits<T>::is_signed), "");
+    static_assert(util::ut_numeric_limits<T>::is_modulo, "");
     using BC = MontyCommonBase<
                         ::hurchalla::montgomery_arithmetic::MontySixthRange, T>;
     using BC::n_;
@@ -36,7 +36,7 @@ public:
     {
         // MontySixthRange requires  modulus < R/6
         T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
-                        (modular_arithmetic::ma_numeric_limits<T>::digits - 1));
+                                      (util::ut_numeric_limits<T>::digits - 1));
         T Rdiv6 = static_cast<T>(Rdiv2 / 3);
         HPBC_PRECONDITION2(modulus < Rdiv6);
     }
@@ -46,7 +46,7 @@ public:
     static constexpr T max_modulus()
     {
         return static_cast<T>((static_cast<T>(1) <<
-                 (modular_arithmetic::ma_numeric_limits<T>::digits - 1))/3 - 1);
+                               (util::ut_numeric_limits<T>::digits - 1))/3 - 1);
     }
 
     HURCHALLA_FORCE_INLINE T getExtendedModulus() const

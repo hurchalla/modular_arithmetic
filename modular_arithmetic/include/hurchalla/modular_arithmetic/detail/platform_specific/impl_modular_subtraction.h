@@ -5,9 +5,9 @@
 #define HURCHALLA_MODULAR_ARITHMETIC_IMPL_MODULAR_SUBTRACTION_H_INCLUDED
 
 
-#include "hurchalla/modular_arithmetic/detail/ma_numeric_limits.h"
-#include "hurchalla/modular_arithmetic/detail/platform_specific/compiler_macros.h"
-#include "hurchalla/programming_by_contract/programming_by_contract.h"
+#include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/compiler_macros.h"
+#include "hurchalla/util/programming_by_contract.h"
 #include <cstdint>
 
 namespace hurchalla { namespace modular_arithmetic {
@@ -16,7 +16,8 @@ namespace hurchalla { namespace modular_arithmetic {
 template <typename T>
 T impl_modular_subtraction_prereduced_inputs(T a, T b, T modulus)
 {
-    static_assert(ma_numeric_limits<T>::is_integer, "");
+    namespace ut = hurchalla::util;
+    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
     HPBC_PRECONDITION2(modulus>0);
     HPBC_PRECONDITION2(a>=0 && a<modulus);  // i.e. the input must be prereduced
     HPBC_PRECONDITION2(b>=0 && b<modulus);  // i.e. the input must be prereduced
