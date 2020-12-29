@@ -2,7 +2,7 @@
 // by the file "LICENSE.TXT" in the root of this repository ---
 
 
-#include "hurchalla/montgomery_arithmetic/detail/inverse_mod_r.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/inverse_mod_R.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "gtest/gtest.h"
@@ -17,7 +17,7 @@ void test_single_inverse(T a)
     using P = typename ut::safely_promote_unsigned<T>::type;
     T one = static_cast<T>(1);
 
-    T inv = mont::inverse_mod_r(a);
+    T inv = mont::inverse_mod_R(a);
     EXPECT_TRUE(static_cast<T>(static_cast<P>(inv) * static_cast<P>(a)) == one);
 }
 

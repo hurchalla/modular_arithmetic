@@ -10,14 +10,11 @@
 #include <cstdint>
 #include <algorithm>
 
-namespace hurchalla { namespace montgomery_arithmetic {
+namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
 
 
 
-namespace detail {
-// -----------------
-// Private Functions
-// -----------------
+namespace detail_mh {
 
 template <typename T>
 HURCHALLA_FORCE_INLINE T default_modsub_canonical_subtrahend(T x, T y, T n)
@@ -53,12 +50,8 @@ HURCHALLA_FORCE_INLINE T default_modadd_canonical_second_addend(T x, T y, T n)
     return result;
 }
 
-} // end namespace detail
+} // end namespace detail_mh
 
-
-// ----------------
-// Public Functions
-// ----------------
 
 
 // primary template
@@ -71,7 +64,7 @@ struct MontHelper
   // to max(x, n-1).
   static HURCHALLA_FORCE_INLINE T modsub_canonical_subtrahend(T x, T y, T n)
   {
-    return detail::default_modsub_canonical_subtrahend(x, y, n);
+    return detail_mh::default_modsub_canonical_subtrahend(x, y, n);
   }
   // modadd_canonical_second_addend()  returns x+y (mod n).
   // y must be canonical (meaning: 0 <= y < n).
@@ -79,7 +72,7 @@ struct MontHelper
   // to max(x, n-1).
   static HURCHALLA_FORCE_INLINE T modadd_canonical_second_addend(T x, T y, T n)
   {
-    return detail::default_modadd_canonical_second_addend(x, y, n);
+    return detail_mh::default_modadd_canonical_second_addend(x, y, n);
   }
 };
 
@@ -120,7 +113,7 @@ struct MontHelper<std::uint64_t>
              : "cc");
     HPBC_POSTCONDITION2(result <= std::max(x, static_cast<T>(n-1)));
     HPBC_POSTCONDITION2(result ==
-                         detail::default_modsub_canonical_subtrahend(x, y, n));
+                       detail_mh::default_modsub_canonical_subtrahend(x, y, n));
     return result;
   }
 
@@ -142,7 +135,7 @@ struct MontHelper<std::uint64_t>
     T result = sum;
     HPBC_POSTCONDITION2(result <= std::max(x, static_cast<T>(n-1)));
     HPBC_POSTCONDITION2(result ==
-                      detail::default_modadd_canonical_second_addend(x, y, n));
+                    detail_mh::default_modadd_canonical_second_addend(x, y, n));
     return result;
   }
 };
@@ -175,7 +168,7 @@ struct MontHelper<std::uint32_t>
              : "cc");
     HPBC_POSTCONDITION2(result <= std::max(x, static_cast<T>(n-1)));
     HPBC_POSTCONDITION2(result ==
-                         detail::default_modsub_canonical_subtrahend(x, y, n));
+                       detail_mh::default_modsub_canonical_subtrahend(x, y, n));
     return result;
   }
 
@@ -193,7 +186,7 @@ struct MontHelper<std::uint32_t>
     T result = sum;
     HPBC_POSTCONDITION2(result <= std::max(x, static_cast<T>(n-1)));
     HPBC_POSTCONDITION2(result ==
-                      detail::default_modadd_canonical_second_addend(x, y, n));
+                    detail_mh::default_modadd_canonical_second_addend(x, y, n));
     return result;
   }
 };
@@ -202,6 +195,6 @@ struct MontHelper<std::uint32_t>
          // defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 
 
-}} // end namespace
+}}} // end namespace
 
 #endif

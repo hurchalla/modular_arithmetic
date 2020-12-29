@@ -2,7 +2,7 @@
 // by the file "LICENSE.TXT" in the root of this repository ---
 
 
-#include "hurchalla/montgomery_arithmetic/detail/experimental/negative_inverse_mod_r.h"
+#include "hurchalla/montgomery_arithmetic/detail/experimental/negative_inverse_mod_R.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "gtest/gtest.h"
@@ -22,7 +22,7 @@ void test_single_negative_inverse(T a)
     using P = typename ut::safely_promote_unsigned<T>::type;
     T minusOne = static_cast<T>(static_cast<P>(0) - static_cast<P>(1));
 
-    T inv = mont::negative_inverse_mod_r(a);
+    T inv = mont::detail::negative_inverse_mod_R(a);
     EXPECT_TRUE(static_cast<T>(static_cast<P>(inv) * static_cast<P>(a)) ==
                                                                       minusOne);
 }
@@ -47,7 +47,7 @@ void test_negative_inverse_exhaustive()
 
 
 template <typename T>
-void test_negative_inverse_mod_r()
+void test_negative_inverse_mod_R()
 {
     namespace ut = hurchalla::util;
     T tmax = ut::ut_numeric_limits<T>::max();
@@ -74,12 +74,12 @@ void test_negative_inverse_mod_r()
 
 namespace {
     TEST(MontgomeryArithmetic, negative_inverse_mod_r) {
-        test_negative_inverse_mod_r<std::uint8_t>();
-        test_negative_inverse_mod_r<std::uint16_t>();
-        test_negative_inverse_mod_r<std::uint32_t>();
-        test_negative_inverse_mod_r<std::uint64_t>();
+        test_negative_inverse_mod_R<std::uint8_t>();
+        test_negative_inverse_mod_R<std::uint16_t>();
+        test_negative_inverse_mod_R<std::uint32_t>();
+        test_negative_inverse_mod_R<std::uint64_t>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
-        test_negative_inverse_mod_r<__uint128_t>();
+        test_negative_inverse_mod_R<__uint128_t>();
 #endif
 
         test_negative_inverse_exhaustive<std::uint8_t>();

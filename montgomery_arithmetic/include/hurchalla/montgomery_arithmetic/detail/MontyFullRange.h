@@ -5,22 +5,23 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_FULL_RANGE_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/detail/monty_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/monty_tag_structs.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 
-namespace hurchalla { namespace montgomery_arithmetic {
+namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
 
 
+// Let the theoretical constant R = 2^(ut_numeric_limits<T>::digits).
 template <typename T>
 class MontyFullRange : public MontyCommonBase<MontyFullRange, T> {
     static_assert(util::ut_numeric_limits<T>::is_integer, "");
     static_assert(!(util::ut_numeric_limits<T>::is_signed), "");
     static_assert(util::ut_numeric_limits<T>::is_modulo, "");
     using BC = MontyCommonBase<
-                         ::hurchalla::montgomery_arithmetic::MontyFullRange, T>;
+                 ::hurchalla::montgomery_arithmetic::detail::MontyFullRange, T>;
     using BC::n_;
     using V = typename BC::MontgomeryValue;
 public:
@@ -78,6 +79,6 @@ public:
 };
 
 
-}} // end namespace
+}}} // end namespace
 
 #endif

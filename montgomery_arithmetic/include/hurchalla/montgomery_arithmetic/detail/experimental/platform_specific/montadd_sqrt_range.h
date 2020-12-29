@@ -10,7 +10,7 @@
 #include "hurchalla/util/programming_by_contract.h"
 #include <cstdint>
 
-namespace hurchalla { namespace montgomery_arithmetic {
+namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
 
 
 // Note: this file is extremely closely related to
@@ -105,6 +105,6 @@ HURCHALLA_FORCE_INLINE std::uint64_t montadd_sqrt_range(std::uint64_t a,
 #endif
 
 
-}} // end namespace
+}}} // end namespace
 
 #endif

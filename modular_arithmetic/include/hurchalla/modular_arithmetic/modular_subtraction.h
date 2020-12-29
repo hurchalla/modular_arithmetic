@@ -47,7 +47,7 @@ T modular_subtraction_prereduced_inputs(T a, T b, T modulus)
     HPBC_PRECONDITION(a>=0 && a<modulus);   // i.e. the input must be prereduced
     HPBC_PRECONDITION(b>=0 && b<modulus);   // i.e. the input must be prereduced
 
-    T result = impl_modular_subtraction_prereduced_inputs(a, b, modulus);
+    T result= detail::impl_modular_subtraction_prereduced_inputs(a, b, modulus);
 
     // POSTCONDITION:
     // Let a conceptual "%%" operator represent a modulo operator that always

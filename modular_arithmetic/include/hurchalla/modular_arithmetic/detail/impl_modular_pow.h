@@ -11,7 +11,7 @@
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 
-namespace hurchalla { namespace modular_arithmetic {
+namespace hurchalla { namespace modular_arithmetic { namespace detail {
 
 
 // See http://en.wikipedia.org/wiki/Modular_exponentiation
@@ -62,6 +62,6 @@ T impl_modular_pow(T base_t, T exponent_t, T modulus_t)
 }
 
 
-}}  // end namespace
+}}}  // end namespace
 
 #endif  // include guard

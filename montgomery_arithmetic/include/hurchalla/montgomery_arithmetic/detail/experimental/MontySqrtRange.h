@@ -5,12 +5,12 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_SQRT_RANGE_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/optimization_tag_structs.h"
-#include "hurchalla/montgomery_arithmetic/detail/monty_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/detail/experimental/platform_specific/montadd_sqrt_range.h"
 #include "hurchalla/montgomery_arithmetic/detail/experimental/platform_specific/montsub_sqrt_range.h"
-#include "hurchalla/montgomery_arithmetic/detail/experimental/negative_inverse_mod_r.h"
-#include "hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h"
+#include "hurchalla/montgomery_arithmetic/detail/experimental/negative_inverse_mod_R.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/monty_tag_structs.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
@@ -23,7 +23,7 @@
 #  pragma warning(disable : 4309)
 #endif
 
-namespace hurchalla { namespace montgomery_arithmetic {
+namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
 
 
 // For discussion purposes, let R = 2^(ut_numeric_limits<T>::digits).  For
@@ -192,7 +192,7 @@ public:
 
     explicit MontySqrtRange(T modulus) : n_(modulus),
                              r_mod_n_(getRModN(n_)),
-                             neg_inv_n_(negative_inverse_mod_r(n_)),
+                             neg_inv_n_(negative_inverse_mod_R(n_)),
                              r_squared_mod_n_( modular_arithmetic::
                                     modular_multiplication_prereduced_inputs(
                                                        r_mod_n_, r_mod_n_, n_) )
@@ -516,7 +516,7 @@ public:
 };
 
 
-}} // end namespace
+}}} // end namespace
 
 
 #if defined(_MSC_VER)

@@ -10,7 +10,7 @@
 #include "hurchalla/util/programming_by_contract.h"
 #include <type_traits>
 
-namespace hurchalla { namespace modular_arithmetic {
+namespace hurchalla { namespace modular_arithmetic { namespace detail {
 
 
 // Enabled only for signed (integral) types T.
@@ -132,6 +132,6 @@ impl_modular_multiplicative_inverse(U val, U modulus)
 }
 
 
-}}  // end namespace
+}}}  // end namespace
 
 #endif

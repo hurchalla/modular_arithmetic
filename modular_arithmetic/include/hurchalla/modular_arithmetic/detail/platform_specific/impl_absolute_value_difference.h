@@ -10,7 +10,7 @@
 #include "hurchalla/util/programming_by_contract.h"
 #include <cstdint>
 
-namespace hurchalla { namespace modular_arithmetic {
+namespace hurchalla { namespace modular_arithmetic { namespace detail {
 
 
 template <typename T>
@@ -81,6 +81,6 @@ std::uint64_t impl_absolute_value_difference(std::uint64_t a, std::uint64_t b)
 #endif
 
 
-}}  // end namespace
+}}}  // end namespace
 
 #endif

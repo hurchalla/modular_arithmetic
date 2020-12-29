@@ -12,7 +12,7 @@
 #include "hurchalla/util/programming_by_contract.h"
 #include <type_traits>
 
-namespace hurchalla { namespace montgomery_arithmetic {
+namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
 
 
 // For discussion purposes, let R = 2^(ut_numeric_limits<T>::digits).  For
@@ -103,7 +103,7 @@ namespace detail_nimr {
 
 // Returns the integer x satisfying  x*a ≡ -1 (mod R)
 template <typename T>
-T negative_inverse_mod_r(T a)
+T negative_inverse_mod_R(T a)
 {
     namespace ut = hurchalla::util;
     static_assert(ut::ut_numeric_limits<T>::is_integer, "");
@@ -125,6 +125,6 @@ T negative_inverse_mod_r(T a)
 #endif
 
 
-}} // end namespace
+}}} // end namespace
 
 #endif

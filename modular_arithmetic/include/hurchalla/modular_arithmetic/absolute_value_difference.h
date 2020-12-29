@@ -20,7 +20,7 @@ T absolute_value_difference(T a, T b)
     HPBC_PRECONDITION(a >= 0);
     HPBC_PRECONDITION(b >= 0);
 
-    T result = impl_absolute_value_difference(a, b);
+    T result = detail::impl_absolute_value_difference(a, b);
 
     // POSTCONDITION:
     // This function returns absolute_value(a-b).  A simple potential

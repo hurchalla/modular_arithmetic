@@ -14,7 +14,7 @@
 #include "hurchalla/util/programming_by_contract.h"
 #include "hurchalla/util/compiler_macros.h"
 
-namespace hurchalla { namespace montgomery_arithmetic {
+namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
 
 
 // This class provides a standard modular arithmetic implementation, wrapped
@@ -205,6 +205,6 @@ public:
 };
 
 
-}} // end namespace
+}}} // end namespace
 
 #endif

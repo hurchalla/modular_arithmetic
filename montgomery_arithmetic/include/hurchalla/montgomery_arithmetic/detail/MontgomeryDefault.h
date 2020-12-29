@@ -14,7 +14,7 @@
 #include "hurchalla/util/compiler_macros.h"
 #include <type_traits>
 
-namespace hurchalla { namespace montgomery_arithmetic {
+namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
 
 
 // If this primary template is instantiated, then T is an unsigned integral type
@@ -50,6 +50,6 @@ public:
 };
 
 
-}} // end namespace
+}}} // end namespace
 
 #endif

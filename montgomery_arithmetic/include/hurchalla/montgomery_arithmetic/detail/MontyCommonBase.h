@@ -5,30 +5,33 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_COMMON_BASE_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/optimization_tag_structs.h"
-#include "hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h"
-#include "hurchalla/montgomery_arithmetic/detail/inverse_mod_r.h"
-#include "hurchalla/montgomery_arithmetic/detail/platform_specific/Redc.h"
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/MontHelper.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/monty_tag_structs.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/get_Rsquared_mod_n.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/get_R_mod_n.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/inverse_mod_R.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
-#include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/modular_arithmetic/absolute_value_difference.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 
-namespace hurchalla { namespace montgomery_arithmetic {
+namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
 
 
 // For discussion purposes throughout this file, given an unsigned integral type
 // T, let R = 2^(ut_numeric_limits<T>::digits).  For example: if T is uint64_t
-// then R = 2^64.  The name 'R' is based on the wikipedia presentation.
+// then R = 2^64.  The name 'R' is based on the wikipedia presentation
+// https://en.wikipedia.org/wiki/Montgomery_modular_multiplication
 //
 // This base class uses the CRTP idiom
 // https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern
-// This is the base class shared by most montgomery forms (MontySqrtRange is an
-// exception).
+// This is the base class shared by most montgomery forms (the experimental
+// MontySqrtRange is an exception).
 template <template <typename> class Derived, typename T>
 class MontyCommonBase {
 public:
@@ -66,90 +69,24 @@ protected:
     const T r_squared_mod_n_;
 
     explicit MontyCommonBase(T modulus) : n_(modulus),
-                              r_mod_n_(getRModN(n_)),
-                              inv_n_(inverse_mod_r(n_)),
-                              r_squared_mod_n_(calculateRSquaredModN())
+                       r_mod_n_(get_R_mod_n(n_)),
+                       inv_n_(inverse_mod_R(n_)),
+                       r_squared_mod_n_(get_Rsquared_mod_n(n_, inv_n_, r_mod_n_,
+                                        typename D::MontyTag()))
     {
         HPBC_PRECONDITION2(modulus % 2 == 1);
         HPBC_PRECONDITION2(modulus > 1);
         // Note: unityValue == (the montgomery form of 1)==(1*R)%n_ == r_mod_n_.
         //
-        // getRModN() guarantees the below.  getUnityValue() and
-        // getNegativeOneValue() both rely on it.
+        // get_R_mod_n() and get_Rsquared_mod_n() guarantee the below.
+        // getUnityValue() and getNegativeOneValue() both rely on it.
         HPBC_INVARIANT2(0 < r_mod_n_ && r_mod_n_ < n_);
         HPBC_INVARIANT2(r_squared_mod_n_ < n_);
     }
     MontyCommonBase(const MontyCommonBase&) = delete;
     MontyCommonBase& operator=(const MontyCommonBase&) = delete;
 
-private:
-    static T getRModN(T n)
-    {
-        HPBC_PRECONDITION2(n % 2 == 1);
-        HPBC_PRECONDITION2(n > 1);
-        // Assign a tmp T variable rather than directly using the intermediate
-        // expression, in order to avoid a negative value (and a wrong answer)
-        // in cases where 'n' would be promoted to type 'int'.
-        T tmp = static_cast<T>(static_cast<T>(0) - n);
-        // Compute R%n.  For example, if R==2^64, arithmetic wraparound behavior
-        // of the unsigned integral type T results in (0 - n) representing
-        // (2^64 - n).  Thus, rModN = R%n == (2^64)%n == (2^64 - n)%n == (0-n)%n
-        T rModN = static_cast<T>(tmp % n);
-        // Since n is odd and > 1, n does not divide R==2^x.  Thus, rModN != 0
-        HPBC_POSTCONDITION2(0 < rModN && rModN < n);
-        return rModN;
-    }
 
-    T calculateRSquaredModN()
-    {
-#ifndef HURCHALLA_TARGET_BIT_WIDTH
-#  error HURCHALLA_TARGET_BIT_WIDTH must be defined
-#endif
-#if defined(HURCHALLA_TARGET_ISA_X86_32) || defined(HURCHALLA_TARGET_ISA_X86_64)
-        // x86 has a division instruction that has a dividend parameter that is
-        // twice the CPU word size (word size == HURCHALLA_TARGET_BIT_WIDTH).
-        // Modular multiplication produces a temporary product that is twice its
-        // operand bit width, and also divides a temporary dividend that is
-        // twice the operand bit width.  That's why we flag if we're on x86.
-        constexpr bool is_x86 = true;
-#else
-        constexpr bool is_x86 = false;
-#endif
-#ifdef HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE
-        constexpr bool no_native_divide = true;
-#else
-        constexpr bool no_native_divide = false;
-#endif
-        constexpr int bitsT = util::ut_numeric_limits<T>::digits;
-        // We must be sure that add() and multiply() never use
-        // r_squared_mod_n_, since it is not yet initialized!  I don't expect
-        // those functions will ever use r_squared_mod_n_.  In fact, the only
-        // function that I expect to ever use it is convertIn().
-        if (no_native_divide || (bitsT > HURCHALLA_TARGET_BIT_WIDTH) ||
-                           ((bitsT == HURCHALLA_TARGET_BIT_WIDTH) && !is_x86)) {
-            V tmp = V(r_mod_n_);   // r_mod_n_ == 1*R (mod n)
-            int i=0;
-            for (; i<4; ++i)
-                tmp = add(tmp, tmp);
-            // at this point,  tmp == 16*R (mod n)
-            bool isZero;
-            for (; i<bitsT; i*=2)
-                tmp = multiply(tmp, tmp, isZero, LowlatencyTag());
-            HPBC_ASSERT2(i == bitsT);
-            V cv = static_cast<const D*>(this)->getCanonicalValue(tmp);
-            T rSquaredModN = cv.get();
-            HPBC_POSTCONDITION2(rSquaredModN < n_);
-            HPBC_POSTCONDITION2(rSquaredModN ==
-                   modular_arithmetic::modular_multiplication_prereduced_inputs(
-                                                       r_mod_n_, r_mod_n_, n_));
-            return rSquaredModN;
-        } else {
-            return modular_arithmetic::modular_multiplication_prereduced_inputs(
-                                                        r_mod_n_, r_mod_n_, n_);
-        }
-    }
-
-protected:
     // intended for use in preconditions/postconditions
     HURCHALLA_FORCE_INLINE bool isValid(V x) const
     {
@@ -328,9 +265,8 @@ public:
         // in Redc.h for proof.
         HPBC_ASSERT2(u_hi < n_);
 
-        T result = REDC(u_hi, u_lo, n_, inv_n_, typename D::MontyTag(), PTAG());
-        isZero = isZeroRedcResult(result, n_, typename D::MontyTag());
-
+        T result = REDC(u_hi, u_lo, n_, inv_n_, isZero, typename D::MontyTag(),
+                                                                        PTAG());
         HPBC_POSTCONDITION2(isZero ==
              (static_cast<const D*>(this)->getCanonicalValue(V(result)).get() ==
               getZeroValue().get()));
@@ -404,6 +340,6 @@ public:
 };
 
 
-}} // end namespace
+}}} // end namespace
 
 #endif

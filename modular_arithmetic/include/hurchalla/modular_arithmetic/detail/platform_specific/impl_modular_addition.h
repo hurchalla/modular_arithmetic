@@ -12,7 +12,7 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace hurchalla { namespace modular_arithmetic {
+namespace hurchalla { namespace modular_arithmetic { namespace detail {
 
 
 // -----------------------------------------------------------------------------
@@ -250,6 +250,6 @@ inline std::uint64_t impl_modular_addition_prereduced_inputs(std::uint64_t a,
 // }
 
 
-}}  // end namespace
+}}}  // end namespace
 
 #endif

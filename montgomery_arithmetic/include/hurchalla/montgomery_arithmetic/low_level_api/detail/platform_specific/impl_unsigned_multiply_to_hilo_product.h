@@ -15,7 +15,7 @@
 #  pragma warning(disable : 4127)
 #endif
 
-namespace hurchalla { namespace montgomery_arithmetic {
+namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
 
 
 // Generic (non-platform specific) implementation of the contract for
@@ -184,7 +184,7 @@ HURCHALLA_FORCE_INLINE std::uint64_t impl_unsigned_multiply_to_hilo_product(
 #endif
 
 
-}} // end namespace
+}}} // end namespace
 
 
 #if defined(_MSC_VER)

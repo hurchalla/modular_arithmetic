@@ -5,7 +5,7 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_UNSIGNED_MULT_TO_HILO_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/detail/platform_specific/impl_unsigned_multiply_to_hilo_product.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/detail/platform_specific/impl_unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
 
@@ -29,7 +29,7 @@ T unsigned_multiply_to_hilo_product(T* pLowProduct, T a, T b)
     //                *pLowProduct.
     // POSTCONDITION: Returns the high-bits portion of the product (a*b).
 
-    return impl_unsigned_multiply_to_hilo_product(pLowProduct, a, b);
+    return detail::impl_unsigned_multiply_to_hilo_product(pLowProduct, a, b);
 }
 
 

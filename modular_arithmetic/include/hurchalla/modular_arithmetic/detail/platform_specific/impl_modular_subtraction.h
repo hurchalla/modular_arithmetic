@@ -10,7 +10,7 @@
 #include "hurchalla/util/programming_by_contract.h"
 #include <cstdint>
 
-namespace hurchalla { namespace modular_arithmetic {
+namespace hurchalla { namespace modular_arithmetic { namespace detail {
 
 
 template <typename T>
@@ -160,6 +160,6 @@ inline std::uint64_t impl_modular_subtraction_prereduced_inputs(std::uint64_t a,
 #endif
 
 
-}}  // end namespace
+}}}  // end namespace
 
 #endif

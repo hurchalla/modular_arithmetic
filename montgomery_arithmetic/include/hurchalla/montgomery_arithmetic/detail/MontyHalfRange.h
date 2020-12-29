@@ -5,15 +5,15 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_HALF_RANGE_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/detail/monty_tag_structs.h"
-#include "hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
-#include "hurchalla/montgomery_arithmetic/detail/platform_specific/Redc.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/monty_tag_structs.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 
-namespace hurchalla { namespace montgomery_arithmetic {
+namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
 
 
 // Let the theoretical constant R = 2^(ut_numeric_limits<T>::digits).
@@ -23,7 +23,7 @@ class MontyHalfRange : public MontyCommonBase<MontyHalfRange, T> {
     static_assert(!(util::ut_numeric_limits<T>::is_signed), "");
     static_assert(util::ut_numeric_limits<T>::is_modulo, "");
     using BC = MontyCommonBase<
-                         ::hurchalla::montgomery_arithmetic::MontyHalfRange, T>;
+                 ::hurchalla::montgomery_arithmetic::detail::MontyHalfRange, T>;
     using BC::n_;
     using BC::inv_n_;
     using V = typename BC::MontgomeryValue;
@@ -77,8 +77,7 @@ public:
         // u_hi < n  implies that  sum*z == u < n*R.  See REDC_non_finalized()
         // in Redc.h for proof.
         HPBC_ASSERT2(u_hi < n_);
-        T result = REDC(u_hi, u_lo, n_, inv_n_, HalfrangeTag(), PTAG());
-        isZero = isZeroRedcResult(result, n_, HalfrangeTag());
+        T result = REDC(u_hi, u_lo, n_, inv_n_, isZero, HalfrangeTag(), PTAG());
 
         HPBC_POSTCONDITION2(isZero ==
               (getCanonicalValue(V(result)).get() == BC::getZeroValue().get()));
@@ -88,6 +87,6 @@ public:
 };
 
 
-}} // end namespace
+}}} // end namespace
 
 #endif

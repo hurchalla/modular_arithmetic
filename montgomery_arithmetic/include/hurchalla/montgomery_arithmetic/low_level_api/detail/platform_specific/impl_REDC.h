@@ -1,13 +1,13 @@
 // --- This file is distributed under the MIT Open Source License, as detailed
 // by the file "LICENSE.TXT" in the root of this repository ---
 
-#ifndef HURCHALLA_MONTGOMERY_ARITHMETIC_REDC_H_INCLUDED
-#define HURCHALLA_MONTGOMERY_ARITHMETIC_REDC_H_INCLUDED
+#ifndef HURCHALLA_MONTGOMERY_ARITHMETIC_IMPL_REDC_H_INCLUDED
+#define HURCHALLA_MONTGOMERY_ARITHMETIC_IMPL_REDC_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/optimization_tag_structs.h"
-#include "hurchalla/montgomery_arithmetic/detail/monty_tag_structs.h"
-#include "hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/unsigned_multiply_to_hilo_product.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/monty_tag_structs.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
 #include "hurchalla/util/compiler_macros.h"
@@ -19,23 +19,23 @@
 #  pragma warning(disable : 4127)
 #endif
 
-namespace hurchalla { namespace montgomery_arithmetic {
-
+namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
 
 namespace detail_redc {
-// -----------------
-// Private Functions (public functions are at end of file)
-// -----------------
 
 // Generic Montgomery REDC algorithm
 
 // This function implements the REDC algorithm as described at
-// https://github.com/hurchalla/modular_arithmetic/blob/master/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/platform_specific/README_REDC.md
+// https://github.com/hurchalla/modular_arithmetic/blob/master/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/low_level_api/detail/platform_specific/README_REDC.md
 // This is an alternate version of the REDC algorithm, that differs in small but
 // important ways from Peter Montgomery's original 1985 paper "Modular
-// multiplication without trial division".  For our purposes, the most important
-// distinction is that it is a more efficient algorithm both for latency and
-// number of instructions.  See README_REDC.md for more info.
+// multiplication without trial division".  From the point of view of a caller,
+// the most important distinction is that this version requires the positive
+// inverse for one of its arguments rather than the negative inverse (which was
+// required by the original/traditional REDC algorithm).  For our purposes, the
+// most important distinction is that this alternate version is a more efficient
+// algorithm both for latency and number of instructions.  See README_REDC.md
+// for the details.
 // Note that the description in README_REDC.md uses a variable name "T", despite
 // the fact that in C++ "T" is conventionally reserved for use as a template
 // parameter name.   This is done for consistency with most all descriptions of
@@ -199,7 +199,7 @@ struct DefaultRedc
     if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
         // ensure our result equals what we would get via REDC_non_finalized
         bool ovf;
-        T result = detail_redc::REDC_non_finalized(ovf, u_hi, u_lo, n, inv_n);
+        T result = REDC_non_finalized(ovf, u_hi, u_lo, n, inv_n);
         T result2 = (ovf) ? static_cast<T>(result + n) : result;
         HPBC_POSTCONDITION2(final_result == result2);
     }
@@ -221,7 +221,7 @@ struct DefaultRedc
         HPBC_PRECONDITION2(n < Rdiv4);
     }
     bool ovf;
-    T result = detail_redc::REDC_non_finalized(ovf, u_hi, u_lo, n, inv_n);
+    T result = REDC_non_finalized(ovf, u_hi, u_lo, n, inv_n);
     result = static_cast<T>(result + n);
     // Since we have the precondition n<R/4, we know from REDC_non_finalized()'s
     // Postcondition #2 that  0 < result < 2*n.
@@ -248,7 +248,7 @@ struct Redc
   template <class MTAG, class PTAG>
   static HURCHALLA_FORCE_INLINE T REDC(T u_hi, T u_lo, T n, T inv_n, MTAG, PTAG)
   {
-    return detail_redc::DefaultRedc<T>::REDC(u_hi, u_lo, n, inv_n, MTAG());
+    return DefaultRedc<T>::REDC(u_hi, u_lo, n, inv_n, MTAG());
   }
 };
 
@@ -289,8 +289,8 @@ struct Redc<std::uint64_t>
         : [mnhi]"r"(mn_hi)
         : "cc");
     T result = reg;
-    HPBC_ASSERT2(result == detail_redc::DefaultRedc<T>::REDC(
-                                         u_hi, u_lo, n, inv_n, FullrangeTag()));
+    HPBC_ASSERT2(result ==
+                    DefaultRedc<T>::REDC(u_hi, u_lo, n, inv_n, FullrangeTag()));
     HPBC_POSTCONDITION2(result < n);
     return result;
   }
@@ -302,8 +302,7 @@ struct Redc<std::uint64_t>
     // Calling DefaultRedc::REDC will give us optimal code (we're relying upon
     // modular_subtract_prereduced_inputs() being optimized for low uops - which
     // it is, at least at the time of writing this)
-    T result = detail_redc::DefaultRedc<T>::REDC(
-                                          u_hi, u_lo, n, inv_n, FullrangeTag());
+    T result = DefaultRedc<T>::REDC(u_hi, u_lo, n, inv_n, FullrangeTag());
     HPBC_POSTCONDITION2(result < n);
     return result;
   }
@@ -317,8 +316,7 @@ struct Redc<std::uint64_t>
   {
     // DefaultRedc's REDC for QuarterrangeTag should already be optimal for use
     // here, regardless of whether we prefer low uops or low latency
-    T result = detail_redc::DefaultRedc<T>::REDC(
-                                       u_hi, u_lo, n, inv_n, QuarterrangeTag());
+    T result = DefaultRedc<T>::REDC(u_hi, u_lo, n, inv_n, QuarterrangeTag());
     HPBC_POSTCONDITION2(0 < result && result < 2*n);
     return result;
   }
@@ -333,12 +331,9 @@ struct Redc<std::uint64_t>
 } // end namespace detail_redc
 
 
-// ----------------
-// Public Functions
-// ----------------
 
 template <typename T, class MTAG, class PTAG>
-HURCHALLA_FORCE_INLINE T REDC(T u_hi, T u_lo, T n, T inv_n, MTAG, PTAG)
+HURCHALLA_FORCE_INLINE T impl_REDC(T u_hi, T u_lo, T n, T inv_n, MTAG, PTAG)
 {
     T result = detail_redc::Redc<T>::REDC(u_hi, u_lo, n, inv_n, MTAG(), PTAG());
     HPBC_POSTCONDITION2(
@@ -376,7 +371,7 @@ HURCHALLA_FORCE_INLINE bool isZeroRedcResult(T x, T n, QuarterrangeTag)
 // QuarterrangeTag implementation is correct for it, and SixthrangeTag matches.
 
 
-}} // end namespace
+}}} // end namespace
 
 
 #if defined(_MSC_VER)

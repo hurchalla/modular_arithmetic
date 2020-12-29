@@ -481,40 +481,40 @@ namespace {
 
     TEST(MontgomeryArithmetic, MontyWrappedStandardMath) {
         namespace mont = hurchalla::montgomery_arithmetic;
-        test_custom_monty<mont::MontyWrappedStandardMath>();
+        test_custom_monty<mont::detail::MontyWrappedStandardMath>();
     }
 
     TEST(MontgomeryArithmetic, MontyFullRange) {
         namespace mont = hurchalla::montgomery_arithmetic;
-        test_custom_monty<mont::MontyFullRange>();
+        test_custom_monty<mont::detail::MontyFullRange>();
     }
 
     TEST(MontgomeryArithmetic, MontyHalfRange) {
         namespace mont = hurchalla::montgomery_arithmetic;
-        test_custom_monty<mont::MontyHalfRange>();
+        test_custom_monty<mont::detail::MontyHalfRange>();
     }
 
     TEST(MontgomeryArithmetic, MontyQuarterRange) {
         namespace mont = hurchalla::montgomery_arithmetic;
-        test_custom_monty<mont::MontyQuarterRange>();
+        test_custom_monty<mont::detail::MontyQuarterRange>();
     }
 
     TEST(MontgomeryArithmetic, MontySixthRange) {
         namespace mont = hurchalla::montgomery_arithmetic;
-        test_custom_monty<mont::MontySixthRange>();
+        test_custom_monty<mont::detail::MontySixthRange>();
     }
 
     TEST(MontgomeryArithmetic, MontySqrtRange) {
         namespace mont = hurchalla::montgomery_arithmetic;
         test_MontgomeryForm<mont::MontgomeryForm<std::uint8_t,
-                                        mont::MontySqrtRange<std::uint16_t>>>();
+                                mont::detail::MontySqrtRange<std::uint16_t>>>();
         test_MontgomeryForm<mont::MontgomeryForm<std::uint16_t,
-                                        mont::MontySqrtRange<std::uint32_t>>>();
+                                mont::detail::MontySqrtRange<std::uint32_t>>>();
         test_MontgomeryForm<mont::MontgomeryForm<std::uint32_t,
-                                        mont::MontySqrtRange<std::uint64_t>>>();
+                                mont::detail::MontySqrtRange<std::uint64_t>>>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
         test_MontgomeryForm<mont::MontgomeryForm<std::uint64_t,
-                                          mont::MontySqrtRange<__uint128_t>>>();
+                                  mont::detail::MontySqrtRange<__uint128_t>>>();
 #endif
     }
 }

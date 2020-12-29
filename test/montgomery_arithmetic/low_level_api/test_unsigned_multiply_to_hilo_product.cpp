@@ -2,7 +2,7 @@
 // by the file "LICENSE.TXT" in the root of this repository ---
 
 
-#include "hurchalla/montgomery_arithmetic/detail/unsigned_multiply_to_hilo_product.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "gtest/gtest.h"
 #include <cstdint>

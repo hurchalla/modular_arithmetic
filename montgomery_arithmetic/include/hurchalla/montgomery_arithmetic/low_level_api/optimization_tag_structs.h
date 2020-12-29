@@ -11,7 +11,14 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // private optimization tag intended only for use by the implementation
 struct PrivateAnyTag {};
 
-// public optimization tags
+
+// Public optimization tags:
+// ------------------------
+// LowlatencyTag potentially offers optimizations targeted toward lowering the
+// latency of functions.
+// LowuopsTag potentially offers optimizations targeted toward reducing the
+// number of instructions generated/executed by functions.
+
 struct LowlatencyTag : public PrivateAnyTag {};
 struct LowuopsTag : public PrivateAnyTag {};
 

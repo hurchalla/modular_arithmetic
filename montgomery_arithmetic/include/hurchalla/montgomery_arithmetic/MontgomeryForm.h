@@ -5,8 +5,8 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTGOMERY_FORM_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontgomeryDefault.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
@@ -19,7 +19,7 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // When using the default MontyType, T must be signed or unsigned integral type.
 // A custom MontyType may have different requirements for type T (e.g. that T is
 // an unsigned integral type).
-template<typename T, class MontyType = typename MontgomeryDefault<T>::type>
+template<class T, class MontyType = typename detail::MontgomeryDefault<T>::type>
 class MontgomeryForm {
     const MontyType impl;
     using U = typename MontyType::template_param_type;
@@ -59,7 +59,7 @@ public:
     {
         return (MontyType::max_modulus() >
                               static_cast<U>(util::ut_numeric_limits<T>::max()))
-            ? ((util::ut_numeric_limits<T>::max() == 0)
+            ? ((util::ut_numeric_limits<T>::max() % 2 == 0)
                 ? static_cast<T>(util::ut_numeric_limits<T>::max() - 1)
                 : util::ut_numeric_limits<T>::max())
             : static_cast<T>(MontyType::max_modulus());

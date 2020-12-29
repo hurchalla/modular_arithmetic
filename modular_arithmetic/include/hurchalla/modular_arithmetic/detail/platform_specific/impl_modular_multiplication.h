@@ -34,7 +34,7 @@
 #endif
 
 
-namespace hurchalla { namespace modular_arithmetic {
+namespace hurchalla { namespace modular_arithmetic { namespace detail {
 
 
 /*  Generic (non-platform specific) implementation for
@@ -329,7 +329,7 @@ inline std::uint64_t impl_modular_multiplication_prereduced_inputs(
 
 
 
-}}  // end namespace
+}}}  // end namespace
 
 #ifdef __GNUC__
 #  pragma GCC diagnostic pop

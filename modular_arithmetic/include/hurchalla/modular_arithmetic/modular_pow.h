@@ -21,7 +21,7 @@ T modular_pow(T base, T exponent, T modulus)
     HPBC_PRECONDITION(base >= 0);
     HPBC_PRECONDITION(exponent >= 0);
 
-    T result = impl_modular_pow(base, exponent, modulus);
+    T result = detail::impl_modular_pow(base, exponent, modulus);
 
     // POSTCONDITION:
     //   Returns the modular exponentiation of base^exponent (mod modulus).
