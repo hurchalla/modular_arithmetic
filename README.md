@@ -19,7 +19,8 @@ This project is licensed under the MIT License - see the [LICENSE.TXT](LICENSE.T
 
 ## TODO
 
-Set up continuous integration (Travis or GitHub actions)
+Determine whether users of this library can safely use uint128_t with gcc versions between 5.1 and 11.  See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98474
+Set up continuous integration (Travis or GitHub actions).
 Document the project.
 Compare performance of impl_modular_multiplication_prereduced_inputs(uint64_t, uint64_t, uint64_t) with internal __uint128_t, to the template function version.
 Add the following options/target_compile_definitions to CMakeLists.txt, and document here:

@@ -378,15 +378,16 @@ namespace {
             REDC_test_all(n);
     }
 
-#if !defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(__clang__)
+#if !defined(__GNUC__) || __GNUC__ >= 11 || defined(__INTEL_COMPILER) || \
+                                            defined(__clang__)
 // GCC has a compiler bug that causes an incorrect value of n to be produced and
-// thus results in one of my google test assertions failing.  I'm in the process
-// of filing a bug report and I hope to be able to find a work-around.  It's
-// unclear right now whether __uint128_t is safe to use with any version of gcc
-// released in the last 5 years.  The bug appears to have been introduced to gcc
-// between versions 4.93 and 5.1 - I would guess it was introduced in 5.1.  It
-// exists up to the latest released version (v10.2) of gcc at the time of this
-// writing.
+// thus results in one of my google test assertions failing.  See
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98474 .  The bug appears to have
+// been introduced as a regression to gcc in v5.1.  It exists up to the latest
+// released version (v10.2) of gcc at the time of this writing.  It's unclear
+// at the moment whether __uint128_t is safe to use with any version of gcc
+// between 5.1 and 10.2.  The patch appears to fix the bug and presumably new
+// releases of gcc will incorporate the patch fix.
 // For now, the #if above disables the following tests on gcc, since they will
 // fail on gcc at optimization level -O1 or higher due to the compiler bug.
 #  if HURCHALLA_COMPILER_HAS_UINT128_T()
