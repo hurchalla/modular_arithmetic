@@ -10,6 +10,7 @@
 #include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyQuarterRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontySixthRange.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontyWrappedStandardMath.h"
 #include "hurchalla/util/compiler_macros.h"
 #include <cstdint>
 
@@ -22,13 +23,19 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // convenient to simply use MontgomeryForm<T>, instead of using these aliases.
 //
 // USAGE:
-// The number in the Monty alias template denotes the size limit (by power of 2)
-// of the modulus you can use to construct an object of the alias type.  For
-// example, Monty<uint64_t, 63> allows any modulus < 2^63, and it would be an
-// error to use any modulus >= 2^63 with this type.  Relatively speaking, an
-// alias type with a smaller modulus limit will often perform better than an
-// alias with a larger limit; you can expect that the smaller alias will never
-// perform worse than the larger alias, when given the same modulus.
+// The BITS value in the Monty<T, BITS> alias template denotes the size limit
+// (by power of 2) of the modulus you can use to construct an object of the
+// alias type.  For example, Monty<uint64_t, 63> allows any modulus < 2^63, and
+// it would be an error to use any modulus >= 2^63 with this type.  Relatively
+// speaking, an alias type with a smaller modulus limit will often perform
+// better than an alias with a larger limit; you can expect that the smaller
+// alias will never perform worse than the larger alias, if given the same
+// modulus.
+// (This file also provides an alias called MontyStandardMathWrapper.  This
+// alias maps to a class that uses the MontgomeryForm interface but that
+// internally performs all calculations with standard modular arithmetic rather
+// than any montgomery arithmetic.  This can be useful as an aid for comparing
+// performance between montgomery and non-montgomery modular arithmetic.)
 //
 // PERFORMANCE DETAILS:
 // Note that these aliases do not always improve upon the performance of
@@ -65,7 +72,9 @@ namespace hurchalla { namespace montgomery_arithmetic {
 
 
 // Don't directly use anything from the detail namespace here.  Instead, use the
-// Monty template alias at the bottom of this file.
+// Monty template alias at the bottom of this file.  Also at the bottom is the
+// MontyStandardMathWrapper alias, which is not normally used, though it can be
+// sometimes helpful.
 namespace detail {
 
   // primary template
@@ -141,6 +150,20 @@ namespace detail {
 
 template <typename T, int BITS>
 using Monty = typename detail::MontyAlias<T, BITS>::type;
+
+
+// The MontyStandardMathWrapper alias provides the MontgomeryForm interface but
+// uses no montgomery arithmetic.  All arithmetic is done with standard modular
+// arithmetic instead.  This can be useful to compare performance, especially
+// since some systems with extremely fast divide operations may be able to
+// provide better performance in certain situations via standard modular
+// arithmetic than via montgomery arithmetic.  This wrapper lets you simply
+// switch your type instead of rewriting code, when you want to compare
+// performance between montgomery and non-montgomery arithmetic implementations.
+// Ordinarily you would use the plain Monty alias above.
+template <typename T>
+using MontyStandardMathWrapper =
+                typename MontgomeryForm<T, detail::MontyWrappedStandardMath<T>>;
 
 
 }} // end namespace
