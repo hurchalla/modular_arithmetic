@@ -11,27 +11,35 @@
 #include "hurchalla/montgomery_arithmetic/detail/MontyQuarterRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontySixthRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyWrappedStandardMath.h"
+#include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/sized_uint.h"
 #include "hurchalla/util/compiler_macros.h"
-#include <cstdint>
+#include <type_traits>
 
 namespace hurchalla { namespace montgomery_arithmetic {
 
 
 // These are aliases for high performance MontgomeryForm types that are tailored
 // to the size of the modulus you plan to use.  But unless you wish to squeeze
-// out every possible performance advantage, you will generally find it more
-// convenient to simply use MontgomeryForm<T>, instead of using these aliases.
+// out every possible performance advantage, you will likely find it is more
+// convenient to simply use MontgomeryForm<T>, instead of these aliases.
 //
 // USAGE:
-// The BITS value in the Monty<T, BITS> alias template denotes the size limit
-// (by power of 2) of the modulus you can use to construct an object of the
-// alias type.  For example, Monty<uint64_t, 63> allows any modulus < 2^63, and
-// it would be an error to use any modulus >= 2^63 with this type.  Relatively
-// speaking, an alias type with a smaller modulus limit will often perform
-// better than an alias with a larger limit; you can expect that the smaller
-// alias will never perform worse than the larger alias, if given the same
-// modulus.
-// (This file also provides an alias called MontyStandardMathWrapper.  This
+// The suffix (Full, Half, Quarter, Sixth) in each alias indicates the size 
+// limit allowed for the modulus you can use to construct an object of each
+// alias type.  Full allows you to use the full range of type T for the modulus.
+// Half allows you to use the smaller half of the range of possible T values, or
+// more specifically, if we let R = 2^(ut_numeric_limits<T>::digits), Half
+// allows any modulus < R/2.  Quarter allows any modulus < R/4, and Sixth allows
+// any modulus < R/6.  To give an example, MontgomeryQuarter<uint64_t> allows
+// any modulus less than (2^64)/4.  It is undefined behavior to use a modulus
+// that is not within the allowed range for your alias type.  As with all
+// montgomery arithmetic, the modulus you use must also be odd.
+// Relatively speaking, an alias type with a smaller modulus limit will often
+// perform better than an alias with a larger limit; you can expect that the
+// smaller alias will never perform worse than the larger alias, if given the
+// same modulus.
+// (This file also provides an alias called MontgomeryStandardMathWrapper.  This
 // alias maps to a class that uses the MontgomeryForm interface but that
 // internally performs all calculations with standard modular arithmetic rather
 // than any montgomery arithmetic.  This can be useful as an aid for comparing
@@ -41,129 +49,81 @@ namespace hurchalla { namespace montgomery_arithmetic {
 // Note that these aliases do not always improve upon the performance of
 // MontgomeryForm<T> - the performance gain (or lack of gain) you can expect
 // from these aliases depends on the particular alias:
-// (1) The aliases Monty<uint32_t, 32>, Monty<uint64_t, 64>, and
-// Monty<__uint128_t, 128> map to respectively the same classes as
-// MontgomeryForm<uint32_t>, MontgomeryForm<uint64_t>, and
-// MontgomeryForm<__uint128_t>.  Thus these aliases offer no improvement on
-// performance over MontgomeryForm<T>.
-// (2) The aliases Monty<uint32_t, 30>, Monty<uint32_t, 29>, Monty<uint64_t, 62>,
-// Monty<uint64_t, 61>, Monty<__uint128_t, 126>, and Monty<__uint128_t, 125> 
-// all offer significant performance improvements over their corresponding
-// classes of MontgomeryForm<uint32_t>, MontgomeryForm<uint64_t>, and
-// MontgomeryForm<__uint128_t>.  If you know either at compile-time or via run-
-// time checking that your modulus will be small enough to allow you to use one
-// of these aliases (see below), then you might expect these aliases to provide
-// perhaps a 5-20% performance gain over MontgomeryForm<T>.  However if you use
-// run-time checking, your checking is of course extra complexity and extra code
-// size (since you need an alternate code path for when the modulus is not small
-// enough).
-// (3) The alias Monty<uint64_t, 61> improves upon Monty<uint64_t, 62> only for
-// the famul() member function; otherwise it's the same as Monty<uint64_t, 62>.
-// Likewise for Monty<uint32_t, 29> vs. Monty<uint32_t, 30>, and likewise for
-// Monty<__uint128_t, 125> vs. Monty<__uint128_t, 126>.
-// (4) The alias Monty<uint64_t, 63> improves upon Monty<uint64_t, 64> (and thus
-// the equivalent MontgomeryForm<uint64_t>) only for the famul() member
-// function; it's otherwise equivalent to both Monty<uint64_t, 64> and
-// MontgomeryForm<uint64_t>.  Likewise for Monty<uint32_t, 31> vs.
-// Monty<uint32_t, 32> (and MontgomeryForm<uint32_t>), and likewise for
-// Monty<__uint128_t, 127> vs. Monty<__uint128_t, 128> (and
-// MontygomeryForm<__uint128_t>).
+// (1) The MontgomeryFull<T> alias maps to the same class as MontgomeryForm<T>.
+// Thus it offers no improvement on performance over MontgomeryForm<T>.
+// (2) The MontgomeryQuarter<T> and MontgomerySixth<T> aliases offer significant
+// performance improvements over MontgomeryForm<T>.  If you know either at
+// compile-time or via run-time checking that your modulus will be small enough
+// to allow you to use one of these aliases, then you might expect these aliases
+// to provide perhaps a 5-20% performance gain over MontgomeryForm<T>.
+// (3) The alias MontgomerySixth<T> improves upon MontgomeryQuarter<T> only for
+// the famul() member function; otherwise it's the same as MontgomeryQuarter<T>.
+// (4) The alias MontgomeryHalf<T> improves upon MontgomeryFull<T> only for the
+// famul() member function; it's otherwise equivalent to MontgomeryFull<T>.
 
 
-
-// Don't directly use anything from the detail namespace here.  Instead, use the
-// Monty template alias at the bottom of this file.  Also at the bottom is the
-// MontyStandardMathWrapper alias, which is not normally used, though it can be
-// sometimes helpful.
-namespace detail {
-
-  // primary template
-  template<typename T, int BITS> struct MontyAlias {};
-
-  // specializations:
-
-  template<> struct MontyAlias<std::uint64_t, 64> { using type = 
-      MontgomeryForm<std::uint64_t, detail::MontyFullRange<std::uint64_t>>;
-  };
-  template<> struct MontyAlias<std::uint64_t, 63> { using type = 
-      MontgomeryForm<std::uint64_t, detail::MontyHalfRange<std::uint64_t>>;
-  };
-  template<> struct MontyAlias<std::uint64_t, 62> { using type = 
-      MontgomeryForm<std::uint64_t, detail::MontyQuarterRange<std::uint64_t>>;
-  };
-  // technically, MontyAlias<61> works for any modulus < 2^(61.415)
-  template<> struct MontyAlias<std::uint64_t, 61> { using type = 
-      MontgomeryForm<std::uint64_t, detail::MontySixthRange<std::uint64_t>>;
-  };
-
-#ifndef HURCHALLA_TARGET_BIT_WIDTH
-#   error "HURCHALLA_TARGET_BIT_WIDTH must be defined (normally compiler_macros.h automatically detects it)"
-#endif
-#if (HURCHALLA_TARGET_BIT_WIDTH < 64)
-  template<> struct MontyAlias<std::uint32_t, 32> { using type = 
-      MontgomeryForm<std::uint32_t, detail::MontyFullRange<std::uint32_t>>;
-  };
-  template<> struct MontyAlias<std::uint32_t, 31> { using type = 
-      MontgomeryForm<std::uint32_t, detail::MontyHalfRange<std::uint32_t>>;
-  };
-  template<> struct MontyAlias<std::uint32_t, 30> { using type = 
-      MontgomeryForm<std::uint32_t, detail::MontyQuarterRange<std::uint32_t>>;
-  };
-  // technically, MontyAlias<29> works for any modulus < 2^(29.415)
-  template<> struct MontyAlias<std::uint32_t, 29> { using type = 
-      MontgomeryForm<std::uint32_t, detail::MontySixthRange<std::uint32_t>>;
-  };
-#else
-  template<> struct MontyAlias<std::uint32_t, 32> { using type = 
-      MontgomeryForm<std::uint32_t, detail::MontySixthRange<std::uint64_t>>;
-  };
-  template<> struct MontyAlias<std::uint32_t, 31> { using type = 
-      MontgomeryForm<std::uint32_t, detail::MontySixthRange<std::uint64_t>>;
-  };
-  template<> struct MontyAlias<std::uint32_t, 30> { using type = 
-      MontgomeryForm<std::uint32_t, detail::MontySixthRange<std::uint64_t>>;
-  };
-  // technically, MontyAlias<29> works for any modulus < 2^(29.415)
-  template<> struct MontyAlias<std::uint32_t, 29> { using type = 
-      MontgomeryForm<std::uint32_t, detail::MontySixthRange<std::uint64_t>>;
-  };
-#endif
-
-#if (HURCHALLA_COMPILER_HAS_UINT128_T())
-  template<> struct MontyAlias<__uint128_t, 128> { using type = 
-      MontgomeryForm<__uint128_t, detail::MontyFullRange<__uint128_t>>;
-  };
-  template<> struct MontyAlias<__uint128_t, 127> { using type = 
-      MontgomeryForm<__uint128_t, detail::MontyHalfRange<__uint128_t>>;
-  };
-  template<> struct MontyAlias<__uint128_t, 126> { using type = 
-      MontgomeryForm<__uint128_t, detail::MontyQuarterRange<__uint128_t>>;
-  };
-  // technically, MontyAlias<125> works for any modulus < 2^(125.415)
-  template<> struct MontyAlias<__uint128_t, 125> { using type = 
-      MontgomeryForm<__uint128_t, detail::MontySixthRange<__uint128_t>>;
-  };
-#endif
-
-}  // end namespace detail
+template <typename, template <typename> class> class MontyAliasHelper;
 
 
-template <typename T, int BITS>
-using Monty = typename detail::MontyAlias<T, BITS>::type;
+// The Montgomery Form Aliases
+// ---------------------------
 
-
-// The MontyStandardMathWrapper alias provides the MontgomeryForm interface but
-// uses no montgomery arithmetic.  All arithmetic is done with standard modular
-// arithmetic instead.  This can be useful to compare performance, especially
-// since some systems with extremely fast divide operations may be able to
-// provide better performance in certain situations via standard modular
-// arithmetic than via montgomery arithmetic.  This wrapper lets you simply
-// switch your type instead of rewriting code, when you want to compare
-// performance between montgomery and non-montgomery arithmetic implementations.
-// Ordinarily you would use the plain Monty alias above.
 template <typename T>
-using MontyStandardMathWrapper =
-                typename MontgomeryForm<T, detail::MontyWrappedStandardMath<T>>;
+using MontgomeryFull = MontgomeryForm<T,
+                typename MontyAliasHelper<T, detail::MontyFullRange>::type>;
+
+template <typename T>
+using MontgomeryHalf = MontgomeryForm<T,
+                typename MontyAliasHelper<T, detail::MontyHalfRange>::type>;
+
+template <typename T>
+using MontgomeryQuarter = MontgomeryForm<T,
+                typename MontyAliasHelper<T, detail::MontyQuarterRange>::type>;
+
+template <typename T>
+using MontgomerySixth = MontgomeryForm<T,
+                typename MontyAliasHelper<T, detail::MontySixthRange>::type>;
+
+// The MontgomeryStandardMathWrapper alias provides the MontgomeryForm interface
+// but uses no montgomery arithmetic.  All arithmetic is done with standard
+// modular arithmetic instead.  This can be useful to compare performance of
+// standard modular arithmetic with montgomery arithmetic - some systems with
+// extremely fast divide operations may perform better in some situations with
+// standard modular arithmetic than with montgomery arithmetic.  This wrapper
+// lets you simply switch your type instead of rewriting code, when you want to
+// compare performance.
+// Ordinarily, this is probably not an alias you should expect to use.
+template <typename T>
+using MontgomeryStandardMathWrapper =
+                MontgomeryForm<T, detail::MontyWrappedStandardMath<T>>;
+
+
+
+
+// You should not use this class (it's intended for the alias implementations)
+template <typename T, template <typename> class M>
+class MontyAliasHelper {
+    static_assert(util::ut_numeric_limits<T>::is_integer, "");
+    static_assert(!util::ut_numeric_limits<T>::is_signed, "");
+    static_assert(util::ut_numeric_limits<T>::is_modulo, "");
+    static constexpr int bitsT = util::ut_numeric_limits<T>::digits;
+    static constexpr int target_bits = HURCHALLA_TARGET_BIT_WIDTH;
+public:
+    using type =
+        typename std::conditional<
+            std::is_same<M<T>, detail::MontySixthRange<T>>::value,
+            M<T>,
+        typename std::conditional<
+            util::sized_uint<bitsT*2>::is_valid && (bitsT*2 < target_bits),
+            detail::MontySixthRange<typename util::sized_uint<bitsT*2>::type>,
+        typename std::conditional<
+            (bitsT <= target_bits - 3) &&
+                        (std::is_same<M<T>, detail::MontyFullRange<T>>::value ||
+                         std::is_same<M<T>, detail::MontyHalfRange<T>>::value),
+            detail::MontySixthRange<typename hurchalla::util::sized_uint<target_bits>::type>,
+            M<T>
+        >::type>::type>::type;
+};
 
 
 }} // end namespace
