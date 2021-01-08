@@ -47,11 +47,16 @@ T impl_get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
 #else
     constexpr bool no_native_divide = false;
 #endif
+#ifdef HURCHALLA_TESTING_RSQUARED_MOD_N
+    constexpr bool is_a_test = true;
+#else
+    constexpr bool is_a_test = false;
+#endif
     constexpr int bitsT = util::ut_numeric_limits<T>::digits;
 
     T rSquaredModN;
     if (no_native_divide || (bitsT > HURCHALLA_TARGET_BIT_WIDTH) ||
-                       ((bitsT == HURCHALLA_TARGET_BIT_WIDTH) && !is_x86)) {
+              ((bitsT == HURCHALLA_TARGET_BIT_WIDTH) && !is_x86) || is_a_test) {
         HPBC_ASSERT2(Rmod_n < n);
         T tmp = Rmod_n;   // Rmod_n == 1*R (mod n)
         int i=0;
@@ -74,7 +79,7 @@ T impl_get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
         if (!(std::is_same<MTAG, FullrangeTag>::value ||
                       std::is_same<MTAG, HalfrangeTag>::value)) {
             if (tmp >= n)
-                tmp -= n;  // fully reduce tmp, mod n.
+                tmp = static_cast<T>(tmp - n);  // fully reduce tmp, mod n.
         }
         rSquaredModN = tmp;
         HPBC_POSTCONDITION2(rSquaredModN ==
