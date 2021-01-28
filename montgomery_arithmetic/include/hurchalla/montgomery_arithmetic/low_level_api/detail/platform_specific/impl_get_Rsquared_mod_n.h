@@ -14,7 +14,7 @@
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 
-namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
+namespace hurchalla { namespace detail {
 
 
 // For discussion purposes, let the unlimited precision constant R represent
@@ -27,7 +27,6 @@ T impl_get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
 {
     HPBC_PRECONDITION2(n % 2 == 1);
     HPBC_PRECONDITION2(n > 1);
-    namespace ma = hurchalla::modular_arithmetic;
 
 #ifndef HURCHALLA_TARGET_BIT_WIDTH
 #  error HURCHALLA_TARGET_BIT_WIDTH must be defined
@@ -52,7 +51,7 @@ T impl_get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
 #else
     constexpr bool is_a_test = false;
 #endif
-    constexpr int bitsT = util::ut_numeric_limits<T>::digits;
+    constexpr int bitsT = ut_numeric_limits<T>::digits;
 
     T rSquaredModN;
     if (no_native_divide || (bitsT > HURCHALLA_TARGET_BIT_WIDTH) ||
@@ -61,7 +60,7 @@ T impl_get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
         T tmp = Rmod_n;   // Rmod_n == 1*R (mod n)
         int i=0;
         for (; i<4; ++i)
-            tmp = ma::modular_addition_prereduced_inputs(tmp, tmp, n);
+            tmp = modular_addition_prereduced_inputs(tmp, tmp, n);
         // at this point,  tmp == 16*R (mod n)
         for (; i<bitsT; i*=2) {
             // use montgomery multiplication to square tmp on each iteration
@@ -83,9 +82,9 @@ T impl_get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
         }
         rSquaredModN = tmp;
         HPBC_POSTCONDITION2(rSquaredModN ==
-             ma::modular_multiplication_prereduced_inputs(Rmod_n, Rmod_n, n));
+                   modular_multiplication_prereduced_inputs(Rmod_n, Rmod_n, n));
     } else {
-        rSquaredModN = ma::modular_multiplication_prereduced_inputs(
+        rSquaredModN = modular_multiplication_prereduced_inputs(
                                                              Rmod_n, Rmod_n, n);
     }
 
@@ -94,6 +93,6 @@ T impl_get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
 }
 
 
-}}}
+}} // end namespace
 
 #endif

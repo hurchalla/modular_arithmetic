@@ -14,7 +14,7 @@
 #include "hurchalla/util/programming_by_contract.h"
 #include "hurchalla/util/compiler_macros.h"
 
-namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
+namespace hurchalla { namespace detail {
 
 
 // This class provides a standard modular arithmetic implementation, wrapped
@@ -43,9 +43,9 @@ public:
         T value;
     };
 private:
-    static_assert(util::ut_numeric_limits<T>::is_integer, "");
-    static_assert(!(util::ut_numeric_limits<T>::is_signed), "");
-    static_assert(util::ut_numeric_limits<T>::is_modulo, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+    static_assert(ut_numeric_limits<T>::is_modulo, "");
     using V = MontgomeryValue;
     T modulus_;
 public:
@@ -61,14 +61,14 @@ public:
 
     static constexpr T max_modulus()
     {
-        return util::ut_numeric_limits<T>::max();
+        return ut_numeric_limits<T>::max();
     }
 
     // intended for use in postconditions/preconditions
     HURCHALLA_FORCE_INLINE bool isCanonical(V x) const
     {
         // this static_assert guarantees 0 <= x.get()
-        static_assert(!(util::ut_numeric_limits<T>::is_signed), "");
+        static_assert(!(ut_numeric_limits<T>::is_signed), "");
         return (x.get() < modulus_);
     }
     HURCHALLA_FORCE_INLINE T getModulus() const
@@ -116,8 +116,7 @@ public:
     {
         HPBC_PRECONDITION2(isCanonical(x));
         HPBC_PRECONDITION2(isCanonical(y));
-        namespace ma = hurchalla::modular_arithmetic;
-        T result = ma::modular_multiplication_prereduced_inputs(x.get(),
+        T result = modular_multiplication_prereduced_inputs(x.get(),
                                                              y.get(), modulus_);
         isZero = (getCanonicalValue(V(result)).get() == getZeroValue().get());
         HPBC_POSTCONDITION2(isCanonical(V(result)));
@@ -163,9 +162,7 @@ public:
     {
         HPBC_PRECONDITION2(isCanonical(x));
         HPBC_PRECONDITION2(isCanonical(y));
-        namespace ma = hurchalla::modular_arithmetic;
-        T result =
-          ma::modular_addition_prereduced_inputs(x.get(), y.get(), modulus_);
+        T result=modular_addition_prereduced_inputs(x.get(), y.get(), modulus_);
         HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
@@ -179,9 +176,8 @@ public:
     {
         HPBC_PRECONDITION2(isCanonical(x));
         HPBC_PRECONDITION2(isCanonical(y));
-        namespace ma = hurchalla::modular_arithmetic;
         T result =
-          ma::modular_subtraction_prereduced_inputs(x.get(), y.get(), modulus_);
+              modular_subtraction_prereduced_inputs(x.get(), y.get(), modulus_);
         HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
@@ -195,14 +191,13 @@ public:
     {
         HPBC_PRECONDITION2(isCanonical(x));
         HPBC_PRECONDITION2(isCanonical(y));
-        namespace ma = hurchalla::modular_arithmetic;
-        T result = ma::absolute_value_difference(x.get(), y.get());
+        T result = absolute_value_difference(x.get(), y.get());
         HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
 };
 
 
-}}} // end namespace
+}} // end namespace
 
 #endif

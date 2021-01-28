@@ -9,14 +9,13 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/programming_by_contract.h"
 
-namespace hurchalla { namespace modular_arithmetic {
+namespace hurchalla {
 
 
 template <typename T>
 T absolute_value_difference(T a, T b)
 {
-    namespace ut = hurchalla::util;
-    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
     HPBC_PRECONDITION(a >= 0);
     HPBC_PRECONDITION(b >= 0);
 
@@ -30,6 +29,6 @@ T absolute_value_difference(T a, T b)
 }
 
 
-}}  // end namespace
+}  // end namespace
 
 #endif

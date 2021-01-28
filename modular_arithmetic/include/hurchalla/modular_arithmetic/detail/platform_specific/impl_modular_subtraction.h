@@ -10,14 +10,13 @@
 #include "hurchalla/util/programming_by_contract.h"
 #include <cstdint>
 
-namespace hurchalla { namespace modular_arithmetic { namespace detail {
+namespace hurchalla { namespace detail {
 
 
 template <typename T>
 T impl_modular_subtraction_prereduced_inputs(T a, T b, T modulus)
 {
-    namespace ut = hurchalla::util;
-    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
     HPBC_PRECONDITION2(modulus>0);
     HPBC_PRECONDITION2(a>=0 && a<modulus);  // i.e. the input must be prereduced
     HPBC_PRECONDITION2(b>=0 && b<modulus);  // i.e. the input must be prereduced
@@ -161,6 +160,6 @@ inline std::uint64_t impl_modular_subtraction_prereduced_inputs(std::uint64_t a,
 #endif
 
 
-}}}  // end namespace
+}}  // end namespace
 
 #endif

@@ -23,7 +23,7 @@
 #  pragma warning(disable : 4309)
 #endif
 
-namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
+namespace hurchalla { namespace detail {
 
 
 // For discussion purposes, let R = 2^(ut_numeric_limits<T>::digits).  For
@@ -39,16 +39,15 @@ namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
 template <typename T>
 HURCHALLA_FORCE_INLINE T msr_REDC_non_minimized(T u_lo, T n, T neg_inv_n)
 {
-    namespace ut = hurchalla::util;
-    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
-    static_assert(!(ut::ut_numeric_limits<T>::is_signed), "");
-    static_assert(ut::ut_numeric_limits<T>::is_modulo, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+    static_assert(ut_numeric_limits<T>::is_modulo, "");
 
     // For casts, we want to use types that are protected from surprises and
     // undefined behavior due to the unsigned integral promotion rules in C++.
     // https://jeffhurchalla.com/2019/01/16/c-c-surprises-and-undefined-behavior-due-to-unsigned-integer-promotion/
-    using P = typename ut::safely_promote_unsigned<T>::type;
-    static_assert(ut::ut_numeric_limits<P>::is_modulo, "");
+    using P = typename safely_promote_unsigned<T>::type;
+    static_assert(ut_numeric_limits<P>::is_modulo, "");
 
     HPBC_PRECONDITION2(n > 1);
     HPBC_PRECONDITION2(n % 2 == 1);
@@ -117,15 +116,14 @@ HURCHALLA_FORCE_INLINE T msr_REDC_non_minimized(T u_lo, T n, T neg_inv_n)
 template <typename T>
 HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
 {
-    namespace ut = hurchalla::util;
-    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
-    static_assert(!(ut::ut_numeric_limits<T>::is_signed), "");
-    static_assert(ut::ut_numeric_limits<T>::is_modulo, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+    static_assert(ut_numeric_limits<T>::is_modulo, "");
     // As in msr_REDC_non_minimized(), protect against undefined behavior:
-    using P = typename ut::safely_promote_unsigned<T>::type;
-    static_assert(ut::ut_numeric_limits<P>::is_modulo, "");
+    using P = typename safely_promote_unsigned<T>::type;
+    static_assert(ut_numeric_limits<P>::is_modulo, "");
 
-    static constexpr int bit_width_T = ut::ut_numeric_limits<T>::digits;
+    static constexpr int bit_width_T = ut_numeric_limits<T>::digits;
     static_assert(bit_width_T % 2 == 0, "");   // bit_width_T divisible by 2
     // MontySqrtRange requires  modulus < sqrt(R)
     static constexpr T sqrtR = static_cast<T>(1) << (bit_width_T / 2);
@@ -176,9 +174,9 @@ public:
         T value;
     };
 private:
-    static_assert(util::ut_numeric_limits<T>::is_integer, "");
-    static_assert(!(util::ut_numeric_limits<T>::is_signed), "");
-    static_assert(util::ut_numeric_limits<T>::is_modulo, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+    static_assert(ut_numeric_limits<T>::is_modulo, "");
     const T n_;   // the modulus
     const T r_mod_n_;
     const T neg_inv_n_;
@@ -188,15 +186,14 @@ public:
     using montvalue_type = V;
     using template_param_type = T;
 
-    explicit MontySqrtRange(T modulus) : n_(modulus),
-                             r_mod_n_(getRModN(n_)),
-                             neg_inv_n_(negative_inverse_mod_R(n_)),
-                             r_squared_mod_n_( modular_arithmetic::
-                                    modular_multiplication_prereduced_inputs(
-                                                       r_mod_n_, r_mod_n_, n_) )
+    explicit MontySqrtRange(T modulus) :
+                n_(modulus),
+                r_mod_n_(getRModN(n_)),
+                neg_inv_n_(negative_inverse_mod_R(n_)),
+                r_squared_mod_n_(modular_multiplication_prereduced_inputs(
+                                                        r_mod_n_, r_mod_n_, n_))
     {
-        namespace ut = hurchalla::util;
-        static constexpr int bitsT = ut::ut_numeric_limits<T>::digits;
+        static constexpr int bitsT = ut_numeric_limits<T>::digits;
         static_assert(bitsT % 2 == 0, "");   // bitsT divisible by 2
         // MontySqrtRange requires  modulus < sqrt(R)
         static constexpr T sqrtR = static_cast<T>(1) << (bitsT / 2);
@@ -216,8 +213,8 @@ public:
 
     static constexpr T max_modulus()
     {
-        static_assert(util::ut_numeric_limits<T>::digits%2 == 0, "");
-        return (static_cast<T>(1) << (util::ut_numeric_limits<T>::digits/2)) -1;
+        static_assert(ut_numeric_limits<T>::digits%2 == 0, "");
+        return (static_cast<T>(1) << (ut_numeric_limits<T>::digits/2)) - 1;
     }
 
 private:
@@ -270,7 +267,7 @@ public:
     // a < sqrtR playing a psuedo-role of the proposed T.
     HURCHALLA_FORCE_INLINE V convertIn(T a) const
     {
-        static constexpr int bitsT = util::ut_numeric_limits<T>::digits;
+        static constexpr int bitsT = ut_numeric_limits<T>::digits;
         static_assert(bitsT % 2 == 0, "");
         static constexpr T sqrtR = static_cast<T>(1) << (bitsT / 2);
         HPBC_PRECONDITION2(0 <= a && a < sqrtR);
@@ -514,7 +511,7 @@ public:
 };
 
 
-}}} // end namespace
+}} // end namespace
 
 
 #if defined(_MSC_VER)

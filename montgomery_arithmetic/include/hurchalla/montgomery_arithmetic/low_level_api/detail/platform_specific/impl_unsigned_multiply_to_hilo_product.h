@@ -15,7 +15,7 @@
 #  pragma warning(disable : 4127)
 #endif
 
-namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
+namespace hurchalla { namespace detail {
 
 
 // Generic (non-platform specific) implementation of the contract for
@@ -29,12 +29,11 @@ template <typename T>
 HURCHALLA_FORCE_INLINE
 T slow_unsigned_multiply_to_hilo_product(T* pLowProduct, T u, T v)
 {
-    namespace ut = hurchalla::util;
-    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
-    static_assert(!(ut::ut_numeric_limits<T>::is_signed), "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
 
     // for example, if T==uint64_t, shift ought to == 32
-    static const unsigned int shift = ut::ut_numeric_limits<T>::digits / 2;
+    static const unsigned int shift = ut_numeric_limits<T>::digits / 2;
     // for example, if T==uint64_t, lowmask ought to == 0xFFFFFFFF
     static const T lowmask = (static_cast<T>(1) << shift) - static_cast<T>(1);
 
@@ -82,16 +81,15 @@ template <typename T>
 template <typename T, typename T2>
 HURCHALLA_FORCE_INLINE T umult_to_hilo_product(T* pLowProduct, T u, T v)
 {
-    namespace ut = hurchalla::util;
-    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
-    static_assert(!(ut::ut_numeric_limits<T>::is_signed), "");
-    static_assert(ut::ut_numeric_limits<T2>::is_integer, "");
-    static_assert(!(ut::ut_numeric_limits<T2>::is_signed), "");
-    static_assert(ut::ut_numeric_limits<T2>::digits >=
-                  2*ut::ut_numeric_limits<T>::digits, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+    static_assert(ut_numeric_limits<T2>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T2>::is_signed), "");
+    static_assert(ut_numeric_limits<T2>::digits >=
+                  2*ut_numeric_limits<T>::digits, "");
     T2 product = static_cast<T2>(static_cast<T2>(u) * static_cast<T2>(v));
     *pLowProduct = static_cast<T>(product);
-    return  static_cast<T>(product >> ut::ut_numeric_limits<T>::digits);
+    return  static_cast<T>(product >> ut_numeric_limits<T>::digits);
 }
 
 
@@ -184,7 +182,7 @@ HURCHALLA_FORCE_INLINE std::uint64_t impl_unsigned_multiply_to_hilo_product(
 #endif
 
 
-}}} // end namespace
+}} // end namespace
 
 
 #if defined(_MSC_VER)

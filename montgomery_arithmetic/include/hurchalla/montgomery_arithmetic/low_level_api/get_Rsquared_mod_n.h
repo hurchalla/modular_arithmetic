@@ -12,7 +12,7 @@
 #include "hurchalla/util/programming_by_contract.h"
 #include <type_traits>
 
-namespace hurchalla { namespace montgomery_arithmetic {
+namespace hurchalla {
 
 
 // For discussion purposes, let the unlimited precision constant R represent
@@ -26,15 +26,14 @@ namespace hurchalla { namespace montgomery_arithmetic {
 template <typename T, class MTAG = FullrangeTag>
 T get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
 {
-    namespace ut = hurchalla::util;
-    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
-    static_assert(!(ut::ut_numeric_limits<T>::is_signed), "");
-    static_assert(ut::ut_numeric_limits<T>::is_modulo, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+    static_assert(ut_numeric_limits<T>::is_modulo, "");
     if (HPBC_PRECONDITION2_MACRO_IS_ACTIVE) {
         // Using HalfrangeTag requires that the modulus n < R/2.
         // QuarterrangeTag requires n < R/4.  SixthrangeTag requires n < R/6.
         T Rdiv2 = static_cast<T>(
-                   static_cast<T>(1) << (ut::ut_numeric_limits<T>::digits - 1));
+                   static_cast<T>(1) << (ut_numeric_limits<T>::digits - 1));
         HPBC_PRECONDITION2((std::is_same<MTAG, HalfrangeTag>::value) ? 
                            n < Rdiv2 : true);
         HPBC_PRECONDITION2((std::is_same<MTAG, QuarterrangeTag>::value) ? 
@@ -44,7 +43,7 @@ T get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
     }
     HPBC_PRECONDITION2(n % 2 == 1);  // REDC requires an odd modulus.
     HPBC_PRECONDITION2(n > 1);
-    using P = typename ut::safely_promote_unsigned<T>::type;
+    using P = typename safely_promote_unsigned<T>::type;
     // verify that  n * inverse_n_modR ≡ 1 (mod R)
     HPBC_PRECONDITION2(
        static_cast<T>(static_cast<P>(n) * static_cast<P>(inverse_n_modR)) == 1);
@@ -57,6 +56,6 @@ T get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
 }
 
 
-}}
+}
 
 #endif

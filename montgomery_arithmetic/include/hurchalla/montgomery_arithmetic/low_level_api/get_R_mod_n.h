@@ -8,7 +8,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/programming_by_contract.h"
 
-namespace hurchalla { namespace montgomery_arithmetic {
+namespace hurchalla {
 
 
 // For discussion purposes, let the unlimited precision constant R represent
@@ -19,10 +19,9 @@ namespace hurchalla { namespace montgomery_arithmetic {
 template <typename T>
 T get_R_mod_n(T n)
 {
-    namespace ut = hurchalla::util;
-    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
-    static_assert(!(ut::ut_numeric_limits<T>::is_signed), "");
-    static_assert(ut::ut_numeric_limits<T>::is_modulo, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+    static_assert(ut_numeric_limits<T>::is_modulo, "");
     HPBC_PRECONDITION2(n % 2 == 1);
     HPBC_PRECONDITION2(n > 1);
 
@@ -41,6 +40,6 @@ T get_R_mod_n(T n)
 }
 
 
-}}
+}
 
 #endif

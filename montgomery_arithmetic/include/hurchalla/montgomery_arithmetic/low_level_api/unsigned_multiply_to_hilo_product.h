@@ -9,7 +9,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
 
-namespace hurchalla { namespace montgomery_arithmetic {
+namespace hurchalla {
 
 
 // unsigned_multiply_to_hilo_product() calculates a 'double-width'
@@ -22,9 +22,8 @@ template <typename T>
 HURCHALLA_FORCE_INLINE
 T unsigned_multiply_to_hilo_product(T* pLowProduct, T a, T b)
 {
-    namespace ut = hurchalla::util;
-    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
-    static_assert(!(ut::ut_numeric_limits<T>::is_signed), "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
     // POSTCONDITION: Stores the low-bits portion of the product (a*b) in
     //                *pLowProduct.
     // POSTCONDITION: Returns the high-bits portion of the product (a*b).
@@ -33,6 +32,6 @@ T unsigned_multiply_to_hilo_product(T* pLowProduct, T a, T b)
 }
 
 
-}} // end namespace
+} // end namespace
 
 #endif

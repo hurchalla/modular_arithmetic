@@ -23,68 +23,66 @@
 #include <cstdint>
 
 
-
 template <typename T>
 void test_absolute_value_difference()
 {
-    namespace ma = hurchalla::modular_arithmetic;
-    namespace ut = hurchalla::util;
+    namespace hc = hurchalla;
 
     // Test with a few basic examples first
     T a = 5;
     T b = 12;
-    EXPECT_TRUE(static_cast<T>(7) == ma::absolute_value_difference(a, b));
-    EXPECT_TRUE(static_cast<T>(7) == ma::absolute_value_difference(b, a));
-    EXPECT_TRUE(static_cast<T>(0) == ma::absolute_value_difference(b, b));
+    EXPECT_TRUE(static_cast<T>(7) == hc::absolute_value_difference(a, b));
+    EXPECT_TRUE(static_cast<T>(7) == hc::absolute_value_difference(b, a));
+    EXPECT_TRUE(static_cast<T>(0) == hc::absolute_value_difference(b, b));
     a = 7; b = 6;
-    EXPECT_TRUE(static_cast<T>(1) == ma::absolute_value_difference(a, b));
-    EXPECT_TRUE(static_cast<T>(1) == ma::absolute_value_difference(b, a));
-    EXPECT_TRUE(static_cast<T>(0) == ma::absolute_value_difference(b, b));
+    EXPECT_TRUE(static_cast<T>(1) == hc::absolute_value_difference(a, b));
+    EXPECT_TRUE(static_cast<T>(1) == hc::absolute_value_difference(b, a));
+    EXPECT_TRUE(static_cast<T>(0) == hc::absolute_value_difference(b, b));
 
     // --------- Test possible edge cases --------
 
     a = 0; b = 0;
-    EXPECT_TRUE(static_cast<T>(0) == ma::absolute_value_difference(a, b));
+    EXPECT_TRUE(static_cast<T>(0) == hc::absolute_value_difference(a, b));
     a = 0; b = 1;
-    EXPECT_TRUE(static_cast<T>(1) == ma::absolute_value_difference(a, b));
-    EXPECT_TRUE(static_cast<T>(1) == ma::absolute_value_difference(b, a));
+    EXPECT_TRUE(static_cast<T>(1) == hc::absolute_value_difference(a, b));
+    EXPECT_TRUE(static_cast<T>(1) == hc::absolute_value_difference(b, a));
     a = 1; b = 1;
-    EXPECT_TRUE(static_cast<T>(0) == ma::absolute_value_difference(a, b));
+    EXPECT_TRUE(static_cast<T>(0) == hc::absolute_value_difference(a, b));
 
-    a = 0; b = ut::ut_numeric_limits<T>::max();
-    EXPECT_TRUE(b == ma::absolute_value_difference(a, b));
-    EXPECT_TRUE(b == ma::absolute_value_difference(b, a));
-    EXPECT_TRUE(static_cast<T>(0) == ma::absolute_value_difference(b, b));
+    a = 0; b = hc::ut_numeric_limits<T>::max();
+    EXPECT_TRUE(b == hc::absolute_value_difference(a, b));
+    EXPECT_TRUE(b == hc::absolute_value_difference(b, a));
+    EXPECT_TRUE(static_cast<T>(0) == hc::absolute_value_difference(b, b));
     a = 1;
-    EXPECT_TRUE(static_cast<T>(b-1) == ma::absolute_value_difference(a, b));
-    EXPECT_TRUE(static_cast<T>(b-1) == ma::absolute_value_difference(b, a));
+    EXPECT_TRUE(static_cast<T>(b-1) == hc::absolute_value_difference(a, b));
+    EXPECT_TRUE(static_cast<T>(b-1) == hc::absolute_value_difference(b, a));
 
-    a = 0; b = static_cast<T>(ut::ut_numeric_limits<T>::max() - 1);
-    EXPECT_TRUE(b == ma::absolute_value_difference(a, b));
-    EXPECT_TRUE(b == ma::absolute_value_difference(b, a));
+    a = 0; b = static_cast<T>(hc::ut_numeric_limits<T>::max() - 1);
+    EXPECT_TRUE(b == hc::absolute_value_difference(a, b));
+    EXPECT_TRUE(b == hc::absolute_value_difference(b, a));
     a = 1;
-    EXPECT_TRUE(static_cast<T>(b-1) == ma::absolute_value_difference(a, b));
-    EXPECT_TRUE(static_cast<T>(b-1) == ma::absolute_value_difference(b, a));
+    EXPECT_TRUE(static_cast<T>(b-1) == hc::absolute_value_difference(a, b));
+    EXPECT_TRUE(static_cast<T>(b-1) == hc::absolute_value_difference(b, a));
 
-    a = static_cast<T>(ut::ut_numeric_limits<T>::max()/2);
+    a = static_cast<T>(hc::ut_numeric_limits<T>::max()/2);
     b = static_cast<T>(a + 1);
-    EXPECT_TRUE(static_cast<T>(1) == ma::absolute_value_difference(a, b));
-    EXPECT_TRUE(static_cast<T>(1) == ma::absolute_value_difference(b, a));
-    EXPECT_TRUE(static_cast<T>(0) == ma::absolute_value_difference(a, a));
-    EXPECT_TRUE(static_cast<T>(0) == ma::absolute_value_difference(b, b));
+    EXPECT_TRUE(static_cast<T>(1) == hc::absolute_value_difference(a, b));
+    EXPECT_TRUE(static_cast<T>(1) == hc::absolute_value_difference(b, a));
+    EXPECT_TRUE(static_cast<T>(0) == hc::absolute_value_difference(a, a));
+    EXPECT_TRUE(static_cast<T>(0) == hc::absolute_value_difference(b, b));
 
     b++;
-    EXPECT_TRUE(static_cast<T>(2) == ma::absolute_value_difference(a, b));
-    EXPECT_TRUE(static_cast<T>(2) == ma::absolute_value_difference(b, a));
+    EXPECT_TRUE(static_cast<T>(2) == hc::absolute_value_difference(a, b));
+    EXPECT_TRUE(static_cast<T>(2) == hc::absolute_value_difference(b, a));
     a++;
-    EXPECT_TRUE(static_cast<T>(1) == ma::absolute_value_difference(a, b));
-    EXPECT_TRUE(static_cast<T>(1) == ma::absolute_value_difference(b, a));
+    EXPECT_TRUE(static_cast<T>(1) == hc::absolute_value_difference(a, b));
+    EXPECT_TRUE(static_cast<T>(1) == hc::absolute_value_difference(b, a));
 
-    a = static_cast<T>(ut::ut_numeric_limits<T>::max()/2 - 1);
+    a = static_cast<T>(hc::ut_numeric_limits<T>::max()/2 - 1);
     b = static_cast<T>(a + 1);
-    EXPECT_TRUE(static_cast<T>(1) == ma::absolute_value_difference(a, b));
-    EXPECT_TRUE(static_cast<T>(1) == ma::absolute_value_difference(b, a));
-    EXPECT_TRUE(static_cast<T>(0) == ma::absolute_value_difference(a, a));
+    EXPECT_TRUE(static_cast<T>(1) == hc::absolute_value_difference(a, b));
+    EXPECT_TRUE(static_cast<T>(1) == hc::absolute_value_difference(b, a));
+    EXPECT_TRUE(static_cast<T>(0) == hc::absolute_value_difference(a, a));
 }
 
 

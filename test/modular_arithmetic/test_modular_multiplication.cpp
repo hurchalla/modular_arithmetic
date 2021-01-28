@@ -27,102 +27,101 @@
 template <typename T>
 void test_modulus(T modulus)
 {
-    namespace ma = hurchalla::modular_arithmetic;
+    namespace hc = hurchalla;
 
     T a = 0;
     T b = 0;
     EXPECT_TRUE(static_cast<T>(0) ==
-                   ma::modular_multiplication_prereduced_inputs(a, b, modulus));
+                   hc::modular_multiplication_prereduced_inputs(a, b, modulus));
     a = 0; b = 1;
     EXPECT_TRUE(static_cast<T>(0) ==
-                   ma::modular_multiplication_prereduced_inputs(a, b, modulus));
+                   hc::modular_multiplication_prereduced_inputs(a, b, modulus));
     EXPECT_TRUE(static_cast<T>(0) ==
-                   ma::modular_multiplication_prereduced_inputs(b, a, modulus));
+                   hc::modular_multiplication_prereduced_inputs(b, a, modulus));
     a = 1; b = 1;
     EXPECT_TRUE(static_cast<T>(1) ==
-                   ma::modular_multiplication_prereduced_inputs(a, b, modulus));
+                   hc::modular_multiplication_prereduced_inputs(a, b, modulus));
 
     a = 2; b = 3;
     EXPECT_TRUE(static_cast<T>(6) ==
-                   ma::modular_multiplication_prereduced_inputs(a, b, modulus));
+                   hc::modular_multiplication_prereduced_inputs(a, b, modulus));
     EXPECT_TRUE(static_cast<T>(6) ==
-                   ma::modular_multiplication_prereduced_inputs(b, a, modulus));
+                   hc::modular_multiplication_prereduced_inputs(b, a, modulus));
     EXPECT_TRUE(static_cast<T>(4) ==
-                   ma::modular_multiplication_prereduced_inputs(a, a, modulus));
+                   hc::modular_multiplication_prereduced_inputs(a, a, modulus));
 
     a = 0; b = static_cast<T>(modulus - 1);
     EXPECT_TRUE(static_cast<T>(0) ==
-                   ma::modular_multiplication_prereduced_inputs(a, b, modulus));
+                   hc::modular_multiplication_prereduced_inputs(a, b, modulus));
     EXPECT_TRUE(static_cast<T>(0) ==
-                   ma::modular_multiplication_prereduced_inputs(b, a, modulus));
+                   hc::modular_multiplication_prereduced_inputs(b, a, modulus));
     EXPECT_TRUE(static_cast<T>(1) ==
-                   ma::modular_multiplication_prereduced_inputs(b, b, modulus));
+                   hc::modular_multiplication_prereduced_inputs(b, b, modulus));
 
     a = 1; b = static_cast<T>(modulus - 1);
     EXPECT_TRUE(static_cast<T>(modulus - 1) ==
-                   ma::modular_multiplication_prereduced_inputs(a, b, modulus));
+                   hc::modular_multiplication_prereduced_inputs(a, b, modulus));
     EXPECT_TRUE(static_cast<T>(modulus - 1) ==
-                   ma::modular_multiplication_prereduced_inputs(b, a, modulus));
+                   hc::modular_multiplication_prereduced_inputs(b, a, modulus));
 
     a = static_cast<T>(modulus - 1);
     b = static_cast<T>(modulus - 2);
     EXPECT_TRUE(static_cast<T>(2) ==
-                   ma::modular_multiplication_prereduced_inputs(a, b, modulus));
+                   hc::modular_multiplication_prereduced_inputs(a, b, modulus));
     EXPECT_TRUE(static_cast<T>(2) ==
-                   ma::modular_multiplication_prereduced_inputs(b, a, modulus));
+                   hc::modular_multiplication_prereduced_inputs(b, a, modulus));
 
     a = static_cast<T>(modulus - 2);
     b = static_cast<T>(modulus - 3);
     EXPECT_TRUE(static_cast<T>(6) ==
-                   ma::modular_multiplication_prereduced_inputs(a, b, modulus));
+                   hc::modular_multiplication_prereduced_inputs(a, b, modulus));
     EXPECT_TRUE(static_cast<T>(6) ==
-                   ma::modular_multiplication_prereduced_inputs(b, a, modulus));
+                   hc::modular_multiplication_prereduced_inputs(b, a, modulus));
 
     T tmp = static_cast<T>((modulus/4)*4);  // make tmp == 4n for some integer n
     a = static_cast<T>(tmp/2);
     EXPECT_TRUE(static_cast<T>(0) ==
-                   ma::modular_multiplication_prereduced_inputs(a, a, tmp));
+                   hc::modular_multiplication_prereduced_inputs(a, a, tmp));
 
     tmp = static_cast<T>((modulus/2)*2);
     a = static_cast<T>(tmp/2);
     b = static_cast<T>(6);
     EXPECT_TRUE(static_cast<T>(0) ==
-                   ma::modular_multiplication_prereduced_inputs(a, b, tmp));
+                   hc::modular_multiplication_prereduced_inputs(a, b, tmp));
     EXPECT_TRUE(static_cast<T>(0) ==
-                   ma::modular_multiplication_prereduced_inputs(b, a, tmp));
+                   hc::modular_multiplication_prereduced_inputs(b, a, tmp));
 
     b = static_cast<T>(5);
-    EXPECT_TRUE(a == ma::modular_multiplication_prereduced_inputs(a, b, tmp));
-    EXPECT_TRUE(a == ma::modular_multiplication_prereduced_inputs(b, a, tmp));
+    EXPECT_TRUE(a == hc::modular_multiplication_prereduced_inputs(a, b, tmp));
+    EXPECT_TRUE(a == hc::modular_multiplication_prereduced_inputs(b, a, tmp));
 }
 
 
 template <typename T>
 void test_modular_multiplication()
 {
-    namespace ma = hurchalla::modular_arithmetic;
-    namespace ut = hurchalla::util;
+    namespace hc = hurchalla;
 
     // test with a few basic examples first
     T modulus = 13;
     T a = 5;
     T b = 12;
     EXPECT_TRUE(static_cast<T>(8) ==
-                   ma::modular_multiplication_prereduced_inputs(a, b, modulus));
+                   hc::modular_multiplication_prereduced_inputs(a, b, modulus));
     EXPECT_TRUE(static_cast<T>(8) ==
-                   ma::modular_multiplication_prereduced_inputs(b, a, modulus));
+                   hc::modular_multiplication_prereduced_inputs(b, a, modulus));
     EXPECT_TRUE(static_cast<T>(12) ==
-                   ma::modular_multiplication_prereduced_inputs(a, a, modulus));
+                   hc::modular_multiplication_prereduced_inputs(a, a, modulus));
     EXPECT_TRUE(static_cast<T>(1) ==
-                   ma::modular_multiplication_prereduced_inputs(b, b, modulus));
+                   hc::modular_multiplication_prereduced_inputs(b, b, modulus));
 
     modulus = 14;
     a = 7;
     b = 8;
     EXPECT_TRUE(static_cast<T>(0) ==
-                   ma::modular_multiplication_prereduced_inputs(a, b, modulus));
+                   hc::modular_multiplication_prereduced_inputs(a, b, modulus));
     EXPECT_TRUE(static_cast<T>(0) ==
-                   ma::modular_multiplication_prereduced_inputs(b, a, modulus));
+                   hc::modular_multiplication_prereduced_inputs(b, a, modulus));
 
     test_modulus(modulus);
     test_modulus(static_cast<T>(15));
@@ -132,14 +131,14 @@ void test_modular_multiplication()
     modulus = 1;
     a = 0; b = 0;
     EXPECT_TRUE(static_cast<T>(0) ==
-                   ma::modular_multiplication_prereduced_inputs(a, b, modulus));
+                   hc::modular_multiplication_prereduced_inputs(a, b, modulus));
 
-    modulus = ut::ut_numeric_limits<T>::max();
+    modulus = hc::ut_numeric_limits<T>::max();
     test_modulus(modulus);
     modulus--;
     test_modulus(modulus);
 
-    modulus = ut::ut_numeric_limits<T>::max() / 2;
+    modulus = hc::ut_numeric_limits<T>::max() / 2;
     test_modulus(modulus);
     modulus++;
     test_modulus(modulus);

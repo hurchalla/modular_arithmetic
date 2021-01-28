@@ -19,20 +19,19 @@
 template <typename T, class MTAG>
 T get_max_allowable_modulus()
 {
-    namespace mont = hurchalla::montgomery_arithmetic;
-    namespace ut = hurchalla::util;
+    namespace hc = hurchalla;
     T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
-                                        (ut::ut_numeric_limits<T>::digits - 1));
+                                        (hc::ut_numeric_limits<T>::digits - 1));
     T Rdiv4 = static_cast<T>(Rdiv2 / 2);
     T Rdiv6 = static_cast<T>(Rdiv2 / 3);
 
-    if (std::is_same<MTAG, mont::FullrangeTag>::value)
+    if (std::is_same<MTAG, hc::FullrangeTag>::value)
         return static_cast<T>(Rdiv2 - 1 + Rdiv2);
-    else if (std::is_same<MTAG, mont::HalfrangeTag>::value)
+    else if (std::is_same<MTAG, hc::HalfrangeTag>::value)
         return static_cast<T>(Rdiv2 - 1);
-    else if (std::is_same<MTAG, mont::QuarterrangeTag>::value)
+    else if (std::is_same<MTAG, hc::QuarterrangeTag>::value)
         return static_cast<T>(Rdiv4 - 1);
-    else if (std::is_same<MTAG, mont::SixthrangeTag>::value)
+    else if (std::is_same<MTAG, hc::SixthrangeTag>::value)
         return static_cast<T>(Rdiv6 - 1);
     else {
         EXPECT_TRUE(false);  // there should be no other tag types than above
@@ -44,22 +43,20 @@ T get_max_allowable_modulus()
 template <typename T, class MTAG>
 void test_single_R2(T n)
 {
-    namespace ma = hurchalla::modular_arithmetic;
-    namespace mont = hurchalla::montgomery_arithmetic;
-    namespace ut = hurchalla::util;
-    using P = typename ut::safely_promote_unsigned<T>::type;
+    namespace hc = hurchalla;
+    using P = typename hc::safely_promote_unsigned<T>::type;
     // a failure on the next line would mean the test case was written wrong.
     T max = get_max_allowable_modulus<T, MTAG>();
     EXPECT_TRUE(n <= max);
     T one = static_cast<T>(1);
 
-    T inv = mont::inverse_mod_R(n);
+    T inv = hc::inverse_mod_R(n);
     // the next line tests inverse_mod_R - we might as well test it while here.
     EXPECT_TRUE(static_cast<T>(static_cast<P>(inv) * static_cast<P>(n)) == one);
 
-    T rmodn = mont::get_R_mod_n(n);
-    T r2modn_1 = mont::get_Rsquared_mod_n(n, inv, rmodn, MTAG());
-    T r2modn_2 = ma::modular_multiplication_prereduced_inputs(rmodn, rmodn, n);
+    T rmodn = hc::get_R_mod_n(n);
+    T r2modn_1 = hc::get_Rsquared_mod_n(n, inv, rmodn, MTAG());
+    T r2modn_2 = hc::modular_multiplication_prereduced_inputs(rmodn, rmodn, n);
     // finally, test get_Rsquared_mod_n()
     EXPECT_TRUE(r2modn_1 == r2modn_2);
 }
@@ -105,43 +102,43 @@ void test_R2()
 
 namespace {
     TEST(MontgomeryArithmetic, get_Rsquared_mod_N) {
-        namespace mont = hurchalla::montgomery_arithmetic;
+        namespace hc = hurchalla;
 
-        test_R2<std::uint8_t, mont::FullrangeTag>();
-        test_R2<std::uint8_t, mont::HalfrangeTag>();
-        test_R2<std::uint8_t, mont::QuarterrangeTag>();
-        test_R2<std::uint8_t, mont::SixthrangeTag>();
+        test_R2<std::uint8_t, hc::FullrangeTag>();
+        test_R2<std::uint8_t, hc::HalfrangeTag>();
+        test_R2<std::uint8_t, hc::QuarterrangeTag>();
+        test_R2<std::uint8_t, hc::SixthrangeTag>();
 
-        test_R2<std::uint16_t, mont::FullrangeTag>();
-        test_R2<std::uint16_t, mont::HalfrangeTag>();
-        test_R2<std::uint16_t, mont::QuarterrangeTag>();
-        test_R2<std::uint16_t, mont::SixthrangeTag>();
+        test_R2<std::uint16_t, hc::FullrangeTag>();
+        test_R2<std::uint16_t, hc::HalfrangeTag>();
+        test_R2<std::uint16_t, hc::QuarterrangeTag>();
+        test_R2<std::uint16_t, hc::SixthrangeTag>();
 
-        test_R2<std::uint32_t, mont::FullrangeTag>();
-        test_R2<std::uint32_t, mont::HalfrangeTag>();
-        test_R2<std::uint32_t, mont::QuarterrangeTag>();
-        test_R2<std::uint32_t, mont::SixthrangeTag>();
+        test_R2<std::uint32_t, hc::FullrangeTag>();
+        test_R2<std::uint32_t, hc::HalfrangeTag>();
+        test_R2<std::uint32_t, hc::QuarterrangeTag>();
+        test_R2<std::uint32_t, hc::SixthrangeTag>();
 
-        test_R2<std::uint64_t, mont::FullrangeTag>();
-        test_R2<std::uint64_t, mont::HalfrangeTag>();
-        test_R2<std::uint64_t, mont::QuarterrangeTag>();
-        test_R2<std::uint64_t, mont::SixthrangeTag>();
+        test_R2<std::uint64_t, hc::FullrangeTag>();
+        test_R2<std::uint64_t, hc::HalfrangeTag>();
+        test_R2<std::uint64_t, hc::QuarterrangeTag>();
+        test_R2<std::uint64_t, hc::SixthrangeTag>();
 
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
-        test_R2<__uint128_t, mont::FullrangeTag>();
-        test_R2<__uint128_t, mont::HalfrangeTag>();
-        test_R2<__uint128_t, mont::QuarterrangeTag>();
-        test_R2<__uint128_t, mont::SixthrangeTag>();
+        test_R2<__uint128_t, hc::FullrangeTag>();
+        test_R2<__uint128_t, hc::HalfrangeTag>();
+        test_R2<__uint128_t, hc::QuarterrangeTag>();
+        test_R2<__uint128_t, hc::SixthrangeTag>();
 #endif
 
-        test_R2_exhaustive<std::uint8_t, mont::FullrangeTag>();
-        test_R2_exhaustive<std::uint8_t, mont::HalfrangeTag>();
-        test_R2_exhaustive<std::uint8_t, mont::QuarterrangeTag>();
-        test_R2_exhaustive<std::uint8_t, mont::SixthrangeTag>();
+        test_R2_exhaustive<std::uint8_t, hc::FullrangeTag>();
+        test_R2_exhaustive<std::uint8_t, hc::HalfrangeTag>();
+        test_R2_exhaustive<std::uint8_t, hc::QuarterrangeTag>();
+        test_R2_exhaustive<std::uint8_t, hc::SixthrangeTag>();
 
-        test_R2_exhaustive<std::uint16_t, mont::FullrangeTag>();
-        test_R2_exhaustive<std::uint16_t, mont::HalfrangeTag>();
-        test_R2_exhaustive<std::uint16_t, mont::QuarterrangeTag>();
-        test_R2_exhaustive<std::uint16_t, mont::SixthrangeTag>();
+        test_R2_exhaustive<std::uint16_t, hc::FullrangeTag>();
+        test_R2_exhaustive<std::uint16_t, hc::HalfrangeTag>();
+        test_R2_exhaustive<std::uint16_t, hc::QuarterrangeTag>();
+        test_R2_exhaustive<std::uint16_t, hc::SixthrangeTag>();
     }
 }

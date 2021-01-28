@@ -10,7 +10,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/programming_by_contract.h"
 
-namespace hurchalla { namespace modular_arithmetic {
+namespace hurchalla {
 
 
 // Note: Calling with a < modulus slightly improves performance.
@@ -20,7 +20,7 @@ namespace hurchalla { namespace modular_arithmetic {
 template <typename T>
 T modular_multiplicative_inverse(T a, T modulus)
 {
-    static_assert(util::ut_numeric_limits<T>::is_integer, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
     HPBC_PRECONDITION(a >= 0);
     HPBC_PRECONDITION(modulus > 1);
 
@@ -35,6 +35,6 @@ T modular_multiplicative_inverse(T a, T modulus)
 }
 
 
-}}	// end namespace
+}	// end namespace
 
 #endif

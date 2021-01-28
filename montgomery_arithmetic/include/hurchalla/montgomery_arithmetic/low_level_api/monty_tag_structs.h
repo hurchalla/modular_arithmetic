@@ -5,7 +5,7 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_TAG_STRUCTS_H_INCLUDED
 
 
-namespace hurchalla { namespace montgomery_arithmetic {
+namespace hurchalla {
 
 
 struct FullrangeTag {};
@@ -54,7 +54,7 @@ struct SixthrangeTag : public QuarterrangeTag {};
 // https://www.comodo.com/resources/research/cryptography/CDW_CHES_99.ps
 
 
-}} // end namespace
+} // end namespace
 
 
 #endif

@@ -17,12 +17,11 @@
 template <typename T>
 void test_single_negative_inverse(T a)
 {
-    namespace mont = hurchalla::montgomery_arithmetic;
-    namespace ut = hurchalla::util;
-    using P = typename ut::safely_promote_unsigned<T>::type;
+    namespace hc = hurchalla;
+    using P = typename hc::safely_promote_unsigned<T>::type;
     T minusOne = static_cast<T>(static_cast<P>(0) - static_cast<P>(1));
 
-    T inv = mont::detail::negative_inverse_mod_R(a);
+    T inv = hc::detail::negative_inverse_mod_R(a);
     EXPECT_TRUE(static_cast<T>(static_cast<P>(inv) * static_cast<P>(a)) ==
                                                                       minusOne);
 }
@@ -35,8 +34,8 @@ void test_single_negative_inverse(T a)
 template <typename T>
 void test_negative_inverse_exhaustive()
 {
-    namespace ut = hurchalla::util;
-    T tmax = ut::ut_numeric_limits<T>::max();
+    namespace hc = hurchalla;
+    T tmax = hc::ut_numeric_limits<T>::max();
     T evenmax = static_cast<T>((tmax/2)*2);
     T oddmax = (evenmax != tmax) ? tmax : static_cast<T>(tmax - 1);
 
@@ -49,8 +48,8 @@ void test_negative_inverse_exhaustive()
 template <typename T>
 void test_negative_inverse_mod_R()
 {
-    namespace ut = hurchalla::util;
-    T tmax = ut::ut_numeric_limits<T>::max();
+    namespace hc = hurchalla;
+    T tmax = hc::ut_numeric_limits<T>::max();
     T evenmax = static_cast<T>((tmax/2)*2);
     T oddmax = (evenmax != tmax) ? tmax : static_cast<T>(tmax - 1);
     T oddhalfmax = static_cast<T>((tmax/4)*2 + 1);

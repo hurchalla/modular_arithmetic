@@ -24,88 +24,87 @@
 template <typename T>
 void test_modulus(T modulus)
 {
-    namespace ma = hurchalla::modular_arithmetic;
+    namespace hc = hurchalla;
 
     T a = 0;
     T b = 0;
     EXPECT_TRUE(static_cast<T>(0) ==
-                         ma::modular_addition_prereduced_inputs(a, b, modulus));
+                         hc::modular_addition_prereduced_inputs(a, b, modulus));
     a = 0; b = 1;
     EXPECT_TRUE(static_cast<T>(1) ==
-                         ma::modular_addition_prereduced_inputs(a, b, modulus));
+                         hc::modular_addition_prereduced_inputs(a, b, modulus));
     EXPECT_TRUE(static_cast<T>(1) ==
-                         ma::modular_addition_prereduced_inputs(b, a, modulus));
+                         hc::modular_addition_prereduced_inputs(b, a, modulus));
     a = 1; b = 1;
     EXPECT_TRUE(static_cast<T>(2) ==
-                         ma::modular_addition_prereduced_inputs(a, b, modulus));
+                         hc::modular_addition_prereduced_inputs(a, b, modulus));
 
     a = 0; b = static_cast<T>(modulus - 1);
-    EXPECT_TRUE(b == ma::modular_addition_prereduced_inputs(a, b, modulus));
-    EXPECT_TRUE(b == ma::modular_addition_prereduced_inputs(b, a, modulus));
+    EXPECT_TRUE(b == hc::modular_addition_prereduced_inputs(a, b, modulus));
+    EXPECT_TRUE(b == hc::modular_addition_prereduced_inputs(b, a, modulus));
     EXPECT_TRUE(static_cast<T>(modulus - 2) ==
-                         ma::modular_addition_prereduced_inputs(b, b, modulus));
+                         hc::modular_addition_prereduced_inputs(b, b, modulus));
 
     a = 1; b = static_cast<T>(modulus - 1);
     EXPECT_TRUE(static_cast<T>(0) ==
-                         ma::modular_addition_prereduced_inputs(a, b, modulus));
+                         hc::modular_addition_prereduced_inputs(a, b, modulus));
     EXPECT_TRUE(static_cast<T>(0) ==
-                         ma::modular_addition_prereduced_inputs(b, a, modulus));
+                         hc::modular_addition_prereduced_inputs(b, a, modulus));
 
     a = static_cast<T>(modulus/2);
     b = static_cast<T>(modulus - a);
     EXPECT_TRUE(static_cast<T>(0) ==
-                         ma::modular_addition_prereduced_inputs(a, b, modulus));
+                         hc::modular_addition_prereduced_inputs(a, b, modulus));
     EXPECT_TRUE(static_cast<T>(0) ==
-                         ma::modular_addition_prereduced_inputs(b, a, modulus));
+                         hc::modular_addition_prereduced_inputs(b, a, modulus));
 
     b++;
     EXPECT_TRUE(static_cast<T>(1) ==
-                         ma::modular_addition_prereduced_inputs(a, b, modulus));
+                         hc::modular_addition_prereduced_inputs(a, b, modulus));
     EXPECT_TRUE(static_cast<T>(1) ==
-                         ma::modular_addition_prereduced_inputs(b, a, modulus));
+                         hc::modular_addition_prereduced_inputs(b, a, modulus));
     a++;
     EXPECT_TRUE(static_cast<T>(2) ==
-                         ma::modular_addition_prereduced_inputs(a, b, modulus));
+                         hc::modular_addition_prereduced_inputs(a, b, modulus));
     EXPECT_TRUE(static_cast<T>(2) ==
-                         ma::modular_addition_prereduced_inputs(b, a, modulus));
+                         hc::modular_addition_prereduced_inputs(b, a, modulus));
 
     a = static_cast<T>(modulus/2 - 1);
     b = static_cast<T>(modulus - a - 2);
     EXPECT_TRUE(static_cast<T>(modulus - 2) ==
-                         ma::modular_addition_prereduced_inputs(a, b, modulus));
+                         hc::modular_addition_prereduced_inputs(a, b, modulus));
     EXPECT_TRUE(static_cast<T>(modulus - 2) ==
-                         ma::modular_addition_prereduced_inputs(b, a, modulus));
+                         hc::modular_addition_prereduced_inputs(b, a, modulus));
     a++;
     EXPECT_TRUE(static_cast<T>(modulus - 1) ==
-                         ma::modular_addition_prereduced_inputs(a, b, modulus));
+                         hc::modular_addition_prereduced_inputs(a, b, modulus));
     EXPECT_TRUE(static_cast<T>(modulus - 1) ==
-                         ma::modular_addition_prereduced_inputs(b, a, modulus));
+                         hc::modular_addition_prereduced_inputs(b, a, modulus));
 }
 
 
 template <typename T>
 void test_modular_addition()
 {
-    namespace ma = hurchalla::modular_arithmetic;
-    namespace ut = hurchalla::util;
+    namespace hc = hurchalla;
 
     // test with a few basic examples first
     T modulus = 13;
     T a = 5;
     T b = 12;
     EXPECT_TRUE(static_cast<T>(4) ==
-                         ma::modular_addition_prereduced_inputs(a, b, modulus));
+                         hc::modular_addition_prereduced_inputs(a, b, modulus));
     EXPECT_TRUE(static_cast<T>(4) ==
-                         ma::modular_addition_prereduced_inputs(b, a, modulus));
+                         hc::modular_addition_prereduced_inputs(b, a, modulus));
     EXPECT_TRUE(static_cast<T>(11) ==
-                         ma::modular_addition_prereduced_inputs(b, b, modulus));
+                         hc::modular_addition_prereduced_inputs(b, b, modulus));
     a = 7; b = 6;
     EXPECT_TRUE(static_cast<T>(0) ==
-                         ma::modular_addition_prereduced_inputs(a, b, modulus));
+                         hc::modular_addition_prereduced_inputs(a, b, modulus));
     EXPECT_TRUE(static_cast<T>(0) ==
-                         ma::modular_addition_prereduced_inputs(b, a, modulus));
+                         hc::modular_addition_prereduced_inputs(b, a, modulus));
     EXPECT_TRUE(static_cast<T>(12) ==
-                         ma::modular_addition_prereduced_inputs(b, b, modulus));
+                         hc::modular_addition_prereduced_inputs(b, b, modulus));
 
     test_modulus(modulus);
     test_modulus(static_cast<T>(14));
@@ -115,14 +114,14 @@ void test_modular_addition()
     modulus = 1;
     a = 0; b = 0;
     EXPECT_TRUE(static_cast<T>(0) ==
-                         ma::modular_addition_prereduced_inputs(a, b, modulus));
+                         hc::modular_addition_prereduced_inputs(a, b, modulus));
 
-    modulus = ut::ut_numeric_limits<T>::max();
+    modulus = hc::ut_numeric_limits<T>::max();
     test_modulus(modulus);
     modulus--;
     test_modulus(modulus);
 
-    modulus = ut::ut_numeric_limits<T>::max() / 2;
+    modulus = hc::ut_numeric_limits<T>::max() / 2;
     test_modulus(modulus);
     modulus++;
     test_modulus(modulus);

@@ -10,16 +10,16 @@
 #include "hurchalla/util/programming_by_contract.h"
 #include <type_traits>
 
-namespace hurchalla { namespace modular_arithmetic { namespace detail {
+namespace hurchalla { namespace detail {
 
 
 // Enabled only for signed (integral) types T.
 template <typename T>
-typename std::enable_if<util::ut_numeric_limits<T>::is_signed, T>::type
+typename std::enable_if<ut_numeric_limits<T>::is_signed, T>::type
 impl_modular_multiplicative_inverse(T val, T modulus)
 {
-    static_assert(util::ut_numeric_limits<T>::is_integer, "");
-    static_assert(util::ut_numeric_limits<T>::is_signed, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(ut_numeric_limits<T>::is_signed, "");
     HPBC_PRECONDITION2(val >= 0);
     HPBC_PRECONDITION2(modulus > 1);
 
@@ -73,11 +73,11 @@ impl_modular_multiplicative_inverse(T val, T modulus)
 
 // Enabled only for unsigned (integral) types U.
 template <typename U>
-typename std::enable_if<!(util::ut_numeric_limits<U>::is_signed), U>::type
+typename std::enable_if<!(ut_numeric_limits<U>::is_signed), U>::type
 impl_modular_multiplicative_inverse(U val, U modulus)
 {
-    static_assert(util::ut_numeric_limits<U>::is_integer, "");
-    static_assert(!(util::ut_numeric_limits<U>::is_signed), "");
+    static_assert(ut_numeric_limits<U>::is_integer, "");
+    static_assert(!(ut_numeric_limits<U>::is_signed), "");
     HPBC_PRECONDITION2(modulus>1);
 
     // POSTCONDITION: Returns 0 if the inverse doesn't exist. Otherwise returns
@@ -99,7 +99,7 @@ impl_modular_multiplicative_inverse(U val, U modulus)
         return std::make_tuple(static_cast<T>(0), true);
     }
 */
-    using S = typename util::extensible_make_signed<U>::type;
+    using S = typename extensible_make_signed<U>::type;
 
     // The following algorithm is adapted from Figure 6 of
     // https://jeffhurchalla.com/2018/10/13/implementing-the-extended-euclidean-algorithm-with-unsigned-inputs/
@@ -132,6 +132,6 @@ impl_modular_multiplicative_inverse(U val, U modulus)
 }
 
 
-}}}  // end namespace
+}}  // end namespace
 
 #endif

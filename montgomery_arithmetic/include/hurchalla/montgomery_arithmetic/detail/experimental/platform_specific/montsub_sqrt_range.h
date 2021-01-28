@@ -10,7 +10,7 @@
 #include "hurchalla/util/programming_by_contract.h"
 #include <cstdint>
 
-namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
+namespace hurchalla { namespace detail {
 
 
 // Note: this file is extremely closely related to
@@ -37,9 +37,9 @@ namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
 template <typename T>
 HURCHALLA_FORCE_INLINE T montsub_sqrt_range(T a, T b, T n)
 {
-    static_assert(util::ut_numeric_limits<T>::is_integer, "");
-    static_assert(!(util::ut_numeric_limits<T>::is_signed), "");
-    static_assert(util::ut_numeric_limits<T>::is_modulo, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+    static_assert(ut_numeric_limits<T>::is_modulo, "");
     HPBC_PRECONDITION2(n > 0);
     // MontySqrtRange uses input/output values that satisfy 0 < value <= n, but
     // we can relax the precondition here to allow zero values for a or b, even
@@ -116,6 +116,6 @@ HURCHALLA_FORCE_INLINE std::uint64_t montsub_sqrt_range(std::uint64_t a,
 #endif
 
 
-}}} // end namespace
+}} // end namespace
 
 #endif

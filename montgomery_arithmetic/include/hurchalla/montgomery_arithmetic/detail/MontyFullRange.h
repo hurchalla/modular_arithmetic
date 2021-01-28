@@ -11,17 +11,16 @@
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 
-namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
+namespace hurchalla { namespace detail {
 
 
 // Let the theoretical constant R = 2^(ut_numeric_limits<T>::digits).
 template <typename T>
 class MontyFullRange : public MontyCommonBase<MontyFullRange, T> {
-    static_assert(util::ut_numeric_limits<T>::is_integer, "");
-    static_assert(!(util::ut_numeric_limits<T>::is_signed), "");
-    static_assert(util::ut_numeric_limits<T>::is_modulo, "");
-    using BC = MontyCommonBase<
-                 ::hurchalla::montgomery_arithmetic::detail::MontyFullRange, T>;
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+    static_assert(ut_numeric_limits<T>::is_modulo, "");
+    using BC = MontyCommonBase<::hurchalla::detail::MontyFullRange, T>;
     using BC::n_;
     using V = typename BC::MontgomeryValue;
 public:
@@ -35,9 +34,9 @@ public:
 
     static constexpr T max_modulus()
     {
-        return (util::ut_numeric_limits<T>::max() % 2 == 0) ?
-                static_cast<T>(util::ut_numeric_limits<T>::max() - 1) :
-                util::ut_numeric_limits<T>::max();
+        return (ut_numeric_limits<T>::max() % 2 == 0) ?
+                static_cast<T>(ut_numeric_limits<T>::max() - 1) :
+                ut_numeric_limits<T>::max();
     }
 
     HURCHALLA_FORCE_INLINE T getExtendedModulus() const { return n_; }
@@ -79,6 +78,6 @@ public:
 };
 
 
-}}} // end namespace
+}} // end namespace
 
 #endif

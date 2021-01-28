@@ -34,7 +34,7 @@
 #endif
 
 
-namespace hurchalla { namespace modular_arithmetic { namespace detail {
+namespace hurchalla { namespace detail {
 
 
 /*  Generic (non-platform specific) implementation for
@@ -64,8 +64,7 @@ Code review notes: Everything appears correct.
 template <typename T>
 T slow_modular_multiplication(T a, T b, T modulus)
 {
-    namespace ut = hurchalla::util;
-    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
     HPBC_PRECONDITION2(modulus>0);
     HPBC_PRECONDITION2(a>=0 && a<modulus);
     HPBC_PRECONDITION2(b>=0 && b<modulus);
@@ -329,7 +328,7 @@ inline std::uint64_t impl_modular_multiplication_prereduced_inputs(
 
 
 
-}}}  // end namespace
+}}  // end namespace
 
 #ifdef __GNUC__
 #  pragma GCC diagnostic pop

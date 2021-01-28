@@ -12,7 +12,7 @@
 #include "hurchalla/util/programming_by_contract.h"
 #include <type_traits>
 
-namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
+namespace hurchalla { namespace detail {
 
 
 // For discussion purposes, let R = 2^(ut_numeric_limits<T>::digits).  For
@@ -48,14 +48,13 @@ namespace detail_nimr {
     typename std::enable_if<bits<=HURCHALLA_TARGET_BIT_WIDTH, T>::type
     impl_neg_inverse(T a)
     {
-        namespace ut = hurchalla::util;
-        static_assert(bits == ut::ut_numeric_limits<T>::digits, "");
+        static_assert(bits == ut_numeric_limits<T>::digits, "");
         static_assert(std::is_unsigned<T>::value, ""); //T native unsign integer
         HPBC_PRECONDITION2(a % 2 == 1);
 
         // avoid undefined behavior that could result if T is an unsigned type
         // that would be promoted to (signed) 'int'.
-        using P = typename ut::safely_promote_unsigned<T>::type;
+        using P = typename safely_promote_unsigned<T>::type;
         P b = static_cast<P>(a);
   
         P x = (3*b)^12;  // good to 5 bits, but we'll treat it as good to only 4
@@ -82,10 +81,9 @@ namespace detail_nimr {
     typename std::enable_if<!(bits<=HURCHALLA_TARGET_BIT_WIDTH), T>::type
     impl_neg_inverse(T a)
     {
-        namespace ut = hurchalla::util;
         static_assert((bits/2)*2 == bits, "");
-        using T2 = typename std::conditional<ut::sized_uint<bits/2>::is_valid,
-                                typename ut::sized_uint<bits/2>::type, T>::type;
+        using T2 = typename std::conditional<sized_uint<bits/2>::is_valid,
+                                typename sized_uint<bits/2>::type, T>::type;
         // set x so that the lower ('bits'/2) half of the bits are good.
         T x = static_cast<T>(impl_neg_inverse<T2, bits/2>(static_cast<T2>(a)));
   
@@ -105,16 +103,15 @@ namespace detail_nimr {
 template <typename T>
 T negative_inverse_mod_R(T a)
 {
-    namespace ut = hurchalla::util;
-    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
-    static_assert(!(ut::ut_numeric_limits<T>::is_signed), "");
-    static_assert(ut::ut_numeric_limits<T>::is_modulo, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+    static_assert(ut_numeric_limits<T>::is_modulo, "");
     HPBC_PRECONDITION2(a % 2 == 1);
 
-    T inv= detail_nimr::impl_neg_inverse<T,ut::ut_numeric_limits<T>::digits>(a);
+    T inv= detail_nimr::impl_neg_inverse<T, ut_numeric_limits<T>::digits>(a);
 
     // guarantee inv*a ≡ -1 (mod R)
-    using P = typename ut::safely_promote_unsigned<T>::type;
+    using P = typename safely_promote_unsigned<T>::type;
     HPBC_POSTCONDITION2(static_cast<T>(static_cast<P>(inv) * static_cast<P>(a))
                       == static_cast<T>(static_cast<P>(0) - static_cast<P>(1)));
     return inv;
@@ -125,6 +122,6 @@ T negative_inverse_mod_R(T a)
 #endif
 
 
-}}} // end namespace
+}} // end namespace
 
 #endif

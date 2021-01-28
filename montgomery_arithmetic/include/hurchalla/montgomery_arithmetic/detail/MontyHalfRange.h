@@ -13,17 +13,16 @@
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 
-namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
+namespace hurchalla { namespace detail {
 
 
 // Let the theoretical constant R = 2^(ut_numeric_limits<T>::digits).
 template <typename T>
 class MontyHalfRange : public MontyCommonBase<MontyHalfRange, T> {
-    static_assert(util::ut_numeric_limits<T>::is_integer, "");
-    static_assert(!(util::ut_numeric_limits<T>::is_signed), "");
-    static_assert(util::ut_numeric_limits<T>::is_modulo, "");
-    using BC = MontyCommonBase<
-                 ::hurchalla::montgomery_arithmetic::detail::MontyHalfRange, T>;
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+    static_assert(ut_numeric_limits<T>::is_modulo, "");
+    using BC = MontyCommonBase<::hurchalla::detail::MontyHalfRange, T>;
     using BC::n_;
     using BC::inv_n_;
     using V = typename BC::MontgomeryValue;
@@ -36,7 +35,7 @@ public:
     {
         // MontyHalfRange requires  modulus < R/2
         T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
-                                      (util::ut_numeric_limits<T>::digits - 1));
+                                       (ut_numeric_limits<T>::digits - 1));
         HPBC_PRECONDITION2(modulus < Rdiv2);
     }
     MontyHalfRange(const MontyHalfRange&) = delete;
@@ -45,7 +44,7 @@ public:
     static constexpr T max_modulus()
     {
         return static_cast<T>((static_cast<T>(1) <<
-                                 (util::ut_numeric_limits<T>::digits - 1)) - 1);
+                                       (ut_numeric_limits<T>::digits - 1)) - 1);
     }
 
     HURCHALLA_FORCE_INLINE T getExtendedModulus() const { return n_; }
@@ -87,6 +86,6 @@ public:
 };
 
 
-}}} // end namespace
+}} // end namespace
 
 #endif

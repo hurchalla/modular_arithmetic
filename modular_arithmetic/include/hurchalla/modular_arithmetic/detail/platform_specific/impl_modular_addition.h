@@ -12,7 +12,7 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace hurchalla { namespace modular_arithmetic { namespace detail {
+namespace hurchalla { namespace detail {
 
 
 // -----------------------------------------------------------------------------
@@ -45,8 +45,7 @@ namespace hurchalla { namespace modular_arithmetic { namespace detail {
 template <typename T>
 T impl_modular_addition_prereduced_inputs(T a, T b, T modulus)
 {
-    namespace ut = hurchalla::util;
-    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
     HPBC_PRECONDITION2(modulus>0);
     HPBC_PRECONDITION2(0<=a && a<modulus);  // i.e. the input must be prereduced
     HPBC_PRECONDITION2(0<=b && b<modulus);  // i.e. the input must be prereduced
@@ -73,13 +72,12 @@ T impl_modular_addition_prereduced_inputs(T a, T b, T modulus)
 template <typename T>
 T impl_modular_addition_prereduced_inputs(T a, T b, T modulus)
 {
-    namespace ut = hurchalla::util;
-    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
     HPBC_PRECONDITION2(modulus>0);
     HPBC_PRECONDITION2(0<=a && a<modulus);  // the input must be prereduced
     HPBC_PRECONDITION2(0<=b && b<modulus);  // the input must be prereduced
 
-    using U = typename ut::extensible_make_unsigned<T>::type;
+    using U = typename extensible_make_unsigned<T>::type;
     U sum = static_cast<U>(static_cast<U>(a) + static_cast<U>(b));
     U tmp = static_cast<U>(static_cast<U>(b) - static_cast<U>(modulus));
     U tmp2 = static_cast<U>(static_cast<U>(a) + tmp);
@@ -251,6 +249,6 @@ inline std::uint64_t impl_modular_addition_prereduced_inputs(std::uint64_t a,
 // }
 
 
-}}}  // end namespace
+}}  // end namespace
 
 #endif

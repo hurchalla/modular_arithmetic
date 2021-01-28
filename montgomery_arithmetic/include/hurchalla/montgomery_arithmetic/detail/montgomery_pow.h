@@ -13,7 +13,7 @@
 #include <array>
 #include <cstddef>
 
-namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
+namespace hurchalla { namespace detail {
 
 
 // This class is intended solely for internal use by this file
@@ -22,7 +22,7 @@ template<class MF>
 struct MontPowImpl {
   using T = typename MF::T_type;
   using V = typename MF::MontgomeryValue;
-  static_assert(util::ut_numeric_limits<T>::is_integer, "");
+  static_assert(ut_numeric_limits<T>::is_integer, "");
 
   static HURCHALLA_FORCE_INLINE V pow(const MF& mf, V base, T exponent)
   {
@@ -54,8 +54,8 @@ struct MontPowImpl {
 #else
         T lowbit = (exponent & static_cast<T>(1));
         using U = decltype(tmp.get());
-        static_assert(util::ut_numeric_limits<U>::is_integer, "");
-        static_assert(!(util::ut_numeric_limits<U>::is_signed), "");
+        static_assert(ut_numeric_limits<U>::is_integer, "");
+        static_assert(!(ut_numeric_limits<U>::is_signed), "");
         U mask = static_cast<U>(0) - static_cast<U>(lowbit);
         U mask_flipped = static_cast<U>(lowbit) - static_cast<U>(1);
         result = V((mask & (tmp.get())) | (mask_flipped & (result.get())));
@@ -155,8 +155,8 @@ struct MontPowImpl {
         exponent = static_cast<T>(exponent >> static_cast<T>(1));
         T lowbit = (exponent & static_cast<T>(1));
         using U = decltype(result[0].get());
-        static_assert(util::ut_numeric_limits<U>::is_integer, "");
-        static_assert(!(util::ut_numeric_limits<U>::is_signed), "");
+        static_assert(ut_numeric_limits<U>::is_integer, "");
+        static_assert(!(ut_numeric_limits<U>::is_signed), "");
         U mask = static_cast<U>(0) - static_cast<U>(lowbit);
         U maskflip = static_cast<U>(lowbit) - static_cast<U>(1);
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
@@ -177,7 +177,7 @@ template<class MF>
 struct MontPow {
     using T = typename MF::T_type;
     using V = typename MF::MontgomeryValue;
-    static_assert(util::ut_numeric_limits<T>::is_integer, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
 
     // The catch-all template version
     template <std::size_t NUM_BASES>
@@ -222,9 +222,12 @@ struct MontPow {
 // improvement over the catch-all template version.  In general I'd expect the
 // template version to work best for an array sized 3 or larger though, so I've
 // only enabled this section for the (measured) x86-64 ISA.
-#  if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)
+#  if defined(__GNUC__) && !defined(__clang__)
+    // This section will be enabled for both gcc and icc, but not clang.
     // x86-64 gcc seems to do better with masking for array size of 3.  But in
     // general we expect conditional moves (cmovs) to perform better than masks.
+    // x86-64 icc does much better with the masking version (at size 3) than
+    // with the cmov version.
     static HURCHALLA_FORCE_INLINE
     std::array<V,3> pow(const MF& mf, std::array<V,3>& bases, T exponent)
     {
@@ -259,6 +262,6 @@ montgomery_pow(const MF& mf,
 }
 
 
-}}} // end namespace
+}} // end namespace
 
 #endif

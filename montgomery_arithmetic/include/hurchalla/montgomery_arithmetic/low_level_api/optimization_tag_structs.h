@@ -5,7 +5,7 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_OPTIMIZATION_TAG_STRUCTS_H_INCLUDED
 
 
-namespace hurchalla { namespace montgomery_arithmetic {
+namespace hurchalla {
 
 
 // private optimization tag intended only for use by the implementation
@@ -23,7 +23,7 @@ struct LowlatencyTag : public PrivateAnyTag {};
 struct LowuopsTag : public PrivateAnyTag {};
 
 
-}} // end namespace
+} // end namespace
 
 
 #endif

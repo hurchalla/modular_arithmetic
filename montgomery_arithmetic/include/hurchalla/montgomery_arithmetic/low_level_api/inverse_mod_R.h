@@ -10,7 +10,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/programming_by_contract.h"
 
-namespace hurchalla { namespace montgomery_arithmetic {
+namespace hurchalla {
 
 
 // For discussion purposes, let the unlimited precision constant R equal
@@ -20,22 +20,21 @@ namespace hurchalla { namespace montgomery_arithmetic {
 template <typename T>
 T inverse_mod_R(T a)
 {
-    namespace ut = hurchalla::util;
-    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
-    static_assert(!(ut::ut_numeric_limits<T>::is_signed), "");
-    static_assert(ut::ut_numeric_limits<T>::is_modulo, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+    static_assert(ut_numeric_limits<T>::is_modulo, "");
     HPBC_PRECONDITION2(a % 2 == 1);
 
-    T inv = detail::impl_inverse_mod_R<T, ut::ut_numeric_limits<T>::digits>(a);
+    T inv = detail::impl_inverse_mod_R<T, ut_numeric_limits<T>::digits>(a);
 
     // guarantee inv*a ≡ 1 (mod R)
-    using P = typename ut::safely_promote_unsigned<T>::type;
+    using P = typename safely_promote_unsigned<T>::type;
     HPBC_POSTCONDITION2(static_cast<T>(static_cast<P>(inv) * static_cast<P>(a))
                         == static_cast<T>(1));
     return inv;
 }
 
 
-}} // end namespace
+} // end namespace
 
 #endif

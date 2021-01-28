@@ -16,7 +16,7 @@
 #include "hurchalla/util/compiler_macros.h"
 #include <type_traits>
 
-namespace hurchalla { namespace montgomery_arithmetic {
+namespace hurchalla {
 
 
 // These are aliases for high performance MontgomeryForm types that are tailored
@@ -103,21 +103,21 @@ using MontgomeryStandardMathWrapper =
 // You should not use this class (it's intended for the alias implementations)
 template <typename T, template <typename> class M>
 class MontyAliasHelper {
-    static_assert(util::ut_numeric_limits<T>::is_integer, "");
-    static_assert(!util::ut_numeric_limits<T>::is_signed, "");
-    static_assert(util::ut_numeric_limits<T>::is_modulo, "");
-    static constexpr int bitsT = util::ut_numeric_limits<T>::digits;
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!ut_numeric_limits<T>::is_signed, "");
+    static_assert(ut_numeric_limits<T>::is_modulo, "");
+    static constexpr int bitsT = ut_numeric_limits<T>::digits;
     static constexpr int target_bits = HURCHALLA_TARGET_BIT_WIDTH;
 public:
     using type =
-      typename std::conditional<
-        (bitsT <= target_bits - 2),
-        detail::MontyQuarterRange<typename util::sized_uint<target_bits>::type>,
-        M<T>
-      >::type;
+        typename std::conditional<
+            (bitsT <= target_bits - 2),
+            detail::MontyQuarterRange<typename sized_uint<target_bits>::type>,
+            M<T>
+        >::type;
 };
 
 
-}} // end namespace
+} // end namespace
 
 #endif

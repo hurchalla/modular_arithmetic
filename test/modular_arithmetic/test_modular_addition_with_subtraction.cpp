@@ -29,15 +29,15 @@
 
 namespace {
 TEST(ModularArithmetic, modular_addition_with_subtraction) {
-    namespace ma = hurchalla::modular_arithmetic;
+    namespace hc = hurchalla;
     using T = std::uint8_t;
 
     for (T modulus=255; modulus>0; --modulus) {
         for (T a=0; a<modulus; ++a) {
             for (T b=0; b<modulus; ++b) {
-                T sum = ma::modular_addition_prereduced_inputs(a, b, modulus);
+                T sum = hc::modular_addition_prereduced_inputs(a, b, modulus);
                 EXPECT_TRUE(a ==
-                    ma::modular_subtraction_prereduced_inputs(sum, b, modulus));
+                    hc::modular_subtraction_prereduced_inputs(sum, b, modulus));
             }
         }
     }

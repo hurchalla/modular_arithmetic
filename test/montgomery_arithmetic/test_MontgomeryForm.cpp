@@ -34,22 +34,22 @@ template <typename M>
 void test_multiply_variants(const M& mf, typename M::MontgomeryValue x,
               typename M::MontgomeryValue y, typename M::T_type expected_result)
 {
-    namespace mont = hurchalla::montgomery_arithmetic;
-    EXPECT_TRUE(mf.convertOut(mf.multiply(x, y)) == expected_result);
+    namespace hc = hurchalla;
+    EXPECT_TRUE(mf.convertOut(mf.multiply(x,y)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-      mf.template multiply<mont::LowlatencyTag>(x,y)) == expected_result);
+             mf.template multiply<hc::LowlatencyTag>(x,y)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-      mf.template multiply<mont::LowuopsTag>(x,y)) == expected_result);
+             mf.template multiply<hc::LowuopsTag>(x,y)) == expected_result);
 
     typename M::MontgomeryValue result;
     bool isZero;
-    result = mf.multiplyIsZero(x, y, isZero);
+    result = mf.multiplyIsZero(x,y,isZero);
     EXPECT_TRUE(mf.convertOut(result) == expected_result &&
                  isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
-    result = mf.template multiplyIsZero<mont::LowlatencyTag>(x, y, isZero);
+    result = mf.template multiplyIsZero<hc::LowlatencyTag>(x,y,isZero);
     EXPECT_TRUE(mf.convertOut(result) == expected_result &&
                  isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
-    result = mf.template multiplyIsZero<mont::LowuopsTag>(x, y, isZero);
+    result = mf.template multiplyIsZero<hc::LowuopsTag>(x,y,isZero);
     EXPECT_TRUE(mf.convertOut(result) == expected_result &&
                  isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
 }
@@ -59,12 +59,12 @@ void test_fmadd_variants(const M& mf, typename M::MontgomeryValue x,
                    typename M::MontgomeryValue y, typename M::CanonicalValue zc,
                    typename M::T_type expected_result)
 {
-    namespace mont = hurchalla::montgomery_arithmetic;
-    EXPECT_TRUE(mf.convertOut(mf.fmadd(x, y, zc)) == expected_result);
+    namespace hc = hurchalla;
+    EXPECT_TRUE(mf.convertOut(mf.fmadd(x,y,zc)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-       mf.template fmadd<mont::LowlatencyTag>(x,y,zc)) == expected_result);
+          mf.template fmadd<hc::LowlatencyTag>(x,y,zc)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-      mf.template fmadd<mont::LowuopsTag>(x,y,zc))==expected_result);
+          mf.template fmadd<hc::LowuopsTag>(x,y,zc)) == expected_result);
 }
 
 template <typename M>
@@ -72,12 +72,12 @@ void test_fmsub_variants(const M& mf, typename M::MontgomeryValue x,
                    typename M::MontgomeryValue y, typename M::CanonicalValue zc,
                    typename M::T_type expected_result)
 {
-    namespace mont = hurchalla::montgomery_arithmetic;
-    EXPECT_TRUE(mf.convertOut(mf.fmsub(x, y, zc)) == expected_result);
+    namespace hc = hurchalla;
+    EXPECT_TRUE(mf.convertOut(mf.fmsub(x,y,zc)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-       mf.template fmsub<mont::LowlatencyTag>(x,y,zc)) == expected_result);
+          mf.template fmsub<hc::LowlatencyTag>(x,y,zc)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-      mf.template fmsub<mont::LowuopsTag>(x,y,zc))==expected_result);
+          mf.template fmsub<hc::LowuopsTag>(x,y,zc)) == expected_result);
 }
 
 template <typename M>
@@ -85,22 +85,22 @@ void test_famul_variants(const M& mf, typename M::MontgomeryValue x,
                    typename M::CanonicalValue yc, typename M::MontgomeryValue z,
                    typename M::T_type expected_result)
 {
-    namespace mont = hurchalla::montgomery_arithmetic;
-    EXPECT_TRUE(mf.convertOut(mf.famul(x, yc, z)) == expected_result);
+    namespace hc = hurchalla;
+    EXPECT_TRUE(mf.convertOut(mf.famul(x,yc,z)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-       mf.template famul<mont::LowlatencyTag>(x,yc,z)) == expected_result);
+          mf.template famul<hc::LowlatencyTag>(x,yc,z)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-      mf.template famul<mont::LowuopsTag>(x,yc,z))==expected_result);
+          mf.template famul<hc::LowuopsTag>(x,yc,z)) == expected_result);
 
     typename M::MontgomeryValue result;
     bool isZero;
-    result = mf.famulIsZero(x, yc, z, isZero);
+    result = mf.famulIsZero(x,yc,z,isZero);
     EXPECT_TRUE(mf.convertOut(result) == expected_result &&
                  isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
-    result = mf.template famulIsZero<mont::LowlatencyTag>(x, yc, z, isZero);
+    result = mf.template famulIsZero<hc::LowlatencyTag>(x,yc,z,isZero);
     EXPECT_TRUE(mf.convertOut(result) == expected_result &&
                  isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
-    result = mf.template famulIsZero<mont::LowuopsTag>(x, yc, z, isZero);
+    result = mf.template famulIsZero<hc::LowuopsTag>(x,yc,z,isZero);
     EXPECT_TRUE(mf.convertOut(result) == expected_result &&
                  isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
 }
@@ -111,7 +111,7 @@ template <typename M>
 void test_mf_general_checks(M& mf, typename M::T_type a, typename M::T_type b,
                                                            typename M::T_type c)
 {
-    namespace ma = hurchalla::modular_arithmetic;
+    namespace hc = hurchalla;
 
     using T = typename M::T_type;
     using V = typename M::MontgomeryValue;
@@ -137,7 +137,7 @@ void test_mf_general_checks(M& mf, typename M::T_type a, typename M::T_type b,
     EXPECT_TRUE(mf.getCanonicalValue(mf.negate(zc)) ==
                 mf.getCanonicalValue(mf.subtract(mf.getZeroValue(), zc)));
 
-    T reference_sum = ma::modular_addition_prereduced_inputs(a,b,modulus);
+    T reference_sum = hc::modular_addition_prereduced_inputs(a,b,modulus);
     EXPECT_TRUE(mf.convertOut(mf.add(x,y)) == reference_sum);
     EXPECT_TRUE(mf.convertOut(mf.add(y,x)) == reference_sum);
     EXPECT_TRUE(mf.convertOut(mf.add(x,yc)) == reference_sum);
@@ -147,10 +147,10 @@ void test_mf_general_checks(M& mf, typename M::T_type a, typename M::T_type b,
     EXPECT_TRUE(mf.getCanonicalValue(mf.add(x,yc)) ==
                              mf.getCanonicalValue(mf.convertIn(reference_sum)));
 
-    T diff1 = ma::modular_subtraction_prereduced_inputs(b,a,modulus);
+    T diff1 = hc::modular_subtraction_prereduced_inputs(b,a,modulus);
     EXPECT_TRUE(mf.convertOut(mf.subtract(y,x)) == diff1);
     EXPECT_TRUE(mf.convertOut(mf.subtract(y,xc)) == diff1);
-    T diff2 = ma::modular_subtraction_prereduced_inputs(a,b,modulus);
+    T diff2 = hc::modular_subtraction_prereduced_inputs(a,b,modulus);
     EXPECT_TRUE(mf.convertOut(mf.subtract(x,y)) == diff2);
     EXPECT_TRUE(mf.convertOut(mf.subtract(x,yc)) == diff2);
     T us = mf.convertOut(mf.unorderedSubtract(x,y));
@@ -163,46 +163,46 @@ void test_mf_general_checks(M& mf, typename M::T_type a, typename M::T_type b,
     EXPECT_TRUE(mf.getNegativeOneValue() ==
               mf.getCanonicalValue(mf.convertIn(static_cast<T>(modulus-1))));
 
-    T ref_product = ma::modular_multiplication_prereduced_inputs(a,b,modulus);
+    T ref_product = hc::modular_multiplication_prereduced_inputs(a,b,modulus);
     test_multiply_variants(mf, x, y, ref_product);
     test_multiply_variants(mf, y, x, ref_product);
     test_fmadd_variants(mf, x, y, zc,
-                 ma::modular_addition_prereduced_inputs(ref_product,c,modulus));
+                 hc::modular_addition_prereduced_inputs(ref_product,c,modulus));
     test_fmsub_variants(mf, x, y, zc,
-              ma::modular_subtraction_prereduced_inputs(ref_product,c,modulus));
+              hc::modular_subtraction_prereduced_inputs(ref_product,c,modulus));
     test_famul_variants(mf, x, yc, z,
-          ma::modular_multiplication_prereduced_inputs(
-            ma::modular_addition_prereduced_inputs(a, b, modulus), c, modulus));
+          hc::modular_multiplication_prereduced_inputs(
+              hc::modular_addition_prereduced_inputs(a,b,modulus), c, modulus));
 
-    T a_squared = ma::modular_multiplication_prereduced_inputs(a,a,modulus);
+    T a_squared = hc::modular_multiplication_prereduced_inputs(a,a,modulus);
     test_multiply_variants(mf, x, x, a_squared);
     test_fmadd_variants(mf, x, x, zc,
-                   ma::modular_addition_prereduced_inputs(a_squared,c,modulus));
+                   hc::modular_addition_prereduced_inputs(a_squared,c,modulus));
     test_fmsub_variants(mf, x, x, zc,
-                ma::modular_subtraction_prereduced_inputs(a_squared,c,modulus));
+                hc::modular_subtraction_prereduced_inputs(a_squared,c,modulus));
     test_famul_variants(mf, x, xc, z,
-          ma::modular_multiplication_prereduced_inputs(
-            ma::modular_addition_prereduced_inputs(a, a, modulus), c, modulus));
+          hc::modular_multiplication_prereduced_inputs(
+              hc::modular_addition_prereduced_inputs(a,a,modulus), c, modulus));
 
-    T b_squared = ma::modular_multiplication_prereduced_inputs(b,b,modulus);
+    T b_squared = hc::modular_multiplication_prereduced_inputs(b,b,modulus);
     test_multiply_variants(mf, y, y, b_squared);
     test_fmadd_variants(mf, y, y, zc,
-                   ma::modular_addition_prereduced_inputs(b_squared,c,modulus));
+                   hc::modular_addition_prereduced_inputs(b_squared,c,modulus));
     test_fmsub_variants(mf, y, y, zc,
-                ma::modular_subtraction_prereduced_inputs(b_squared,c,modulus));
+                hc::modular_subtraction_prereduced_inputs(b_squared,c,modulus));
     test_famul_variants(mf, y, yc, z,
-          ma::modular_multiplication_prereduced_inputs(
-            ma::modular_addition_prereduced_inputs(b, b, modulus), c, modulus));
+          hc::modular_multiplication_prereduced_inputs(
+              hc::modular_addition_prereduced_inputs(b,b,modulus), c, modulus));
 
     EXPECT_TRUE(mf.convertOut(mf.pow(y,0)) == 1);
     EXPECT_TRUE(mf.convertOut(mf.pow(y,1)) == b);
-    EXPECT_TRUE(mf.convertOut(mf.pow(y,4)) == ma::modular_pow<T>(b,4,modulus));
+    EXPECT_TRUE(mf.convertOut(mf.pow(y,4)) == hc::modular_pow<T>(b,4,modulus));
     EXPECT_TRUE(mf.convertOut(mf.pow(y,13)) ==
-                                              ma::modular_pow<T>(b,13,modulus));
+                                              hc::modular_pow<T>(b,13,modulus));
     EXPECT_TRUE(mf.convertOut(mf.pow(y,17)) ==
-                                              ma::modular_pow<T>(b,17,modulus));
+                                              hc::modular_pow<T>(b,17,modulus));
     EXPECT_TRUE(mf.convertOut(mf.pow(y,127)) ==
-                                             ma::modular_pow<T>(b,127,modulus));
+                                             hc::modular_pow<T>(b,127,modulus));
 }
 
 
@@ -445,76 +445,76 @@ void test_MontgomeryForm()
 template <template<class> class M>
 void test_custom_monty()
 {
-    namespace mont = hurchalla::montgomery_arithmetic;
-    test_MontgomeryForm<mont::MontgomeryForm<std::uint8_t, M<std::uint8_t>>>();
-    test_MontgomeryForm<mont::MontgomeryForm<std::uint16_t,M<std::uint16_t>>>();
-    test_MontgomeryForm<mont::MontgomeryForm<std::uint32_t,M<std::uint32_t>>>();
-    test_MontgomeryForm<mont::MontgomeryForm<std::uint64_t,M<std::uint64_t>>>();
+    namespace hc = hurchalla;
+    test_MontgomeryForm<hc::MontgomeryForm<std::uint8_t, M<std::uint8_t>>>();
+    test_MontgomeryForm<hc::MontgomeryForm<std::uint16_t, M<std::uint16_t>>>();
+    test_MontgomeryForm<hc::MontgomeryForm<std::uint32_t, M<std::uint32_t>>>();
+    test_MontgomeryForm<hc::MontgomeryForm<std::uint64_t, M<std::uint64_t>>>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
-    test_MontgomeryForm<mont::MontgomeryForm<__uint128_t, M<__uint128_t>>>();
+    test_MontgomeryForm<hc::MontgomeryForm<__uint128_t, M<__uint128_t>>>();
 #endif
 }
 
 
 namespace {
     TEST(MontgomeryArithmetic, MontyDefault) {
-        namespace mont = hurchalla::montgomery_arithmetic;
-        test_MontgomeryForm<mont::MontgomeryForm<std::uint8_t>>();
-        test_MontgomeryForm<mont::MontgomeryForm<std::uint16_t>>();
-        test_MontgomeryForm<mont::MontgomeryForm<std::uint32_t>>();
-        test_MontgomeryForm<mont::MontgomeryForm<std::uint64_t>>();
+        namespace hc = hurchalla;
+        test_MontgomeryForm<hc::MontgomeryForm<std::uint8_t>>();
+        test_MontgomeryForm<hc::MontgomeryForm<std::uint16_t>>();
+        test_MontgomeryForm<hc::MontgomeryForm<std::uint32_t>>();
+        test_MontgomeryForm<hc::MontgomeryForm<std::uint64_t>>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
-        test_MontgomeryForm<mont::MontgomeryForm<__uint128_t>>();
+        test_MontgomeryForm<hc::MontgomeryForm<__uint128_t>>();
 #endif
-        test_MontgomeryForm<mont::MontgomeryForm<std::int8_t>>();
-        test_MontgomeryForm<mont::MontgomeryForm<std::int16_t>>();
-        test_MontgomeryForm<mont::MontgomeryForm<std::int32_t>>();
-        test_MontgomeryForm<mont::MontgomeryForm<std::int64_t>>();
+        test_MontgomeryForm<hc::MontgomeryForm<std::int8_t>>();
+        test_MontgomeryForm<hc::MontgomeryForm<std::int16_t>>();
+        test_MontgomeryForm<hc::MontgomeryForm<std::int32_t>>();
+        test_MontgomeryForm<hc::MontgomeryForm<std::int64_t>>();
 // It's a slight hack here to use a macro that tells us whether or not the
 // compiler supports  __uint128_t, when what we really want is to know is
 // whether we can use __int128_t.  Nevertheless in practice, if we have
 // __uint128_t then we almost certainly have __int128_t too.
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
-        test_MontgomeryForm<mont::MontgomeryForm<__int128_t>>();
+        test_MontgomeryForm<hc::MontgomeryForm<__int128_t>>();
 #endif
     }
 
     TEST(MontgomeryArithmetic, MontyWrappedStandardMath) {
-        namespace mont = hurchalla::montgomery_arithmetic;
-        test_custom_monty<mont::detail::MontyWrappedStandardMath>();
+        namespace hc = hurchalla;
+        test_custom_monty<hc::detail::MontyWrappedStandardMath>();
     }
 
     TEST(MontgomeryArithmetic, MontyFullRange) {
-        namespace mont = hurchalla::montgomery_arithmetic;
-        test_custom_monty<mont::detail::MontyFullRange>();
+        namespace hc = hurchalla;
+        test_custom_monty<hc::detail::MontyFullRange>();
     }
 
     TEST(MontgomeryArithmetic, MontyHalfRange) {
-        namespace mont = hurchalla::montgomery_arithmetic;
-        test_custom_monty<mont::detail::MontyHalfRange>();
+        namespace hc = hurchalla;
+        test_custom_monty<hc::detail::MontyHalfRange>();
     }
 
     TEST(MontgomeryArithmetic, MontyQuarterRange) {
-        namespace mont = hurchalla::montgomery_arithmetic;
-        test_custom_monty<mont::detail::MontyQuarterRange>();
+        namespace hc = hurchalla;
+        test_custom_monty<hc::detail::MontyQuarterRange>();
     }
 
     TEST(MontgomeryArithmetic, MontySixthRange) {
-        namespace mont = hurchalla::montgomery_arithmetic;
-        test_custom_monty<mont::detail::MontySixthRange>();
+        namespace hc = hurchalla;
+        test_custom_monty<hc::detail::MontySixthRange>();
     }
 
     TEST(MontgomeryArithmetic, MontySqrtRange) {
-        namespace mont = hurchalla::montgomery_arithmetic;
-        test_MontgomeryForm<mont::MontgomeryForm<std::uint8_t,
-                                mont::detail::MontySqrtRange<std::uint16_t>>>();
-        test_MontgomeryForm<mont::MontgomeryForm<std::uint16_t,
-                                mont::detail::MontySqrtRange<std::uint32_t>>>();
-        test_MontgomeryForm<mont::MontgomeryForm<std::uint32_t,
-                                mont::detail::MontySqrtRange<std::uint64_t>>>();
+        namespace hc = hurchalla;
+        test_MontgomeryForm<hc::MontgomeryForm<std::uint8_t,
+                                  hc::detail::MontySqrtRange<std::uint16_t>>>();
+        test_MontgomeryForm<hc::MontgomeryForm<std::uint16_t,
+                                  hc::detail::MontySqrtRange<std::uint32_t>>>();
+        test_MontgomeryForm<hc::MontgomeryForm<std::uint32_t,
+                                  hc::detail::MontySqrtRange<std::uint64_t>>>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
-        test_MontgomeryForm<mont::MontgomeryForm<std::uint64_t,
-                                  mont::detail::MontySqrtRange<__uint128_t>>>();
+        test_MontgomeryForm<hc::MontgomeryForm<std::uint64_t,
+                                    hc::detail::MontySqrtRange<__uint128_t>>>();
 #endif
     }
 }

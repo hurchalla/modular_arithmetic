@@ -20,7 +20,7 @@
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 
-namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
+namespace hurchalla { namespace detail {
 
 
 // For discussion purposes throughout this file, given an unsigned integral type
@@ -55,9 +55,9 @@ public:
         T value;
     };
 private:
-    static_assert(util::ut_numeric_limits<T>::is_integer, "");
-    static_assert(!(util::ut_numeric_limits<T>::is_signed), "");
-    static_assert(util::ut_numeric_limits<T>::is_modulo, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+    static_assert(ut_numeric_limits<T>::is_modulo, "");
     using D = Derived<T>;
     using V = MontgomeryValue;
 protected:
@@ -176,8 +176,7 @@ public:
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isValid(y));
         T em = static_cast<const D*>(this)->getExtendedModulus();
-        namespace ma = hurchalla::modular_arithmetic;
-        T z = ma::modular_addition_prereduced_inputs(x.get(), y.get(), em);
+        T z = modular_addition_prereduced_inputs(x.get(), y.get(), em);
         HPBC_POSTCONDITION2(isValid(V(z)));
         return V(z);
     }
@@ -202,8 +201,7 @@ public:
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isValid(y));
         T em = static_cast<const D*>(this)->getExtendedModulus();
-        namespace ma = hurchalla::modular_arithmetic;
-        T z = ma::modular_subtraction_prereduced_inputs(x.get(), y.get(), em);
+        T z = modular_subtraction_prereduced_inputs(x.get(), y.get(), em);
         HPBC_POSTCONDITION2(isValid(V(z)));
         return V(z);
     }
@@ -226,8 +224,7 @@ public:
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isValid(y));
-        namespace ma = hurchalla::modular_arithmetic;
-        T result = ma::absolute_value_difference(x.get(), y.get());
+        T result = absolute_value_difference(x.get(), y.get());
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
@@ -295,8 +292,7 @@ public:
         // The following calculations should execute in parallel with the first
         // two multiplies in REDC(), since those mutiplies do not depend on
         // these calculations.  (Instruction level parallelism)
-        T diff = modular_arithmetic::modular_subtraction_prereduced_inputs(u_hi,
-                                                                   z.get(), n_);
+        T diff = modular_subtraction_prereduced_inputs(u_hi, z.get(), n_);
         HPBC_ASSERT2(diff < n_);
         T result = REDC(diff, u_lo, n_, inv_n_, typename D::MontyTag(), PTAG());
 
@@ -327,8 +323,7 @@ public:
         // The following calculations should execute in parallel with the first
         // two multiplies in REDC(), since those mutiplies do not depend on
         // these calculations.  (Instruction level parallelism)
-        T sum = modular_arithmetic::modular_addition_prereduced_inputs(u_hi,
-                                                                   z.get(), n_);
+        T sum = modular_addition_prereduced_inputs(u_hi, z.get(), n_);
         HPBC_ASSERT2(sum < n_);
         T result = REDC(sum, u_lo, n_, inv_n_, typename D::MontyTag(), PTAG());
 
@@ -338,6 +333,6 @@ public:
 };
 
 
-}}} // end namespace
+}} // end namespace
 
 #endif

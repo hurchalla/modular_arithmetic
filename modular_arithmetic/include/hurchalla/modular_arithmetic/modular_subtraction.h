@@ -9,7 +9,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/programming_by_contract.h"
 
-namespace hurchalla { namespace modular_arithmetic {
+namespace hurchalla {
 
 
 // Performance note on modular addition vs modular subtraction:
@@ -41,8 +41,7 @@ namespace hurchalla { namespace modular_arithmetic {
 template <typename T>
 T modular_subtraction_prereduced_inputs(T a, T b, T modulus)
 {
-    namespace ut = hurchalla::util;
-    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
     HPBC_PRECONDITION(modulus>0);
     HPBC_PRECONDITION(a>=0 && a<modulus);   // i.e. the input must be prereduced
     HPBC_PRECONDITION(b>=0 && b<modulus);   // i.e. the input must be prereduced
@@ -60,6 +59,6 @@ T modular_subtraction_prereduced_inputs(T a, T b, T modulus)
 }
 
 
-}}  // end namespace
+}  // end namespace
 
 #endif

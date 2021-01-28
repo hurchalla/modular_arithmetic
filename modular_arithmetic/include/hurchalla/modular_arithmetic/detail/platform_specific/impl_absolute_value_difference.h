@@ -10,14 +10,13 @@
 #include "hurchalla/util/programming_by_contract.h"
 #include <cstdint>
 
-namespace hurchalla { namespace modular_arithmetic { namespace detail {
+namespace hurchalla { namespace detail {
 
 
 template <typename T>
 T impl_absolute_value_difference(T a, T b)
 {
-    namespace ut = hurchalla::util;
-    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
     HPBC_PRECONDITION(a >= 0);
     HPBC_PRECONDITION(b >= 0);
 
@@ -82,6 +81,6 @@ std::uint64_t impl_absolute_value_difference(std::uint64_t a, std::uint64_t b)
 #endif
 
 
-}}}  // end namespace
+}}  // end namespace
 
 #endif

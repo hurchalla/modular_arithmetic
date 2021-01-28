@@ -14,7 +14,7 @@
 #include <array>
 #include <cstddef>
 
-namespace hurchalla { namespace montgomery_arithmetic {
+namespace hurchalla {
 
 
 // When using the default MontyType, T must be signed or unsigned integral type.
@@ -24,11 +24,11 @@ template<class T, class MontyType = typename detail::MontgomeryDefault<T>::type>
 class MontgomeryForm {
     const MontyType impl;
     using U = typename MontyType::template_param_type;
-    static_assert(util::ut_numeric_limits<U>::is_integer, "");
-    static_assert(!(util::ut_numeric_limits<U>::is_signed), "");
-    static_assert(util::ut_numeric_limits<T>::is_integer, "");
-    static_assert(util::ut_numeric_limits<U>::digits >=
-                  util::ut_numeric_limits<T>::digits, "");
+    static_assert(ut_numeric_limits<U>::is_integer, "");
+    static_assert(!(ut_numeric_limits<U>::is_signed), "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(ut_numeric_limits<U>::digits >=
+                  ut_numeric_limits<T>::digits, "");
 public:
     using MontgomeryValue = typename MontyType::montvalue_type;
     using T_type = T;
@@ -64,11 +64,11 @@ public:
     static constexpr T max_modulus()
     {
         return (MontyType::max_modulus() >
-                              static_cast<U>(util::ut_numeric_limits<T>::max()))
-            ? ((util::ut_numeric_limits<T>::max() % 2 == 0)
-                ? static_cast<T>(util::ut_numeric_limits<T>::max() - 1)
-                : util::ut_numeric_limits<T>::max())
-            : static_cast<T>(MontyType::max_modulus());
+                                    static_cast<U>(ut_numeric_limits<T>::max()))
+                ? ((ut_numeric_limits<T>::max() % 2 == 0)
+                    ? static_cast<T>(ut_numeric_limits<T>::max() - 1)
+                    : ut_numeric_limits<T>::max())
+                : static_cast<T>(MontyType::max_modulus());
     }
 
     // Returns the modulus given to the constructor
@@ -361,6 +361,6 @@ public:
 };
 
 
-}} // end namespace
+} // end namespace
 
 #endif

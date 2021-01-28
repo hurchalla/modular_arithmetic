@@ -32,8 +32,8 @@
 template <typename T>
 T gcd(T a, T b)
 {
-    namespace ut = hurchalla::util;
-    static_assert(ut::ut_numeric_limits<T>::is_integer, "");
+    namespace hc = hurchalla;
+    static_assert(hc::ut_numeric_limits<T>::is_integer, "");
     HPBC_PRECONDITION(a >= 0);
     HPBC_PRECONDITION(b >= 0);
 
@@ -49,15 +49,15 @@ T gcd(T a, T b)
 void exhaustive_test_uint8_t();
 void exhaustive_test_uint8_t()
 {
-    namespace ma = hurchalla::modular_arithmetic;
+    namespace hc = hurchalla;
     for (std::uint8_t modulus = 255; modulus>1; --modulus) {
         for (std::uint8_t a=0; a<modulus; ++a) {
-            std::uint8_t inv = ma::modular_multiplicative_inverse(a, modulus);
+            std::uint8_t inv = hc::modular_multiplicative_inverse(a, modulus);
             if (inv == 0)
                 EXPECT_TRUE(1 < gcd(a, modulus));
             else
                 EXPECT_TRUE(static_cast<std::uint8_t>(1) ==
-                    ma::modular_multiplication_prereduced_inputs(a, inv,
+                    hc::modular_multiplication_prereduced_inputs(a, inv,
                                                                       modulus));
         }
     }
@@ -67,72 +67,71 @@ void exhaustive_test_uint8_t()
 template <typename T>
 void test_modulus(T modulus)
 {
-    namespace ma = hurchalla::modular_arithmetic;
-    namespace ut = hurchalla::util;
+    namespace hc = hurchalla;
 
     T a = 0;
     EXPECT_TRUE(static_cast<T>(0) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
     a = 1;
     EXPECT_TRUE(static_cast<T>(1) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
     a = modulus;
     EXPECT_TRUE(static_cast<T>(0) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
 
-    T tmax = ut::ut_numeric_limits<T>::max();
+    T tmax = hc::ut_numeric_limits<T>::max();
     if (modulus < tmax) {
         a = static_cast<T>(modulus + 1);
         EXPECT_TRUE(static_cast<T>(1) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
     }
 
     a = 2;
-    T inverse = ma::modular_multiplicative_inverse(a, modulus);
+    T inverse = hc::modular_multiplicative_inverse(a, modulus);
     if (inverse == 0)
         EXPECT_TRUE(1 < gcd(a, modulus));
     else
         EXPECT_TRUE(static_cast<T>(1) ==
-             ma::modular_multiplication_prereduced_inputs(
+             hc::modular_multiplication_prereduced_inputs(
                                 static_cast<T>(a % modulus), inverse, modulus));
 
     a = 3;
-    inverse = ma::modular_multiplicative_inverse(a, modulus);
+    inverse = hc::modular_multiplicative_inverse(a, modulus);
     if (inverse == 0)
         EXPECT_TRUE(1 < gcd(a, modulus));
     else
         EXPECT_TRUE(static_cast<T>(1) ==
-             ma::modular_multiplication_prereduced_inputs(
+             hc::modular_multiplication_prereduced_inputs(
                                 static_cast<T>(a % modulus), inverse, modulus));
 
     a = static_cast<T>(modulus - 1);
-    inverse = ma::modular_multiplicative_inverse(a, modulus);
+    inverse = hc::modular_multiplicative_inverse(a, modulus);
     EXPECT_TRUE(static_cast<T>(1) ==
-             ma::modular_multiplication_prereduced_inputs(a, inverse, modulus));
+             hc::modular_multiplication_prereduced_inputs(a, inverse, modulus));
 
     a = static_cast<T>(modulus - 2);
-    inverse = ma::modular_multiplicative_inverse(a, modulus);
+    inverse = hc::modular_multiplicative_inverse(a, modulus);
     if (inverse == 0)
         EXPECT_TRUE(1 < gcd(a, modulus));
     else
         EXPECT_TRUE(static_cast<T>(1) ==
-             ma::modular_multiplication_prereduced_inputs(a, inverse, modulus));
+             hc::modular_multiplication_prereduced_inputs(a, inverse, modulus));
 
     a = static_cast<T>(modulus/2);
-    inverse = ma::modular_multiplicative_inverse(a, modulus);
+    inverse = hc::modular_multiplicative_inverse(a, modulus);
     if (inverse == 0)
         EXPECT_TRUE(1 < gcd(a, modulus));
     else
         EXPECT_TRUE(static_cast<T>(1) ==
-             ma::modular_multiplication_prereduced_inputs(a, inverse, modulus));
+             hc::modular_multiplication_prereduced_inputs(a, inverse, modulus));
 
     a++;
-    inverse = ma::modular_multiplicative_inverse(a, modulus);
+    inverse = hc::modular_multiplicative_inverse(a, modulus);
     if (inverse == 0)
         EXPECT_TRUE(1 < gcd(a, modulus));
     else
         EXPECT_TRUE(static_cast<T>(1) ==
-             ma::modular_multiplication_prereduced_inputs(a, inverse, modulus));
+             hc::modular_multiplication_prereduced_inputs(a, inverse, modulus));
 }
 
 
@@ -140,29 +139,28 @@ void test_modulus(T modulus)
 template <typename T>
 void test_modular_multiplicative_inverse()
 {
-    namespace ma = hurchalla::modular_arithmetic;
-    namespace ut = hurchalla::util;
+    namespace hc = hurchalla;
 
     // test with a few basic examples first
     T modulus = 13;
     T a = 5;
     EXPECT_TRUE(static_cast<T>(8) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
     a = 7;
     EXPECT_TRUE(static_cast<T>(2) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
     a = 4;
     EXPECT_TRUE(static_cast<T>(10) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
     a = 17;
     EXPECT_TRUE(static_cast<T>(10) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
     a = 1;
     EXPECT_TRUE(static_cast<T>(1) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
     a = 14;
     EXPECT_TRUE(static_cast<T>(1) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
 
 
     // modular_multiplicative_inverse() indicates the inverse doesn't exist by
@@ -170,29 +168,29 @@ void test_modular_multiplicative_inverse()
     a = 12;
     modulus = 21;   // a modulus of 21 shares the factor 3 with a.
     EXPECT_TRUE(static_cast<T>(0) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
     a = 0;
     EXPECT_TRUE(static_cast<T>(0) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
     a = 1;
     EXPECT_TRUE(static_cast<T>(1) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
 
     a = 7;
     modulus = 16;
     EXPECT_TRUE(static_cast<T>(7) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
     a = 10;
     EXPECT_TRUE(static_cast<T>(0) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
 
     a = 7;
     modulus = 14;
     EXPECT_TRUE(static_cast<T>(0) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
     a = 9;
     EXPECT_TRUE(static_cast<T>(11) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
 
     test_modulus(modulus);
     test_modulus(static_cast<T>(15));
@@ -202,20 +200,20 @@ void test_modular_multiplicative_inverse()
     modulus = 2;
     a = 0;
     EXPECT_TRUE(static_cast<T>(0) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
     a = 1;
     EXPECT_TRUE(static_cast<T>(1) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
     a = 5;
     EXPECT_TRUE(static_cast<T>(1) ==
-                                ma::modular_multiplicative_inverse(a, modulus));
+                                hc::modular_multiplicative_inverse(a, modulus));
 
-    modulus = ut::ut_numeric_limits<T>::max();
+    modulus = hc::ut_numeric_limits<T>::max();
     test_modulus(modulus);
     modulus--;
     test_modulus(modulus);
 
-    modulus = ut::ut_numeric_limits<T>::max() / 2;
+    modulus = hc::ut_numeric_limits<T>::max() / 2;
     test_modulus(modulus);
     modulus++;
     test_modulus(modulus);

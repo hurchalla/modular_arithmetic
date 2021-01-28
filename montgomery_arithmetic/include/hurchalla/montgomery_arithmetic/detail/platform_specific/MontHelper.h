@@ -10,8 +10,7 @@
 #include <cstdint>
 #include <algorithm>
 
-namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
-
+namespace hurchalla { namespace detail {
 
 
 namespace detail_mh {
@@ -197,6 +196,6 @@ struct MontHelper<std::uint32_t>
          // defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 
 
-}}} // end namespace
+}} // end namespace
 
 #endif
