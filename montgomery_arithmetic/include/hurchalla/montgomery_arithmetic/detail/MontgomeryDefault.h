@@ -6,8 +6,7 @@
 
 
 #include "hurchalla/montgomery_arithmetic/detail/MontyFullRange.h"
-#include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
-#include "hurchalla/montgomery_arithmetic/detail/MontySixthRange.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontyQuarterRange.h"
 #include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/sized_uint.h"
@@ -17,36 +16,18 @@
 namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
 
 
-// If this primary template is instantiated, then T is an unsigned integral type
-template <typename T, typename Enable = void>
+template <typename T>
 class MontgomeryDefault {
     static_assert(util::ut_numeric_limits<T>::is_integer, "");
-    static_assert(!(util::ut_numeric_limits<T>::is_signed), "");
-    static constexpr int ubits = util::ut_numeric_limits<T>::digits;
-public:
-    using type = typename std::conditional<
-                      util::sized_uint<ubits*2>::is_valid
-                                     && (ubits*2 <= HURCHALLA_TARGET_BIT_WIDTH),
-                      MontySixthRange<typename util::sized_uint<ubits*2>::type>,
-                      MontyFullRange<T>
-                 >::type;
-};
-
-// If this partial specialization is instantiated, T is a signed integral type.
-template <typename T>
-class MontgomeryDefault<T, typename std::enable_if<
-                                 util::ut_numeric_limits<T>::is_integer &&
-                                 util::ut_numeric_limits<T>::is_signed>::type>
-{
     using U = typename util::extensible_make_unsigned<T>::type;
-    static constexpr int ubits = util::ut_numeric_limits<U>::digits;
+    static constexpr int bitsT = util::ut_numeric_limits<T>::digits;
+    static constexpr int target_bits = HURCHALLA_TARGET_BIT_WIDTH;
 public:
     using type = typename std::conditional<
-                      util::sized_uint<ubits*2>::is_valid
-                                     && (ubits*2 <= HURCHALLA_TARGET_BIT_WIDTH),
-                      MontySixthRange<typename util::sized_uint<ubits*2>::type>,
-                      MontyHalfRange<U>
-                 >::type;
+                (bitsT <= target_bits - 2),
+                MontyQuarterRange<typename util::sized_uint<target_bits>::type>,
+                MontyFullRange<U>
+               >::type;
 };
 
 

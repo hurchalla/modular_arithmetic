@@ -77,7 +77,8 @@ struct MontHelper
 };
 
 
-#if defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) && \
+#if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
+     defined(HURCHALLA_ALLOW_INLINE_ASM_MONTHELPER)) && \
       defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 
 // specialization for uint64_t (for x86_64)
@@ -191,7 +192,8 @@ struct MontHelper<std::uint32_t>
   }
 };
 
-#endif   // defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) &&
+#endif   // (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) ||
+         //  defined(HURCHALLA_ALLOW_INLINE_ASM_MONTHELPER)) &&
          // defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 
 

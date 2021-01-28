@@ -22,7 +22,7 @@ namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
 // R = 2^64.
 
 // Compute (R*R) % n
-template <typename T, class MTAG = FullrangeTag>
+template <typename T, class MTAG = FullrangeTag> HURCHALLA_FORCE_INLINE
 T impl_get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
 {
     HPBC_PRECONDITION2(n % 2 == 1);

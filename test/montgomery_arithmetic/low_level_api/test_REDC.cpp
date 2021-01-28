@@ -386,8 +386,8 @@ namespace {
 // been introduced as a regression to gcc in v5.1.  It exists up to the latest
 // released version (v10.2) of gcc at the time of this writing.  It's unclear
 // at the moment whether __uint128_t is safe to use with any version of gcc
-// between 5.1 and 10.2.  The patch appears to fix the bug and presumably new
-// releases of gcc will incorporate the patch fix.
+// between 5.1 and 10.2.  The patch appears to fix the bug, and it is scheduled
+// to be in the gcc 11 release.
 // For now, the #if above disables the following tests on gcc, since they will
 // fail on gcc at optimization level -O1 or higher due to the compiler bug.
 #  if HURCHALLA_COMPILER_HAS_UINT128_T()

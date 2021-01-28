@@ -21,7 +21,7 @@ namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
 
 namespace detail_invmR {
     template <int n>
-    constexpr int log2()
+    HURCHALLA_FORCE_INLINE constexpr int log2()
     {
         // PRECONDITION: n!=0 (this isn't possible to express via static_assert)
         static_assert(n>=0, "");

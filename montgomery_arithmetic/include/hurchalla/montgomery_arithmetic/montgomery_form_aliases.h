@@ -110,19 +110,11 @@ class MontyAliasHelper {
     static constexpr int target_bits = HURCHALLA_TARGET_BIT_WIDTH;
 public:
     using type =
-        typename std::conditional<
-            std::is_same<M<T>, detail::MontySixthRange<T>>::value,
-            M<T>,
-        typename std::conditional<
-            util::sized_uint<bitsT*2>::is_valid && (bitsT*2 < target_bits),
-            detail::MontySixthRange<typename util::sized_uint<bitsT*2>::type>,
-        typename std::conditional<
-            (bitsT <= target_bits - 3) &&
-                        (std::is_same<M<T>, detail::MontyFullRange<T>>::value ||
-                         std::is_same<M<T>, detail::MontyHalfRange<T>>::value),
-            detail::MontySixthRange<typename hurchalla::util::sized_uint<target_bits>::type>,
-            M<T>
-        >::type>::type>::type;
+      typename std::conditional<
+        (bitsT <= target_bits - 2),
+        detail::MontyQuarterRange<typename util::sized_uint<target_bits>::type>,
+        M<T>
+      >::type;
 };
 
 

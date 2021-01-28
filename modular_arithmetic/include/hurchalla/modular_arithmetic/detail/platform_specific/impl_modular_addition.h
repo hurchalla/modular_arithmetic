@@ -100,7 +100,8 @@ T impl_modular_addition_prereduced_inputs(T a, T b, T modulus)
 // These inline asm functions implement version #2 of the template function.
 // MSVC doesn't support inline asm, so we skip it.
 
-#if defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) && \
+#if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
+     defined(HURCHALLA_ALLOW_INLINE_ASM_MODADD)) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 inline std::uint32_t impl_modular_addition_prereduced_inputs(std::uint32_t a,
                                          std::uint32_t b, std::uint32_t modulus)

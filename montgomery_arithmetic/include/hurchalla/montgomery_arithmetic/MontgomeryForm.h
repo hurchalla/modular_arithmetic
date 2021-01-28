@@ -6,6 +6,7 @@
 
 
 #include "hurchalla/montgomery_arithmetic/detail/MontgomeryDefault.h"
+#include "hurchalla/montgomery_arithmetic/detail/montgomery_pow.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
@@ -25,6 +26,7 @@ class MontgomeryForm {
     using U = typename MontyType::template_param_type;
     static_assert(util::ut_numeric_limits<U>::is_integer, "");
     static_assert(!(util::ut_numeric_limits<U>::is_signed), "");
+    static_assert(util::ut_numeric_limits<T>::is_integer, "");
     static_assert(util::ut_numeric_limits<U>::digits >=
                   util::ut_numeric_limits<T>::digits, "");
 public:
@@ -33,13 +35,16 @@ public:
 
     class CanonicalValue : public MontgomeryValue {
         friend MontgomeryForm;
+        HURCHALLA_FORCE_INLINE
         explicit CanonicalValue(MontgomeryValue val) : MontgomeryValue(val) {}
     public:
-        CanonicalValue() : MontgomeryValue() {}
+        HURCHALLA_FORCE_INLINE CanonicalValue() : MontgomeryValue() {}
+        HURCHALLA_FORCE_INLINE
         friend bool operator==(const CanonicalValue& x, const CanonicalValue& y)
         {
             return x.value == y.value;
         }
+        HURCHALLA_FORCE_INLINE
         friend bool operator!=(const CanonicalValue& x, const CanonicalValue& y)
         {
             return !(x == y);
@@ -48,7 +53,8 @@ public:
 
     explicit MontgomeryForm(T modulus) : impl(static_cast<U>(modulus))
     {
-        HPBC_PRECONDITION(modulus % 2 == 1);  // modulus must be odd
+        // usually odd modulus is required, but not for MontyWrappedStandardMath
+        //HPBC_PRECONDITION(modulus % 2 == 1);
         HPBC_PRECONDITION(modulus > 1);
     }
     MontgomeryForm(const MontgomeryForm&) = delete;
@@ -222,30 +228,7 @@ public:
     MontgomeryValue pow(MontgomeryValue base, T exponent) const
     {
         HPBC_PRECONDITION(exponent >= 0);
-        // This is an optimized version of Algorithm 14.76, from
-        // Applied Handbook of Cryptography- http://cacr.uwaterloo.ca/hac/
-        // See also: hurchalla/modular_arithmetic/detail/impl_modular_pow.h
-        MontgomeryValue result = (exponent & static_cast<T>(1)) ?
-                                                    base : impl.getUnityValue();
-        while (exponent > static_cast<T>(1))
-        {
-            exponent = static_cast<T>(exponent >> static_cast<T>(1));
-            base = multiply<LowuopsTag>(base, base);
-            // The multiply above is a loop carried dependency.  Thus, a second
-            // loop carried dependency with the same length can be essentially
-            // free due to instruction level parallelism, so long as it does not
-            // introduce any branch mispredictions.
-            // So we will always compute the second multiply, instead of
-            // conditionally computing it, and we will encourage the compiler to
-            // use a (branchless) conditional move instruction.
-            // We use lowlatencyTag below because the "result" loop carried
-            // dependency depends upon both multiply and a conditional move,
-            // whereas "base" above depends only on multiply and thus is tagged
-            // for lowuops since it is less likely to be a latency bottleneck.
-            MontgomeryValue tmp = multiply<LowlatencyTag>(result, base);
-            result = (exponent & static_cast<T>(1)) ? tmp : result;
-        }
-        return result;
+        return montgomery_pow(*this, base, exponent);
     }
 
     // This is a specially optimized version of the pow() function above.
@@ -254,9 +237,9 @@ public:
     // can expect that calling this function multiple times with a small/optimal
     // value for NUM_BASES will be more efficient than calling this function a
     // single time using a large/suboptimal value for NUM_BASES.  Typically you
-    // might expect optimal NUM_BASES to be somewhere in the range of 2 to 6,
-    // but you need to benchmark to find best efficiency on your CPU.  FYI, you
-    // should probably not expect to use a value of NUM_BASES significantly
+    // might expect an optimal NUM_BASES to be somewhere in the range of 3 to 6,
+    // but you need to benchmark to find the best efficiency on your CPU.  FYI,
+    // you should probably not expect to use a value of NUM_BASES significantly
     // greater than the number of (non-SIMD) integer multiply instructions that
     // can be simultaneously in-flight on your CPU on a single thread (via
     // pipelined and/or superscalar hardware multiply).  For example on the
@@ -268,29 +251,8 @@ public:
     std::array<MontgomeryValue, NUM_BASES>
     pow(std::array<MontgomeryValue, NUM_BASES> bases, T exponent) const
     {
-        using std::size_t;
         HPBC_PRECONDITION2(exponent >= 0);
-
-        std::array<MontgomeryValue, NUM_BASES> result;
-        if (exponent & static_cast<T>(1)) {
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i<NUM_BASES; ++i)
-                result[i] = bases[i];
-        } else {
-            MontgomeryValue unity = impl.getUnityValue();
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i<NUM_BASES; ++i)
-                result[i] = unity;
-        }
-
-        while (exponent > static_cast<T>(1)) {
-            exponent = static_cast<T>(exponent >> static_cast<T>(1));
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i<NUM_BASES; ++i)
-                bases[i] = multiply<LowuopsTag>(bases[i], bases[i]);
-            if (exponent & static_cast<T>(1)) {
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i<NUM_BASES; ++i)
-                    result[i] = multiply<LowuopsTag>(result[i], bases[i]);
-            }
-        }
-        return result;
+        return montgomery_pow(*this, bases, exponent);
     }
 
     // "Fused multiply-subtract" operation:  Returns the modular evaluation of

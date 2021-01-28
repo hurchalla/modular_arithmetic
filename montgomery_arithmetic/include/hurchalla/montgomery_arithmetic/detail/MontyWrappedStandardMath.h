@@ -19,29 +19,27 @@ namespace hurchalla { namespace montgomery_arithmetic { namespace detail {
 
 // This class provides a standard modular arithmetic implementation, wrapped
 // inside a Monty template.  This allows standard modular arithmetic to be used
-// in a generic MontgomeryForm instantation.
+// with a generic MontgomeryForm interface.
 template <typename T>
 class MontyWrappedStandardMath final {
 public:
     class MontgomeryValue {
         friend MontyWrappedStandardMath;
-        explicit MontgomeryValue(T val) : value(val) {}
+        template <class> friend struct MontPowImpl;
+        HURCHALLA_FORCE_INLINE explicit MontgomeryValue(T val) : value(val) {}
     public:
 #ifdef __GNUC__
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Weffc++"
 #endif
-        MontgomeryValue() {} // This constructor purposely does not initialize
-        // 'value' - the contents are undefined until the object is assigned to.
+        // This next constructor purposely does not initialize 'value' - the
+        // contents are undefined until the object is assigned to.
+        HURCHALLA_FORCE_INLINE MontgomeryValue() {}
 #ifdef __GNUC__
 #  pragma GCC diagnostic pop
 #endif
-        // It's rarely a good idea for a function outside montgomery_arithmetic
-        // namespace to call get(), though there are exceptions to this rule.
-        // If you're not sure if your use case is an exception to the rule, then
-        // almost certainly it isn't.
-        T get() const { return value; }
     protected:
+        HURCHALLA_FORCE_INLINE T get() const { return value; }
         T value;
     };
 private:

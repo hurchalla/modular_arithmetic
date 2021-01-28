@@ -253,8 +253,9 @@ struct Redc
 };
 
 
-#if defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) && \
-      defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
+#if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
+     defined(HURCHALLA_ALLOW_INLINE_ASM_REDC)) && \
+    defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 // specialization for uint64_t (for x86_64)
 template <>
 struct Redc<std::uint64_t>
@@ -324,7 +325,8 @@ struct Redc<std::uint64_t>
   // We don't need a dedicated REDC function for SixthrangeTag since
   // QuarterrangeTag is already optimal for it, and SixthrangeTag will match it.
 };
-#endif   // defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) &&
+#endif   // (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) ||
+         //  defined(HURCHALLA_ALLOW_INLINE_ASM_REDC)) &&
          // defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 
 

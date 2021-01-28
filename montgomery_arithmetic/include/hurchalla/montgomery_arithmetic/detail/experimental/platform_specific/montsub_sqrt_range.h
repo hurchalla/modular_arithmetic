@@ -78,7 +78,8 @@ HURCHALLA_FORCE_INLINE T montsub_sqrt_range(T a, T b, T n)
 // function and the generic template function match the caller's provided
 // argument type(s).
 
-#if defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) && \
+#if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
+     defined(HURCHALLA_ALLOW_INLINE_ASM_MONTSUB_SQRT_RANGE)) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 // This function is an asm version of the template montsub_sqrt_range()
 HURCHALLA_FORCE_INLINE std::uint64_t montsub_sqrt_range(std::uint64_t a,
