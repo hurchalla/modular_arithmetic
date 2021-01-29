@@ -211,7 +211,7 @@ public:
     MontySqrtRange(const MontySqrtRange&) = delete;
     MontySqrtRange& operator=(const MontySqrtRange&) = delete;
 
-    static constexpr T max_modulus()
+    static HURCHALLA_FORCE_INLINE constexpr T max_modulus()
     {
         static_assert(ut_numeric_limits<T>::digits%2 == 0, "");
         return (static_cast<T>(1) << (ut_numeric_limits<T>::digits/2)) - 1;

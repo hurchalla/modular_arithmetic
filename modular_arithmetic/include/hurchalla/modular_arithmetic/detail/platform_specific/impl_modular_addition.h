@@ -42,7 +42,7 @@ namespace hurchalla { namespace detail {
 // function versions.  In all situations, we can expect the latency of the two
 // versions to be the same.
 
-template <typename T>
+template <typename T> HURCHALLA_FORCE_INLINE
 T impl_modular_addition_prereduced_inputs(T a, T b, T modulus)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
@@ -69,7 +69,7 @@ T impl_modular_addition_prereduced_inputs(T a, T b, T modulus)
 // proof of this function's correctness is given by the theorem in the comments
 // at the end of this file.  See the notes at the end of those comments to
 // understand the implementation details.
-template <typename T>
+template <typename T> HURCHALLA_FORCE_INLINE
 T impl_modular_addition_prereduced_inputs(T a, T b, T modulus)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
@@ -101,8 +101,8 @@ T impl_modular_addition_prereduced_inputs(T a, T b, T modulus)
 #if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
      defined(HURCHALLA_ALLOW_INLINE_ASM_MODADD)) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
-inline std::uint32_t impl_modular_addition_prereduced_inputs(std::uint32_t a,
-                                         std::uint32_t b, std::uint32_t modulus)
+HURCHALLA_FORCE_INLINE std::uint32_t impl_modular_addition_prereduced_inputs(
+                        std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
 {
     using std::uint32_t;
     HPBC_PRECONDITION2(modulus>0);
@@ -128,8 +128,8 @@ inline std::uint32_t impl_modular_addition_prereduced_inputs(std::uint32_t a,
     return result;
 }
 
-inline std::uint64_t impl_modular_addition_prereduced_inputs(std::uint64_t a,
-                                         std::uint64_t b, std::uint64_t modulus)
+HURCHALLA_FORCE_INLINE std::uint64_t impl_modular_addition_prereduced_inputs(
+                        std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
 {
     using std::uint64_t;
     HPBC_PRECONDITION2(modulus>0);

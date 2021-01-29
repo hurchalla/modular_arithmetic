@@ -38,7 +38,7 @@ public:
     MontyQuarterRange(const MontyQuarterRange&) = delete;
     MontyQuarterRange& operator=(const MontyQuarterRange&) = delete;
 
-    static constexpr T max_modulus()
+    static HURCHALLA_FORCE_INLINE constexpr T max_modulus()
     {
         return static_cast<T>((static_cast<T>(1) <<
                                        (ut_numeric_limits<T>::digits - 2)) - 1);

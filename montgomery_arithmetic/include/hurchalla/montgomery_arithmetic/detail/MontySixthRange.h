@@ -42,7 +42,7 @@ public:
     MontySixthRange(const MontySixthRange&) = delete;
     MontySixthRange& operator=(const MontySixthRange&) = delete;
 
-    static constexpr T max_modulus()
+    static HURCHALLA_FORCE_INLINE constexpr T max_modulus()
     {
         return static_cast<T>((static_cast<T>(1) <<
                                      (ut_numeric_limits<T>::digits - 1))/3 - 1);

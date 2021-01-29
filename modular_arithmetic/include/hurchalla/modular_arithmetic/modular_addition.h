@@ -38,7 +38,6 @@ namespace hurchalla {
 //          x = modular_subtraction_prereduced_inputs(x, c, modulus);
 
 
-// Interface/contract.
 template <typename T>
 T modular_addition_prereduced_inputs(T a, T b, T modulus)
 {

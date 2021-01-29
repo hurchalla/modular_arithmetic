@@ -12,7 +12,6 @@
 namespace hurchalla {
 
 
-// Interface/contract.
 template <typename T>
 T modular_pow(T base, T exponent, T modulus)
 {

@@ -32,7 +32,7 @@ public:
     MontyFullRange(const MontyFullRange&) = delete;
     MontyFullRange& operator=(const MontyFullRange&) = delete;
 
-    static constexpr T max_modulus()
+    static HURCHALLA_FORCE_INLINE constexpr T max_modulus()
     {
         return (ut_numeric_limits<T>::max() % 2 == 0) ?
                 static_cast<T>(ut_numeric_limits<T>::max() - 1) :

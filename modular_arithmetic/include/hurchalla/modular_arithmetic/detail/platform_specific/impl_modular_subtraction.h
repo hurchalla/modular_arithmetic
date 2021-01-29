@@ -13,7 +13,7 @@
 namespace hurchalla { namespace detail {
 
 
-template <typename T>
+template <typename T> HURCHALLA_FORCE_INLINE
 T impl_modular_subtraction_prereduced_inputs(T a, T b, T modulus)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
@@ -94,7 +94,8 @@ T impl_modular_subtraction_prereduced_inputs(T a, T b, T modulus)
 #if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
      defined(HURCHALLA_ALLOW_INLINE_ASM_MODSUB)) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
-inline std::uint32_t impl_modular_subtraction_prereduced_inputs(std::uint32_t a,
+HURCHALLA_FORCE_INLINE
+std::uint32_t impl_modular_subtraction_prereduced_inputs(std::uint32_t a,
                                          std::uint32_t b, std::uint32_t modulus)
 {
     using std::uint32_t;
@@ -129,7 +130,8 @@ inline std::uint32_t impl_modular_subtraction_prereduced_inputs(std::uint32_t a,
     return result;
 }
 
-inline std::uint64_t impl_modular_subtraction_prereduced_inputs(std::uint64_t a,
+HURCHALLA_FORCE_INLINE
+std::uint64_t impl_modular_subtraction_prereduced_inputs(std::uint64_t a,
                                          std::uint64_t b, std::uint64_t modulus)
 {
     using std::uint64_t;

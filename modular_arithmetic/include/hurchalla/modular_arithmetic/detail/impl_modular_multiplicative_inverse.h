@@ -7,6 +7,7 @@
 
 #include "hurchalla/util/traits/extensible_make_signed.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 #include <type_traits>
 
@@ -14,7 +15,7 @@ namespace hurchalla { namespace detail {
 
 
 // Enabled only for signed (integral) types T.
-template <typename T>
+template <typename T> HURCHALLA_FORCE_INLINE
 typename std::enable_if<ut_numeric_limits<T>::is_signed, T>::type
 impl_modular_multiplicative_inverse(T val, T modulus)
 {
@@ -72,7 +73,7 @@ impl_modular_multiplicative_inverse(T val, T modulus)
 
 
 // Enabled only for unsigned (integral) types U.
-template <typename U>
+template <typename U> HURCHALLA_FORCE_INLINE
 typename std::enable_if<!(ut_numeric_limits<U>::is_signed), U>::type
 impl_modular_multiplicative_inverse(U val, U modulus)
 {

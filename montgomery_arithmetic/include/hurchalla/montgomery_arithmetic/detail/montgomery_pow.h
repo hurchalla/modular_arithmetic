@@ -192,7 +192,7 @@ struct MontPow {
 
     // delegate a size 1 array call to the non-array montgomery_pow
     static HURCHALLA_FORCE_INLINE
-    std::array<V,1> pow(const MF& mf, std::array<V,1> bases, T exponent)
+    std::array<V,1> pow(const MF& mf, std::array<V,1>& bases, T exponent)
     {
         HPBC_PRECONDITION(exponent >= 0);
         std::array<V,1> result;
@@ -204,6 +204,15 @@ struct MontPow {
     defined(HURCHALLA_TARGET_ISA_X86_64)
 // x86-64 gcc seems to do better with masking for array size of 2.  But in
 // general we expect conditional moves (cmovs) to perform better than masks.
+// x86-64 icc has no difference between mask and cmov, at -O2 and -O3.  However
+// at -Os (and -O1) icc takes ~4x as long as it should with cmov and ~3x as long
+// as it should with mask.
+//TODO: file a bug report regarding icc perf at -Os?  FYI using the compile flag
+// -inline-forceinline gets it to ~1.5x the runtime of -O2 (which is acceptable)
+// so this strongly suggests it's due to inlining not happening, but my VTune
+// and godbolt experiments haven't yet shown inlining to be skipped at -Os when
+// a function has __attribute__((always_inline)).  And I double checked to be
+// certain that all involved functions had this (via HURCHALLA_FORCE_INLINE).
     static HURCHALLA_FORCE_INLINE
     std::array<V,2> pow(const MF& mf, std::array<V,2>& bases, T exponent)
     {

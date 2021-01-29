@@ -23,6 +23,15 @@
 #endif
 
 
+// Please consider using the montgomery_arithmetic MontgomeryForm's multiply
+// function instead of the standard modular multiplication of this file, if you
+// are heavily using modular multiplication in your code, or if you are in
+// danger of (or certain of) getting the slow_modular_multiplication function.
+// In such cases, there's a good chance that montgomery multiplication will
+// greatly improve your code's performance.
+
+
+
 // By default, if an inline asm modmult function is available we use it unless
 // explicitly disallowed via HURCHALLA_DISALLOW_INLINE_ASM_MODMUL.  We do this
 // by default because at least for x86, the asm version is many times faster
@@ -40,26 +49,8 @@ namespace hurchalla { namespace detail {
 /*  Generic (non-platform specific) implementation for
 T modular_multiplication_prereduced_inputs(T a, T b, T modulus).
 Ideally for best performance, call with a >= b.
-Notes:
-   This code was adapted from mulmod() at
+Notes:  This code was adapted from mulmod() at
  http://community.topcoder.com/tc?module=Static&d1=tutorials&d2=primalityTesting
-   I've made faster non-template function overloads later in this file when
-   possible. They are platform specific, though the uint8_t version is available
-   for any 16 bit or greater target; likewise uint16_t, uint32_t, and uint64_t
-   versions are available for any platform target with bit width that is at
-   least twice the size of the prospective uint_t's bit width.
-   Additionally for the x86/x64 ISAs I've made overloads using assembly language
-   for uint32_t and uint64_t, later in this file.
-   From preliminary investigation I did on ARM, I don't believe ARM would get
-   any significant gain by writing assembly language overloads of this function.
-   At the time of this writing none of the ARM ISAs appear to provide an
-   instruction for division of a 128 bit dividend by a 64 bit divisor (with a 64
-   bit quotient); ARM also doesn't seem to have any instruction to divide a 64
-   bit dividend by a 32 bit divisor. Not all ARM ISAs even have the standard
-   division instructions (32bit by 32bit, or 64bit by 64 bit). ARM does have a
-   UMULL instruction though, which does 32bit by 32bit multiplication for
-   (effectively) a 64bit result.
-Code review notes: Everything appears correct.
 */
 template <typename T>
 T slow_modular_multiplication(T a, T b, T modulus)
@@ -83,6 +74,27 @@ T slow_modular_multiplication(T a, T b, T modulus)
 
 
 // ---- TEMPLATE versions of impl_modular_multiplication_prereduced_inputs ----
+
+/*
+   Note first that I've made faster non-template function overloads of
+   impl_modular_multiplication_prereduced_inputs() later in this file when
+   possible. They are platform specific, though the uint8_t version is available
+   for any 16 bit or greater target; likewise uint16_t, uint32_t, and uint64_t
+   versions are available for any platform target with bit width that is at
+   least twice the size of the prospective uint_t's bit width.
+   Additionally for the x86/x64 ISAs I've made overloads using assembly language
+   for uint32_t and uint64_t, later in this file.
+   From preliminary investigation I did on ARM, I don't believe ARM would get
+   any significant gain by writing assembly language overloads of the function
+   (though like any ISA it benefits from the non-asm overloads where available
+   for the type T). At the time of this writing none of the ARM ISAs appear to
+   provide an instruction for division of a 128 bit dividend by a 64 bit divisor
+   (with a 64 bit quotient); ARM also doesn't seem to have any instruction to
+   divide a 64 bit dividend by a 32 bit divisor. Not all ARM ISAs even have the
+   standard division instructions (32bit by 32bit, or 64bit by 64 bit). ARM does
+   have a UMULL instruction though, which does 32bit by 32bit multiplication for
+   (effectively) a 64bit result.
+*/
 
 
 // True for signed integral types *KNOWN* to std::type_traits, otherwise false.
@@ -115,7 +127,7 @@ typename std::enable_if<!(IsSignedAndNativeInteger<T>::value), T>::type
 // call typically resolves to one of the platform specific overloads below.  If
 // not, it resolves to the template just above enabled for not-signed-and-native
 // types.
-template <typename T>
+template <typename T> HURCHALLA_FORCE_INLINE
 typename std::enable_if<IsSignedAndNativeInteger<T>::value, T>::type
 impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
 {
@@ -139,7 +151,8 @@ impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
 
 #if !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
                    HURCHALLA_TARGET_BIT_WIDTH >= 16
-inline std::uint8_t impl_modular_multiplication_prereduced_inputs(
+HURCHALLA_FORCE_INLINE
+std::uint8_t impl_modular_multiplication_prereduced_inputs(
                            std::uint8_t a, std::uint8_t b, std::uint8_t modulus)
 {
     // Calculate (a*b)%modulus, guaranteeing no overflow on a*b.
@@ -152,7 +165,8 @@ inline std::uint8_t impl_modular_multiplication_prereduced_inputs(
 
 #if !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
                    HURCHALLA_TARGET_BIT_WIDTH >= 32
-inline std::uint16_t impl_modular_multiplication_prereduced_inputs(
+HURCHALLA_FORCE_INLINE
+std::uint16_t impl_modular_multiplication_prereduced_inputs(
                         std::uint16_t a, std::uint16_t b, std::uint16_t modulus)
 {
     using std::uint16_t; using std::uint32_t;
@@ -172,7 +186,8 @@ inline std::uint16_t impl_modular_multiplication_prereduced_inputs(
   (defined(HURCHALLA_TARGET_ISA_X86_64) || defined(HURCHALLA_TARGET_ISA_X86_32))
 // _MSC_VER >= 1920 indicates Visual Studio 2019 or higher. VS2019 (for x86/x64)
 // is the first version to support _udiv64 used below.
-inline std::uint32_t impl_modular_multiplication_prereduced_inputs(
+HURCHALLA_FORCE_INLINE
+std::uint32_t impl_modular_multiplication_prereduced_inputs(
                         std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
 {
     using std::uint32_t; using std::uint64_t;
@@ -194,7 +209,8 @@ inline std::uint32_t impl_modular_multiplication_prereduced_inputs(
 // To do this, we declare this function with the __cdecl modifier, which forces
 // the function to use cdecl calling convention.  This overrides any potential
 // compiler flag that might specify __fastcall or __vectorcall.
-inline std::uint32_t __cdecl impl_modular_multiplication_prereduced_inputs(
+HURCHALLA_FORCE_INLINE
+std::uint32_t __cdecl impl_modular_multiplication_prereduced_inputs(
                         std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
 {
     using std::uint32_t; using std::uint64_t;
@@ -212,7 +228,8 @@ inline std::uint32_t __cdecl impl_modular_multiplication_prereduced_inputs(
 #elif !defined(HURCHALLA_DISALLOW_INLINE_ASM_MODMUL) && !defined(_MSC_VER) && \
       ( defined(HURCHALLA_TARGET_ISA_X86_64) || \
         defined(HURCHALLA_TARGET_ISA_X86_32) )
-inline std::uint32_t impl_modular_multiplication_prereduced_inputs(
+HURCHALLA_FORCE_INLINE
+std::uint32_t impl_modular_multiplication_prereduced_inputs(
                         std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
 {
     using std::uint32_t; using std::uint64_t;
@@ -235,7 +252,8 @@ inline std::uint32_t impl_modular_multiplication_prereduced_inputs(
 }
 #elif !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
                      HURCHALLA_TARGET_BIT_WIDTH >= 64
-inline std::uint32_t impl_modular_multiplication_prereduced_inputs(
+HURCHALLA_FORCE_INLINE
+std::uint32_t impl_modular_multiplication_prereduced_inputs(
                         std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
 {
     using std::uint32_t; using std::uint64_t;
@@ -250,7 +268,8 @@ inline std::uint32_t impl_modular_multiplication_prereduced_inputs(
           defined(HURCHALLA_TARGET_ISA_X86_64)
 // _MSC_VER >= 1920 indicates Visual Studio 2019 or higher. VS2019 (for x64)
 // is the first version to support _udiv128 used below.
-inline std::uint64_t impl_modular_multiplication_prereduced_inputs(
+HURCHALLA_FORCE_INLINE
+std::uint64_t impl_modular_multiplication_prereduced_inputs(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
 {
     using std::uint64_t;
@@ -267,7 +286,8 @@ inline std::uint64_t impl_modular_multiplication_prereduced_inputs(
 #elif defined(_MSC_VER) && defined(HURCHALLA_TARGET_ISA_X86_64)
 extern "C" std::uint64_t modular_multiply_uint64_asm_UID7b5f83fc983(
               std::uint64_t a, std::uint64_t b, std::uint64_t modulus) noexcept;
-inline std::uint64_t impl_modular_multiplication_prereduced_inputs(
+HURCHALLA_FORCE_INLINE
+std::uint64_t impl_modular_multiplication_prereduced_inputs(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
 {
     using std::uint64_t;
@@ -279,7 +299,8 @@ inline std::uint64_t impl_modular_multiplication_prereduced_inputs(
 }
 #elif !defined(HURCHALLA_DISALLOW_INLINE_ASM_MODMUL) && \
       defined(HURCHALLA_TARGET_ISA_X86_64)    // inline asm with gnu/AT&T syntax
-inline std::uint64_t impl_modular_multiplication_prereduced_inputs(
+HURCHALLA_FORCE_INLINE
+std::uint64_t impl_modular_multiplication_prereduced_inputs(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
 {
     using std::uint64_t;
@@ -301,7 +322,8 @@ inline std::uint64_t impl_modular_multiplication_prereduced_inputs(
 #elif !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
                     HURCHALLA_TARGET_BIT_WIDTH >= 128
 // this is speculative since I don't know of any 128 bit ALUs.
-inline std::uint64_t impl_modular_multiplication_prereduced_inputs(
+HURCHALLA_FORCE_INLINE
+std::uint64_t impl_modular_multiplication_prereduced_inputs(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
 {
     using std::uint64_t; using std::uint128_t;
@@ -316,7 +338,8 @@ inline std::uint64_t impl_modular_multiplication_prereduced_inputs(
 //
 #elif !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
                                             (HURCHALLA_COMPILER_HAS_UINT128_T())
-inline std::uint64_t impl_modular_multiplication_prereduced_inputs(
+HURCHALLA_FORCE_INLINE
+std::uint64_t impl_modular_multiplication_prereduced_inputs(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
 {
     using std::uint64_t;

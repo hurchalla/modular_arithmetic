@@ -12,7 +12,13 @@
 namespace hurchalla {
 
 
-// Interface/contract.
+// Alternatively, please consider using the montgomery_multiplication class
+// MontgomeryForm (specifically its multiply function) instead of this function
+// modular_multiplication_prereduced_inputs().  If you are heavily using modular
+// multiplication in your code, there's a decent chance that montgomery
+// multiplication will improve performance- often significantly.  It always
+// requires an odd modulus though.
+
 template <typename T>
 T modular_multiplication_prereduced_inputs(T a, T b, T modulus)
 {

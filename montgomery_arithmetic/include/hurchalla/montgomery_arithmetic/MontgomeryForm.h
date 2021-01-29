@@ -228,7 +228,7 @@ public:
     MontgomeryValue pow(MontgomeryValue base, T exponent) const
     {
         HPBC_PRECONDITION(exponent >= 0);
-        return montgomery_pow(*this, base, exponent);
+        return detail::montgomery_pow(*this, base, exponent);
     }
 
     // This is a specially optimized version of the pow() function above.
@@ -249,10 +249,10 @@ public:
     // an optimal value though, and that value may differ from expectations.
     template <std::size_t NUM_BASES>
     std::array<MontgomeryValue, NUM_BASES>
-    pow(std::array<MontgomeryValue, NUM_BASES> bases, T exponent) const
+    pow(std::array<MontgomeryValue, NUM_BASES>& bases, T exponent) const
     {
         HPBC_PRECONDITION2(exponent >= 0);
-        return montgomery_pow(*this, bases, exponent);
+        return detail::montgomery_pow(*this, bases, exponent);
     }
 
     // "Fused multiply-subtract" operation:  Returns the modular evaluation of

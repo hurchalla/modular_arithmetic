@@ -59,7 +59,7 @@ public:
     MontyWrappedStandardMath(const MontyWrappedStandardMath&) = delete;
     MontyWrappedStandardMath& operator=(const MontyWrappedStandardMath&)=delete;
 
-    static constexpr T max_modulus()
+    static HURCHALLA_FORCE_INLINE constexpr T max_modulus()
     {
         return ut_numeric_limits<T>::max();
     }

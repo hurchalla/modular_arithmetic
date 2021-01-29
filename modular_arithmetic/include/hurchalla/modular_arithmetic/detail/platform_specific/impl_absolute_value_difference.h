@@ -14,7 +14,7 @@ namespace hurchalla { namespace detail {
 
 
 template <typename T>
-T impl_absolute_value_difference(T a, T b)
+HURCHALLA_FORCE_INLINE T impl_absolute_value_difference(T a, T b)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     HPBC_PRECONDITION(a >= 0);
@@ -39,7 +39,7 @@ T impl_absolute_value_difference(T a, T b)
 #if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
      defined(HURCHALLA_ALLOW_INLINE_ASM_ABSDIFF)) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
-inline
+HURCHALLA_FORCE_INLINE
 std::uint32_t impl_absolute_value_difference(std::uint32_t a, std::uint32_t b)
 {
     using std::uint32_t;
@@ -59,7 +59,7 @@ std::uint32_t impl_absolute_value_difference(std::uint32_t a, std::uint32_t b)
     return result;
 }
 
-inline
+HURCHALLA_FORCE_INLINE
 std::uint64_t impl_absolute_value_difference(std::uint64_t a, std::uint64_t b)
 {
     using std::uint64_t;
