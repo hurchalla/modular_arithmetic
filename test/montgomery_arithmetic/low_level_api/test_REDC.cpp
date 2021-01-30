@@ -17,6 +17,11 @@
 #include <cstdint>
 #include <type_traits>
 
+#if defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable : 4127)
+#endif
+
 
 // verify that  REDC(a*(R mod n)) == a
 template <typename T>
@@ -401,3 +406,8 @@ namespace {
 #endif
 
 }
+
+
+#if defined(_MSC_VER)
+#  pragma warning(pop)
+#endif

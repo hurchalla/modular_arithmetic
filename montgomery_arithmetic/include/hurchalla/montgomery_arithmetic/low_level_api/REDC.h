@@ -14,6 +14,11 @@
 #include "hurchalla/util/programming_by_contract.h"
 #include <type_traits>
 
+#if defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable : 4127)
+#endif
+
 namespace hurchalla {
 
 
@@ -95,5 +100,10 @@ T REDC(T u_hi, T u_lo, T n, T inv_n, bool& resultIsZero, MTAG = MTAG(),
 
 
 } // end namespace
+
+
+#if defined(_MSC_VER)
+#  pragma warning(pop)
+#endif
 
 #endif

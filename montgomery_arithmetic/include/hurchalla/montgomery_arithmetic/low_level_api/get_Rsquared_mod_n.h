@@ -12,6 +12,11 @@
 #include "hurchalla/util/programming_by_contract.h"
 #include <type_traits>
 
+#if defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable : 4127)
+#endif
+
 namespace hurchalla {
 
 
@@ -57,5 +62,9 @@ T get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
 
 
 }
+
+#if defined(_MSC_VER)
+#  pragma warning(pop)
+#endif
 
 #endif

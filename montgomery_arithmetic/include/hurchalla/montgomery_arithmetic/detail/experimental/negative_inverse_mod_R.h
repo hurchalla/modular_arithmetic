@@ -21,7 +21,7 @@ namespace hurchalla { namespace detail {
 
 namespace detail_nimr {
     template <int n>
-    HURCHALLA_FORCE_INLINE constexpr int log2()
+    constexpr int log2()
     {
       // PRECONDITION: n!=0 (this isn't possible to express via static_assert)
       static_assert(n>=0, "");
