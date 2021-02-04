@@ -6,7 +6,7 @@
 
 
 #include "hurchalla/montgomery_arithmetic/detail/MontgomeryDefault.h"
-#include "hurchalla/montgomery_arithmetic/detail/montgomery_pow.h"
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/montgomery_pow.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
@@ -23,7 +23,7 @@ namespace hurchalla {
 template<class T, class MontyType = typename detail::MontgomeryDefault<T>::type>
 class MontgomeryForm {
     const MontyType impl;
-    using U = typename MontyType::template_param_type;
+    using U = typename MontyType::uint_type;
     static_assert(ut_numeric_limits<U>::is_integer, "");
     static_assert(!(ut_numeric_limits<U>::is_signed), "");
     static_assert(ut_numeric_limits<T>::is_integer, "");
@@ -90,7 +90,7 @@ public:
     T convertOut(MontgomeryValue x) const
     {
         T a = static_cast<T>(impl.convertOut(x));
-        HPBC_POSTCONDITION(0 <= a && a < static_cast<T>(impl.getModulus()));
+        HPBC_POSTCONDITION(0 <= a && a < getModulus());
         return a;
     }
 
@@ -251,8 +251,20 @@ public:
     std::array<MontgomeryValue, NUM_BASES>
     pow(std::array<MontgomeryValue, NUM_BASES>& bases, T exponent) const
     {
-        HPBC_PRECONDITION2(exponent >= 0);
+        HPBC_PRECONDITION(exponent >= 0);
         return detail::montgomery_pow(*this, bases, exponent);
+    }
+
+    // Returns the greatest common denominator of the standard representations
+    // (non-montgomery) of both x and the modulus, using the supplied functor.
+    // The functor must take two integral arguments of the same type and return
+    // the gcd of its two arguments.
+    // Calling  gcd_with_modulus(x)  is more efficient than computing the
+    // equivalent value  gcd(convertOut(x), modulus).
+    template <template<class> class Functor>
+    HURCHALLA_FORCE_INLINE T gcd_with_modulus(MontgomeryValue x) const
+    {
+        return static_cast<T>(impl.template gcd_with_modulus<Functor>(x));
     }
 
     // "Fused multiply-subtract" operation:  Returns the modular evaluation of
@@ -302,59 +314,83 @@ public:
         return ret;
     }
 
+    // "Multiply, with test for result congruent to zero":
+    // The operation's results are identical to
+    //    MontgomeryValue result = multiply(x, y);
+    //    bool isZero = (getCanonicalValue(result) == getZeroValue());
+    // Note on the optimization: for certain Monty Types (e.g.
+    // MontyQuarterRange), setting isZero via delegation to a lower level (as we
+    // do here) lets us avoid an extra conditional move for getCanonicalValue().
+    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
+    MontgomeryValue multiplyIsZero(MontgomeryValue x, MontgomeryValue y,
+                                                             bool& isZero) const
+    {
+        MontgomeryValue ret = impl.multiply(x, y, isZero, PTAG());
+        HPBC_POSTCONDITION(isZero == (getCanonicalValue(ret)==getZeroValue()));
+        return ret;
+    }
+
     // "Fused add-multiply" operation:  Returns the modular evaluation of
-    // (x + y) * z.  Note that y must be a canonical value.
-    // Performance note: for certain MontyTypes (e.g. MontyHalfRange and
-    // MontySixthRange) this function has the twin benefits of lower latency and
-    // fewer uops than multiply(add(x, y), z).  For all other MontyTypes, you
-    // can expect this function's efficiency will be at least as good as
-    // multiply(add(x, y), z).  Since there are potential benefits without any
-    // expected downside, you should prefer to use this function.
+    // (x + y) * z.  Note that y must be a canonical value.  The result will be
+    // congruent to multiply(add(x, y), z).  If you use this function with the
+    // template argument smallModulus == true, then you must ensure that the
+    // object on which this member function is being called has a modulus value
+    // that is small enough to meet the size requirements that the impl's class
+    // (aliased by MontyType) states as a precondition in its famul() member
+    // function.
+    // This peculiar function is an optimization that can be useful for Pollard-
+    // rho factorization, though perhaps it might be useful elsewhere too.
+    // Performance note: depending upon the implementing impl's MontyType, when
+    // this function's template argument smallModulus is true, this function can
+    // have the twin benefits of lower latency and fewer uops than
+    // multiply(add(x, y), z).  This function should always perform at least as
+    // well as multiply(add(x, y), z).
     // FSMUL note: If what you really want/need is an fsmul (fused
     // subtract-multiply), you can negate y prior to this call to get its
     // equivalent; see the comments above fmadd for why you should perform
     // negate outside of a loop.
     // Usually you don't want to specify PTAG (just accept the default).  For
     // advanced use: PTAG can be LowlatencyTag or LowuopsTag
-    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
+    template <bool smallModulus, class PTAG = LowlatencyTag>
+    HURCHALLA_FORCE_INLINE
     MontgomeryValue famul(MontgomeryValue x, CanonicalValue y,
                                                         MontgomeryValue z) const
     {
+        // PRECONDITION: if smallModulus is true, then you must ensure that the
+        // object on which this member function is being called has a modulus
+        // value that is small enough to meet the size requirements of the
+        // implementing famul() member function called below.  See the class
+        // aliased by MontyType for this member function.
+
         // note: the compiler should remove isZero calculations during dead code
         // elimination; isZero is unused here and impl.famul() is forced inline.
         bool isZero;
-        MontgomeryValue ret = impl.famul(x, y, z, isZero, PTAG());
+//        constexpr bool smallT =
+//              (ut_numeric_limits<T>::max() <= (MontyType::max_modulus() / 2));
+        MontgomeryValue ret =
+                       impl.template famul<smallModulus, PTAG>(x, y, z, isZero);
         HPBC_POSTCONDITION(getCanonicalValue(ret) ==
                                      getCanonicalValue(multiply(add(x, y), z)));
         return ret;
     }
 
-    // "Fused add-multiply, with test for result congruent to zero":
-    // This peculiar function is an optimization that is useful for Pollard-rho
-    // factorization, though perhaps it might be useful elsewhere too.
-    // The operation's results are identical to
-    //    MontgomeryValue result = famul(x, y, z);
-    //    bool isZero = (getCanonicalValue(result) == getZeroValue());
-    // Note on the optimization: for certain Monty Types (MontyQuarterRange and
-    // MontySixthRange), setting isZero via delegation to a lower level (as we
-    // do here) lets us avoid an extra conditional move for getCanonicalValue().
-    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
+    // "Fused add-multiply, with test for result congruent to zero".
+    // See comments on famul() for more information.  See comments on
+    // multiplyIsZero() for optimization notes.
+    template <bool smallModulus, class PTAG = LowlatencyTag>
+    HURCHALLA_FORCE_INLINE
     MontgomeryValue famulIsZero(MontgomeryValue x, CanonicalValue y,
                                           MontgomeryValue z, bool& isZero) const
     {
-        MontgomeryValue ret = impl.famul(x, y, z, isZero, PTAG());
+        // PRECONDITION: if smallModulus is true, then you must ensure that the
+        // object on which this member function is being called has a modulus
+        // value that is small enough to meet the size requirements of the
+        // implementing famul() member function called below.  See the class
+        // aliased by MontyType for this member function.
+        MontgomeryValue ret =
+                       impl.template famul<smallModulus, PTAG>(x, y, z, isZero);
         HPBC_POSTCONDITION(getCanonicalValue(ret) ==
                                      getCanonicalValue(multiply(add(x, y), z)));
-        HPBC_POSTCONDITION(isZero == (getCanonicalValue(ret)==getZeroValue()));
-        return ret;
-    }
-    // "Multiply, with test for result congruent to zero".  See comments on
-    // famulIsZero() for rationale.
-    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
-    MontgomeryValue multiplyIsZero(MontgomeryValue x, MontgomeryValue y,
-                                                             bool& isZero) const
-    {
-        MontgomeryValue ret = impl.multiply(x, y, isZero, PTAG());
         HPBC_POSTCONDITION(isZero == (getCanonicalValue(ret)==getZeroValue()));
         return ret;
     }

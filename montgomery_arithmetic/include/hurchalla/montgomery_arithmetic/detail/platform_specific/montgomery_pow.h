@@ -168,6 +168,39 @@ struct MontPowImpl {
     }
     return result;
   }
+
+  // This version of the function version is intended for very large NUM_BASES.
+  // For example, on haswell NUM_BASES of 96 performs quite efficiently,
+  // especially with compiler flags -march=haswell and -mtune=haswell.
+  // Note that being able to find a huge number of bases that you want to use
+  // for modular exponentiation all with the same power and modulus, is likely a
+  // special case.  Even just having more than one single base, so that you can
+  // use an arraypow function rather than pow, may be unusual.
+  template <std::size_t NUM_BASES>
+  static HURCHALLA_FORCE_INLINE std::array<V, NUM_BASES>
+  arraypow_huge(const MF& mf, std::array<V, NUM_BASES> bases, T exponent)
+  {
+    HPBC_PRECONDITION(exponent >= 0);
+    std::array<V, NUM_BASES> result;
+    if (exponent & static_cast<T>(1)) {
+        for (std::size_t i=0; i<NUM_BASES; ++i)
+            result[i] = bases[i];
+    } else {
+        V unity = mf.getUnityValue();
+        for (std::size_t i=0; i<NUM_BASES; ++i)
+            result[i] = unity;
+    }
+    while (exponent > static_cast<T>(1)) {
+        exponent = static_cast<T>(exponent >> static_cast<T>(1));
+        for (std::size_t i=0; i<NUM_BASES; ++i)
+            bases[i] = mf.template multiply<LowuopsTag>(bases[i], bases[i]);
+        if (exponent & static_cast<T>(1)) {
+            for (std::size_t i=0; i<NUM_BASES; ++i)
+                result[i]= mf.template multiply<LowuopsTag>(result[i],bases[i]);
+        }
+    }
+    return result;
+  }
 };
 
 
@@ -179,15 +212,37 @@ struct MontPow {
     using V = typename MF::MontgomeryValue;
     static_assert(ut_numeric_limits<T>::is_integer, "");
 
-    // The catch-all template version
+    // The catch-all template version.
+    // Having the std::enable_if cutoff at NUM_BASES < 32 is a bit arbitrary,
+    // since the only way to know the best cutoff for any given machine is to
+    // make performance measurements.  However, it may be roughly okay in
+    // practice since most of the time NUM_BASES is likely to be < 10, and
+    // otherwise (probably much less common), it's likely > 50, in the "huge"
+    // category where arraypow_huge() will likely perform best.  Even if
+    // arraypow_huge() doesn't perform best in microbenchmarks, its much smaller
+    // function size compared to arraypow_cond_branch (and consequent reduced
+    // i-cache use) might provide more of a benefit to the whole program's
+    // performance as NUM_BASES starts to get "huge".
     template <std::size_t NUM_BASES>
-    static HURCHALLA_FORCE_INLINE std::array<V, NUM_BASES>
+    static HURCHALLA_FORCE_INLINE
+    typename std::enable_if<(NUM_BASES < 32), std::array<V, NUM_BASES>>::type
     pow(const MF& mf, std::array<V, NUM_BASES>& bases, T exponent)
     {
         static_assert(NUM_BASES > 0, "");
         // conditional branching seems to typically work best for large-ish
         // array sizes.
         return MontPowImpl<MF>::arraypow_cond_branch(mf, bases, exponent);
+    }
+
+    template <std::size_t NUM_BASES>
+    static HURCHALLA_FORCE_INLINE
+    typename std::enable_if<(NUM_BASES >= 32), std::array<V, NUM_BASES>>::type
+    pow(const MF& mf, std::array<V, NUM_BASES>& bases, T exponent)
+    {
+        static_assert(NUM_BASES > 0, "");
+        // When NUM_BASES gets huge we don't want to force-unroll loops, but
+        // other than that we do the same as arraypow_cond_branch
+        return MontPowImpl<MF>::arraypow_huge(mf, bases, exponent);
     }
 
     // delegate a size 1 array call to the non-array montgomery_pow

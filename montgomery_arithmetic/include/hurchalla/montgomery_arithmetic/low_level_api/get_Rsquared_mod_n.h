@@ -35,16 +35,11 @@ T get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     static_assert(ut_numeric_limits<T>::is_modulo, "");
     if (HPBC_PRECONDITION2_MACRO_IS_ACTIVE) {
-        // Using HalfrangeTag requires that the modulus n < R/2.
-        // QuarterrangeTag requires n < R/4.  SixthrangeTag requires n < R/6.
-        T Rdiv2 = static_cast<T>(
-                   static_cast<T>(1) << (ut_numeric_limits<T>::digits - 1));
-        HPBC_PRECONDITION2((std::is_same<MTAG, HalfrangeTag>::value) ? 
-                           n < Rdiv2 : true);
+        // Using QuarterrangeTag requires n < R/4.
+        T Rdiv4 = static_cast<T>(
+                   static_cast<T>(1) << (ut_numeric_limits<T>::digits - 2));
         HPBC_PRECONDITION2((std::is_same<MTAG, QuarterrangeTag>::value) ? 
-                           n < (Rdiv2/2) : true);
-        HPBC_PRECONDITION2((std::is_same<MTAG, SixthrangeTag>::value) ? 
-                           n < (Rdiv2/3) : true);
+                           n < (Rdiv4) : true);
     }
     HPBC_PRECONDITION2(n % 2 == 1);  // REDC requires an odd modulus.
     HPBC_PRECONDITION2(n > 1);

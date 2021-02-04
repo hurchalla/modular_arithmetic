@@ -242,18 +242,10 @@ public:
         //   means n < R.  Since MontyFullRange's isValid(a) returns (a < n),
         //   we know by this function's preconditions that x < n and y < n.
         //   Therefore  x*y < n*n < n*R.
-        // For MontyHalfRange: its constructor requires modulus < R/2, which
-        //   means n < R/2.  Its isValid(a) returns (a < n), so we know by this
-        //   function's preconditions that x < n and y < n.  Thus
-        //   x*y < n*n < n*R/2 < n*R.
         // For MontyQuarterRange: its constructor requires modulus < R/4, which
         //   means n < R/4.  Its isValid(a) returns (a < 2*n), so we know by
         //   this function's preconditions that x < 2*n and y < 2*n.  Thus
         //   x*y < (2*n)*(2*n) == 4*n*n < 4*n*R/4 == n*R.
-        // For MontySixthRange: its constructor requires modulus < R/6, which
-        //   means n < R/6.  Its isValid(a) returns (a < 2*n), so we know by
-        //   this function's preconditions that x < 2*n and y < 2*n.  Thus
-        //   x*y < (2*n)*(2*n) == 4*n*n < 4*n*R/6 == (2/3)*n*R < n*R.
         T u_lo;
         T u_hi = unsigned_multiply_to_hilo_product(&u_lo, x.get(), y.get());
         // u_hi < n  implies that  x*y == u < n*R.  See REDC_non_finalized()
@@ -329,6 +321,56 @@ public:
 
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
+    }
+
+    // Returns the greatest common denominator of the standard representations
+    // (non-montgomery) of both x and the modulus, using the supplied functor.
+    // The functor must take two integral arguments of the same type and return
+    // the gcd of those two arguments.
+    template <template<class> class Functor>
+    HURCHALLA_FORCE_INLINE T gcd_with_modulus(MontgomeryValue x) const
+    {
+        // Proof that gcd(x.get(), n_) == gcd(convertOut(x), n_)
+        // -----------------------------------------------------
+        // Let the integer g = x.get(), and let the integer c = convertOut(x).
+        // Let the integer d be a divisor of n_.
+        // We will use mathematical integers (with infinite precision and no
+        // overflow) throughout this discussion.
+        //
+        // Because g is a value in montgomery domain, we know g ≡ c*R (mod n_),
+        // and thus there exists some integer k such that  g == c*R + k*n_.
+        // Since n_ (by constructor precondition) is odd, we know n_ and R are
+        // coprime, and thus d can not be a divisor of R (unless d==1, in which
+        // case d divides all integers).
+        // Therefore d divides c*R if and only if d divides c.
+        // Assume d divides c:
+        //    Then d divides c*R.  Since d divides n_, d also divides k*n_.
+        //    Thus d divides c*R + k*n_ == g.
+        // Assume d divides g:
+        //    Since d divides n_, d also divides k*n_.  Thus d divides
+        //    g - k*n_ == c*R.  Since we showed d can not be a divisor of R
+        //    (unless d==1), d must divide c.
+        // Therefore d divides g if and only if d divides c.
+        //
+        // Let p be the greatest common divisor of g and n_.  Since p
+        // divides g, p must divide c.  Let  q = gcd(c, n_).  Since q
+        // divides c, q must divide g.  Since q also divides n_, q is a
+        // common divisor of g and n_, and thus q <= p.  Since p divides
+        // both c and n_, p is a common divisor of c and n_, and thus p <= q.
+        // Since q <= p and p <= q, we know q == p.  Therefore:
+        // gcd(g, n_) == gcd(c, n_).
+        // -----------------------------------------------
+        //
+        // We want to return the value  q = gcd(convertOut(x), n_).
+        // By the proof above, we can instead return the equivalent value
+        // p = gcd(x.get(), n_)  which we can compute more efficiently.
+        Functor<T> gcd_func;
+        T p = gcd_func(x.get(), n_);
+        // Our postconditions assume the Functor implementation is correct.
+        HPBC_POSTCONDITION2(0 < p && p <= n_ && (x.get() == 0 || p <= x.get()));
+        HPBC_POSTCONDITION2(n_ % p == 0);
+        HPBC_POSTCONDITION2(x.get() % p == 0);
+        return p;
     }
 };
 

@@ -21,13 +21,12 @@
 #include "hurchalla/modular_arithmetic/modular_pow.h"
 #include "hurchalla/montgomery_arithmetic/MontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyFullRange.h"
-#include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyQuarterRange.h"
-#include "hurchalla/montgomery_arithmetic/detail/MontySixthRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/experimental/MontySqrtRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyWrappedStandardMath.h"
 #include "gtest/gtest.h"
 #include <cstdint>
+#include <type_traits>
 
 
 template <typename M>
@@ -86,23 +85,49 @@ void test_famul_variants(const M& mf, typename M::MontgomeryValue x,
                    typename M::T_type expected_result)
 {
     namespace hc = hurchalla;
-    EXPECT_TRUE(mf.convertOut(mf.famul(x,yc,z)) == expected_result);
-    EXPECT_TRUE(mf.convertOut(
-          mf.template famul<hc::LowlatencyTag>(x,yc,z)) == expected_result);
-    EXPECT_TRUE(mf.convertOut(
-          mf.template famul<hc::LowuopsTag>(x,yc,z)) == expected_result);
-
     typename M::MontgomeryValue result;
     bool isZero;
-    result = mf.famulIsZero(x,yc,z,isZero);
+
+    EXPECT_TRUE(mf.convertOut(mf.template
+          famul<false>(x,yc,z)) == expected_result);
+    EXPECT_TRUE(mf.convertOut(mf.template
+          famul<false, hc::LowlatencyTag>(x,yc,z)) == expected_result);
+    EXPECT_TRUE(mf.convertOut(mf.template
+          famul<false, hc::LowuopsTag>(x,yc,z)) == expected_result);
+
+    result = mf.template famulIsZero<false>(x,yc,z,isZero);
     EXPECT_TRUE(mf.convertOut(result) == expected_result &&
                  isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
-    result = mf.template famulIsZero<hc::LowlatencyTag>(x,yc,z,isZero);
+    result = mf.template famulIsZero<false, hc::LowlatencyTag>(x,yc,z,isZero);
     EXPECT_TRUE(mf.convertOut(result) == expected_result &&
                  isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
-    result = mf.template famulIsZero<hc::LowuopsTag>(x,yc,z,isZero);
+    result = mf.template famulIsZero<false, hc::LowuopsTag>(x,yc,z,isZero);
     EXPECT_TRUE(mf.convertOut(result) == expected_result &&
                  isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
+
+    // This clause is a bit of a hack, since it requires white-box knowledge
+    // that modulus < max_modulus()/2 will satisfy the preconditions of all
+    // known implementing MontyType famul functions.  New MontyTypes might be
+    // added or changed, or some MontyType outside my awareness might be used,
+    // all of which could break this assumption.
+    if (mf.getModulus() < mf.max_modulus()/2) {
+        EXPECT_TRUE(mf.convertOut(mf.template
+              famul<true>(x,yc,z)) == expected_result);
+        EXPECT_TRUE(mf.convertOut(mf.template
+              famul<true, hc::LowlatencyTag>(x,yc,z)) == expected_result);
+        EXPECT_TRUE(mf.convertOut(mf.template
+              famul<true, hc::LowuopsTag>(x,yc,z)) == expected_result);
+
+        result = mf.template famulIsZero<true>(x,yc,z,isZero);
+        EXPECT_TRUE(mf.convertOut(result) == expected_result &&
+                 isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
+        result = mf.template famulIsZero<true,hc::LowlatencyTag>(x,yc,z,isZero);
+        EXPECT_TRUE(mf.convertOut(result) == expected_result &&
+                 isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
+        result = mf.template famulIsZero<true, hc::LowuopsTag>(x,yc,z,isZero);
+        EXPECT_TRUE(mf.convertOut(result) == expected_result &&
+                 isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
+    }
 }
 
 
@@ -206,6 +231,26 @@ void test_mf_general_checks(M& mf, typename M::T_type a, typename M::T_type b,
 }
 
 
+// an example functor to use while testing MontgomeryForm's gcd()
+template <typename T>
+struct GcdFunctor {
+    T operator()(T a, T b)
+    {
+        static_assert(hurchalla::ut_numeric_limits<T>::is_integer, "");
+        static_assert(!hurchalla::ut_numeric_limits<T>::is_signed, "");
+        HPBC_PRECONDITION2(a > 0 || b > 0);
+        while (a != 0) {
+            T tmp = a;
+            a = static_cast<T>(b % a);
+            b = tmp;
+        }
+        HPBC_POSTCONDITION2(b > 0);
+        return b;
+    }
+};
+
+
+
 template <typename M>
 void test_MontgomeryForm()
 {
@@ -278,10 +323,21 @@ void test_MontgomeryForm()
         C zero = mf.getZeroValue();
         C one = mf.getUnityValue();
         bool isZero;
-        EXPECT_TRUE(mf.getCanonicalValue(mf.famulIsZero(one,zero,one,isZero)) ==
-                    one && isZero == false);
-        EXPECT_TRUE(mf.getCanonicalValue(mf.famulIsZero(one,one,zero,isZero)) ==
-                    zero && isZero == true);
+        EXPECT_TRUE(mf.getCanonicalValue(mf.template
+            famulIsZero<false>(one,zero,one,isZero)) == one && isZero == false);
+        EXPECT_TRUE(mf.getCanonicalValue(mf.template
+            famulIsZero<false>(one,one,zero,isZero)) == zero && isZero == true);
+        // This is a bit of a hack, since it requires white-box knowledge that
+        // modulus < max_modulus()/2 will satisfy the preconditions of all
+        // known implementing MontyType famul functions.  New MontyTypes might
+        // be added or changed, or some MontyType outside my awareness might be
+        // used, all of which could break this assumption.
+        if (mf.getModulus() < mf.max_modulus()/2) {
+            EXPECT_TRUE(mf.getCanonicalValue(mf.template
+             famulIsZero<true>(one,zero,one,isZero)) == one && isZero == false);
+            EXPECT_TRUE(mf.getCanonicalValue(mf.template
+             famulIsZero<true>(one,one,zero,isZero)) == zero && isZero == true);
+        }
 
         EXPECT_TRUE(mf.getCanonicalValue(mf.multiplyIsZero(one,one,isZero)) ==
                     one && isZero == false);
@@ -439,6 +495,45 @@ void test_MontgomeryForm()
         a=2; b=static_cast<T>(mf.getModulus()-2);
         test_mf_general_checks(mf, a, b, c);
     }
+
+    // test gcd
+    {
+        M mf(static_cast<T>(35));
+        EXPECT_TRUE(
+              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(28)) == 7);
+        EXPECT_TRUE(
+              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(29)) == 1);
+        EXPECT_TRUE(
+              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(70)) == 35);
+    }
+    if (117 <= M::max_modulus())
+    {
+        M mf(static_cast<T>(117));
+        EXPECT_TRUE(
+              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(78)) == 39);
+        EXPECT_TRUE(
+              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(26)) == 13);
+        EXPECT_TRUE(
+              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(27)) == 9);
+        EXPECT_TRUE(
+              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(28)) == 1);
+    }
+    {
+        M mf(static_cast<T>(3));  // smallest possible modulus
+        EXPECT_TRUE(
+              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(2)) == 1);
+        EXPECT_TRUE(
+              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(0)) == 3);
+    }
+    {
+        T modulus = M::max_modulus();
+        ASSERT_TRUE(modulus > 9);
+        while (modulus % 3 != 0 || modulus % 2 == 0)
+            --modulus;
+        M mf(modulus);
+        EXPECT_TRUE(
+              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(12)) == 3);
+    }
 }
 
 
@@ -489,19 +584,9 @@ namespace {
         test_custom_monty<hc::detail::MontyFullRange>();
     }
 
-    TEST(MontgomeryArithmetic, MontyHalfRange) {
-        namespace hc = hurchalla;
-        test_custom_monty<hc::detail::MontyHalfRange>();
-    }
-
     TEST(MontgomeryArithmetic, MontyQuarterRange) {
         namespace hc = hurchalla;
         test_custom_monty<hc::detail::MontyQuarterRange>();
-    }
-
-    TEST(MontgomeryArithmetic, MontySixthRange) {
-        namespace hc = hurchalla;
-        test_custom_monty<hc::detail::MontySixthRange>();
     }
 
     TEST(MontgomeryArithmetic, MontySqrtRange) {

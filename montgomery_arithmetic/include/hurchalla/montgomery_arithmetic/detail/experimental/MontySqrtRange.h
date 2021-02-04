@@ -184,7 +184,7 @@ private:
     using V = MontgomeryValue;
 public:
     using montvalue_type = V;
-    using template_param_type = T;
+    using uint_type = T;
 
     explicit MontySqrtRange(T modulus) :
                 n_(modulus),
@@ -480,8 +480,8 @@ public:
         return diff;
     }
 
-    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, bool& isZero, PTAG) const
+    template <bool, class PTAG>  // Performance TAG (optimization_tag_structs.h)
+    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, bool& isZero) const
     {
         HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
         HPBC_PRECONDITION2(0 < y.get() && y.get() <= n_);
@@ -507,6 +507,28 @@ public:
 
         HPBC_POSTCONDITION2(0 < result.get() && result.get() <= n_);
         return result;
+    }
+
+    // Returns the greatest common denominator of the standard representations
+    // (non-montgomery) of both x and the modulus, using the supplied functor.
+    // The functor must take two integral arguments of the same type and return
+    // the gcd of those two arguments.
+    template <template<class> class Functor>
+    HURCHALLA_FORCE_INLINE T gcd_with_modulus(MontgomeryValue x) const
+    {
+        // See the member function gcd_with_modulus() in MontyCommonBases.h for
+        // proof that gcd(x.get(), n_) == gcd(convertOut(x), n_)
+        // We want to return the value  q = gcd(convertOut(x), n_).
+        // By relying on the equivalence of those two gcds, we can instead
+        // compute and return p = gcd(x.get(), n_)  which we can compute more
+        // efficiently than q.
+        Functor<T> gcd_func;
+        T p = gcd_func(x.get(), n_);
+        // Our postconditions assume the Functor implementation is correct.
+        HPBC_POSTCONDITION2(0 < p && p <= n_ && (x.get() == 0 || p <= x.get()));
+        HPBC_POSTCONDITION2(n_ % p == 0);
+        HPBC_POSTCONDITION2(x.get() % p == 0);
+        return p;
     }
 };
 

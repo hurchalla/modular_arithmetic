@@ -77,11 +77,10 @@ T impl_get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
         // we should now have  tmp ≡ R*R (mod n).
 
         // REDC's postcondition guarantees the following
-        HPBC_ASSERT2((std::is_same<MTAG, FullrangeTag>::value ||
-                      std::is_same<MTAG, HalfrangeTag>::value) ?
-                     tmp < n : 0 < tmp && tmp < 2*n);
-        if (!(std::is_same<MTAG, FullrangeTag>::value ||
-                      std::is_same<MTAG, HalfrangeTag>::value)) {
+        HPBC_ASSERT2((std::is_same<MTAG, FullrangeTag>::value) ?
+                     tmp < n :
+                     0 < tmp && tmp < 2*n);
+        if (!(std::is_same<MTAG, FullrangeTag>::value)) {
             if (tmp >= n)
                 tmp = static_cast<T>(tmp - n);  // fully reduce tmp, mod n.
         }

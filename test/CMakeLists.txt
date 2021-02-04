@@ -31,8 +31,8 @@ add_executable(test_hurchalla_modular_arithmetic
                montgomery_arithmetic/low_level_api/test_get_Rsquared_mod_n.cpp
                montgomery_arithmetic/low_level_api/test_inverse_mod_R.cpp
                montgomery_arithmetic/low_level_api/test_negative_inverse_mod_R.cpp
-               montgomery_arithmetic/low_level_api/test_unsigned_multiply_to_hilo_product.cpp
                montgomery_arithmetic/low_level_api/test_REDC.cpp
+               montgomery_arithmetic/low_level_api/test_unsigned_multiply_to_hilo_product.cpp
                montgomery_arithmetic/test_MontgomeryForm.cpp
                )
 

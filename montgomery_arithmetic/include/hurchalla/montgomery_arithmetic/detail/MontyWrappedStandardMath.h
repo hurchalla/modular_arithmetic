@@ -49,7 +49,7 @@ private:
     using V = MontgomeryValue;
     T modulus_;
 public:
-    using template_param_type = T;
+    using uint_type = T;
     using montvalue_type = V;
 
     explicit MontyWrappedStandardMath(T modulus) : modulus_(modulus)
@@ -146,8 +146,8 @@ public:
         HPBC_POSTCONDITION2(isCanonical(result));
         return result;
     }
-    template <class PTAG>   // Performance TAG (ignored by this class)
-    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, bool& isZero, PTAG) const
+    template <bool, class PTAG>   // Performance TAG (ignored by this class)
+    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, bool& isZero) const
     {
         HPBC_PRECONDITION2(isCanonical(x));
         HPBC_PRECONDITION2(isCanonical(y));
@@ -157,7 +157,6 @@ public:
         HPBC_POSTCONDITION2(isCanonical(result));
         return result;
     }
-
     HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
         HPBC_PRECONDITION2(isCanonical(x));
@@ -194,6 +193,26 @@ public:
         T result = absolute_value_difference(x.get(), y.get());
         HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
+    }
+
+    // Returns the greatest common denominator of the standard representations
+    // (non-montgomery) of both x and the modulus, using the supplied functor.
+    // The functor must take two integral arguments of the same type and return
+    // the gcd of those two arguments.
+    template <template<class> class Functor>
+    HURCHALLA_FORCE_INLINE T gcd_with_modulus(MontgomeryValue x) const
+    {
+        // We want to return the value  q = gcd(convertOut(x), modulus_).  Since
+        // this class simply wraps standard integer domain values within a
+        // MontgomeryForm interface, x.get() == convertOut(x).
+        Functor<T> gcd_func;
+        T p = gcd_func(x.get(), modulus_);
+        // Our postconditions assume the Functor implementation is correct.
+        HPBC_POSTCONDITION2(0 < p && p <= modulus_ &&
+                            (x.get() == 0 || p <= x.get()));
+        HPBC_POSTCONDITION2(modulus_ % p == 0);
+        HPBC_POSTCONDITION2(x.get() % p == 0);
+        return p;
     }
 };
 

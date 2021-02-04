@@ -33,10 +33,8 @@ void test_REDC_identity(T a, T n, T inv_n, T Rmod_n)
     u_hi = hc::unsigned_multiply_to_hilo_product(&u_lo, Rmod_n, a);
 
     T amodn = static_cast<T>(a % n);
-    T Rdiv2 = static_cast<T>(
-                   static_cast<T>(1) << (hc::ut_numeric_limits<T>::digits - 1));
-    T Rdiv4 = static_cast<T>(Rdiv2/2);
-    T Rdiv6 = static_cast<T>(Rdiv2/3);
+    T Rdiv4 = static_cast<T>(
+                   static_cast<T>(1) << (hc::ut_numeric_limits<T>::digits - 2));
     {  // Fullrange has no requirements on n
         EXPECT_TRUE(hc::REDC(u_hi, u_lo, n, inv_n) == amodn);
         EXPECT_TRUE(hc::REDC(u_hi, u_lo, n, inv_n, hc::FullrangeTag(),
@@ -44,24 +42,10 @@ void test_REDC_identity(T a, T n, T inv_n, T Rmod_n)
         EXPECT_TRUE(hc::REDC(u_hi, u_lo, n, inv_n, hc::FullrangeTag(),
                                hc::LowuopsTag()) == amodn);
     }
-    if (n < Rdiv2) {
-        EXPECT_TRUE(hc::REDC(u_hi, u_lo, n, inv_n, hc::HalfrangeTag(),
-                               hc::LowlatencyTag()) == amodn);
-        EXPECT_TRUE(hc::REDC(u_hi, u_lo, n, inv_n, hc::HalfrangeTag(),
-                               hc::LowuopsTag()) == amodn);
-    }
     if (n < Rdiv4) {
         T result1 = hc::REDC(u_hi, u_lo, n, inv_n, hc::QuarterrangeTag(),
                                hc::LowlatencyTag());
         T result2 = hc::REDC(u_hi, u_lo, n, inv_n, hc::QuarterrangeTag(),
-                               hc::LowuopsTag());
-        EXPECT_TRUE(result1 == amodn || result1 == amodn + n);
-        EXPECT_TRUE(result2 == amodn || result2 == amodn + n);
-    }
-    if (n < Rdiv6) {
-        T result1 = hc::REDC(u_hi, u_lo, n, inv_n, hc::SixthrangeTag(),
-                               hc::LowlatencyTag());
-        T result2 = hc::REDC(u_hi, u_lo, n, inv_n, hc::SixthrangeTag(),
                                hc::LowuopsTag());
         EXPECT_TRUE(result1 == amodn || result1 == amodn + n);
         EXPECT_TRUE(result2 == amodn || result2 == amodn + n);
@@ -124,20 +108,17 @@ void test_REDC_multiply(T a, T b, T n, T inv_n, T Rsqrd_mod_n)
     // convert a and b into montgomery domain
     u_hi = hc::unsigned_multiply_to_hilo_product(&u_lo, Rsqrd_mod_n, a);
     T a_md = hc::REDC(u_hi, u_lo, n, inv_n, MTAG(), PTAG());
-    EXPECT_TRUE((std::is_same<MTAG, hc::FullrangeTag>::value ||
-                 std::is_same<MTAG, hc::HalfrangeTag>::value) ?
+    EXPECT_TRUE((std::is_same<MTAG, hc::FullrangeTag>::value) ?
                  a_md < n : a_md < 2*n);
     u_hi = hc::unsigned_multiply_to_hilo_product(&u_lo, Rsqrd_mod_n, b);
     T b_md = hc::REDC(u_hi, u_lo, n, inv_n, MTAG(), PTAG());
-    EXPECT_TRUE((std::is_same<MTAG, hc::FullrangeTag>::value ||
-                 std::is_same<MTAG, hc::HalfrangeTag>::value) ?
+    EXPECT_TRUE((std::is_same<MTAG, hc::FullrangeTag>::value) ?
                  b_md < n : b_md < 2*n);
 
     // compute the montgomery domain product of a_md and b_md
     u_hi = hc::unsigned_multiply_to_hilo_product(&u_lo, a_md, b_md);
     T product_md = hc::REDC(u_hi, u_lo, n, inv_n, MTAG(), PTAG());
-    EXPECT_TRUE((std::is_same<MTAG, hc::FullrangeTag>::value ||
-                 std::is_same<MTAG, hc::HalfrangeTag>::value) ?
+    EXPECT_TRUE((std::is_same<MTAG, hc::FullrangeTag>::value) ?
                  product_md < n : product_md < 2*n);
 
     // convert product_md out of montgomery domain, and verify it is correct
@@ -145,8 +126,7 @@ void test_REDC_multiply(T a, T b, T n, T inv_n, T Rsqrd_mod_n)
     T product = hc::REDC(u_hi, u_lo, n, inv_n, MTAG(), PTAG());
     T answer = hc::modular_multiplication_prereduced_inputs(
                                static_cast<T>(a % n), static_cast<T>(b % n), n);
-    EXPECT_TRUE((std::is_same<MTAG, hc::FullrangeTag>::value ||
-                 std::is_same<MTAG, hc::HalfrangeTag>::value) ?
+    EXPECT_TRUE((std::is_same<MTAG, hc::FullrangeTag>::value) ?
                  product == answer :
                  product == answer || product == answer + n);
 }
@@ -159,21 +139,13 @@ void multi_tests_REDC_multiply(T n)
     HPBC_PRECONDITION2(n > 1);
     namespace hc = hurchalla;
 
-    T Rdiv2 = static_cast<T>(
-                   static_cast<T>(1) << (hc::ut_numeric_limits<T>::digits - 1));
-    T Rdiv4 = static_cast<T>(Rdiv2/2);
-    T Rdiv6 = static_cast<T>(Rdiv2/3);
+    T Rdiv4 = static_cast<T>(
+                   static_cast<T>(1) << (hc::ut_numeric_limits<T>::digits - 2));
 
     // if n is invalid for the MTAG, change n to be some value we can test
-    if ((std::is_same<MTAG, hc::HalfrangeTag>::value) && n >= Rdiv2)
-        n = static_cast<T>(n - Rdiv2);
     if (std::is_same<MTAG, hc::QuarterrangeTag>::value) {
         while (n >= Rdiv4)
             n = static_cast<T>(n - Rdiv4);
-    }
-    if (std::is_same<MTAG, hc::SixthrangeTag>::value) {
-        while (n >= Rdiv6)
-            n = static_cast<T>(n - Rdiv6);
     }
     if (n < 3)
         n = 3;
@@ -259,8 +231,7 @@ void test_REDC_is_zero(T a, T n, T inv_n, T Rmod_n)
 
     // we might as well test that the result itself is correct too,
     // even though it's not our focus here.
-    EXPECT_TRUE((std::is_same<MTAG, hc::FullrangeTag>::value ||
-                 std::is_same<MTAG, hc::HalfrangeTag>::value) ?
+    EXPECT_TRUE((std::is_same<MTAG, hc::FullrangeTag>::value) ?
                  result == amodn :
                  result == amodn || result == amodn + n);
 }
@@ -274,21 +245,13 @@ void multi_tests_REDC_is_zero(T n)
     HPBC_PRECONDITION2(n > 1);
 
     namespace hc = hurchalla;
-    T Rdiv2 = static_cast<T>(
-                   static_cast<T>(1) << (hc::ut_numeric_limits<T>::digits - 1));
-    T Rdiv4 = static_cast<T>(Rdiv2/2);
-    T Rdiv6 = static_cast<T>(Rdiv2/3);
+    T Rdiv4 = static_cast<T>(
+                   static_cast<T>(1) << (hc::ut_numeric_limits<T>::digits - 2));
 
     // if n is invalid for the MTAG, change n to be some value we can test
-    if ((std::is_same<MTAG, hc::HalfrangeTag>::value) && n >= Rdiv2)
-        n = static_cast<T>(n - Rdiv2);
     if (std::is_same<MTAG, hc::QuarterrangeTag>::value) {
         while (n >= Rdiv4)
             n = static_cast<T>(n - Rdiv4);
-    }
-    if (std::is_same<MTAG, hc::SixthrangeTag>::value) {
-        while (n >= Rdiv6)
-            n = static_cast<T>(n - Rdiv6);
     }
     if (n < 3)
         n = 3;
@@ -328,21 +291,13 @@ void REDC_test_all(T n)
 
     multi_tests_REDC_multiply<T, hc::FullrangeTag, hc::LowlatencyTag>(n);
     multi_tests_REDC_multiply<T, hc::FullrangeTag, hc::LowuopsTag>(n);
-    multi_tests_REDC_multiply<T, hc::HalfrangeTag, hc::LowlatencyTag>(n);
-    multi_tests_REDC_multiply<T, hc::HalfrangeTag, hc::LowuopsTag>(n);
     multi_tests_REDC_multiply<T, hc::QuarterrangeTag, hc::LowlatencyTag>(n);
     multi_tests_REDC_multiply<T, hc::QuarterrangeTag, hc::LowuopsTag>(n);
-    multi_tests_REDC_multiply<T, hc::SixthrangeTag, hc::LowlatencyTag>(n);
-    multi_tests_REDC_multiply<T, hc::SixthrangeTag, hc::LowuopsTag>(n);
 
     multi_tests_REDC_is_zero<T, hc::FullrangeTag, hc::LowlatencyTag>(n);
     multi_tests_REDC_is_zero<T, hc::FullrangeTag, hc::LowuopsTag>(n);
-    multi_tests_REDC_is_zero<T, hc::HalfrangeTag, hc::LowlatencyTag>(n);
-    multi_tests_REDC_is_zero<T, hc::HalfrangeTag, hc::LowuopsTag>(n);
     multi_tests_REDC_is_zero<T, hc::QuarterrangeTag, hc::LowlatencyTag>(n);
     multi_tests_REDC_is_zero<T, hc::QuarterrangeTag, hc::LowuopsTag>(n);
-    multi_tests_REDC_is_zero<T, hc::SixthrangeTag, hc::LowlatencyTag>(n);
-    multi_tests_REDC_is_zero<T, hc::SixthrangeTag, hc::LowuopsTag>(n);
 }
 
 

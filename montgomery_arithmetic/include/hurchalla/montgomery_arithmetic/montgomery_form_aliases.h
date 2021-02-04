@@ -7,9 +7,7 @@
 
 #include "hurchalla/montgomery_arithmetic/MontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyFullRange.h"
-#include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyQuarterRange.h"
-#include "hurchalla/montgomery_arithmetic/detail/MontySixthRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyWrappedStandardMath.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/sized_uint.h"
@@ -25,41 +23,35 @@ namespace hurchalla {
 // convenient to simply use MontgomeryForm<T>, instead of these aliases.
 //
 // USAGE:
-// The suffix (Full, Half, Quarter, Sixth) in each alias indicates the size 
-// limit allowed for the modulus you can use to construct an object of each
-// alias type.  Full allows you to use the full range of type T for the modulus.
-// Half allows you to use the smaller half of the range of possible T values, or
-// more specifically, if we let R = 2^(ut_numeric_limits<T>::digits), Half
-// allows any modulus < R/2.  Quarter allows any modulus < R/4, and Sixth allows
-// any modulus < R/6.  To give an example, MontgomeryQuarter<uint64_t> allows
+// The suffix (Full, Quarter) in each alias indicates the size limit allowed for
+// the modulus that you can use to construct an object of each alias type.  Full
+// allows you to use the full range of type T for the modulus.  Quarter allows
+// you to use the smallest quarter of the range of all possible T values, or
+// more specifically, if we let R = 2^(ut_numeric_limits<T>::digits), Quarter
+// allows any modulus < R/4.  For example, MontgomeryQuarter<uint64_t> allows
 // any modulus less than (2^64)/4.  It is undefined behavior to use a modulus
 // that is not within the allowed range for your alias type.  As with all
 // montgomery arithmetic, the modulus you use must also be odd.
-// Relatively speaking, an alias type with a smaller modulus limit will often
-// perform better than an alias with a larger limit; you can expect that the
-// smaller alias will never perform worse than the larger alias, if given the
-// same modulus.
-// (This file also provides an alias called MontgomeryStandardMathWrapper.  This
-// alias maps to a class that uses the MontgomeryForm interface but that
+// You can expect that an alias type with a smaller modulus limit will perform
+// better (very often) or at worst the same as an alias with a larger limit, if
+// both are given the same modulus.
+// Note that this file also has an alias called MontgomeryStandardMathWrapper.
+// This alias maps to a class that uses the MontgomeryForm interface but that
 // internally performs all calculations with standard modular arithmetic rather
 // than any montgomery arithmetic.  This can be useful as an aid for comparing
-// performance between montgomery and non-montgomery modular arithmetic.)
+// performance between montgomery and non-montgomery modular arithmetic.
 //
 // PERFORMANCE DETAILS:
-// Note that these aliases do not always improve upon the performance of
-// MontgomeryForm<T> - the performance gain (or lack of gain) you can expect
-// from these aliases depends on the particular alias:
+// Note that these aliases do not all improve upon the performance of
+// MontgomeryForm<T> - the performance gain (or lack of gain) that you can
+// expect from these aliases depends upon the particular alias:
 // (1) The MontgomeryFull<T> alias maps to the same class as MontgomeryForm<T>.
-// Thus it offers no improvement on performance over MontgomeryForm<T>.
-// (2) The MontgomeryQuarter<T> and MontgomerySixth<T> aliases offer significant
-// performance improvements over MontgomeryForm<T>.  If you know either at
-// compile-time or via run-time checking that your modulus will be small enough
-// to allow you to use one of these aliases, then you might expect these aliases
-// to provide perhaps a 5-20% performance gain over MontgomeryForm<T>.
-// (3) The alias MontgomerySixth<T> improves upon MontgomeryQuarter<T> only for
-// the famul() member function; otherwise it's the same as MontgomeryQuarter<T>.
-// (4) The alias MontgomeryHalf<T> improves upon MontgomeryFull<T> only for the
-// famul() member function; it's otherwise equivalent to MontgomeryFull<T>.
+// It therefore offers no improvement on performance over MontgomeryForm<T>.
+// (2) The MontgomeryQuarter<T> alias can offer a significant performance
+// improvement over MontgomeryForm<T>.  If you know either at compile-time or
+// via run-time checks that your modulus will be small enough to allow you to
+// use this alias, then you might expect it to provide perhaps a 5-20%
+// performance gain over MontgomeryForm<T>.
 
 
 template <typename, template <typename> class> class MontyAliasHelper;
@@ -73,26 +65,23 @@ using MontgomeryFull = MontgomeryForm<T,
                 typename MontyAliasHelper<T, detail::MontyFullRange>::type>;
 
 template <typename T>
-using MontgomeryHalf = MontgomeryForm<T,
-                typename MontyAliasHelper<T, detail::MontyHalfRange>::type>;
-
-template <typename T>
 using MontgomeryQuarter = MontgomeryForm<T,
                 typename MontyAliasHelper<T, detail::MontyQuarterRange>::type>;
-
-template <typename T>
-using MontgomerySixth = MontgomeryForm<T,
-                typename MontyAliasHelper<T, detail::MontySixthRange>::type>;
 
 // The MontgomeryStandardMathWrapper alias provides the MontgomeryForm interface
 // but uses no montgomery arithmetic.  All arithmetic is done with standard
 // modular arithmetic instead.  This can be useful to compare performance of
 // standard modular arithmetic with montgomery arithmetic - some systems with
-// extremely fast divide operations may perform better in some situations with
-// standard modular arithmetic than with montgomery arithmetic.  This wrapper
-// lets you simply switch your type instead of rewriting code, when you want to
-// compare performance.
-// Ordinarily, this is probably not an alias you should expect to use.
+// extremely fast divide operations could in theory perform better in some
+// situations with standard modular arithmetic than with montgomery arithmetic.
+// This wrapper lets you simply switch your type instead of rewriting code, when
+// you want to compare performance.
+// Ordinarily, montgomery arithmetic tends to be considerably faster than
+// standard modular arithmetic whenever a large amount of modular multiplication
+// is needed, and so this is probably unlikely to be an alias you would expect
+// to use.  However, CPU architectures vary and evolve, and what is true today
+// may not be true tomorrow - the only way to truly know what is fastest on a
+// given system is to measure and compare performance.
 template <typename T>
 using MontgomeryStandardMathWrapper =
                 MontgomeryForm<T, detail::MontyWrappedStandardMath<T>>;

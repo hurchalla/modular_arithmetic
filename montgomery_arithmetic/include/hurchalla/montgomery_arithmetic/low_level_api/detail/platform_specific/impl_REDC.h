@@ -204,9 +204,6 @@ struct DefaultRedc
     HPBC_POSTCONDITION2(final_result < n);
     return final_result;
   }
-  // Since HalfrangeTag inherits from FullrangeTag, it will argument match to
-  // the FullrangeTag function above.  I don't see any way to improve upon
-  // the FullrangeTag function with a dedicated version for HalfrangeTag.
 
   static HURCHALLA_FORCE_INLINE
   T REDC(T u_hi, T u_lo, T n, T inv_n, QuarterrangeTag)
@@ -229,8 +226,6 @@ struct DefaultRedc
     // further reduced.
     return result;
   }
-  // Since SixthrangeTag inherits from QuarterrangeTag, it will argument match
-  // to the QuarterrangeTag function above.
 };
 
 
@@ -306,9 +301,6 @@ struct Redc<std::uint64_t>
     return result;
   }
 
-  // We don't need a dedicated REDC function for HalfrangeTag since
-  // FullrangeTag is already optimal for it, and HalfrangeTag will match to it.
-
   // This REDC should have: cycles latency 8, fused uops 5.
   static HURCHALLA_FORCE_INLINE
   T REDC(T u_hi, T u_lo, T n, T inv_n, QuarterrangeTag, PrivateAnyTag)
@@ -319,9 +311,6 @@ struct Redc<std::uint64_t>
     HPBC_POSTCONDITION2(0 < result && result < 2*n);
     return result;
   }
-
-  // We don't need a dedicated REDC function for SixthrangeTag since
-  // QuarterrangeTag is already optimal for it, and SixthrangeTag will match it.
 };
 #endif   // (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) ||
          //  defined(HURCHALLA_ALLOW_INLINE_ASM_REDC)) &&
@@ -336,11 +325,9 @@ template <typename T, class MTAG, class PTAG>
 HURCHALLA_FORCE_INLINE T impl_REDC(T u_hi, T u_lo, T n, T inv_n, MTAG, PTAG)
 {
     T result = detail_redc::Redc<T>::REDC(u_hi, u_lo, n, inv_n, MTAG(), PTAG());
-    HPBC_POSTCONDITION2(
-        (std::is_same<MTAG, FullrangeTag>::value ||
-         std::is_same<MTAG, HalfrangeTag>::value) ?
-        result < n :
-        0 < result && result < 2*n);
+    HPBC_POSTCONDITION2((std::is_same<MTAG, FullrangeTag>::value) ?
+                        result < n :
+                        0 < result && result < 2*n);
     return result;
 }
 
@@ -350,12 +337,10 @@ HURCHALLA_FORCE_INLINE bool isZeroRedcResult(T x, T, FullrangeTag)
     // The montgomery zero ≡ (0*R) ≡ 0 (mod n).  The equivalence class for zero
     // therefore is composed of values that satisfy  0 + m*n, where m is any
     // integer.  Since REDC() guarantees its return result satisfies result < n
-    // for FullrangeTag and HalfrangeTag, its only result that can belong to the
-    // zero equivalence class is result == 0.
+    // for FullrangeTag, its only result that can belong to the zero equivalence
+    // class is result == 0.
     return x == 0;
 }
-// We don't need a dedicated isZeroRedcResult function for HalfrangeTag since
-// FullrangeTag implementation is correct for it, and HalfrangeTag matches it.
 
 template <typename T>
 HURCHALLA_FORCE_INLINE bool isZeroRedcResult(T x, T n, QuarterrangeTag)
@@ -363,13 +348,10 @@ HURCHALLA_FORCE_INLINE bool isZeroRedcResult(T x, T n, QuarterrangeTag)
     // The montgomery zero ≡ (0*R) ≡ 0 (mod n).  The equivalence class for zero
     // therefore is composed of values that satisfy  0 + m*n, where m is any
     // integer.  Since REDC() guarantees its return result satisfies
-    // 0 < result < 2*n for QuarterrangeTag and SixthrangeTag, its only result
-    // that can belong to the zero equivalence class is result == n.
+    // 0 < result < 2*n for QuarterrangeTag, its only result that can belong to
+    // the zero equivalence class is result == n.
     return x == n;
 }
-// We don't need a dedicated isZeroRedcResult function for SixthrangeTag since
-// QuarterrangeTag implementation is correct for it, and SixthrangeTag matches.
-
 
 }} // end namespace
 
