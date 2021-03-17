@@ -12,6 +12,7 @@
 // NDEBUG here too.
 #undef HURCHALLA_ALLOW_INLINE_ASM_ALL
 #define HURCHALLA_ALLOW_INLINE_ASM_ALL 1
+
 #undef NDEBUG
 
 
@@ -27,6 +28,7 @@
 #include "gtest/gtest.h"
 #include <cstdint>
 #include <type_traits>
+#include <array>
 
 
 template <typename M>
@@ -228,6 +230,23 @@ void test_mf_general_checks(M& mf, typename M::T_type a, typename M::T_type b,
                                               hc::modular_pow<T>(b,17,modulus));
     EXPECT_TRUE(mf.convertOut(mf.pow(y,127)) ==
                                              hc::modular_pow<T>(b,127,modulus));
+
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+// old versions of gcc and clang give unnecessary warnings about single braced
+// initialization lists with std::array (newer versions fixed this).
+#  pragma GCC diagnostic ignored "-Wmissing-braces"
+#endif
+    std::array<V,3> mv_base = { x, y, z };
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
+    // Do just a simple test of pow()'s array form template function -
+    // it's tested more thoroughly in test_montgomery_pow.cpp.
+    std::array<V,3> mv_res = mf.pow(mv_base, 19);
+    EXPECT_TRUE(mf.convertOut(mv_res[0]) == hc::modular_pow<T>(a, 19, modulus));
+    EXPECT_TRUE(mf.convertOut(mv_res[1]) == hc::modular_pow<T>(b, 19, modulus));
+    EXPECT_TRUE(mf.convertOut(mv_res[2]) == hc::modular_pow<T>(c, 19, modulus));
 }
 
 
@@ -258,8 +277,8 @@ void test_MontgomeryForm()
     using V = typename M::MontgomeryValue;
     using C = typename M::CanonicalValue;
 
-    // Try a basic test case first that is valid for all possible Monty types,
-    // even M == MontySqrtRange<std::uint8_t>.
+    // Try a basic test case first that is valid for all possible Monty types
+    // (including even type M == MontySqrtRange<std::uint8_t>).
     {
         T modulus = 13;
         M mf(modulus);

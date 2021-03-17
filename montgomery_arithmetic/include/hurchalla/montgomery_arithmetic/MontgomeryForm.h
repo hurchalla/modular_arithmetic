@@ -247,6 +247,11 @@ public:
     // and so NUM_BASES == 3 is likely to be fairly close to optimal, whereas
     // NUM_BASES == 10 would likely be suboptimal; you need to benchmark to find
     // an optimal value though, and that value may differ from expectations.
+    // Also note that as NUM_BASES increases, this function requires more and
+    // more space in the instruction cache, and this can negatively effect
+    // performance for the rest of your program.  Therefore, when measured
+    // performance with two different values of NUM_BASES is similar, you should
+    // almost always prefer the smaller NUM_BASES value.
     template <std::size_t NUM_BASES>
     std::array<MontgomeryValue, NUM_BASES>
     pow(std::array<MontgomeryValue, NUM_BASES>& bases, T exponent) const

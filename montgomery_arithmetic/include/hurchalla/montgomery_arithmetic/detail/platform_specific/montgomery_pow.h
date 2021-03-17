@@ -16,7 +16,10 @@
 namespace hurchalla { namespace detail {
 
 
-// This class is intended solely for internal use by this file
+// The montgomery_pow() function at bottom of this file implements the class
+// MontgomeryForm's member function pow().
+
+// This MontPowImpl struct is intended solely for internal use by this file.
 // MF should be a MontgomeryForm type
 template<class MF>
 struct MontPowImpl {
@@ -24,7 +27,7 @@ struct MontPowImpl {
   using V = typename MF::MontgomeryValue;
   static_assert(ut_numeric_limits<T>::is_integer, "");
 
-  static HURCHALLA_FORCE_INLINE V pow(const MF& mf, V base, T exponent)
+  static HURCHALLA_FORCE_INLINE V scalarpow(const MF& mf, V base, T exponent)
   {
     HPBC_PRECONDITION(exponent >= 0);
     // This is an optimized version of Algorithm 14.76, from
@@ -65,15 +68,54 @@ struct MontPowImpl {
   }
 
   // --------
-  // These array versions have a performance advantage due to instruction level
-  // parallelism, compared to the non-array montgomery_pow function.
-  // They use the same algorithm as the non-array montgomery_pow().
+  // The array versions below have a performance advantage due to instruction
+  // level parallelism, compared to the non-array montgomery_pow function.
+  // They use the same algorithm as the non-array montgomery_pow().  They
+  // require an array of bases, of which each element is modularly exponentiated
+  // to the same power and returned as an array.  At least one application is
+  // miller-rabin primality testing, since it needs to raise multiple bases to
+  // the same power.
   // These array version functions should all be equivalent to one another,
   // aside from their differences in performance.
   // --------
+
+  // This first arraypow function version is the most obvious implementation and
+  // results in the smallest code size.  It works well when you wish to limit
+  // the code size and/or the i-cache usage, but it also is competitive at
+  // providing the best performance when NUM_BASES gets huge (roughly values of
+  // NUM_BASES > 50, though note that such situations are probably unusual in
+  // practice, given that even having NUM_BASES > 1 could be considered a
+  // special case for pow).
   template <std::size_t NUM_BASES>
   static HURCHALLA_FORCE_INLINE std::array<V, NUM_BASES>
   arraypow_cond_branch(const MF& mf, std::array<V, NUM_BASES> bases, T exponent)
+  {
+    HPBC_PRECONDITION(exponent >= 0);
+    std::array<V, NUM_BASES> result;
+    if (exponent & static_cast<T>(1)) {
+        for (std::size_t i=0; i<NUM_BASES; ++i)
+            result[i] = bases[i];
+    } else {
+        V unity = mf.getUnityValue();
+        for (std::size_t i=0; i<NUM_BASES; ++i)
+            result[i] = unity;
+    }
+    while (exponent > static_cast<T>(1)) {
+        exponent = static_cast<T>(exponent >> static_cast<T>(1));
+        for (std::size_t i=0; i<NUM_BASES; ++i)
+            bases[i] = mf.template multiply<LowuopsTag>(bases[i], bases[i]);
+        if (exponent & static_cast<T>(1)) {
+            for (std::size_t i=0; i<NUM_BASES; ++i)
+                result[i]= mf.template multiply<LowuopsTag>(result[i],bases[i]);
+        }
+    }
+    return result;
+  }
+
+  template <std::size_t NUM_BASES>
+  static HURCHALLA_FORCE_INLINE std::array<V, NUM_BASES>
+  arraypow_cond_branch_unrolled(const MF& mf, std::array<V, NUM_BASES> bases,
+                                                                     T exponent)
   {
     HPBC_PRECONDITION(exponent >= 0);
     std::array<V, NUM_BASES> result;
@@ -152,13 +194,15 @@ struct MontPowImpl {
         });
     }
     while (exponent > static_cast<T>(1)) {
-        exponent = static_cast<T>(exponent >> static_cast<T>(1));
-        T lowbit = (exponent & static_cast<T>(1));
         using U = decltype(result[0].get());
         static_assert(ut_numeric_limits<U>::is_integer, "");
         static_assert(!(ut_numeric_limits<U>::is_signed), "");
-        U mask = static_cast<U>(0) - static_cast<U>(lowbit);
-        U maskflip = static_cast<U>(lowbit) - static_cast<U>(1);
+        static_assert(ut_numeric_limits<U>::digits >=
+                      ut_numeric_limits<T>::digits, "");
+        exponent = static_cast<T>(exponent >> 1u);
+        U lowbit = static_cast<U>(static_cast<U>(exponent) & static_cast<U>(1));
+        U mask = static_cast<U>(static_cast<U>(0) - lowbit);
+        U maskflip = static_cast<U>(lowbit - static_cast<U>(1));
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
             bases[i] = mf.template multiply<LowuopsTag>(bases[i], bases[i]);
 // TODO: use LowuopsTag?
@@ -168,90 +212,65 @@ struct MontPowImpl {
     }
     return result;
   }
-
-  // This version of the function version is intended for very large NUM_BASES.
-  // For example, on haswell NUM_BASES of 96 performs quite efficiently,
-  // especially with compiler flags -march=haswell and -mtune=haswell.
-  // Note that being able to find a huge number of bases that you want to use
-  // for modular exponentiation all with the same power and modulus, is likely a
-  // special case.  Even just having more than one single base, so that you can
-  // use an arraypow function rather than pow, may be unusual.
-  template <std::size_t NUM_BASES>
-  static HURCHALLA_FORCE_INLINE std::array<V, NUM_BASES>
-  arraypow_huge(const MF& mf, std::array<V, NUM_BASES> bases, T exponent)
-  {
-    HPBC_PRECONDITION(exponent >= 0);
-    std::array<V, NUM_BASES> result;
-    if (exponent & static_cast<T>(1)) {
-        for (std::size_t i=0; i<NUM_BASES; ++i)
-            result[i] = bases[i];
-    } else {
-        V unity = mf.getUnityValue();
-        for (std::size_t i=0; i<NUM_BASES; ++i)
-            result[i] = unity;
-    }
-    while (exponent > static_cast<T>(1)) {
-        exponent = static_cast<T>(exponent >> static_cast<T>(1));
-        for (std::size_t i=0; i<NUM_BASES; ++i)
-            bases[i] = mf.template multiply<LowuopsTag>(bases[i], bases[i]);
-        if (exponent & static_cast<T>(1)) {
-            for (std::size_t i=0; i<NUM_BASES; ++i)
-                result[i]= mf.template multiply<LowuopsTag>(result[i],bases[i]);
-        }
-    }
-    return result;
-  }
 };
 
 
-// delegation class
 // MF should be a MontgomeryForm type
 template<class MF>
-struct MontPow {
+struct MontArrayPow {
     using T = typename MF::T_type;
     using V = typename MF::MontgomeryValue;
     static_assert(ut_numeric_limits<T>::is_integer, "");
+    // Below is a catch-all template version of pow(), followed by overloads of
+    // pow() for different array sizes - by C++ rules, overloads take precedence
+    // over templates whenever argument matching succeeds.
 
-    // The catch-all template version.
-    // Having the std::enable_if cutoff at NUM_BASES < 32 is a bit arbitrary,
+    // Template version (with two std::enable_if forms):
+    // Having a std::enable_if cutoff at NUM_BASES < 20 is a bit arbitrary,
     // since the only way to know the best cutoff for any given machine is to
     // make performance measurements.  However, it may be roughly okay in
     // practice since most of the time NUM_BASES is likely to be < 10, and
     // otherwise (probably much less common), it's likely > 50, in the "huge"
-    // category where arraypow_huge() will likely perform best.  Even if
-    // arraypow_huge() doesn't perform best in microbenchmarks, its much smaller
-    // function size compared to arraypow_cond_branch (and consequent reduced
-    // i-cache use) might provide more of a benefit to the whole program's
-    // performance as NUM_BASES starts to get "huge".
+    // category where arraypow_cond_branch() will likely perform best.  Even if
+    // arraypow_cond_branch() doesn't perform best in microbenchmarks, its much
+    // smaller function size compared to arraypow_cond_branch_unrolled (and
+    // consequent reduced i-cache use) might provide more of a benefit to the
+    // whole program's performance as NUM_BASES starts to get "huge".
+    // An additional reason that we would prefer to use a conservatively low
+    // cutoff is that clang in debug mode uses up a huge amount of memory
+    // (enough to crash a system while testing sometimes) during compilation of
+    // the Unroll class when the NUM_BASES parameter is large.  Since the plain
+    // arraypow_cond_branch() doesn't use Unroll, we avoid the problem by using
+    // that function when NUM_BASES starts to get large.
     template <std::size_t NUM_BASES>
     static HURCHALLA_FORCE_INLINE
-    typename std::enable_if<(NUM_BASES < 32), std::array<V, NUM_BASES>>::type
+    typename std::enable_if<(NUM_BASES < 20), std::array<V, NUM_BASES>>::type
     pow(const MF& mf, std::array<V, NUM_BASES>& bases, T exponent)
     {
         static_assert(NUM_BASES > 0, "");
         // conditional branching seems to typically work best for large-ish
-        // array sizes.
-        return MontPowImpl<MF>::arraypow_cond_branch(mf, bases, exponent);
+        // array sizes.  And so long as the array isn't huge, unrolling helps.
+        return MontPowImpl<MF>::arraypow_cond_branch_unrolled(
+                                                           mf, bases, exponent);
     }
-
     template <std::size_t NUM_BASES>
     static HURCHALLA_FORCE_INLINE
-    typename std::enable_if<(NUM_BASES >= 32), std::array<V, NUM_BASES>>::type
+    typename std::enable_if<(NUM_BASES >= 20), std::array<V, NUM_BASES>>::type
     pow(const MF& mf, std::array<V, NUM_BASES>& bases, T exponent)
     {
         static_assert(NUM_BASES > 0, "");
-        // When NUM_BASES gets huge we don't want to force-unroll loops, but
-        // other than that we do the same as arraypow_cond_branch
-        return MontPowImpl<MF>::arraypow_huge(mf, bases, exponent);
+        // When NUM_BASES gets huge we no longer want to force-unroll loops, but
+        // other than that we'll do the same as arraypow_cond_branch_unrolled().
+        return MontPowImpl<MF>::arraypow_cond_branch(mf, bases, exponent);
     }
 
-    // delegate a size 1 array call to the non-array montgomery_pow
+    // delegate a size 1 array call to the scalar (non-array) montgomery_pow
     static HURCHALLA_FORCE_INLINE
     std::array<V,1> pow(const MF& mf, std::array<V,1>& bases, T exponent)
     {
         HPBC_PRECONDITION(exponent >= 0);
         std::array<V,1> result;
-        result[0] = MontPowImpl<MF>::pow(mf, bases[0], exponent);
+        result[0] = MontPowImpl<MF>::scalarpow(mf, bases[0], exponent);
         return result;
     }
 
@@ -281,31 +300,32 @@ struct MontPow {
     }
 #endif
 
-#if defined(HURCHALLA_TARGET_ISA_X86_64)
-// I've only measured x86-64 so far - I measured this section to be a perf
+// I've only measured x86-64 so far - I measured the next section to be a perf
 // improvement over the catch-all template version.  In general I'd expect the
 // template version to work best for an array sized 3 or larger though, so I've
-// only enabled this section for the (measured) x86-64 ISA.
-#  if defined(__GNUC__) && !defined(__clang__)
-    // This section will be enabled for both gcc and icc, but not clang.
-    // x86-64 gcc seems to do better with masking for array size of 3.  But in
-    // general we expect conditional moves (cmovs) to perform better than masks.
-    // x86-64 icc does much better with the masking version (at size 3) than
-    // with the cmov version.
-    static HURCHALLA_FORCE_INLINE
-    std::array<V,3> pow(const MF& mf, std::array<V,3>& bases, T exponent)
-    {
-        return MontPowImpl<MF>::arraypow_masked(mf, bases, exponent);
-    }
-#  else
+// only enabled the section for the (measured) x86-64 ISA.
+#if defined(HURCHALLA_TARGET_ISA_X86_64)
+#  if !defined(__GNUC__) || defined(__clang__)
+    // In general we expect conditional moves (cmovs) to perform better than
+    // masks, so we default to using arraypow_cmov rather than arraypow_masked.
+    // Gcc and icc are exceptions; x86-64 icc does much better for array size
+    // 3 with the masking version than with the cmov version, and x86-64 gcc
+    // does slightly better with masking than cmov for size 3.
     static HURCHALLA_FORCE_INLINE
     std::array<V,3> pow(const MF& mf, std::array<V,3>& bases, T exponent)
     {
         return MontPowImpl<MF>::arraypow_cmov(mf, bases, exponent);
     }
+#  else
+    static HURCHALLA_FORCE_INLINE
+    std::array<V,3> pow(const MF& mf, std::array<V,3>& bases, T exponent)
+    {
+        return MontPowImpl<MF>::arraypow_masked(mf, bases, exponent);
+    }
 #  endif
 #endif
 };
+
 
 
 template <class MF>
@@ -313,7 +333,7 @@ HURCHALLA_FORCE_INLINE typename MF::MontgomeryValue
 montgomery_pow(const MF& mf, typename MF::MontgomeryValue base,
               typename MF::T_type exponent)
 {
-    return MontPowImpl<MF>::pow(mf, base, exponent);
+    return MontPowImpl<MF>::scalarpow(mf, base, exponent);
 }
 
 template <class MF, std::size_t NUM_BASES>
@@ -322,7 +342,7 @@ montgomery_pow(const MF& mf,
                std::array<typename MF::MontgomeryValue, NUM_BASES>& bases,
                typename MF::T_type exponent)
 {
-    return MontPow<MF>::pow(mf, bases, exponent);
+    return MontArrayPow<MF>::pow(mf, bases, exponent);
 }
 
 
