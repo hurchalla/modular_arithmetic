@@ -30,8 +30,8 @@ namespace hurchalla {
 // more specifically, if we let R = 2^(ut_numeric_limits<T>::digits), Quarter
 // allows any modulus < R/4.  For example, MontgomeryQuarter<uint64_t> allows
 // any modulus less than (2^64)/4.  It is undefined behavior to use a modulus
-// that is not within the allowed range for your alias type.  As with all
-// montgomery arithmetic, the modulus you use must also be odd.
+// that is not within the allowed range for your alias type.  The modulus you
+// use must also be odd, which is required for montgomery arithmetic.
 // You can expect that an alias type with a smaller modulus limit will perform
 // better (very often) or at worst the same as an alias with a larger limit, if
 // both are given the same modulus.
@@ -40,6 +40,8 @@ namespace hurchalla {
 // internally performs all calculations with standard modular arithmetic rather
 // than any montgomery arithmetic.  This can be useful as an aid for comparing
 // performance between montgomery and non-montgomery modular arithmetic.
+// Since MontgomeryStandardMathWrapper does not use montgomery arithmetic, its
+// modulus is allowed to be either even or odd.
 //
 // PERFORMANCE DETAILS:
 // Note that these aliases do not all improve upon the performance of

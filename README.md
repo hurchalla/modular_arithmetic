@@ -45,10 +45,11 @@ experimental:
 HURCHALLA_ALLOW_INLINE_ASM_MONTADD_SQRT_RANGE
 HURCHALLA_ALLOW_INLINE_ASM_MONTSUB_SQRT_RANGE
 
+Document that the INLINE_ASM macros above may or may not improve performance.  You need to benchmark with different ASM macros defined/not defined, and generally you would want to start with simply comparing performance with HURCHALLA_ALLOW_INLINE_ASM_ALL defined or not defined.  On x86_64 intel, in brief testing defining HURCHALLA_ALLOW_INLINE_ASM_ALL, I found gcc got a 0-8% improvement, and clang suffered a 0-20% loss of performance.
+
 For MSVC optimization: /Gy (function-level linking) and /Gw (global data optimization) compiler switches
 https://docs.microsoft.com/en-us/archive/msdn-magazine/2015/february/compilers-what-every-programmer-should-know-about-compiler-optimizations
 
 in some README (maybe this one) talk about Montgomery special multiply, takes T and V, returns T.  but probably don't implement it in MontgomeryForm, since it makes the MF API bigger (and thus less simple) without adding much value.  It can be done via low level API instead.
 Also talk about montgomery multiply that takes a W and T (where the type W value is a montmul of a T with R_cubed_mod_n, or a montmul of a V with R_squared_mod_n), and returns V.  Again this is interesting but probably not all that useful in practice, and this first way to get a W would require an extra computation of R_cubed_mod_n in the MF constructor.  Regardless this kind of special montgomery multiply adds complexity to the MF API without adding much value I can see.  It can be done instead via the low level API.
 
-Get rid of MontySixthRange and HalfRange and just use two versions of famul() within each of FullRange and QuarterRange, possibly by making famul templated or tagged to correspond to full/half/quarter/sixth.

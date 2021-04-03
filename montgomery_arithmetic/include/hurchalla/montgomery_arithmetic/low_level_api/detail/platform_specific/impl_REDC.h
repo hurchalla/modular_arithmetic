@@ -259,13 +259,15 @@ struct Redc<std::uint64_t>
   static HURCHALLA_FORCE_INLINE
   T REDC(T u_hi, T u_lo, T n, T inv_n, FullrangeTag, LowlatencyTag)
   {
+    using P = typename safely_promote_unsigned<T>::type;
     // This implementation is based closely on DefaultRedc<uint64_t>::REDC  for
     // FullrangeTag, and the REDC_non_finalized that it in turn calls.  Thus the
     // algorithm should be correct for the same reasons given there.
     // We require u = (u_hi*R + u_lo) < n*R.  As shown in precondition #1 in
     // REDC_non_finalized(), u_hi < n guarantees this.
     HPBC_PRECONDITION2(u_hi < n);
-    HPBC_PRECONDITION2(static_cast<T>(n * inv_n) == 1);
+    HPBC_PRECONDITION2(
+                static_cast<T>(static_cast<P>(n) * static_cast<P>(inv_n)) == 1);
     HPBC_PRECONDITION2(n % 2 == 1);
     HPBC_PRECONDITION2(n > 1);
 

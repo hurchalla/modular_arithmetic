@@ -23,13 +23,13 @@ namespace hurchalla {
 // lower) than modular subtraction.
 //    This comparison is written based on the performance of x86 architecture.
 // If possible, these relative performance characteristic will be maintained
-// across architectures and into the future, but these characteristics can not
-// be guaranteed.
+// across architectures and into the future, but these characteristics are not
+// guaranteed.
 //
 // If you will be adding or subtracting the same value over every iteration of
 // a loop, then if you wish, you can convert a loop's add into a subtract, or a
 // subtract into an add.  You can do this by negating the relevant operand prior
-// to loop start.  Purely as an example, if you have the loop:
+// to loop start.  For example, if you have the loop:
 //      for (int i=0; i<total; ++i)
 //          x = modular_addition_prereduced_inputs(x, b, modulus);
 // you can change it to:

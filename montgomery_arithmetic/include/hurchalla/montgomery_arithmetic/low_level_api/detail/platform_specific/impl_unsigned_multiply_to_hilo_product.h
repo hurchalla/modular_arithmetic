@@ -5,6 +5,7 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_IMPL_UNSIGNED_MULT_TO_HILO_H_INCLUDED
 
 
+#include "hurchalla/util/traits/safely_promote_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
@@ -163,7 +164,13 @@ HURCHALLA_FORCE_INLINE std::uint64_t impl_unsigned_multiply_to_hilo_product(
 {
     using std::uint64_t;
     uint64_t highProduct = __umulh(u, v);
-    *pLowProduct = u*v;
+    // avoid undefined behavior that could result if uint64_t would be promoted
+    // to (signed) 'int'.  Promotion of uint64_t is HIGHLY(!) unlikely, but
+    // since the C++ standard doesn't disallow 'int' type larger than 64 bit, we
+    // should write code that's safe after the C++ "usual arithmetic conversion"
+    // rules apply.
+    using P = typename safely_promote_unsigned<std::uint64_t>::type;
+    *pLowProduct = static_cast<std::uint64_t>(static_cast<P>(u)*v);
     if (HPBC_POSTCONDITION3_MACRO_IS_ACTIVE) {
         uint64_t tmpHi, tmpLo;
         tmpHi = slow_unsigned_multiply_to_hilo_product(&tmpLo, u, v);

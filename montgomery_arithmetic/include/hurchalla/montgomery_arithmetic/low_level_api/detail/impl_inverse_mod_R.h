@@ -83,6 +83,8 @@ HURCHALLA_FORCE_INLINE
 typename std::enable_if<!(bits <= HURCHALLA_TARGET_BIT_WIDTH), T>::type
 impl_inverse_mod_R(T a)
 {
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
     static_assert((bits/2)*2 == bits, "");
     using T2 = typename std::conditional<sized_uint<bits/2>::is_valid,
                                     typename sized_uint<bits/2>::type, T>::type;
@@ -91,9 +93,10 @@ impl_inverse_mod_R(T a)
     // set x so that the lower ('bits'/2) half of the bits are good.
     T x = static_cast<T>(impl_inverse_mod_R<T2, bits/2>(static_cast<T2>(a)));
 
+    using P = typename safely_promote_unsigned<T>::type;
     // use one step of the standard newtons method algorithm for the inverse to
     // double the number of good bits.
-    return x*(static_cast<T>(2) - a*x);
+    return static_cast<T>(x * (2 - static_cast<P>(a)*x));
 }
 
 

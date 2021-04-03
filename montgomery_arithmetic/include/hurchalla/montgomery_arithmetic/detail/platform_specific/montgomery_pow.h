@@ -165,8 +165,8 @@ struct MontPowImpl {
         std::array<V, NUM_BASES> tmp;
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
             bases[i] = mf.template multiply<LowuopsTag>(bases[i], bases[i]);
-// TODO: use LowuopsTag?
-            tmp[i] = mf.template multiply<LowlatencyTag>(result[i], bases[i]);
+// TODO: Is LowlatencyTag for the line below ever faster?
+            tmp[i] = mf.template multiply<LowuopsTag>(result[i], bases[i]);
         });
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
             //the ternary operator usually/hopefully results in our desired cmov
@@ -205,8 +205,8 @@ struct MontPowImpl {
         U maskflip = static_cast<U>(lowbit - static_cast<U>(1));
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
             bases[i] = mf.template multiply<LowuopsTag>(bases[i], bases[i]);
-// TODO: use LowuopsTag?
-            V tmp = mf.template multiply<LowlatencyTag>(result[i], bases[i]);
+// TODO: Is LowlatencyTag for the line below ever faster?
+            V tmp = mf.template multiply<LowuopsTag>(result[i], bases[i]);
             result[i]= V((mask & (tmp.get())) | (maskflip & (result[i].get())));
         });
     }
@@ -274,8 +274,8 @@ struct MontArrayPow {
         return result;
     }
 
-#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER) && \
-    defined(HURCHALLA_TARGET_ISA_X86_64)
+#if defined(__GNUC__) && !defined(__clang__) && \
+        defined(HURCHALLA_TARGET_ISA_X86_64)
 // x86-64 gcc seems to do better with masking for array size of 2.  But in
 // general we expect conditional moves (cmovs) to perform better than masks.
 // x86-64 icc has no difference between mask and cmov, at -O2 and -O3.  However

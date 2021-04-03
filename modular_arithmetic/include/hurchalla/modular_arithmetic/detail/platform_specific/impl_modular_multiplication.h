@@ -6,6 +6,7 @@
 
 
 #include "hurchalla/modular_arithmetic/modular_addition.h"
+#include "hurchalla/util/traits/safely_promote_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
@@ -156,9 +157,10 @@ std::uint8_t impl_modular_multiplication_prereduced_inputs(
                            std::uint8_t a, std::uint8_t b, std::uint8_t modulus)
 {
     // Calculate (a*b)%modulus, guaranteeing no overflow on a*b.
-    // Note: the C++ standard mandates 'unsigned int' is at least 16 bits wide
-    using std::uint8_t;
-    return (uint8_t)((unsigned int)a*(unsigned int)b % (unsigned int)modulus);
+    // We use safely_promote_unsigned<T> to avoid undefined behavior.  See
+    // https://jeffhurchalla.com/2019/01/16/c-c-surprises-and-undefined-behavior-due-to-unsigned-integer-promotion/
+    using P = safely_promote_unsigned<std::uint16_t>::type;
+    return (std::uint8_t)((P)a*(P)b % (P)modulus);
 }
 #endif
 
@@ -169,8 +171,8 @@ HURCHALLA_FORCE_INLINE
 std::uint16_t impl_modular_multiplication_prereduced_inputs(
                         std::uint16_t a, std::uint16_t b, std::uint16_t modulus)
 {
-    using std::uint16_t; using std::uint32_t;
-    return (uint16_t)((uint32_t)a*(uint32_t)b % (uint32_t)modulus);
+    using P = safely_promote_unsigned<std::uint32_t>::type;
+    return (std::uint16_t)((P)a*(P)b % (P)modulus);
 }
 #endif
 
@@ -190,15 +192,14 @@ HURCHALLA_FORCE_INLINE
 std::uint32_t impl_modular_multiplication_prereduced_inputs(
                         std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
 {
-    using std::uint32_t; using std::uint64_t;
+    using P = safely_promote_unsigned<std::uint64_t>::type;
+    std::uint32_t result;
     // Note: at the time of this writing (April 2020), the MS documentation of
     // udiv64 is likely incomplete.  udiv64 is almost certainly a direct
     // translation of the x86/x64 assembly "div" instruction (which we want).
     // See  https://developercommunity.visualstudio.com/content/problem/896815/-udiv128-causes-integer-overflow-and-doesnt-have-a.html
-    uint32_t result;
     _udiv64(__emulu(a, b), modulus, &result);
-    HPBC_POSTCONDITION2((uint64_t)result == 
-                        (uint64_t)a*(uint64_t)b % (uint64_t)modulus);
+    HPBC_POSTCONDITION2((P)result == (P)a*(P)b % (P)modulus);
     return result;
 }
 #elif !defined(HURCHALLA_DISALLOW_INLINE_ASM_MODMUL) && defined(_MSC_VER) && \
@@ -213,16 +214,15 @@ HURCHALLA_FORCE_INLINE
 std::uint32_t __cdecl impl_modular_multiplication_prereduced_inputs(
                         std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
 {
-    using std::uint32_t; using std::uint64_t;
-    uint32_t result;
+    using P = safely_promote_unsigned<std::uint64_t>::type;
+    std::uint32_t result;
     __asm {
         mov eax, a
         mul b           ; EDX:EAX = EAX*b; high-order bits of the product in EDX
         div modulus     ; (quotient EAX, remainder EDX) = EDX:EAX/modulus
         mov result, edx ; save the remainder
     }
-    HPBC_POSTCONDITION2((uint64_t)result ==
-                        (uint64_t)a*(uint64_t)b % (uint64_t)modulus);
+    HPBC_POSTCONDITION2((P)result == (P)a*(P)b % (P)modulus);
     return result;
 }
 #elif !defined(HURCHALLA_DISALLOW_INLINE_ASM_MODMUL) && !defined(_MSC_VER) && \
@@ -232,22 +232,21 @@ HURCHALLA_FORCE_INLINE
 std::uint32_t impl_modular_multiplication_prereduced_inputs(
                         std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
 {
-    using std::uint32_t; using std::uint64_t;
+    using P = safely_promote_unsigned<std::uint64_t>::type;
     // gnu/AT&T style inline asm
     // [inout operands]:  EAX = tmp  (inout lets us safely overwrite EAX)
     // mull %[b]:         EDX:EAX = EAX*b; high-order bits of the product in EDX
     // divl %[m]:         (quotient EAX, remainder EDX) = EDX:EAX/modulus
     // [output operands]: result = EDX
     // [clobber list]:    both mull and divl clobber the FLAGS register ["cc"]
-    uint32_t result;
-    uint32_t tmp = a;  // in C++ we prefer not to overwrite an input (a)
+    std::uint32_t result;
+    std::uint32_t tmp = a;  // in C++ we prefer not to overwrite an input (a)
     __asm__ ("mull %[b] \n\t"
              "divl %[m] \n\t"
              : "=&d"(result), "+&a"(tmp)
              : [b]"rm"(b), [m]"rm"(modulus)
              : "cc");
-    HPBC_POSTCONDITION2((uint64_t)result ==
-                        (uint64_t)a*(uint64_t)b % (uint64_t)modulus);
+    HPBC_POSTCONDITION2((P)result == (P)a*(P)b % (P)modulus);
     return result;
 }
 #elif !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
@@ -256,8 +255,8 @@ HURCHALLA_FORCE_INLINE
 std::uint32_t impl_modular_multiplication_prereduced_inputs(
                         std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
 {
-    using std::uint32_t; using std::uint64_t;
-    return (uint32_t)((uint64_t)a*(uint64_t)b % (uint64_t)modulus);
+    using P = safely_promote_unsigned<std::uint64_t>::type;
+    return (std::uint32_t)((P)a*(P)b % (P)modulus);
 }
 #endif
 
@@ -272,13 +271,12 @@ HURCHALLA_FORCE_INLINE
 std::uint64_t impl_modular_multiplication_prereduced_inputs(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
 {
-    using std::uint64_t;
     // Note: at the time of this writing (April 2020), the MS documentation of
     // udiv128 is likely incomplete.  udiv128 is almost certainly a direct
     // translation of the x64 assembly "div" instruction (which we want!).
     // See  https://developercommunity.visualstudio.com/content/problem/896815/-udiv128-causes-integer-overflow-and-doesnt-have-a.html
-    uint64_t productHigh, result;
-    uint64_t productLow = _umul128(a, b, &productHigh);
+    std::uint64_t productHigh, result;
+    std::uint64_t productLow = _umul128(a, b, &productHigh);
     _udiv128(productHigh, productLow, modulus, &result);
     HPBC_POSTCONDITION3(result == slow_modular_multiplication(a, b, modulus));
     return result;
@@ -303,14 +301,13 @@ HURCHALLA_FORCE_INLINE
 std::uint64_t impl_modular_multiplication_prereduced_inputs(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
 {
-    using std::uint64_t;
     // [inout operands]:  RAX = tmp  (inout lets us safely overwrite RAX)
     // mulq %[b]:         RDX:RAX = RAX*b; high-order bits of the product in RDX
     // divq %[m]:         (quotient RAX, remainder RDX) = RDX:RAX/modulus
     // [output operands]: result = RDX
     // [clobber list]:    both mulq and divq clobber the FLAGS register ["cc"]
-    uint64_t result;
-    uint64_t tmp = a;  // in C++ we prefer not to overwrite an input (a)
+    std::uint64_t result;
+    std::uint64_t tmp = a;  // in C++ we prefer not to overwrite an input (a)
     __asm__ ("mulq %[b] \n\t"
              "divq %[m] \n\t"
              : "=&d"(result), "+&a"(tmp)
@@ -326,8 +323,8 @@ HURCHALLA_FORCE_INLINE
 std::uint64_t impl_modular_multiplication_prereduced_inputs(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
 {
-    using std::uint64_t; using std::uint128_t;
-    return (uint64_t)((uint128_t)a*(uint128_t)b % (uint128_t)modulus);
+    using P = safely_promote_unsigned<std::uint128_t>::type;
+    return (std::uint64_t)((P)a*(P)b % (P)modulus);
 }
 /*
 // For the next #elif, it's uncertain that division using __uint128_t on a 64bit
@@ -342,9 +339,8 @@ HURCHALLA_FORCE_INLINE
 std::uint64_t impl_modular_multiplication_prereduced_inputs(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
 {
-    using std::uint64_t;
     using U = __uint128_t;
-    return (uint64_t)((U)a*(U)b % (U)modulus);
+    return (std::uint64_t)((U)a*(U)b % (U)modulus);
 }
 */
 #endif
