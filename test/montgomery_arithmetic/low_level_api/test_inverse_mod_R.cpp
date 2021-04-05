@@ -18,6 +18,13 @@ void test_single_inverse(T a)
 
     T inv = hc::inverse_mod_R(a);
     EXPECT_TRUE(static_cast<T>(static_cast<P>(inv) * static_cast<P>(a)) == one);
+    // the #if is a slight hack, but inverse_mod_R is only constexpr for C++14
+    // and above (C++11's support for constexpr functions was too primitive)
+#if (__cplusplus >= 201402L) || \
+        (defined(_MSVC_LANG) && _MSVC_LANG >= 201402L && _MSC_VER >= 1910)
+    // test constexpr use of inverse_mod_R
+    static_assert(hc::inverse_mod_R(static_cast<T>(1)) == 1, "");
+#endif
 }
 
 

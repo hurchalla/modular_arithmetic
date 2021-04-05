@@ -47,12 +47,13 @@ namespace detail_invmR {
 // Newton's method becomes more efficient when larger types are required.
 template <typename T, int bits>
 HURCHALLA_FORCE_INLINE
+HURCHALLA_CPP14_CONSTEXPR
 typename std::enable_if<(bits <= HURCHALLA_TARGET_BIT_WIDTH), T>::type
 impl_inverse_mod_R(T a)
 {
     static_assert(bits == ut_numeric_limits<T>::digits, "");
     static_assert(std::is_unsigned<T>::value, "");  // T native unsigned integer
-    HPBC_PRECONDITION2(a % 2 == 1);
+    HPBC_CONSTEXPR_PRECONDITION(a % 2 == 1);
 
     // avoid undefined behavior that could result if T is an unsigned type that
     // would be promoted to (signed) 'int'.
@@ -60,12 +61,12 @@ impl_inverse_mod_R(T a)
     P b = static_cast<P>(a);
 
     P x = (3*b)^2;  // good to 5 bits, but we'll treat it as good to only 4
-    static const constexpr int goodbits = 4;  // must be a power of 2
+    constexpr int goodbits = 4;  // must be a power of 2
     P s = b*x;
     P y = 1-s;
 
     static_assert((bits/goodbits)*goodbits == bits, "");
-    static const constexpr int iterations = detail_invmR::log2<bits/goodbits>();
+    constexpr int iterations = detail_invmR::log2<bits/goodbits>();
     HURCHALLA_REQUEST_UNROLL_LOOP
     for (int i=0; i<iterations; ++i) {
         P t = y+1;
@@ -80,6 +81,7 @@ impl_inverse_mod_R(T a)
 // more efficient than Newton's method for native integer types).
 template <typename T, int bits>
 HURCHALLA_FORCE_INLINE
+HURCHALLA_CPP14_CONSTEXPR
 typename std::enable_if<!(bits <= HURCHALLA_TARGET_BIT_WIDTH), T>::type
 impl_inverse_mod_R(T a)
 {
@@ -88,7 +90,7 @@ impl_inverse_mod_R(T a)
     static_assert((bits/2)*2 == bits, "");
     using T2 = typename std::conditional<sized_uint<bits/2>::is_valid,
                                     typename sized_uint<bits/2>::type, T>::type;
-    HPBC_PRECONDITION2(a % 2 == 1);
+    HPBC_CONSTEXPR_PRECONDITION(a % 2 == 1);
 
     // set x so that the lower ('bits'/2) half of the bits are good.
     T x = static_cast<T>(impl_inverse_mod_R<T2, bits/2>(static_cast<T2>(a)));

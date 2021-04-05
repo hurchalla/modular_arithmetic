@@ -276,7 +276,7 @@ public:
         HPBC_INVARIANT2(0 < r_squared_mod_n_ && r_squared_mod_n_ < n_);
         // thus:  0 < r_squared_mod_n_ < sqrtR
         T result;
-        HURCHALLA_LIKELY_IF (a > 0) {
+        if HURCHALLA_LIKELY(a > 0) {
             // We have  0 < a < sqrtR  and  0 < r_squared_mod_n_ < sqrtR,  which
             // satisfies the preconditions for msr_montmul_non_minimized().
             result = msr_montmul_non_minimized(a, r_squared_mod_n_, n_,
@@ -339,7 +339,7 @@ public:
         HPBC_POSTCONDITION2(0 < prod && prod <= n_);
 
         T minimized_result;
-        HURCHALLA_LIKELY_IF (prod != n_)
+        if HURCHALLA_LIKELY(prod != n_)
             minimized_result = prod;
         else
             minimized_result = static_cast<T>(0);
