@@ -121,6 +121,10 @@ void run_pow_tests()
         test_pow(mf, base, exponent);
         base = 0;  exponent = 0;
         test_pow(mf, base, exponent);
+#if defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable : 4309)
+#endif
         base = 0;  exponent = static_cast<T>(1356);
         test_pow(mf, base, exponent);
         base = 1;  exponent = static_cast<T>(541);
@@ -129,6 +133,9 @@ void run_pow_tests()
         test_pow(mf, base, exponent);
         base = 71;  exponent = static_cast<T>(934);
         test_pow(mf, base, exponent);
+#if defined(_MSC_VER)
+#  pragma warning(pop)
+#endif
     }
     {
         T max = M::max_modulus();

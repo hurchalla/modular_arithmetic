@@ -8,7 +8,13 @@ REM cmake -S. -B.\%build_dir% -DTEST_HURCHALLA_LIBS=ON -G "Visual Studio 15"
 REM the above line appears to build x86-32.  To get x64:
 REM cmake -S. -B.\%build_dir% -DTEST_HURCHALLA_LIBS=ON -G "Visual Studio 15 2017 Win64"
 
-cmake -S. -B.\%build_dir% -DTEST_HURCHALLA_LIBS=ON
+REM for Visual Studio 2019 and above, set the architecture with -A, for example:
+REM -G "Visual Studio 16 2019" -A Win32
+REM -G "Visual Studio 16 2019" -A x64
+REM -G "Visual Studio 16 2019" -A ARM
+REM -G "Visual Studio 16 2019" -A ARM64
+
+cmake -S. -B.\%build_dir% -DTEST_HURCHALLA_LIBS=ON -G "Visual Studio 16 2019" -A x64
 if %errorlevel% neq 0 exit /b %errorlevel%
 cmake --build .\%build_dir% --config Release
 if %errorlevel% neq 0 exit /b %errorlevel%
