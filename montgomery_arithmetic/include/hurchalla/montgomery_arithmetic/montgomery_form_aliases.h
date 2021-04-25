@@ -17,24 +17,28 @@
 namespace hurchalla {
 
 
-// These are aliases for high performance MontgomeryForm types that are tailored
-// to the size of the modulus you plan to use.  But unless you wish to squeeze
-// out every possible performance advantage, you will likely find it is more
-// convenient to simply use MontgomeryForm<T>, instead of these aliases.
+// This file has an alias for a higher performance MontgomeryForm type called
+// MontgomeryQuarter, which is available for use with smaller modulus sizes.
+// But unless you wish to squeeze out every possible performance advantage, you
+// will likely find it is more convenient to simply use MontgomeryForm<T>.
+// This file also has a special purpose alias MontgomeryStandardMathWrapper
+// which is described further below.
 //
 // USAGE:
-// The suffix (Full, Quarter) in each alias indicates the size limit allowed for
-// the modulus that you can use to construct an object of each alias type.  Full
-// allows you to use the full range of type T for the modulus.  Quarter allows
-// you to use the smallest quarter of the range of all possible T values, or
-// more specifically, if we let R = 2^(ut_numeric_limits<T>::digits), Quarter
-// allows any modulus < R/4.  For example, MontgomeryQuarter<uint64_t> allows
-// any modulus less than (2^64)/4.  It is undefined behavior to use a modulus
-// that is not within the allowed range for your alias type.  The modulus you
-// use must also be odd, which is required for montgomery arithmetic.
-// You can expect that an alias type with a smaller modulus limit will perform
-// better (very often) or at worst the same as an alias with a larger limit, if
-// both are given the same modulus.
+// The suffix "Quarter" in the alias name MontgomeryQuarter indicates the size
+// limit for the modulus that you are allowed to use to construct a
+// MontgomeryQuarter object: you may use the smallest quarter of the range of
+// all possible values of type T for the modulus.  More specifically, if we
+// let R = (1 << ut_numeric_limits<T>::digits), MontgomeryQuarter<T> allows any
+// modulus < R/4.  For example, MontgomeryQuarter<uint64_t> allows any modulus
+// less than (1 << 64)/4.  It is undefined behavior to use a modulus that is not
+// within the allowed range.  The modulus you use must also be odd, which is
+// always required for montgomery arithmetic.
+// In contrast, the default class MontgomeryForm<T> has no restriction on the
+// its modulus size, though it too requires the modulus must be odd.
+// You can expect that MontgomeryQuarter<T> will perform better (very often) or
+// at worst the same as MontgomeryForm<T>, if both are given the same modulus.
+//
 // Note that this file also has an alias called MontgomeryStandardMathWrapper.
 // This alias maps to a class that uses the MontgomeryForm interface but that
 // internally performs all calculations with standard modular arithmetic rather
@@ -44,28 +48,24 @@ namespace hurchalla {
 // modulus is allowed to be either even or odd.
 //
 // PERFORMANCE DETAILS:
-// Note that these aliases do not all improve upon the performance of
-// MontgomeryForm<T> - the performance gain (or lack of gain) that you can
-// expect from these aliases depends upon the particular alias:
-// (1) The MontgomeryFull<T> alias maps to the same class as MontgomeryForm<T>.
-// It therefore offers no improvement on performance over MontgomeryForm<T>.
-// (2) The MontgomeryQuarter<T> alias can offer a significant performance
+// The MontgomeryQuarter<T> alias can offer a significant performance
 // improvement over MontgomeryForm<T>.  If you know either at compile-time or
 // via run-time checks that your modulus will be small enough to allow you to
 // use this alias, then you might expect it to provide perhaps a 5-20%
 // performance gain over MontgomeryForm<T>.
+// MontgomeryStandardMathWrapper<T> usually will perform worse than
+// MontgomeryQuarter<T> and MontgomeryForm<T>, and often it performs much worse.
+// However, on some modern systems with extremely fast dividers it is possible
+// that it could outperform MontgomeryForm<T> and/or
+// MontgomeryStandardMathWrapper<T>.
+// With all performance details, you need to measure on your system to know what
+// to truly expect.
 
 
 template <typename, template <typename> class> class MontyAliasHelper;
 
 
-// The Montgomery Form Aliases
-// ---------------------------
-
-template <typename T>
-using MontgomeryFull = MontgomeryForm<T,
-                typename MontyAliasHelper<T, detail::MontyFullRange>::type>;
-
+// The MontgomeryQuarter alias
 template <typename T>
 using MontgomeryQuarter = MontgomeryForm<T,
                 typename MontyAliasHelper<T, detail::MontyQuarterRange>::type>;
