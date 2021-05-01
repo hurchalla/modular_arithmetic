@@ -162,7 +162,7 @@ HURCHALLA_FORCE_INLINE std::uint64_t impl_modular_addition_prereduced_inputs(
 
 // ---------Theorem and proof for Version #2--------
 // The constant "R" used below represents the value
-// R = 2^(std::numeric_limits<T>::digits).  For example, if T is uint64_t,
+// R = 2^(ut_numeric_limits<T>::digits).  For example, if T is uint64_t,
 // then R = 2^64.
 // We'll use a psuedo-cast notation of (Z)x to indicate when we are treating x
 // as an infinite precision signed integer - i.e. a member of the set Z of
@@ -243,7 +243,7 @@ HURCHALLA_FORCE_INLINE std::uint64_t impl_modular_addition_prereduced_inputs(
 //
 // Putting together [4], [10], and [11], in C++ we could write
 // modular_addition_prereduced(unsigned T a, T b, T m) {
-//    static_assert( !(std::numeric_limits<T>::is_signed), "" );
+//    static_assert( !(ut_numeric_limits<T>::is_signed), "" );
 //    T tmp = b-m;
 //    return (a+tmp >= a) ? a+b : a+tmp;
 // }
