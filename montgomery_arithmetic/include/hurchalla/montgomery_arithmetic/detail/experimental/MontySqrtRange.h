@@ -480,35 +480,6 @@ public:
         return diff;
     }
 
-    template <bool, class PTAG>  // Performance TAG (optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, bool& isZero) const
-    {
-        HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
-        HPBC_PRECONDITION2(0 < y.get() && y.get() <= n_);
-        HPBC_PRECONDITION2(0 < z.get() && z.get() <= n_);
-
-        // Unfortunately for MontySqrtRange, it's not possible to do a simple
-        // add of sum=x+y prior to multiplying, since the sum might be greater
-        // than sqrtR (e.g. when n is very close to sqrtR and x and n are both
-        // very close to n), and that would break a precondition for calling
-        // msr_montmul_non_minimized().  Instead we must do a modular addition
-        // to get the sum, which means famul() simply wraps this class's add
-        // and multiply functions.
-        // [Future(?) Note: A hypothetical MontySqrtRangeDiv2 class (requiring
-        // modulus < sqrt(R)/2) could provide the optimization of using a simple
-        // addition rather than a modular addition: this hypothetical class
-        // would have a montmul function that required a*b<R, and using a simple
-        // addition  a=(x+y) <= modulus+modulus == 2*modulus, and letting
-        // b = z <= modulus, we would have
-        // a*b <= 2*modulus*modulus < 2*sqrt(R)*sqrt(R)/4 == R/2, which would
-        // satisfy the hypothetical class's montmul requirement.]
-        V sum = add(x, y);
-        V result = multiply(sum, z, isZero, PTAG());
-
-        HPBC_POSTCONDITION2(0 < result.get() && result.get() <= n_);
-        return result;
-    }
-
     // Returns the greatest common denominator of the standard representations
     // (non-montgomery) of both x and the modulus, using the supplied functor.
     // The functor must take two integral arguments of the same type and return

@@ -146,17 +146,6 @@ public:
         HPBC_POSTCONDITION2(isCanonical(result));
         return result;
     }
-    template <bool, class PTAG>   // Performance TAG (ignored by this class)
-    HURCHALLA_FORCE_INLINE V famul(V x, V y, V z, bool& isZero) const
-    {
-        HPBC_PRECONDITION2(isCanonical(x));
-        HPBC_PRECONDITION2(isCanonical(y));
-        HPBC_PRECONDITION2(isCanonical(z));
-        V sum = add(x, y);
-        V result = multiply(sum, z, isZero, PTAG());
-        HPBC_POSTCONDITION2(isCanonical(result));
-        return result;
-    }
     HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
         HPBC_PRECONDITION2(isCanonical(x));

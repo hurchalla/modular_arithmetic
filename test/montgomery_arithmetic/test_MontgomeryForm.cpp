@@ -82,59 +82,6 @@ void test_fmsub_variants(const M& mf, typename M::MontgomeryValue x,
 }
 
 template <typename M>
-void test_famul_variants(const M& mf, typename M::MontgomeryValue x,
-                   typename M::CanonicalValue yc, typename M::MontgomeryValue z,
-                   typename M::T_type expected_result)
-{
-    namespace hc = hurchalla;
-    typename M::MontgomeryValue result;
-    bool isZero;
-
-    EXPECT_TRUE(mf.convertOut(mf.template
-          famul<false>(x,yc,z)) == expected_result);
-    EXPECT_TRUE(mf.convertOut(mf.template
-          famul<false, hc::LowlatencyTag>(x,yc,z)) == expected_result);
-    EXPECT_TRUE(mf.convertOut(mf.template
-          famul<false, hc::LowuopsTag>(x,yc,z)) == expected_result);
-
-    result = mf.template famulIsZero<false>(x,yc,z,isZero);
-    EXPECT_TRUE(mf.convertOut(result) == expected_result &&
-                 isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
-    result = mf.template famulIsZero<false, hc::LowlatencyTag>(x,yc,z,isZero);
-    EXPECT_TRUE(mf.convertOut(result) == expected_result &&
-                 isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
-    result = mf.template famulIsZero<false, hc::LowuopsTag>(x,yc,z,isZero);
-    EXPECT_TRUE(mf.convertOut(result) == expected_result &&
-                 isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
-
-    // This clause is a bit of a hack, since it requires white-box knowledge
-    // that modulus < max_modulus()/2 will satisfy the preconditions of all
-    // known implementing MontyType famul functions.  New MontyTypes might be
-    // added or changed, or some MontyType outside my awareness might be used,
-    // all of which could break this assumption.
-    if (mf.getModulus() < mf.max_modulus()/2) {
-        EXPECT_TRUE(mf.convertOut(mf.template
-              famul<true>(x,yc,z)) == expected_result);
-        EXPECT_TRUE(mf.convertOut(mf.template
-              famul<true, hc::LowlatencyTag>(x,yc,z)) == expected_result);
-        EXPECT_TRUE(mf.convertOut(mf.template
-              famul<true, hc::LowuopsTag>(x,yc,z)) == expected_result);
-
-        result = mf.template famulIsZero<true>(x,yc,z,isZero);
-        EXPECT_TRUE(mf.convertOut(result) == expected_result &&
-                 isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
-        result = mf.template famulIsZero<true,hc::LowlatencyTag>(x,yc,z,isZero);
-        EXPECT_TRUE(mf.convertOut(result) == expected_result &&
-                 isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
-        result = mf.template famulIsZero<true, hc::LowuopsTag>(x,yc,z,isZero);
-        EXPECT_TRUE(mf.convertOut(result) == expected_result &&
-                 isZero == (mf.getCanonicalValue(result) == mf.getZeroValue()));
-    }
-}
-
-
-
-template <typename M>
 void test_mf_general_checks(M& mf, typename M::T_type a, typename M::T_type b,
                                                            typename M::T_type c)
 {
@@ -197,9 +144,6 @@ void test_mf_general_checks(M& mf, typename M::T_type a, typename M::T_type b,
                  hc::modular_addition_prereduced_inputs(ref_product,c,modulus));
     test_fmsub_variants(mf, x, y, zc,
               hc::modular_subtraction_prereduced_inputs(ref_product,c,modulus));
-    test_famul_variants(mf, x, yc, z,
-          hc::modular_multiplication_prereduced_inputs(
-              hc::modular_addition_prereduced_inputs(a,b,modulus), c, modulus));
 
     T a_squared = hc::modular_multiplication_prereduced_inputs(a,a,modulus);
     test_multiply_variants(mf, x, x, a_squared);
@@ -207,9 +151,6 @@ void test_mf_general_checks(M& mf, typename M::T_type a, typename M::T_type b,
                    hc::modular_addition_prereduced_inputs(a_squared,c,modulus));
     test_fmsub_variants(mf, x, x, zc,
                 hc::modular_subtraction_prereduced_inputs(a_squared,c,modulus));
-    test_famul_variants(mf, x, xc, z,
-          hc::modular_multiplication_prereduced_inputs(
-              hc::modular_addition_prereduced_inputs(a,a,modulus), c, modulus));
 
     T b_squared = hc::modular_multiplication_prereduced_inputs(b,b,modulus);
     test_multiply_variants(mf, y, y, b_squared);
@@ -217,9 +158,6 @@ void test_mf_general_checks(M& mf, typename M::T_type a, typename M::T_type b,
                    hc::modular_addition_prereduced_inputs(b_squared,c,modulus));
     test_fmsub_variants(mf, y, y, zc,
                 hc::modular_subtraction_prereduced_inputs(b_squared,c,modulus));
-    test_famul_variants(mf, y, yc, z,
-          hc::modular_multiplication_prereduced_inputs(
-              hc::modular_addition_prereduced_inputs(b,b,modulus), c, modulus));
 
     EXPECT_TRUE(mf.convertOut(mf.pow(y,0)) == 1);
     EXPECT_TRUE(mf.convertOut(mf.pow(y,1)) == b);
@@ -320,9 +258,6 @@ void test_MontgomeryForm()
         test_fmsub_variants(mf, x, y, zc, 5);
         test_fmsub_variants(mf, x, x, zc, 1);
         test_fmsub_variants(mf, y, y, zc, 8);
-        test_famul_variants(mf, x, yc, z, 10);
-        test_famul_variants(mf, x, xc, z, 4);
-        test_famul_variants(mf, y, yc, z, 3);
 
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 0)) == 1);
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 1)) == 11);
@@ -338,26 +273,10 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.negate(y)) == 2);
         EXPECT_TRUE(mf.convertOut(mf.negate(yc)) == 2);
 
-        // test to see if famulIsZero and multiplyIsZero set isZero correctly
+        // test to see if multiplyIsZero sets isZero correctly
         C zero = mf.getZeroValue();
         C one = mf.getUnityValue();
         bool isZero;
-        EXPECT_TRUE(mf.getCanonicalValue(mf.template
-            famulIsZero<false>(one,zero,one,isZero)) == one && isZero == false);
-        EXPECT_TRUE(mf.getCanonicalValue(mf.template
-            famulIsZero<false>(one,one,zero,isZero)) == zero && isZero == true);
-        // This is a bit of a hack, since it requires white-box knowledge that
-        // modulus < max_modulus()/2 will satisfy the preconditions of all
-        // known implementing MontyType famul functions.  New MontyTypes might
-        // be added or changed, or some MontyType outside my awareness might be
-        // used, all of which could break this assumption.
-        if (mf.getModulus() < mf.max_modulus()/2) {
-            EXPECT_TRUE(mf.getCanonicalValue(mf.template
-             famulIsZero<true>(one,zero,one,isZero)) == one && isZero == false);
-            EXPECT_TRUE(mf.getCanonicalValue(mf.template
-             famulIsZero<true>(one,one,zero,isZero)) == zero && isZero == true);
-        }
-
         EXPECT_TRUE(mf.getCanonicalValue(mf.multiplyIsZero(one,one,isZero)) ==
                     one && isZero == false);
         EXPECT_TRUE(mf.getCanonicalValue(mf.multiplyIsZero(one,zero,isZero)) ==
@@ -404,9 +323,6 @@ void test_MontgomeryForm()
         test_fmsub_variants(mf, x, y, zc, 1);
         test_fmsub_variants(mf, x, x, zc, 0);
         test_fmsub_variants(mf, y, y, zc, 0);
-        test_famul_variants(mf, x, yc, z, 0);
-        test_famul_variants(mf, x, xc, z, 2);
-        test_famul_variants(mf, y, yc, z, 1);
 
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 0)) == 1);
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 1)) == 2);
@@ -453,9 +369,6 @@ void test_MontgomeryForm()
         test_fmadd_variants(mf, x, x, zc, 2);
         test_fmsub_variants(mf, x, y, zc, static_cast<T>(modulus - 3));
         test_fmsub_variants(mf, x, x, zc, 0);
-        test_famul_variants(mf, x, yc, z, 1);
-        test_famul_variants(mf, y, xc, z, 1);
-        test_famul_variants(mf, x, xc, z, static_cast<T>(modulus - 2));
 
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 1)) == 2);
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 2)) == 4);
