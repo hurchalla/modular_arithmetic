@@ -484,8 +484,8 @@ public:
     // (non-montgomery) of both x and the modulus, using the supplied functor.
     // The functor must take two integral arguments of the same type and return
     // the gcd of those two arguments.
-    template <template<class> class Functor>
-    HURCHALLA_FORCE_INLINE T gcd_with_modulus(MontgomeryValue x) const
+    template <class F> HURCHALLA_FORCE_INLINE
+    T gcd_with_modulus(MontgomeryValue x, const F& gcd_functor) const
     {
         // See the member function gcd_with_modulus() in MontyCommonBases.h for
         // proof that gcd(x.get(), n_) == gcd(convertOut(x), n_)
@@ -493,8 +493,7 @@ public:
         // By relying on the equivalence of those two gcds, we can instead
         // compute and return p = gcd(x.get(), n_)  which we can compute more
         // efficiently than q.
-        Functor<T> gcd_func;
-        T p = gcd_func(x.get(), n_);
+        T p = gcd_functor(x.get(), n_);
         // Our postconditions assume the Functor implementation is correct.
         HPBC_POSTCONDITION2(0 < p && p <= n_ && (x.get() == 0 || p <= x.get()));
         HPBC_POSTCONDITION2(n_ % p == 0);

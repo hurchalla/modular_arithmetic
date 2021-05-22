@@ -189,9 +189,9 @@ void test_mf_general_checks(M& mf, typename M::T_type a, typename M::T_type b,
 
 
 // an example functor to use while testing MontgomeryForm's gcd()
-template <typename T>
 struct GcdFunctor {
-    T operator()(T a, T b)
+    template <typename T>
+    T operator()(T a, T b) const
     {
         static_assert(hurchalla::ut_numeric_limits<T>::is_integer, "");
         static_assert(!hurchalla::ut_numeric_limits<T>::is_signed, "");
@@ -431,31 +431,22 @@ void test_MontgomeryForm()
     // test gcd
     {
         M mf(static_cast<T>(35));
-        EXPECT_TRUE(
-              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(28)) == 7);
-        EXPECT_TRUE(
-              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(29)) == 1);
-        EXPECT_TRUE(
-              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(70)) == 35);
+        EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(28), GcdFunctor()) == 7);
+        EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(29), GcdFunctor()) == 1);
+        EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(70), GcdFunctor()) == 35);
     }
     if (117 <= M::max_modulus())
     {
         M mf(static_cast<T>(117));
-        EXPECT_TRUE(
-              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(78)) == 39);
-        EXPECT_TRUE(
-              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(26)) == 13);
-        EXPECT_TRUE(
-              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(27)) == 9);
-        EXPECT_TRUE(
-              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(28)) == 1);
+        EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(78), GcdFunctor()) == 39);
+        EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(26), GcdFunctor()) == 13);
+        EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(27), GcdFunctor()) == 9);
+        EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(28), GcdFunctor()) == 1);
     }
     {
         M mf(static_cast<T>(3));  // smallest possible modulus
-        EXPECT_TRUE(
-              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(2)) == 1);
-        EXPECT_TRUE(
-              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(0)) == 3);
+        EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(2), GcdFunctor()) == 1);
+        EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(0), GcdFunctor()) == 3);
     }
     {
         T modulus = M::max_modulus();
@@ -463,8 +454,7 @@ void test_MontgomeryForm()
         while (modulus % 3 != 0 || modulus % 2 == 0)
             --modulus;
         M mf(modulus);
-        EXPECT_TRUE(
-              mf.template gcd_with_modulus<GcdFunctor>(mf.convertIn(12)) == 3);
+        EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(12), GcdFunctor()) == 3);
     }
 }
 

@@ -265,11 +265,11 @@ public:
     // The functor must take two integral arguments of the same type and return
     // the gcd of its two arguments.
     // Calling  gcd_with_modulus(x)  is more efficient than computing the
-    // equivalent value  gcd(convertOut(x), modulus).
-    template <template<class> class Functor>
-    HURCHALLA_FORCE_INLINE T gcd_with_modulus(MontgomeryValue x) const
+    // equivalent value  gcd_functor(convertOut(x), modulus).
+    template <class F> HURCHALLA_FORCE_INLINE
+    T gcd_with_modulus(MontgomeryValue x, const F& gcd_functor) const
     {
-        return static_cast<T>(impl.template gcd_with_modulus<Functor>(x));
+        return static_cast<T>(impl.gcd_with_modulus(x, gcd_functor));
     }
 
     // "Fused multiply-subtract" operation:  Returns the modular evaluation of

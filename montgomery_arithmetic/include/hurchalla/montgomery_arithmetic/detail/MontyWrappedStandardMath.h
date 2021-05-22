@@ -188,14 +188,13 @@ public:
     // (non-montgomery) of both x and the modulus, using the supplied functor.
     // The functor must take two integral arguments of the same type and return
     // the gcd of those two arguments.
-    template <template<class> class Functor>
-    HURCHALLA_FORCE_INLINE T gcd_with_modulus(MontgomeryValue x) const
+    template <class F> HURCHALLA_FORCE_INLINE
+    T gcd_with_modulus(MontgomeryValue x, const F& gcd_functor) const
     {
         // We want to return the value  q = gcd(convertOut(x), modulus_).  Since
         // this class simply wraps standard integer domain values within a
         // MontgomeryForm interface, x.get() == convertOut(x).
-        Functor<T> gcd_func;
-        T p = gcd_func(x.get(), modulus_);
+        T p = gcd_functor(x.get(), modulus_);
         // Our postconditions assume the Functor implementation is correct.
         HPBC_POSTCONDITION2(0 < p && p <= modulus_ &&
                             (x.get() == 0 || p <= x.get()));
