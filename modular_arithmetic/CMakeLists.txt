@@ -56,6 +56,11 @@ if(HURCHALLA_MA_USING_OLD_MSVC_X64)
 endif()
 
 
+install(DIRECTORY
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
+    DESTINATION include)
+
+
 target_include_directories(hurchalla_basic_modular_arithmetic INTERFACE
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 

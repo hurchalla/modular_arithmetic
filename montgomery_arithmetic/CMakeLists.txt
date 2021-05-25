@@ -46,6 +46,12 @@ target_sources(hurchalla_montgomery_arithmetic INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/montgomery_arithmetic/low_level_api/detail/platform_specific/impl_unsigned_multiply_to_hilo_product.h>
     )
 
+
+install(DIRECTORY
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
+    DESTINATION include)
+
+
 target_include_directories(hurchalla_montgomery_arithmetic
             INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
