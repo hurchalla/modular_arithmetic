@@ -3,7 +3,7 @@ Modular Arithmetic library for C++
 
 ## Design goals
 
-A correct and flexible library for modular arithmetic of native integer types, achieving best possible performance.  For integer types that are double the native bit width (e.g. 128 bit), performance should still be reasonably good though not optimal.  Larger than 128 bit types are permissible; however a library like GMP is likely to provide much better performance at such sizes.
+A correct and flexible library with best possible performance for modular arithmetic of native integer types.  For integer types that are double the native bit width (e.g. 128 bit), performance should still be reasonably good though not optimal.  Larger than 128 bit types are permissible; however a library like GMP is likely to provide much better performance at such sizes.
 
 ## Status
 
