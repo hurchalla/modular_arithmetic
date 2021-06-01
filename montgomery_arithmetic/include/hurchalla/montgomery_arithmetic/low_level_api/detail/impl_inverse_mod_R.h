@@ -34,14 +34,9 @@ namespace detail_invmR {
 #  error "HURCHALLA_TARGET_BIT_WIDTH must be defined"
 #endif
 
-// This is the generalized Dumas algorithm for the inverse (mod R).
-// TODO:
-// I haven't yet published my generalized form of the Dumas algorithm, but the
-// Dumas algorithm comes from  https://arxiv.org/abs/1209.6626
-// The closest information available at the moment is from Marc Reynolds at
-// http://marc-b-reynolds.github.io/math/2017/09/18/ModInverse.html
-// However, Reynolds presents a straightforward adaptation of Dumas's algorithm.
-// This generalized form is a slightly different algo.
+// This is a generalized and slightly more efficient form of Dumas' algorithm
+// (https://arxiv.org/abs/1209.6626) for the inverse (mod R), as described in
+// integer_inverse.pdf in this current directory.
 //
 // Note: Dumas's alg only makes sense to use for the native integral types -
 // Newton's method becomes more efficient when larger types are required.
