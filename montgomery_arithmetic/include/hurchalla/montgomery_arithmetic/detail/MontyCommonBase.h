@@ -278,9 +278,10 @@ public:
         // x*y == u < n*R.  See REDC_non_finalized() in Redc.h for proof.
         HPBC_ASSERT2(u_hi < n_);
 
-        // TODO proof of correctness, showing that performing the modular sub
-        // prior to the REDC will always give the same results as performing the
-        // REDC and then the modular subtraction.
+        // Performing the modular sub prior to the REDC will always give
+        // equivalent results to performing the REDC and then the modular
+        // subtraction.  See fmadd() below for a proof which could be easily
+        // adapted to the modular subtractions of fmsub().
         // The following calculations should execute in parallel with the first
         // two multiplies in REDC(), since those mutiplies do not depend on
         // these calculations.  (Instruction level parallelism)
@@ -309,18 +310,73 @@ public:
         // x*y == u < n*R.  See REDC_non_finalized() in Redc.h for proof.
         HPBC_ASSERT2(u_hi < n_);
 
-        // TODO proof of correctness, showing that performing the modular add
-        // prior to the REDC will always give the same results as performing the
-        // REDC and then the modular addition.
-        // The following calculations should execute in parallel with the first
-        // two multiplies in REDC(), since those mutiplies do not depend on
-        // these calculations.  (Instruction level parallelism)
-        T sum = modular_addition_prereduced_inputs(u_hi, z.get(), n_);
-        HPBC_ASSERT2(sum < n_);
-        T result = REDC(sum, u_lo, n_, inv_n_, typename D::MontyTag(), PTAG());
-
-        HPBC_POSTCONDITION2(isValid(V(result)));
-        return V(result);
+        // The most obvious way to carry out this function would be as follows:
+        // result = REDC(u_hi, u_lo, n_, inv_n_, typename D::MontyTag(), PTAG())
+        // and then performing a modular addition of result with z
+        // sum = this->add(result, z).
+        // However we'll show we can perform a modular addition first, and then
+        // the REDC, and our final result will be congruent to sum above, and
+        // our final result will satisfy
+        // this->isValid(final_result) == true.  If we can achieve this, then
+        // for our purposes final_result is equivalent to the sum above.
+        //
+        // The advantage of this alternate method is that the modular addition
+        // should execute in parallel with the first two multiplies inside
+        // REDC(), because the mutiplies do not depend on the result of the
+        // addition.  (Instruction level parallelism).  In contrast, the most
+        // obvious way of implementing this function, which we described above,
+        // can not take advantage of instruction level parallelism because the
+        // inputs to the ending modular addition depend upon the result of the
+        // REDC.
+        //
+        // Let's prove final_result is congruent to sum and that it is valid.
+        // Proof:
+        // Let Rinverse ≡ R^(-1) (mod n_)       ("R^(-1)" is R to the power -1)
+        // Note that since R is a power of 2 and n_ is odd, Rinverse always
+        // exists.  Let u = u_hi*R + u_lo.  If we call
+        // result = REDC(u_hi, u_lo, n_, inv_n_, typename D::MontyTag(), PTAG())
+        // REDC guarantees that result satisfies
+        // result     ≡ u*Rinverse  (mod n_).   And therefore,
+        // result     ≡ (u_hi*R + u_lo)*Rinverse  (mod n_)
+        // result + z ≡ (u_hi*R + u_lo)*Rinverse + z  (mod n_)
+        // result + z ≡ (u_hi*R + u_lo)*Rinverse + z*R*Rinverse  (mod n_)
+        // result + z ≡ (u_hi*R + z*R + u_lo)*Rinverse  (mod n_)
+        // result + z ≡ ((u_hi + z)*R + u_lo)*Rinverse  (mod n_)
+        // result + z ≡ (((u_hi + z)%n_)*R + u_lo)*Rinverse  (mod n_)
+        // The earlier  sum = this->add(result, z)  satisfies
+        // sum ≡ result + z  (mod n_),  and so
+        // sum        ≡ (((u_hi + z)%n_)*R + u_lo)*Rinverse  (mod n_)
+        //
+        // Earlier in this function, we showed by precondition and assertion
+        // that  u_hi < n_, and z < n_.  Therefore we can perform (u_hi + z)%n_
+        // via the function modular_addition_prereduced_inputs(), as follows:
+        T v_hi = modular_addition_prereduced_inputs(u_hi, z.get(), n_);
+        // By substitution we have 
+        // sum        ≡ (v_hi*R + u_lo)*Rinverse  (mod n_)
+        //
+        // Because v_hi == (u_hi + z)%n_,  we know  v_hi < n_.
+        HPBC_ASSERT2(v_hi < n_);
+        // Thus  v_hi <= n_ - 1,  and  v_hi*R <= n_*R - R.  And
+        // v_hi*R + u_lo <= n_*R - R + u_lo.  Since u_lo is type T, it
+        // satisfies u_lo < R.  And thus
+        // v_hi*R + u_lo <= n_*R - R + u_lo < n_*R - R + R == n_*R.
+        // Therefore we know  (v_hi*R + u_lo) < n_*R.
+        //
+        // Let  v == v_hi*R + u_lo.  We saw just above that v < n_*R, which
+        // satisfies REDC's precondition requiring an input < n_*R.  Therefore
+        // we can call REDC with the input v == (v_hi*R + u_lo), and the REDC
+        // algorithm guarantees it will return the value
+        // final_result ≡ (v_hi*R + u_lo)*Rinverse  (mod n_).  And thus,
+        // final_result ≡ sum  (mod n_).
+        T final_result =
+                   REDC(v_hi, u_lo, n_, inv_n_, typename D::MontyTag(), PTAG());
+        // REDC's postcondition guarantees it will return a valid value for
+        // the given MontyTag, and so
+        HPBC_POSTCONDITION2(isValid(V(final_result)));
+        // We showed  final_result ≡ sum  (mod n_),  and that
+        // final_result is valid.  For our purposes this means final_result is
+        // equivalent to sum, and thus we can return it instead of sum.
+        return V(final_result);
     }
 
     // Returns the greatest common denominator of the standard representations
