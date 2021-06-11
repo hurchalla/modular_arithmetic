@@ -7,7 +7,7 @@ A correct and flexible library with best possible performance for modular arithm
 
 ## Status
 
-Released.  All planned functionality and unit tests are finished and working correctly.  I have not yet updated the CMakeLists.tst to add compile definitions options that enable inline asm (inline asm is available on x86-64 only).  Until then, if you use this library and want the best possible performance, you may wish to consider passing in a macro definition flag for HURCHALLA_ALLOW_INLINE_ASM_ALL.  It is not enabled by default because inline asm is extremely difficult to verify for correctness.  While I believe I'm very skilled at writing high quality inline asm, I advise you to be skeptical; unit tests of inline asm are far less helpful than you might think- https://gcc.gnu.org/wiki/DontUseInlineAsm
+Released.  All planned functionality and unit tests are finished and working correctly.  I have not yet updated the CMakeLists.tst to add compile definitions options that enable inline asm (inline asm is available on x86-64 only).  Until then, if you use this library and want the best possible performance, you may wish to consider passing in a macro definition flag for HURCHALLA_ALLOW_INLINE_ASM_REDC.  It is not enabled by default because inline asm is extremely difficult to verify for correctness.  While I believe I'm very skilled at writing high quality inline asm, I advise you to be skeptical; unit tests of inline asm are far less helpful than you might think- https://gcc.gnu.org/wiki/DontUseInlineAsm
 
 ## Author
 
@@ -34,7 +34,6 @@ HURCHALLA_TARGET_ISA_ARM_32
 HURCHALLA_TARGET_ISA_ARM_64
 
 HURCHALLA_DISALLOW_INLINE_ASM_MODMUL
-HURCHALLA_ALLOW_INLINE_ASM_ALL
 
 HURCHALLA_ALLOW_INLINE_ASM_ABSDIFF
 HURCHALLA_ALLOW_INLINE_ASM_MODADD
@@ -45,7 +44,7 @@ experimental:
 HURCHALLA_ALLOW_INLINE_ASM_MONTADD_SQRT_RANGE
 HURCHALLA_ALLOW_INLINE_ASM_MONTSUB_SQRT_RANGE
 
-Document that the INLINE_ASM macros above may or may not improve performance.  You need to benchmark with different ASM macros defined/not defined, and generally you would want to start with simply comparing performance with HURCHALLA_ALLOW_INLINE_ASM_ALL defined or not defined.  On x86_64 intel, in brief testing defining HURCHALLA_ALLOW_INLINE_ASM_ALL, I found gcc got a 0-8% improvement, and clang suffered a 0-20% loss of performance.
+Document that the INLINE_ASM macros above may or may not improve performance.  You need to benchmark with different ASM macros defined/not defined, and generally you would want to start with simply comparing performance with HURCHALLA_ALLOW_INLINE_ASM_REDC defined or not defined.  On x86_64 intel, in brief testing defining HURCHALLA_ALLOW_INLINE_ASM_REDC, I found gcc saw ~5% improvement and clang was essentially unaffected.
 
 For MSVC optimization: /Gy (function-level linking) and /Gw (global data optimization) compiler switches
 https://docs.microsoft.com/en-us/archive/msdn-magazine/2015/february/compilers-what-every-programmer-should-know-about-compiler-optimizations

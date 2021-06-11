@@ -7,15 +7,14 @@
 // make it computationaly feasible.
 
 
-// We'll define HURCHALLA_ALLOW_INLINE_ASM_ALL here in order to make modular
-// addition use an inline asm function version if it is available.  Internally,
-// this inline asm function will also call the generic template function version
-// of modular addition inside a postcondition, in order to make sure that the
-// asm result is correct.  Of course postcondition checks must be enabled for
-// this check to occur - the easiest way to ensure postconditions are enabled is
-// to undefine NDEBUG, which is why we undef NDEBUG here too.
-// The same applies to modular subtraction as well.
-
+// Strictly for testing purposes, we'll define HURCHALLA_ALLOW_INLINE_ASM_ALL
+// here in order to make modular addition use an inline asm function version if
+// it is available.  Internally, this inline asm function will also call the
+// generic template function version of modular addition inside a postcondition,
+// in order to make sure that the asm result is correct.  Of course
+// postcondition checks must be enabled for this check to occur - the easiest
+// way to ensure postconditions are enabled is to undefine NDEBUG, which is why
+// we undef NDEBUG here too.  The same applies to modular subtraction as well.
 #undef HURCHALLA_ALLOW_INLINE_ASM_ALL
 #define HURCHALLA_ALLOW_INLINE_ASM_ALL 1
 #undef NDEBUG

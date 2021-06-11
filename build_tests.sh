@@ -12,10 +12,10 @@
 #
 # -c allows you to select the compiler, rather than using the default.
 # -r specifies to run all tests after the build.  Without -r, no tests will run.
-# -a specifies you want to compile the code using all available inline assembly
-#    optimizations, which makes for the fastest binaries but of course has the
-#    downsides of inline asm - primarily that inline asm is extremely difficult
-#    to properly test.
+# -a specifies you want to compile the code using typically helpful (how much it
+#    helps depends on your compiler) inline asm optimizations, which makes for
+#    the fastest binaries but of course has the downsides of inline asm -
+#    primarily that inline asm is extremely difficult to properly test.
 # -m allows you to choose between Release and Debug build configuration, rather
 #    than using the default.
 #
@@ -176,7 +176,7 @@ while getopts ":m:c:h-:ra" opt; do
       run_tests=true
       ;;
     a)
-      use_inline_asm="-DHURCHALLA_ALLOW_INLINE_ASM_ALL=1"
+      use_inline_asm="-DHURCHALLA_ALLOW_INLINE_ASM_REDC=1"
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2

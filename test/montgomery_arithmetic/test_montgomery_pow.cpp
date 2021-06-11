@@ -2,8 +2,8 @@
 // by the file "LICENSE.TXT" in the root of this repository ---
 
 
-// For more complete testing we'll define HURCHALLA_ALLOW_INLINE_ASM_ALL,
-// which will cause MontgomeryForm to use any helper inline asm functions that
+// Strictly for testing purposes,  we'll define HURCHALLA_ALLOW_INLINE_ASM_ALL,
+// which will cause MontgomeryForm to use all helper inline asm functions that
 // are available.  Internally, these inline asm functions will also call their
 // corresponding generic template helper functions inside a postcondition, in
 // order to make sure that the asm result is correct.  Of course postcondition
