@@ -22,27 +22,12 @@ impl_modular_multiplicative_inverse(T val, T modulus)
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(ut_numeric_limits<T>::is_signed, "");
     HPBC_PRECONDITION2(val >= 0);
+    // I decided not to support modulus<=1, since it's not likely to be used and
+    // it complicates the return type and adds conditional branches.
     HPBC_PRECONDITION2(modulus > 1);
 
     // POSTCONDITION: Returns 0 if the inverse doesn't exist. Otherwise returns
     //    the inverse (which is never 0, given that modulus>1).
-
-
-// I decided not to support modulus<=1, since it's not likely to be used and
-// it complicates the return type and adds conditional branches. 
-// Nevertheless I left the code here in comment, for reference:
-/*
-    if (modulus == 0)  // ordinarily operations modulo 0 are undefined
-        return std::make_tuple(static_cast<T>(0), false);
-    if (modulus == 1) {
-        // without this "if" clause, when modulus == 1 and val == 1,
-        // this function would calculate the result to be 1.  That result
-        // wouldn't be completely wrong, but it isn't reduced.  We always
-        // want a fully reduced result.  When modulus == 1, the fully
-        // reduced result will always be 0.
-        return std::make_tuple(static_cast<T>(0), true);
-    }
-*/
 
     // The following algorithm is simplified from Figure 1 of
     // https://jeffhurchalla.com/2018/10/13/implementing-the-extended-euclidean-algorithm-with-unsigned-inputs/
@@ -51,7 +36,7 @@ impl_modular_multiplicative_inverse(T val, T modulus)
     {
        T y0=0, a0=modulus;
        T y1=1, a1=val;
-    
+
        while (a1 != 0) {
           T q = static_cast<T>(a0/a1);
           T a2 = static_cast<T>(a0 - q*a1);
@@ -79,27 +64,13 @@ impl_modular_multiplicative_inverse(U val, U modulus)
 {
     static_assert(ut_numeric_limits<U>::is_integer, "");
     static_assert(!(ut_numeric_limits<U>::is_signed), "");
+    // I decided not to support modulus<=1, since it's not likely to be used and
+    // it complicates the return type and adds conditional branches.
     HPBC_PRECONDITION2(modulus>1);
 
     // POSTCONDITION: Returns 0 if the inverse doesn't exist. Otherwise returns
     //    the inverse (which is never 0, given that modulus>1).
 
-
-// I decided not to support modulus<=1, since it's not likely to be used and
-// it complicates the return type and adds conditional branches. 
-// Nevertheless I left the code here in comment, for reference:
-/*
-    if (modulus == 0)  // ordinarily operations modulo 0 are undefined
-        return std::make_tuple(static_cast<T>(0), false);
-    if (modulus == 1) {
-        // without this "if" clause, when modulus == 1 and val == 1,
-        // this function would calculate the result to be 1.  That result
-        // wouldn't be completely wrong, but it isn't reduced.  We always
-        // want a fully reduced result.  When modulus == 1, the fully
-        // reduced result will always be 0.
-        return std::make_tuple(static_cast<T>(0), true);
-    }
-*/
     using S = typename extensible_make_signed<U>::type;
 
     // The following algorithm is adapted from Figure 6 of

@@ -14,9 +14,8 @@
 namespace hurchalla { namespace detail {
 
 
-// See http://en.wikipedia.org/wiki/Modular_exponentiation
-// Code review notes: Analytically, modular_pow() appears correct (assuming that
-//     modular_multiplication_prereduced_inputs() is correct).
+// Returns the modular exponentiation of base^exponent (mod modulus).
+// For details, see http://en.wikipedia.org/wiki/Modular_exponentiation
 template <typename T>
 HURCHALLA_FORCE_INLINE 
 T impl_modular_pow(T base_t, T exponent_t, T modulus_t)
