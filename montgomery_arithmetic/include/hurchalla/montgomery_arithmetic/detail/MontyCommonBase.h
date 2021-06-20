@@ -281,7 +281,7 @@ public:
         // Performing the modular sub prior to the REDC will always give
         // equivalent results to performing the REDC and then the modular
         // subtraction.  See fmadd() below for a proof which could be easily
-        // adapted to the modular subtractions of fmsub().
+        // adapted for the modular subtraction in fmsub().
         // The following calculations should execute in parallel with the first
         // two multiplies in REDC(), since those mutiplies do not depend on
         // these calculations.  (Instruction level parallelism)
@@ -323,7 +323,7 @@ public:
         // The advantage of this alternate method is that the modular addition
         // should execute in parallel with the first two multiplies inside
         // REDC(), because the mutiplies do not depend on the result of the
-        // addition.  (Instruction level parallelism).  In contrast, the most
+        // addition (i.e. instruction level parallelism).  In contrast, the most
         // obvious way of implementing this function, which we described above,
         // can not take advantage of instruction level parallelism because the
         // inputs to the ending modular addition depend upon the result of the
@@ -340,7 +340,6 @@ public:
         // result     ≡ (u_hi*R + u_lo)*Rinverse  (mod n_)
         // result + z ≡ (u_hi*R + u_lo)*Rinverse + z  (mod n_)
         // result + z ≡ (u_hi*R + u_lo)*Rinverse + z*R*Rinverse  (mod n_)
-        // result + z ≡ (u_hi*R + z*R + u_lo)*Rinverse  (mod n_)
         // result + z ≡ ((u_hi + z)*R + u_lo)*Rinverse  (mod n_)
         // result + z ≡ (((u_hi + z)%n_)*R + u_lo)*Rinverse  (mod n_)
         // The earlier  sum = this->add(result, z)  satisfies

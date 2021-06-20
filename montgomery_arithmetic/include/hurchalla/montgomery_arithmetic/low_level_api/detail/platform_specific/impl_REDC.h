@@ -174,33 +174,11 @@ struct DefaultRedc
   static HURCHALLA_FORCE_INLINE
   T REDC(T u_hi, T u_lo, T n, T inv_n, FullrangeTag)
   {
-    using P = typename safely_promote_unsigned<T>::type;
-    static_assert(ut_numeric_limits<P>::is_integer, "");
-    static_assert(!(ut_numeric_limits<P>::is_signed), "");
-    static_assert(ut_numeric_limits<P>::is_modulo, "");
-    // We could implement this most easily using the code in the postcondition
-    // below.  But we will instead elaborate REDC_non_finalized and replace
-    // u_hi - mn_hi  with a modular subtraction, since that's effectively what
-    // the postcondition does.  This potentially gives us the advantage of an
-    // optimized modular subtract from modular_subtraction_prereduced_inputs().
-    HPBC_PRECONDITION2(u_hi < n);
-    HPBC_PRECONDITION2(
-                static_cast<T>(static_cast<P>(n) * static_cast<P>(inv_n)) == 1);
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(n > 1);
+    bool ovf;
+    T result = REDC_non_finalized(ovf, u_hi, u_lo, n, inv_n);
+    // By REDC_non_finalized()'s Postcondition #1, we get
+    T final_result = (ovf) ? static_cast<T>(result + n) : result;
 
-    T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
-    T mn_lo;
-    T mn_hi = unsigned_multiply_to_hilo_product(&mn_lo, m, n);
-    HPBC_ASSERT2(mn_hi < n);
-    T final_result = modular_subtraction_prereduced_inputs(u_hi, mn_hi, n);
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        // ensure our result equals what we would get via REDC_non_finalized
-        bool ovf;
-        T result = REDC_non_finalized(ovf, u_hi, u_lo, n, inv_n);
-        T result2 = (ovf) ? static_cast<T>(result + n) : result;
-        HPBC_POSTCONDITION2(final_result == result2);
-    }
     HPBC_POSTCONDITION2(final_result < n);
     return final_result;
   }
@@ -208,13 +186,12 @@ struct DefaultRedc
   static HURCHALLA_FORCE_INLINE
   T REDC(T u_hi, T u_lo, T n, T inv_n, QuarterrangeTag)
   {
-    if (HPBC_PRECONDITION2_MACRO_IS_ACTIVE) {
-        // QuarterrangeTag has the precondition requirement that n < R/4 (see
-        // MontyQuarterRange for more on this).
-        T Rdiv4 = static_cast<T>(static_cast<T>(1) <<
+    // QuarterrangeTag has the precondition requirement that n < R/4 (see
+    // MontyQuarterRange for more on this).
+    T Rdiv4 = static_cast<T>(static_cast<T>(1) <<
                                             (ut_numeric_limits<T>::digits - 2));
-        HPBC_PRECONDITION2(n < Rdiv4);
-    }
+    HPBC_PRECONDITION2(n < Rdiv4);
+
     bool ovf;
     T result = REDC_non_finalized(ovf, u_hi, u_lo, n, inv_n);
     result = static_cast<T>(result + n);
