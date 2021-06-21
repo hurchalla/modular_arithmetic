@@ -66,7 +66,7 @@ HURCHALLA_FORCE_INLINE T msr_REDC_non_minimized(T u_lo, T n, T neg_inv_n)
     T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(neg_inv_n));
 
     T mn_lo;
-    T mn_hi = unsigned_multiply_to_hilo_product(&mn_lo, m, n);
+    T mn_hi = unsigned_multiply_to_hilo_product(mn_lo, m, n);
 
     // mn = m*n.  Since m=(u_lo*neg_inv_n)%R, we know m < R, and thus  mn < R*n.
     // Therefore mn == mn_hi*R + mn_lo < R*n, and mn_hi*R < R*n - mn_lo <= R*n,

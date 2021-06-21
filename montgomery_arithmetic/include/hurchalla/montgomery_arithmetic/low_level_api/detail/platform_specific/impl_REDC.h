@@ -91,7 +91,7 @@ T REDC_non_finalized(bool& ovf, T u_hi, T u_lo, T n, T inv_n)
     T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
 
     T mn_lo;
-    T mn_hi = unsigned_multiply_to_hilo_product(&mn_lo, m, n);
+    T mn_hi = unsigned_multiply_to_hilo_product(mn_lo, m, n);
 
     // mn = m*n.  Since m = (u_lo*inv_n)%R, we know m < R, and thus  mn < R*n.
     // Therefore mn == mn_hi*R + mn_lo < R*n, and mn_hi*R < R*n - mn_lo <= R*n,
@@ -250,7 +250,7 @@ struct Redc<std::uint64_t>
 
     T m = u_lo * inv_n;
     T mn_lo;
-    T mn_hi = unsigned_multiply_to_hilo_product(&mn_lo, m, n);
+    T mn_hi = unsigned_multiply_to_hilo_product(mn_lo, m, n);
     HPBC_ASSERT2(mn_hi < n);
     T reg = u_hi + n;
     T uhi = u_hi;

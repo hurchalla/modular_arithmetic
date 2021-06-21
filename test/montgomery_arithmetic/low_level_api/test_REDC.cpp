@@ -30,7 +30,7 @@ void test_REDC_identity(T a, T n, T inv_n, T Rmod_n)
     HPBC_PRECONDITION2(n % 2 == 1);
     namespace hc = hurchalla;
     T u_hi, u_lo;
-    u_hi = hc::unsigned_multiply_to_hilo_product(&u_lo, Rmod_n, a);
+    u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, Rmod_n, a);
 
     T amodn = static_cast<T>(a % n);
     T Rdiv4 = static_cast<T>(
@@ -106,17 +106,17 @@ void test_REDC_multiply(T a, T b, T n, T inv_n, T Rsqrd_mod_n)
     namespace hc = hurchalla;
     T u_hi, u_lo;
     // convert a and b into montgomery domain
-    u_hi = hc::unsigned_multiply_to_hilo_product(&u_lo, Rsqrd_mod_n, a);
+    u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, Rsqrd_mod_n, a);
     T a_md = hc::REDC(u_hi, u_lo, n, inv_n, MTAG(), PTAG());
     EXPECT_TRUE((std::is_same<MTAG, hc::FullrangeTag>::value) ?
                  a_md < n : a_md < 2*n);
-    u_hi = hc::unsigned_multiply_to_hilo_product(&u_lo, Rsqrd_mod_n, b);
+    u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, Rsqrd_mod_n, b);
     T b_md = hc::REDC(u_hi, u_lo, n, inv_n, MTAG(), PTAG());
     EXPECT_TRUE((std::is_same<MTAG, hc::FullrangeTag>::value) ?
                  b_md < n : b_md < 2*n);
 
     // compute the montgomery domain product of a_md and b_md
-    u_hi = hc::unsigned_multiply_to_hilo_product(&u_lo, a_md, b_md);
+    u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, a_md, b_md);
     T product_md = hc::REDC(u_hi, u_lo, n, inv_n, MTAG(), PTAG());
     EXPECT_TRUE((std::is_same<MTAG, hc::FullrangeTag>::value) ?
                  product_md < n : product_md < 2*n);
@@ -224,7 +224,7 @@ void test_REDC_is_zero(T a, T n, T inv_n, T Rmod_n)
 
     // test that the REDC resultIsZero matches what we expect
     T u_hi, u_lo;
-    u_hi = hc::unsigned_multiply_to_hilo_product(&u_lo, Rmod_n, a);
+    u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, Rmod_n, a);
     bool resultIsZero;
     T result = REDC(u_hi, u_lo, n, inv_n, resultIsZero, MTAG(), PTAG());
     EXPECT_TRUE(resultIsZero == isZeroAnswer);

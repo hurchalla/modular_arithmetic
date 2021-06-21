@@ -115,7 +115,7 @@ public:
         // r_squared_mod_n < n.  Since a is a type T variable, we know a < R.
         // Therefore,  a * r_squared_mod_n < n * R.
         T u_lo;
-        T u_hi = unsigned_multiply_to_hilo_product(&u_lo, a, r_squared_mod_n_);
+        T u_hi = unsigned_multiply_to_hilo_product(u_lo, a, r_squared_mod_n_);
         // u_hi < n  guarantees we had  a * r_squared_mod_n == u < n*R.  See
         // REDC_non_finalized() in Redc.h for proof.
         HPBC_PRECONDITION2(u_hi < n_);
@@ -247,7 +247,7 @@ public:
         //   this function's preconditions that x < 2*n and y < 2*n.  Thus
         //   x*y < (2*n)*(2*n) == 4*n*n < 4*n*R/4 == n*R.
         T u_lo;
-        T u_hi = unsigned_multiply_to_hilo_product(&u_lo, x.get(), y.get());
+        T u_hi = unsigned_multiply_to_hilo_product(u_lo, x.get(), y.get());
         // u_hi < n  implies that  x*y == u < n*R.  See REDC_non_finalized()
         // in Redc.h for proof.
         HPBC_ASSERT2(u_hi < n_);
@@ -271,7 +271,7 @@ public:
         HPBC_PRECONDITION2(isCanonical(z));
         HPBC_PRECONDITION2(z.get() < n_); // isCanonical() should guarantee this
         T u_lo;
-        T u_hi = unsigned_multiply_to_hilo_product(&u_lo, x.get(), y.get());
+        T u_hi = unsigned_multiply_to_hilo_product(u_lo, x.get(), y.get());
         // Assuming theoretical unlimited precision standard multiplication,
         // REDC requires  u = x*y < n*R.  See multiply() for why this function
         // will always satisfy the requirement.  u_hi < n guarantees we had
@@ -303,7 +303,7 @@ public:
         HPBC_PRECONDITION2(isCanonical(z));
         HPBC_PRECONDITION2(z.get() < n_); // isCanonical() should guarantee this
         T u_lo;
-        T u_hi = unsigned_multiply_to_hilo_product(&u_lo, x.get(), y.get());
+        T u_hi = unsigned_multiply_to_hilo_product(u_lo, x.get(), y.get());
         // Assuming theoretical unlimited precision standard multiplication,
         // REDC requires  u = x*y < n*R.  See multiply() for why this function
         // will always satisfy the requirement.  u_hi < n guarantees we had

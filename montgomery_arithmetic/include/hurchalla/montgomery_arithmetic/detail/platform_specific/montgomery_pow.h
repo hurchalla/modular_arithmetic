@@ -245,7 +245,7 @@ struct MontArrayPow {
     template <std::size_t NUM_BASES>
     static HURCHALLA_FORCE_INLINE
     typename std::enable_if<(NUM_BASES < 20), std::array<V, NUM_BASES>>::type
-    pow(const MF& mf, std::array<V, NUM_BASES>& bases, T exponent)
+    pow(const MF& mf, const std::array<V, NUM_BASES>& bases, T exponent)
     {
         static_assert(NUM_BASES > 0, "");
         // conditional branching seems to typically work best for large-ish
@@ -256,7 +256,7 @@ struct MontArrayPow {
     template <std::size_t NUM_BASES>
     static HURCHALLA_FORCE_INLINE
     typename std::enable_if<(NUM_BASES >= 20), std::array<V, NUM_BASES>>::type
-    pow(const MF& mf, std::array<V, NUM_BASES>& bases, T exponent)
+    pow(const MF& mf, const std::array<V, NUM_BASES>& bases, T exponent)
     {
         static_assert(NUM_BASES > 0, "");
         // When NUM_BASES gets huge we no longer want to force-unroll loops, but
@@ -266,7 +266,7 @@ struct MontArrayPow {
 
     // delegate a size 1 array call to the scalar (non-array) montgomery_pow
     static HURCHALLA_FORCE_INLINE
-    std::array<V,1> pow(const MF& mf, std::array<V,1>& bases, T exponent)
+    std::array<V,1> pow(const MF& mf, const std::array<V,1>& bases, T exponent)
     {
         HPBC_PRECONDITION(exponent >= 0);
         std::array<V,1> result;
@@ -288,13 +288,13 @@ struct MontArrayPow {
 // a function has __attribute__((always_inline)).  And I double checked to be
 // certain that all involved functions had this (via HURCHALLA_FORCE_INLINE).
     static HURCHALLA_FORCE_INLINE
-    std::array<V,2> pow(const MF& mf, std::array<V,2>& bases, T exponent)
+    std::array<V,2> pow(const MF& mf, const std::array<V,2>& bases, T exponent)
     {
         return MontPowImpl<MF>::arraypow_masked(mf, bases, exponent);
     }
 #else
     static HURCHALLA_FORCE_INLINE
-    std::array<V,2> pow(const MF& mf, std::array<V,2>& bases, T exponent)
+    std::array<V,2> pow(const MF& mf, const std::array<V,2>& bases, T exponent)
     {
         return MontPowImpl<MF>::arraypow_cmov(mf, bases, exponent);
     }
@@ -312,13 +312,13 @@ struct MontArrayPow {
     // 3 with the masking version than with the cmov version, and x86-64 gcc
     // does slightly better with masking than cmov for size 3.
     static HURCHALLA_FORCE_INLINE
-    std::array<V,3> pow(const MF& mf, std::array<V,3>& bases, T exponent)
+    std::array<V,3> pow(const MF& mf, const std::array<V,3>& bases, T exponent)
     {
         return MontPowImpl<MF>::arraypow_cmov(mf, bases, exponent);
     }
 #  else
     static HURCHALLA_FORCE_INLINE
-    std::array<V,3> pow(const MF& mf, std::array<V,3>& bases, T exponent)
+    std::array<V,3> pow(const MF& mf, const std::array<V,3>& bases, T exponent)
     {
         return MontPowImpl<MF>::arraypow_masked(mf, bases, exponent);
     }
@@ -339,7 +339,7 @@ montgomery_pow(const MF& mf, typename MF::MontgomeryValue base,
 template <class MF, std::size_t NUM_BASES>
 HURCHALLA_FORCE_INLINE std::array<typename MF::MontgomeryValue, NUM_BASES>
 montgomery_pow(const MF& mf,
-               std::array<typename MF::MontgomeryValue, NUM_BASES>& bases,
+               const std::array<typename MF::MontgomeryValue, NUM_BASES>& bases,
                typename MF::T_type exponent)
 {
     return MontArrayPow<MF>::pow(mf, bases, exponent);

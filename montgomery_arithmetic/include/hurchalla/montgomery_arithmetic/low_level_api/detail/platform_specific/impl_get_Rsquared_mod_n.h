@@ -70,7 +70,7 @@ T impl_get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
         for (; i<bitsT; i*=2) {
             // use montgomery multiplication to square tmp on each iteration
             T u_hi, u_lo;
-            u_hi = unsigned_multiply_to_hilo_product(&u_lo, tmp, tmp);
+            u_hi = unsigned_multiply_to_hilo_product(u_lo, tmp, tmp);
             tmp = REDC(u_hi, u_lo, n, inverse_n_modR, MTAG(), LowlatencyTag());
         }
         HPBC_ASSERT2(i == bitsT);
