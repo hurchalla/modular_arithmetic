@@ -151,7 +151,7 @@ HURCHALLA_FORCE_INLINE std::uint64_t impl_unsigned_multiply_to_hilo_product(
     lowProduct = _umul128(u, v, &highProduct);
     if (HPBC_POSTCONDITION3_MACRO_IS_ACTIVE) {
         uint64_t tmpHi, tmpLo;
-        tmpHi = slow_unsigned_multiply_to_hilo_product(&tmpLo, u, v);
+        tmpHi = slow_unsigned_multiply_to_hilo_product(tmpLo, u, v);
         HPBC_POSTCONDITION3(highProduct == tmpHi && lowProduct == tmpLo);
     }
     return highProduct;
@@ -173,7 +173,7 @@ HURCHALLA_FORCE_INLINE std::uint64_t impl_unsigned_multiply_to_hilo_product(
     lowProduct = static_cast<std::uint64_t>(static_cast<P>(u)*v);
     if (HPBC_POSTCONDITION3_MACRO_IS_ACTIVE) {
         uint64_t tmpHi, tmpLo;
-        tmpHi = slow_unsigned_multiply_to_hilo_product(&tmpLo, u, v);
+        tmpHi = slow_unsigned_multiply_to_hilo_product(tmpLo, u, v);
         HPBC_POSTCONDITION3(highProduct == tmpHi && lowProduct == tmpLo);
     }
     return highProduct;
