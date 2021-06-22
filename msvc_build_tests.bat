@@ -36,10 +36,10 @@ del tmp_test_results.txt
 if %result% neq 0 exit /b %result%
 
 %build_dir%\Release\test_hurchalla_util.exe
-if %result% neq 0 exit /b %result%
+if %errorlevel% neq 0 exit /b %errorlevel%
 
 %build_dir%\Release\test_hurchalla_modular_arithmetic.exe
-if %result% neq 0 exit /b %result%
+if %errorlevel% neq 0 exit /b %errorlevel%
 
 
 REM Once again we'll filter out the useless lines starting with "Running main()"
@@ -56,7 +56,7 @@ del tmp_test_results.txt
 if %result% neq 0 exit /b %result%
 
 %build_dir%\Debug\test_hurchalla_util.exe
-if %result% neq 0 exit /b %result%
+if %errorlevel% neq 0 exit /b %errorlevel%
 
 %build_dir%\Debug\test_hurchalla_modular_arithmetic.exe
-if %result% neq 0 exit /b %result%
+if %errorlevel% neq 0 exit /b %errorlevel%
