@@ -50,7 +50,7 @@ void exhaustive_test_uint8_t();
 void exhaustive_test_uint8_t()
 {
     namespace hc = hurchalla;
-    for (std::uint8_t modulus = 255; modulus>1; --modulus) {
+    for (std::uint8_t modulus=255; modulus>1; --modulus) {
         for (std::uint8_t a=0; a<modulus; ++a) {
             std::uint8_t inv = hc::modular_multiplicative_inverse(a, modulus);
             if (inv == 0)

@@ -45,11 +45,7 @@ T impl_modular_pow(T base_t, T exponent_t, T modulus_t)
    }
 */
    // slightly optimized version
-   U result;
-   if (exponent & 1)
-      result = base;
-   else
-      result = 1;
+   U result = (exponent & 1) ? base : 1;
    while (exponent > 1)
    {
       exponent = static_cast<U>(exponent >> 1);

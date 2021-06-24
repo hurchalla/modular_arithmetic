@@ -134,6 +134,7 @@ void test_mf_general_checks(M& mf, typename M::T_type a, typename M::T_type b,
 
     EXPECT_TRUE(mf.getUnityValue() == mf.getCanonicalValue(mf.convertIn(1)));
     EXPECT_TRUE(mf.getZeroValue() == mf.getCanonicalValue(mf.convertIn(0)));
+    EXPECT_TRUE(modulus > 0);
     EXPECT_TRUE(mf.getNegativeOneValue() ==
               mf.getCanonicalValue(mf.convertIn(static_cast<T>(modulus-1))));
 
@@ -244,6 +245,7 @@ void test_MontgomeryForm()
                                          mf.getCanonicalValue(mf.convertIn(4)));
         EXPECT_TRUE(mf.getUnityValue()== mf.getCanonicalValue(mf.convertIn(1)));
         EXPECT_TRUE(mf.getZeroValue() == mf.getCanonicalValue(mf.convertIn(0)));
+        EXPECT_TRUE(modulus > 0);
         EXPECT_TRUE(mf.getNegativeOneValue() ==
                  mf.getCanonicalValue(mf.convertIn(static_cast<T>(modulus-1))));
         test_multiply_variants(mf, x, y, 1);
@@ -309,6 +311,7 @@ void test_MontgomeryForm()
         EXPECT_TRUE(us == 1 || us == 2);
         EXPECT_TRUE(mf.getUnityValue()== mf.getCanonicalValue(mf.convertIn(1)));
         EXPECT_TRUE(mf.getZeroValue() == mf.getCanonicalValue(mf.convertIn(0)));
+        EXPECT_TRUE(modulus > 0);
         EXPECT_TRUE(mf.getNegativeOneValue() ==
                  mf.getCanonicalValue(mf.convertIn(static_cast<T>(modulus-1))));
         test_multiply_variants(mf, x, y, 2);
@@ -336,6 +339,8 @@ void test_MontgomeryForm()
     {
         T modulus = M::max_modulus();
         M mf(modulus);
+        EXPECT_TRUE(modulus > 4);
+
         V x = mf.convertIn(static_cast<T>(modulus - 1));
         V y = mf.convertIn(2);
 
@@ -396,6 +401,7 @@ void test_MontgomeryForm()
         test_mf_general_checks(mf, a, b, c);
     }
     {
+        EXPECT_TRUE(M::max_modulus() >= 5);
         M mf(M::max_modulus()-2);
         T c = M::max_modulus()-3;
         T a=5; T b=6;
@@ -412,6 +418,7 @@ void test_MontgomeryForm()
         test_mf_general_checks(mf, a, b, c);
     }
     {
+        EXPECT_TRUE(M::max_modulus() >= 5);
         M mf((M::max_modulus()/4)*2 + 1);
         T c = 0;
         T a=5; T b=6;

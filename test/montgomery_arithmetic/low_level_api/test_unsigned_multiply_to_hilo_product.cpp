@@ -12,6 +12,8 @@ template <typename T>
 void test_unsigned_multiply_to_hilo_product()
 {
     namespace hc = hurchalla;
+    static_assert(hc::ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(hc::ut_numeric_limits<T>::is_signed), "");
     T tmax = hc::ut_numeric_limits<T>::max();
     T hi, lo, a, b;
 

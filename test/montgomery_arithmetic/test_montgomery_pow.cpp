@@ -16,9 +16,6 @@
 #undef NDEBUG
 
 
-//#include "hurchalla/modular_arithmetic/modular_multiplication.h"
-//#include "hurchalla/modular_arithmetic/modular_addition.h"
-//#include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/modular_arithmetic/modular_pow.h"
 #include "hurchalla/montgomery_arithmetic/MontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/montgomery_form_aliases.h"

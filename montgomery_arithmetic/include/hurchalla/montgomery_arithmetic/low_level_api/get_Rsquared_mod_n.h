@@ -35,6 +35,7 @@ T get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     static_assert(ut_numeric_limits<T>::is_modulo, "");
     if (HPBC_PRECONDITION2_MACRO_IS_ACTIVE) {
+        static_assert(ut_numeric_limits<T>::digits >= 2, "");
         // Using QuarterrangeTag requires n < R/4.
         T Rdiv4 = static_cast<T>(
                    static_cast<T>(1) << (ut_numeric_limits<T>::digits - 2));

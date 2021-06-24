@@ -20,6 +20,7 @@ template <typename T, class MTAG>
 T get_max_allowable_modulus()
 {
     namespace hc = hurchalla;
+    static_assert(hc::ut_numeric_limits<T>::digits >= 1, "");
     T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
                                         (hc::ut_numeric_limits<T>::digits - 1));
     T Rdiv4 = static_cast<T>(Rdiv2 / 2);
@@ -61,6 +62,7 @@ template <typename T, class MTAG>
 void test_R2_exhaustive()
 {
     T max = get_max_allowable_modulus<T, MTAG>();
+    EXPECT_TRUE(max > 0);
     T evenmax = static_cast<T>((max/2)*2);
     T oddmax = (evenmax != max) ? max : static_cast<T>(max - 1);
 
@@ -74,6 +76,7 @@ template <typename T, class MTAG>
 void test_R2()
 {
     T max = get_max_allowable_modulus<T, MTAG>();
+    EXPECT_TRUE(max > 0);
     T evenmax = static_cast<T>((max/2)*2);
     T oddmax = (evenmax != max) ? max : static_cast<T>(max - 1);
     T oddhalfmax = static_cast<T>((max/4)*2 + 1);

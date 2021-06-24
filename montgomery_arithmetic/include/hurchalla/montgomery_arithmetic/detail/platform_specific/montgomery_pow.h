@@ -40,7 +40,7 @@ struct MontPowImpl {
         // The multiply above is a loop carried dependency.  Thus, a second loop
         // carried dependency with the same length can be essentially free due
         // to instruction level parallelism, so long as it does not introduce
-        // ny branch mispredictions.
+        // any branch mispredictions.
         // So we will always compute the second multiply, instead of
         // conditionally computing it, and we will encourage the compiler to use
         // a (branchless) conditional move instruction.

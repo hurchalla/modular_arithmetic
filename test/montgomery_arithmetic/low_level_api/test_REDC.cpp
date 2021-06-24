@@ -27,12 +27,17 @@
 template <typename T>
 void test_REDC_identity(T a, T n, T inv_n, T Rmod_n)
 {
-    HPBC_PRECONDITION2(n % 2 == 1);
     namespace hc = hurchalla;
+    static_assert(hc::ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(hc::ut_numeric_limits<T>::is_signed), "");
+    HPBC_PRECONDITION2(n % 2 == 1);
+    HPBC_PRECONDITION2(n > 1);
+
     T u_hi, u_lo;
     u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, Rmod_n, a);
 
     T amodn = static_cast<T>(a % n);
+    static_assert(hc::ut_numeric_limits<T>::digits >= 2, "");
     T Rdiv4 = static_cast<T>(
                    static_cast<T>(1) << (hc::ut_numeric_limits<T>::digits - 2));
     {  // Fullrange has no requirements on n
@@ -56,10 +61,12 @@ void test_REDC_identity(T a, T n, T inv_n, T Rmod_n)
 template <typename T>
 void multi_tests_REDC_identity(T n)
 {
+    namespace hc = hurchalla;
+    static_assert(hc::ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(hc::ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION2(n % 2 == 1);
     HPBC_PRECONDITION2(n > 1);
 
-    namespace hc = hurchalla;
     T inv_n = hc::inverse_mod_R(n);
     T Rmod_n = hc::get_R_mod_n(n);
 
@@ -101,9 +108,12 @@ void multi_tests_REDC_identity(T n)
 template <typename T, class MTAG, class PTAG>
 void test_REDC_multiply(T a, T b, T n, T inv_n, T Rsqrd_mod_n)
 {
+    namespace hc = hurchalla;
+    static_assert(hc::ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(hc::ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION2(n % 2 == 1);
     HPBC_PRECONDITION2(n > 1);
-    namespace hc = hurchalla;
+
     T u_hi, u_lo;
     // convert a and b into montgomery domain
     u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, Rsqrd_mod_n, a);
@@ -135,10 +145,13 @@ void test_REDC_multiply(T a, T b, T n, T inv_n, T Rsqrd_mod_n)
 template <typename T, class MTAG, class PTAG>
 void multi_tests_REDC_multiply(T n)
 {
+    namespace hc = hurchalla;
+    static_assert(hc::ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(hc::ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION2(n % 2 == 1);
     HPBC_PRECONDITION2(n > 1);
-    namespace hc = hurchalla;
 
+    static_assert(hc::ut_numeric_limits<T>::digits >= 2, "");
     T Rdiv4 = static_cast<T>(
                    static_cast<T>(1) << (hc::ut_numeric_limits<T>::digits - 2));
 
@@ -214,9 +227,11 @@ void multi_tests_REDC_multiply(T n)
 template <typename T, class MTAG, class PTAG>
 void test_REDC_is_zero(T a, T n, T inv_n, T Rmod_n)
 {
+    namespace hc = hurchalla;
+    static_assert(hc::ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(hc::ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION2(n % 2 == 1);
     HPBC_PRECONDITION2(n > 1);
-    namespace hc = hurchalla;
 
     // get the reference answer on whether the result should be zero.
     T amodn = static_cast<T>(a % n);
@@ -241,10 +256,13 @@ void test_REDC_is_zero(T a, T n, T inv_n, T Rmod_n)
 template <typename T, class MTAG, class PTAG>
 void multi_tests_REDC_is_zero(T n)
 {
+    namespace hc = hurchalla;
+    static_assert(hc::ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(hc::ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION2(n % 2 == 1);
     HPBC_PRECONDITION2(n > 1);
 
-    namespace hc = hurchalla;
+    static_assert(hc::ut_numeric_limits<T>::digits >= 2, "");
     T Rdiv4 = static_cast<T>(
                    static_cast<T>(1) << (hc::ut_numeric_limits<T>::digits - 2));
 

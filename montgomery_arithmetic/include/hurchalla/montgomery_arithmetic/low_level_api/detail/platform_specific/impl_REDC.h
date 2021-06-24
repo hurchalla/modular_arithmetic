@@ -186,6 +186,7 @@ struct DefaultRedc
   static HURCHALLA_FORCE_INLINE
   T REDC(T u_hi, T u_lo, T n, T inv_n, QuarterrangeTag)
   {
+    static_assert(ut_numeric_limits<T>::digits >= 2, "");
     // QuarterrangeTag has the precondition requirement that n < R/4 (see
     // MontyQuarterRange for more on this).
     T Rdiv4 = static_cast<T>(static_cast<T>(1) <<
@@ -248,7 +249,7 @@ struct Redc<std::uint64_t>
     HPBC_PRECONDITION2(n % 2 == 1);
     HPBC_PRECONDITION2(n > 1);
 
-    T m = u_lo * inv_n;
+    T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
     T mn_lo;
     T mn_hi = unsigned_multiply_to_hilo_product(mn_lo, m, n);
     HPBC_ASSERT2(mn_hi < n);

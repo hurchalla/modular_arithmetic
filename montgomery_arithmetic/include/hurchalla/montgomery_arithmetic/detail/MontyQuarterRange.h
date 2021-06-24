@@ -21,6 +21,7 @@ class MontyQuarterRange : public MontyCommonBase<MontyQuarterRange, T> {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     static_assert(ut_numeric_limits<T>::is_modulo, "");
+    static_assert(ut_numeric_limits<T>::digits >= 2, "");
     using BC = MontyCommonBase<::hurchalla::detail::MontyQuarterRange, T>;
     using BC::n_;
     using BC::inv_n_;

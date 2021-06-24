@@ -339,8 +339,8 @@ HURCHALLA_FORCE_INLINE
 std::uint64_t impl_modular_multiplication_prereduced_inputs(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
 {
-    using U = __uint128_t;
-    return (std::uint64_t)((U)a*(U)b % (U)modulus);
+    using P = safely_promote_unsigned<__uint128_t>::type;
+    return (std::uint64_t)((P)a*(P)b % (P)modulus);
 }
 */
 #endif

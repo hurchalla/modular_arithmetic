@@ -32,16 +32,21 @@ namespace detail_nimr {
     #error "HURCHALLA_TARGET_BIT_WIDTH must be defined"
     #endif
 
-    // This is the generalized Dumas algorithm for the negative inverse (mod R).
-    // TODO:
-    // I haven't yet published my generalized form of the Dumas algorithm, but
-    // the Dumas algorithm comes from  https://arxiv.org/abs/1209.6626
-    // The closest information available at the moment is from Marc Reynolds at
-    // http://marc-b-reynolds.github.io/math/2017/09/18/ModInverse.html
-    // However, Reynolds presents a straightforward adaptation of Dumas's
-    // algorithm.  This generalized form is a slightly different algo.
+    // This algorithm is an adaptation of the algorithm described in
+    // https://github.com/hurchalla/modular_arithmetic/blob/master/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/low_level_api/detail/integer_inverse.pdf
+    // It is an adaptation to produce the negative inverse rather than the
+    // normal (positive) inverse.  The algorithm in the linked paper has to be
+    // reworked from scratch (using all the same principles and the same
+    // approach) to produce the negative inverse algorithm used in the function
+    // below.  It's fairly straightforward to rework it for the negative inverse
+    // and prove it's correct, but it's left as an exercise for the reader.
+    // Note that the formula for the negative inverse of 'a' that is good to 5
+    // (or 4) bits is inv_5goodbits = (3*a)^12.  Once again, you can prove the
+    // correctness of this by using the same approach as the paper uses to prove
+    // correctness of its formula for the *positive* inverse (good to 4 or 5
+    // bits).
     //
-    // Note: Dumas's alg only makes sense to use for the native integral types -
+    // Note: This alg only makes sense to use for the native integral types -
     // Newton's method becomes more efficient when larger types are required.
     template <typename T, int bits>
     HURCHALLA_FORCE_INLINE
@@ -74,8 +79,8 @@ namespace detail_nimr {
     }
 
     // This is Newton's method algorithm for the negative inverse (mod R).
-    // To get the starting bits of 'x' we recurse until we use Dumas's method
-    // (it's more efficient than Newton's method for native integer types).
+    // To get the starting bits of 'x' we recurse until we can use the more
+    // efficient algorithm above, at which point we switch to it.
     template <typename T, int bits>
     HURCHALLA_FORCE_INLINE
     typename std::enable_if<!(bits<=HURCHALLA_TARGET_BIT_WIDTH), T>::type

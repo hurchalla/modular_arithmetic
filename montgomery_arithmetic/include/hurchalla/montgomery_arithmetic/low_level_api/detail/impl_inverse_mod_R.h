@@ -34,11 +34,12 @@ namespace detail_invmR {
 #  error "HURCHALLA_TARGET_BIT_WIDTH must be defined"
 #endif
 
-// This is a generalized and slightly more efficient form of Dumas' algorithm
-// (https://arxiv.org/abs/1209.6626) for the inverse (mod R), as described in
-// integer_inverse.pdf in this current directory.
+// This algorithm for the inverse (mod R) is described in "integer_inverse.pdf"
+// in this current directory.  Note: it is a generalized and slightly more
+// efficient version of Dumas' algorithm (from https://arxiv.org/abs/1209.6626),
+// and so we still call it Dumas algorithm.
 //
-// Note: Dumas's alg only makes sense to use for the native integral types -
+// Note: Dumas' alg only makes sense to use for the native integral types -
 // Newton's method becomes more efficient when larger types are required.
 template <typename T, int bits>
 HURCHALLA_FORCE_INLINE
@@ -72,7 +73,7 @@ impl_inverse_mod_R(T a)
 }
 
 // This is Newton's method algorithm for the inverse (mod R).
-// To get the starting bits of 'x' we recurse until we use Dumas's method (it's
+// To get the starting bits of 'x' we recurse until we use Dumas' method (it's
 // more efficient than Newton's method for native integer types).
 template <typename T, int bits>
 HURCHALLA_FORCE_INLINE
