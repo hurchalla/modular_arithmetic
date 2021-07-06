@@ -16,9 +16,9 @@
 #    helps depends on your compiler) inline asm optimizations, which makes for
 #    the fastest binaries but of course has the downsides of inline asm -
 #    primarily that inline asm is extremely difficult to properly test.
-# -t specifies that you want to compile the code using all available inline asm
-#    routines, simply for the purpose of testing them all - this is not expected
-#    to result in the fastest binaries.
+# -u specifies that you want to compile the code using all available inline asm
+#    routines, so that the tests will cover all of them (this is not expected to
+#    result in the fastest binaries).
 # -m allows you to choose between Release and Debug build configuration, rather
 #    than using the default.
 #
@@ -161,12 +161,12 @@
 
 
 
-while getopts ":m:c:h-:rat" opt; do
+while getopts ":m:c:h-:rau" opt; do
   case $opt in
     h)
       ;&
     -)
-      echo "Usage: build_tests [-c<compiler_name>] [-r] [-a] [-t] [-m<Release|Debug>]" >&2
+      echo "Usage: build_tests [-c<compiler_name>] [-r] [-a] [-u] [-m<Release|Debug>]" >&2
       exit 1
       ;;
     c)
@@ -181,7 +181,7 @@ while getopts ":m:c:h-:rat" opt; do
     a)
       use_inline_asm="-DHURCHALLA_ALLOW_INLINE_ASM_REDC=1"
       ;;
-    t)
+    u)
       use_all_inline_asm="-DHURCHALLA_ALLOW_INLINE_ASM_ALL=1"
       ;;
     \?)
