@@ -5,7 +5,8 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_COMMON_BASE_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/detail/platform_specific/MontHelper.h"
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/mont_add_canonical_value.h"
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/mont_subtract_canonical_value.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/monty_tag_structs.h"
@@ -186,9 +187,8 @@ public:
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isCanonical(y));
         HPBC_PRECONDITION2(y.get() < n_); // isCanonical() should guarantee this
-        T z = MontHelper<T>::modadd_canonical_second_addend(x.get(), y.get(),
-                                                                            n_);
-        // modadd_canonical_second_addend guarantees that z <= std::max(x, n-1).
+        T z = mont_add_canonical_value(x.get(), y.get(), n_);
+        // mont_add_canonical_value guarantees that z <= std::max(x, n-1).
         // Thus if x < n, then z < n.  Or in other words, if x is canonical,
         // then z is canonical.
         HPBC_POSTCONDITION2(isCanonical(x) ? isCanonical(V(z)) : true);
@@ -211,8 +211,8 @@ public:
         HPBC_PRECONDITION2(isCanonical(y));
         HPBC_PRECONDITION2(y.get() < n_); // isCanonical() should guarantee this
         HPBC_PRECONDITION2(isValid(x));
-        T z = MontHelper<T>::modsub_canonical_subtrahend(x.get(), y.get(), n_);
-        // modsub_canonical_subtrahend guarantees that z <= std::max(x, n-1).
+        T z = mont_subtract_canonical_value(x.get(), y.get(), n_);
+        // mont_subtract_canonical_value guarantees that z <= std::max(x, n-1).
         // Thus if x < n, then z < n.  Or in other words, if x is canonical,
         // then z is canonical.
         HPBC_POSTCONDITION2(isCanonical(x) ? isCanonical(V(z)) : true);

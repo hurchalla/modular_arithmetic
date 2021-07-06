@@ -16,6 +16,9 @@
 #    helps depends on your compiler) inline asm optimizations, which makes for
 #    the fastest binaries but of course has the downsides of inline asm -
 #    primarily that inline asm is extremely difficult to properly test.
+# -t specifies that you want to compile the code using all available inline asm
+#    routines, simply for the purpose of testing them all - this is not expected
+#    to result in the fastest binaries.
 # -m allows you to choose between Release and Debug build configuration, rather
 #    than using the default.
 #
@@ -158,12 +161,12 @@
 
 
 
-while getopts ":m:c:h-:ra" opt; do
+while getopts ":m:c:h-:rat" opt; do
   case $opt in
     h)
       ;&
     -)
-      echo "Usage: build_tests [-c<compiler_name>] [-r] [-a] [-m<Release|Debug>]" >&2
+      echo "Usage: build_tests [-c<compiler_name>] [-r] [-a] [-t] [-m<Release|Debug>]" >&2
       exit 1
       ;;
     c)
@@ -177,6 +180,9 @@ while getopts ":m:c:h-:ra" opt; do
       ;;
     a)
       use_inline_asm="-DHURCHALLA_ALLOW_INLINE_ASM_REDC=1"
+      ;;
+    t)
+      use_all_inline_asm="-DHURCHALLA_ALLOW_INLINE_ASM_ALL=1"
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -436,7 +442,7 @@ if [ "${mode,,}" = "release" ]; then
     cmake -S. -B./$build_dir -DTEST_HURCHALLA_LIBS=ON \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_FLAGS="$cpp_standard  \
-            $use_inline_asm  \
+            $use_inline_asm  $use_all_inline_asm \
             $gcc_static_analysis"  "${clang_static_analysis[@]}" \
             $cmake_cpp_compiler $cmake_c_compiler
     exit_on_failure
@@ -451,7 +457,7 @@ elif [ "${mode,,}" = "debug" ]; then
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_EXE_LINKER_FLAGS="$clang_ubsan_link_flags" \
             -DCMAKE_CXX_FLAGS="$cpp_standard  $clang_ubsan  $gcc_ubsan  \
-            $use_inline_asm  \
+            $use_inline_asm  $use_all_inline_asm \
             $gcc_static_analysis"  "${clang_static_analysis[@]}" \
             $cmake_cpp_compiler $cmake_c_compiler
     exit_on_failure

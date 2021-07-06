@@ -6,12 +6,14 @@
 
 
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/monty_tag_structs.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/Unroll.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 #include <array>
 #include <cstddef>
+#include <type_traits>
 
 namespace hurchalla { namespace detail {
 
@@ -33,7 +35,11 @@ struct MontPowImpl {
     // This is an optimized version of Algorithm 14.76, from
     // Applied Handbook of Cryptography- http://cacr.uwaterloo.ca/hac/
     // See also: hurchalla/modular_arithmetic/detail/impl_modular_pow.h
-    V result = (exponent & static_cast<T>(1)) ? base : mf.getUnityValue();
+    V result;
+    if (exponent & static_cast<T>(1))
+        result = base;
+    else
+        result = mf.getUnityValue();
     while (exponent > static_cast<T>(1)) {
         exponent = static_cast<T>(exponent >> static_cast<T>(1));
         base = mf.template multiply<LowuopsTag>(base, base);
@@ -49,20 +55,8 @@ struct MontPowImpl {
         // 'base' above depends only on multiply and thus is tagged for lowuops
         // since it is less likely to be a latency bottleneck.
         V tmp = mf.template multiply<LowlatencyTag>(result, base);
-#if 1
-  // ternary op generally compiles to conditional moves.  On x64 gcc and clang
-  // performance was significantly better with this line than with the masking
-  // method below.  I haven't measured icc or msvc.
+        // ternary op generally compiles to conditional moves.
         result = (exponent & static_cast<T>(1)) ? tmp : result;
-#else
-        T lowbit = (exponent & static_cast<T>(1));
-        using U = decltype(tmp.get());
-        static_assert(ut_numeric_limits<U>::is_integer, "");
-        static_assert(!(ut_numeric_limits<U>::is_signed), "");
-        U mask = static_cast<U>(0) - static_cast<U>(lowbit);
-        U mask_flipped = static_cast<U>(lowbit) - static_cast<U>(1);
-        result = V((mask & (tmp.get())) | (mask_flipped & (result.get())));
-#endif
     }
     return result;
   }
@@ -149,7 +143,6 @@ struct MontPowImpl {
   {
     HPBC_PRECONDITION(exponent >= 0);
     std::array<V, NUM_BASES> result;
-// TODO: use cmov/masking on this?
     if (exponent & static_cast<T>(1)) {
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
             result[i] = bases[i];
@@ -165,7 +158,6 @@ struct MontPowImpl {
         std::array<V, NUM_BASES> tmp;
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
             bases[i] = mf.template multiply<LowuopsTag>(bases[i], bases[i]);
-// TODO: Is LowlatencyTag for the line below ever faster?
             tmp[i] = mf.template multiply<LowuopsTag>(result[i], bases[i]);
         });
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
@@ -182,7 +174,6 @@ struct MontPowImpl {
   {
     HPBC_PRECONDITION(exponent >= 0);
     std::array<V, NUM_BASES> result;
-// TODO: use cmov/masking on this?
     if (exponent & static_cast<T>(1)) {
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
             result[i] = bases[i];
@@ -205,7 +196,6 @@ struct MontPowImpl {
         U maskflip = static_cast<U>(lowbit - static_cast<U>(1));
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
             bases[i] = mf.template multiply<LowuopsTag>(bases[i], bases[i]);
-// TODO: Is LowlatencyTag for the line below ever faster?
             V tmp = mf.template multiply<LowuopsTag>(result[i], bases[i]);
             result[i]= V((mask & (tmp.get())) | (maskflip & (result[i].get())));
         });
@@ -217,7 +207,7 @@ struct MontPowImpl {
 
 // MF should be a MontgomeryForm type
 template<class MF>
-struct MontArrayPow {
+struct DefaultMontArrayPow {
     using T = typename MF::T_type;
     using V = typename MF::MontgomeryValue;
     static_assert(ut_numeric_limits<T>::is_integer, "");
@@ -226,7 +216,7 @@ struct MontArrayPow {
     // over templates whenever argument matching succeeds.
 
     // Template version (with two std::enable_if forms):
-    // Having a std::enable_if cutoff at NUM_BASES < 20 is a bit arbitrary,
+    // Having a std::enable_if cutoff at NUM_BASES < 10 is a bit arbitrary,
     // since the only way to know the best cutoff for any given machine is to
     // make performance measurements.  However, it may be roughly okay in
     // practice since most of the time NUM_BASES is likely to be < 10, and
@@ -244,7 +234,7 @@ struct MontArrayPow {
     // that function when NUM_BASES starts to get large.
     template <std::size_t NUM_BASES>
     static HURCHALLA_FORCE_INLINE
-    typename std::enable_if<(NUM_BASES < 20), std::array<V, NUM_BASES>>::type
+    typename std::enable_if<(NUM_BASES < 10), std::array<V, NUM_BASES>>::type
     pow(const MF& mf, const std::array<V, NUM_BASES>& bases, T exponent)
     {
         static_assert(NUM_BASES > 0, "");
@@ -255,7 +245,7 @@ struct MontArrayPow {
     }
     template <std::size_t NUM_BASES>
     static HURCHALLA_FORCE_INLINE
-    typename std::enable_if<(NUM_BASES >= 20), std::array<V, NUM_BASES>>::type
+    typename std::enable_if<(NUM_BASES >= 10), std::array<V, NUM_BASES>>::type
     pow(const MF& mf, const std::array<V, NUM_BASES>& bases, T exponent)
     {
         static_assert(NUM_BASES > 0, "");
@@ -274,75 +264,109 @@ struct MontArrayPow {
         return result;
     }
 
-#if defined(__GNUC__) && !defined(__clang__) && \
-        defined(HURCHALLA_TARGET_ISA_X86_64)
-// x86-64 gcc seems to do better with masking for array size of 2.  But in
-// general we expect conditional moves (cmovs) to perform better than masks.
-// x86-64 icc has no difference between mask and cmov, at -O2 and -O3.  However
-// at -Os (and -O1) icc takes ~4x as long as it should with cmov and ~3x as long
-// as it should with mask.
-//TODO: file a bug report regarding icc perf at -Os?  FYI using the compile flag
-// -inline-forceinline gets it to ~1.5x the runtime of -O2 (which is acceptable)
-// so this strongly suggests it's due to inlining not happening, but my VTune
-// and godbolt experiments haven't yet shown inlining to be skipped at -Os when
-// a function has __attribute__((always_inline)).  And I double checked to be
-// certain that all involved functions had this (via HURCHALLA_FORCE_INLINE).
-    static HURCHALLA_FORCE_INLINE
-    std::array<V,2> pow(const MF& mf, const std::array<V,2>& bases, T exponent)
-    {
-        return MontPowImpl<MF>::arraypow_masked(mf, bases, exponent);
-    }
-#else
     static HURCHALLA_FORCE_INLINE
     std::array<V,2> pow(const MF& mf, const std::array<V,2>& bases, T exponent)
     {
         return MontPowImpl<MF>::arraypow_cmov(mf, bases, exponent);
     }
-#endif
+};
 
-// I've only measured x86-64 so far - I measured the next section to be a perf
-// improvement over the catch-all template version.  In general I'd expect the
-// template version to work best for an array sized 3 or larger though, so I've
-// only enabled the section for the (measured) x86-64 ISA.
+
+
+// Primary template.  Forwards all work to DefaultMontArrayPow.
+template<class MontyType, class MF, class Enable = void>
+struct WrapperMontArrayPow {
+    using V = typename MF::MontgomeryValue;
+    template <std::size_t NUM_BASES>
+    static HURCHALLA_FORCE_INLINE
+    std::array<V, NUM_BASES> pow(const MF& mf,
+                                 const std::array<V, NUM_BASES>& bases,
+                                 typename MF::T_type exponent)
+    {
+        return DefaultMontArrayPow<MF>::pow(mf, bases, exponent);
+    }
+};
+
 #if defined(HURCHALLA_TARGET_ISA_X86_64)
+// Partial specialization using QuarterrangeTag (x86-64 only).
+// I haven't measured performance for any ISAs except x86-64, and so all other
+// ISAs default to the primary template above.
+//
+// We use the awkward "enable_if" syntax in this template because we want to
+// match MontyType::MontyTag to QuarterrangeTag - but the client code can't
+// provide MontyType::MontyTag because sometimes it might not exist and the
+// client would get a compile error if so.  But in the template parameters below
+// if MontyType::MontyTag doesn't exist that's ok, because due to SFINAE the
+// compiler will just give up on attempting the match (it will instead match to
+// the primary template above).
+template<class MontyType, class MF>
+struct WrapperMontArrayPow<MontyType, MF, typename std::enable_if<
+              std::is_same<typename MontyType::MontyTag, QuarterrangeTag>::value
+          >::type> {
+    using T = typename MF::T_type;
+    using V = typename MF::MontgomeryValue;
+
+    template <std::size_t NUM_BASES>
+    static HURCHALLA_FORCE_INLINE
+    std::array<V, NUM_BASES> pow(const MF& mf,
+                                 const std::array<V, NUM_BASES>& bases,
+                                 T exponent)
+    {
+        return DefaultMontArrayPow<MF>::pow(mf, bases, exponent);
+    }
+
+    // For x86-64 Montgomery QuarterrangeTag and 2 or 3 bases and compiling with
+    // clang, arraypow_cmov() always had better measured performance than any of
+    // the alternative functions.  For gcc and icc compilers, arraypow_masked()
+    // resulted in the best measured performance.  But in general we expect
+    // conditional moves (cmovs) to perform better than masks, so we default for
+    // any unmeasured compiler to using arraypow_cmov().  I haven't measured
+    // perf on MSVC, for example.
 #  if !defined(__GNUC__) || defined(__clang__)
-    // In general we expect conditional moves (cmovs) to perform better than
-    // masks, so we default to using arraypow_cmov rather than arraypow_masked.
-    // Gcc and icc are exceptions; x86-64 icc does much better for array size
-    // 3 with the masking version than with the cmov version, and x86-64 gcc
-    // does slightly better with masking than cmov for size 3.
+    static HURCHALLA_FORCE_INLINE
+    std::array<V,2> pow(const MF& mf, const std::array<V,2>& bases, T exponent)
+    {
+        return MontPowImpl<MF>::arraypow_cmov(mf, bases, exponent);
+    }
     static HURCHALLA_FORCE_INLINE
     std::array<V,3> pow(const MF& mf, const std::array<V,3>& bases, T exponent)
     {
         return MontPowImpl<MF>::arraypow_cmov(mf, bases, exponent);
     }
+
 #  else
+    static HURCHALLA_FORCE_INLINE
+    std::array<V,2> pow(const MF& mf, const std::array<V,2>& bases, T exponent)
+    {
+        return MontPowImpl<MF>::arraypow_masked(mf, bases, exponent);
+    }
     static HURCHALLA_FORCE_INLINE
     std::array<V,3> pow(const MF& mf, const std::array<V,3>& bases, T exponent)
     {
         return MontPowImpl<MF>::arraypow_masked(mf, bases, exponent);
     }
 #  endif
-#endif
 };
+#endif
 
 
 
 template <class MF>
 HURCHALLA_FORCE_INLINE typename MF::MontgomeryValue
-montgomery_pow(const MF& mf, typename MF::MontgomeryValue base,
-              typename MF::T_type exponent)
+montgomery_pow(const MF& mf,
+               typename MF::MontgomeryValue base,
+               typename MF::T_type exponent)
 {
     return MontPowImpl<MF>::scalarpow(mf, base, exponent);
 }
 
-template <class MF, std::size_t NUM_BASES>
+template <class MontyType, class MF, std::size_t NUM_BASES>
 HURCHALLA_FORCE_INLINE std::array<typename MF::MontgomeryValue, NUM_BASES>
 montgomery_pow(const MF& mf,
                const std::array<typename MF::MontgomeryValue, NUM_BASES>& bases,
                typename MF::T_type exponent)
 {
-    return MontArrayPow<MF>::pow(mf, bases, exponent);
+    return WrapperMontArrayPow<MontyType, MF>::pow(mf, bases, exponent);
 }
 
 

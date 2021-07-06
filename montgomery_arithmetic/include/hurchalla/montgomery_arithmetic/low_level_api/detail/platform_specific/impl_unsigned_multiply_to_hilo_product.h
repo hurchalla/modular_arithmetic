@@ -34,9 +34,9 @@ T slow_unsigned_multiply_to_hilo_product(T& lowProduct, T u, T v)
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
 
     // for example, if T==uint64_t, shift ought to == 32
-    static const unsigned int shift = ut_numeric_limits<T>::digits / 2;
+    static constexpr unsigned int shift = ut_numeric_limits<T>::digits / 2;
     // for example, if T==uint64_t, lowmask ought to == 0xFFFFFFFF
-    static const T lowmask = (static_cast<T>(1) << shift) - static_cast<T>(1);
+    static constexpr T lowmask = (static_cast<T>(1)<<shift) - static_cast<T>(1);
 
     T u0 = u & lowmask;
     T v0 = v & lowmask;

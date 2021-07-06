@@ -38,11 +38,15 @@ HURCHALLA_DISALLOW_INLINE_ASM_MODMUL
 HURCHALLA_ALLOW_INLINE_ASM_ABSDIFF
 HURCHALLA_ALLOW_INLINE_ASM_MODADD
 HURCHALLA_ALLOW_INLINE_ASM_MODSUB
-HURCHALLA_ALLOW_INLINE_ASM_MONTHELPER
+HURCHALLA_ALLOW_INLINE_ASM_MONT_ADD_CANONICAL
+HURCHALLA_ALLOW_INLINE_ASM_MONT_SUBTRACT_CANONICAL
 HURCHALLA_ALLOW_INLINE_ASM_REDC
 experimental:
 HURCHALLA_ALLOW_INLINE_ASM_MONTADD_SQRT_RANGE
 HURCHALLA_ALLOW_INLINE_ASM_MONTSUB_SQRT_RANGE
+
+for testing use only:
+HURCHALLA_ALLOW_INLINE_ASM_ALL
 
 Document that the INLINE_ASM macros above may or may not improve performance.  You need to benchmark with different ASM macros defined/not defined, and generally you would want to start with simply comparing performance with HURCHALLA_ALLOW_INLINE_ASM_REDC defined or not defined.  On x86_64 intel, in brief testing defining HURCHALLA_ALLOW_INLINE_ASM_REDC, I found gcc saw ~5% improvement and clang was essentially unaffected.
 

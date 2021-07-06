@@ -257,7 +257,7 @@ public:
     pow(std::array<MontgomeryValue, NUM_BASES>& bases, T exponent) const
     {
         HPBC_PRECONDITION(exponent >= 0);
-        return detail::montgomery_pow(*this, bases, exponent);
+        return detail::montgomery_pow<MontyType>(*this, bases, exponent);
     }
 
     // Returns the greatest common denominator of the standard representations
