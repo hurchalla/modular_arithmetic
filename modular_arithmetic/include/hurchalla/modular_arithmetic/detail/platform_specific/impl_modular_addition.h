@@ -46,9 +46,10 @@ template <typename T> HURCHALLA_FORCE_INLINE
 T impl_modular_addition_prereduced_inputs(T a, T b, T modulus)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(0<=a && a<modulus);  // i.e. the input must be prereduced
-    HPBC_PRECONDITION2(0<=b && b<modulus);  // i.e. the input must be prereduced
+    HPBC_PRECONDITION2(a<modulus);  // i.e. the input must be prereduced
+    HPBC_PRECONDITION2(b<modulus);  // i.e. the input must be prereduced
 
     // We want essentially-  result = (a+b < modulus) ? a+b : a+b-modulus
     //   But due to the potential for overflow on a+b, we need to instead test
@@ -73,15 +74,20 @@ template <typename T> HURCHALLA_FORCE_INLINE
 T impl_modular_addition_prereduced_inputs(T a, T b, T modulus)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(0<=a && a<modulus);  // the input must be prereduced
-    HPBC_PRECONDITION2(0<=b && b<modulus);  // the input must be prereduced
+    HPBC_PRECONDITION2(a<modulus);  // the input must be prereduced
+    HPBC_PRECONDITION2(b<modulus);  // the input must be prereduced
 
     using U = typename extensible_make_unsigned<T>::type;
     U sum = static_cast<U>(static_cast<U>(a) + static_cast<U>(b));
     U tmp = static_cast<U>(static_cast<U>(b) - static_cast<U>(modulus));
-    U tmp2 = static_cast<U>(static_cast<U>(a) + tmp);
-    U result = (tmp2 >= static_cast<U>(a)) ? sum : tmp2;
+    U result = static_cast<U>(static_cast<U>(a) + tmp);
+# if 0
+    result = (result >= static_cast<U>(a)) ? sum : result;
+# else
+    HURCHALLA_CMOV(result >= static_cast<U>(a), result, sum);
+# endif
 
     HPBC_POSTCONDITION2(static_cast<U>(0) <= result &&
                                               result < static_cast<U>(modulus));
@@ -114,11 +120,15 @@ HURCHALLA_FORCE_INLINE std::uint32_t impl_modular_addition_prereduced_inputs(
     // https://en.wikipedia.org/wiki/Loop-invariant_code_motion
     uint32_t sum = a + b;
     uint32_t tmp = b - modulus;
-    uint32_t tmp2 = a;  // in C++ we prefer not to overwrite an input (a)
+    uint32_t tmp2 = a;  // we prefer not to overwrite an input (a)
     __asm__ ("addl %[tmp], %[tmp2] \n\t"       /* tmp2 = a + tmp */
              "cmovbl %[tmp2], %[sum] \n\t"     /* sum = (tmp2<a) ? tmp2 : sum */
              : [tmp2]"+&r"(tmp2), [sum]"+r"(sum)
+# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [tmp]"r"(tmp)
+# else
              : [tmp]"rm"(tmp)
+# endif
              : "cc");
     uint32_t result = sum;
 
@@ -141,11 +151,15 @@ HURCHALLA_FORCE_INLINE std::uint64_t impl_modular_addition_prereduced_inputs(
     // https://en.wikipedia.org/wiki/Loop-invariant_code_motion
     uint64_t sum = a + b;
     uint64_t tmp = b - modulus;
-    uint64_t tmp2 = a;  // in C++ we prefer not to overwrite an input (a)
+    uint64_t tmp2 = a;  // we prefer not to overwrite an input (a)
     __asm__ ("addq %[tmp], %[tmp2] \n\t"       /* tmp2 = a + tmp */
              "cmovbq %[tmp2], %[sum] \n\t"     /* sum = (tmp2<a) ? tmp2 : sum */
              : [tmp2]"+&r"(tmp2), [sum]"+r"(sum)
+# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [tmp]"r"(tmp)
+# else
              : [tmp]"rm"(tmp)
+# endif
              : "cc");
     uint64_t result = sum;
 

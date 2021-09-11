@@ -30,8 +30,13 @@ HURCHALLA_FORCE_INLINE T mont_add_canonical_value(T x, T y, T n)
     T tmp = static_cast<T>(n - y);
     T sum = static_cast<T>(x + y);
     T tmp2 = static_cast<T>(x - tmp);
+#if 0
     // encourage compiler to use conditional move via ternary operator
     T result = (x>=tmp) ? tmp2 : sum;
+#else
+    T result = sum;
+    HURCHALLA_CMOV(x >= tmp, result, tmp2);
+#endif
 
     HPBC_POSTCONDITION2(result <= std::max(x, static_cast<T>(n-1)));
     return result;
@@ -55,7 +60,11 @@ HURCHALLA_FORCE_INLINE std::uint64_t mont_add_canonical_value(std::uint64_t x,
     __asm__ ("subq %[tmp], %[tmp2] \n\t"     /* tmp2 = x - tmp */
              "cmovaeq %[tmp2], %[sum] \n\t"  /* sum = (x>=tmp) ? tmp2 : sum */
              : [tmp2]"+&r"(tmp2), [sum]"+r"(sum)
+# if defined(__clang__)       /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [tmp]"r"(tmp)
+# else
              : [tmp]"rm"(tmp)
+# endif
              : "cc");
     std::uint64_t result = sum;
     HPBC_POSTCONDITION2(result <= std::max(x, static_cast<std::uint64_t>(n-1)));
@@ -74,7 +83,11 @@ HURCHALLA_FORCE_INLINE std::uint32_t mont_add_canonical_value(std::uint32_t x,
     __asm__ ("subl %[tmp], %[tmp2] \n\t"      /* tmp2 = x - tmp */
              "cmovael %[tmp2], %[sum] \n\t"   /* sum = (x>=tmp) ? tmp2 : sum */
              : [tmp2]"+&r"(tmp2), [sum]"+r"(sum)
+# if defined(__clang__)       /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [tmp]"r"(tmp)
+# else
              : [tmp]"rm"(tmp)
+# endif
              : "cc");
     std::uint32_t result = sum;
     HPBC_POSTCONDITION2(result <= std::max(x, static_cast<std::uint32_t>(n-1)));

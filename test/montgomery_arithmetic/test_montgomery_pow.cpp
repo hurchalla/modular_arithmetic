@@ -25,11 +25,14 @@
 #include <type_traits>
 #include <array>
 
+namespace {
+
+
+namespace hc = ::hurchalla;
 
 template <std::size_t NUM_BASES, typename M>
 void test_pow_array(M& mf, typename M::T_type base, typename M::T_type exponent)
 {
-    namespace hc = hurchalla;
     using T = typename M::T_type;
     using V = typename M::MontgomeryValue;
 
@@ -52,9 +55,7 @@ void test_pow_array(M& mf, typename M::T_type base, typename M::T_type exponent)
 template <typename M>
 void test_pow(M& mf, typename M::T_type base, typename M::T_type exponent)
 {
-    namespace hc = hurchalla;
     using T = typename M::T_type;
-
     T modulus = mf.getModulus();
 
     // first try the non-array overload of pow
@@ -162,29 +163,30 @@ void run_pow_tests()
 }
 
 
-namespace {
-    TEST(MontgomeryArithmetic, montgomery_pow) {
-        namespace hc = hurchalla;
-        run_pow_tests<hc::MontgomeryForm<std::uint8_t>>();
-        run_pow_tests<hc::MontgomeryQuarter<std::uint8_t>>();
-        run_pow_tests<hc::MontgomeryStandardMathWrapper<std::uint8_t>>();
 
-        run_pow_tests<hc::MontgomeryForm<std::uint16_t>>();
-        run_pow_tests<hc::MontgomeryQuarter<std::uint16_t>>();
-        run_pow_tests<hc::MontgomeryStandardMathWrapper<std::uint16_t>>();
+TEST(MontgomeryArithmetic, montgomery_pow) {
+    run_pow_tests<hc::MontgomeryForm<std::uint8_t>>();
+    run_pow_tests<hc::MontgomeryQuarter<std::uint8_t>>();
+    run_pow_tests<hc::MontgomeryStandardMathWrapper<std::uint8_t>>();
 
-        run_pow_tests<hc::MontgomeryForm<std::uint32_t>>();
-        run_pow_tests<hc::MontgomeryQuarter<std::uint32_t>>();
-        run_pow_tests<hc::MontgomeryStandardMathWrapper<std::uint32_t>>();
+    run_pow_tests<hc::MontgomeryForm<std::uint16_t>>();
+    run_pow_tests<hc::MontgomeryQuarter<std::uint16_t>>();
+    run_pow_tests<hc::MontgomeryStandardMathWrapper<std::uint16_t>>();
 
-        run_pow_tests<hc::MontgomeryForm<std::uint64_t>>();
-        run_pow_tests<hc::MontgomeryQuarter<std::uint64_t>>();
-        run_pow_tests<hc::MontgomeryStandardMathWrapper<std::uint64_t>>();
+    run_pow_tests<hc::MontgomeryForm<std::uint32_t>>();
+    run_pow_tests<hc::MontgomeryQuarter<std::uint32_t>>();
+    run_pow_tests<hc::MontgomeryStandardMathWrapper<std::uint32_t>>();
+
+    run_pow_tests<hc::MontgomeryForm<std::uint64_t>>();
+    run_pow_tests<hc::MontgomeryQuarter<std::uint64_t>>();
+    run_pow_tests<hc::MontgomeryStandardMathWrapper<std::uint64_t>>();
 
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
-        run_pow_tests<hc::MontgomeryForm<__uint128_t>>();
-        run_pow_tests<hc::MontgomeryQuarter<__uint128_t>>();
-        run_pow_tests<hc::MontgomeryStandardMathWrapper<__uint128_t>>();
+    run_pow_tests<hc::MontgomeryForm<__uint128_t>>();
+    run_pow_tests<hc::MontgomeryQuarter<__uint128_t>>();
+    run_pow_tests<hc::MontgomeryStandardMathWrapper<__uint128_t>>();
 #endif
-    }
 }
+
+
+} // end unnamed namespace

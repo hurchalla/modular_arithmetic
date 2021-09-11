@@ -16,15 +16,14 @@ template <typename T>
 T modular_pow(T base, T exponent, T modulus)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION(modulus > 1);
-    HPBC_PRECONDITION(base >= 0);
-    HPBC_PRECONDITION(exponent >= 0);
 
     T result = detail::impl_modular_pow(base, exponent, modulus);
 
     // POSTCONDITION:
     //   Returns the modular exponentiation of base^exponent (mod modulus).
-    HPBC_POSTCONDITION(0<=result && result<modulus);
+    HPBC_POSTCONDITION(result<modulus);
     return result;
 }
 

@@ -55,7 +55,12 @@ public:
     HURCHALLA_FORCE_INLINE V getCanonicalValue(V x) const
     {
         HPBC_PRECONDITION2(x.get() < 2*n_);
-        T cv = (x.get() < n_) ? x.get() : static_cast<T>(x.get() - n_);
+        T cv = static_cast<T>(x.get() - n_);
+#if 0
+        cv = (x.get() < n_) ? x.get() : cv;
+#else
+        HURCHALLA_CMOV(x.get() < n_, cv, x.get());
+#endif
         HPBC_POSTCONDITION2(cv < n_);
         return V(cv);
     }

@@ -22,12 +22,15 @@
 #  pragma warning(disable : 4127)
 #endif
 
+namespace {
+
+
+namespace hc = ::hurchalla;
 
 // verify that  REDC(a*(R mod n)) == a
 template <typename T>
 void test_REDC_identity(T a, T n, T inv_n, T Rmod_n)
 {
-    namespace hc = hurchalla;
     static_assert(hc::ut_numeric_limits<T>::is_integer, "");
     static_assert(!(hc::ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION2(n % 2 == 1);
@@ -61,7 +64,6 @@ void test_REDC_identity(T a, T n, T inv_n, T Rmod_n)
 template <typename T>
 void multi_tests_REDC_identity(T n)
 {
-    namespace hc = hurchalla;
     static_assert(hc::ut_numeric_limits<T>::is_integer, "");
     static_assert(!(hc::ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION2(n % 2 == 1);
@@ -102,13 +104,11 @@ void multi_tests_REDC_identity(T n)
 }
 
 
-
 // verify that montgomery multiplication (via REDC) provides the same answer
 // as standard modular multiplication
 template <typename T, class MTAG, class PTAG>
 void test_REDC_multiply(T a, T b, T n, T inv_n, T Rsqrd_mod_n)
 {
-    namespace hc = hurchalla;
     static_assert(hc::ut_numeric_limits<T>::is_integer, "");
     static_assert(!(hc::ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION2(n % 2 == 1);
@@ -145,7 +145,6 @@ void test_REDC_multiply(T a, T b, T n, T inv_n, T Rsqrd_mod_n)
 template <typename T, class MTAG, class PTAG>
 void multi_tests_REDC_multiply(T n)
 {
-    namespace hc = hurchalla;
     static_assert(hc::ut_numeric_limits<T>::is_integer, "");
     static_assert(!(hc::ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION2(n % 2 == 1);
@@ -222,12 +221,9 @@ void multi_tests_REDC_multiply(T n)
 }
 
 
-
-
 template <typename T, class MTAG, class PTAG>
 void test_REDC_is_zero(T a, T n, T inv_n, T Rmod_n)
 {
-    namespace hc = hurchalla;
     static_assert(hc::ut_numeric_limits<T>::is_integer, "");
     static_assert(!(hc::ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION2(n % 2 == 1);
@@ -252,11 +248,9 @@ void test_REDC_is_zero(T a, T n, T inv_n, T Rmod_n)
 }
 
 
-
 template <typename T, class MTAG, class PTAG>
 void multi_tests_REDC_is_zero(T n)
 {
-    namespace hc = hurchalla;
     static_assert(hc::ut_numeric_limits<T>::is_integer, "");
     static_assert(!(hc::ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION2(n % 2 == 1);
@@ -300,11 +294,9 @@ void multi_tests_REDC_is_zero(T n)
 }
 
 
-
 template <typename T>
 void REDC_test_all(T n)
 {
-    namespace hc = hurchalla;
     multi_tests_REDC_identity(n);
 
     multi_tests_REDC_multiply<T, hc::FullrangeTag, hc::LowlatencyTag>(n);
@@ -320,35 +312,33 @@ void REDC_test_all(T n)
 
 
 
-namespace {
-
-    TEST(MontgomeryArithmetic, REDC8) {
-        std::vector<uint8_t> moduli { 3, 255, 19, 21, 211, 23, 171 };
-        for (auto n : moduli)
-            REDC_test_all(n);
-    }
-    TEST(MontgomeryArithmetic, REDC16) {
-        std::vector<uint16_t> moduli { 3, 17, UINT16_C(65535),
-                              UINT16_C(65533), UINT16_C(357), UINT16_C(32253),
-                              UINT16_C(11111) };
-        for (auto n : moduli)
-            REDC_test_all(n);
-    }
-    TEST(MontgomeryArithmetic, REDC32) {
-        std::vector<uint32_t> moduli { 3, 13, UINT32_C(4294967295),
-                              UINT32_C(4294967293), UINT32_C(2147483347),
-                              UINT32_C(246098243), UINT32_C(1111111) };
-        for (auto n : moduli)
-            REDC_test_all(n);
-    }
-    TEST(MontgomeryArithmetic, REDC64) {
-        std::vector<uint64_t> moduli { 3, 11, UINT64_C(18446744073709551615),
-                              UINT64_C(18446744073709551613),
-                              UINT64_C(4294967295),
-                              UINT64_C(3194806714689), UINT64_C(11111111311) };
-        for (auto n : moduli)
-            REDC_test_all(n);
-    }
+TEST(MontgomeryArithmetic, REDC8) {
+    std::vector<uint8_t> moduli { 3, 255, 19, 21, 211, 23, 171 };
+    for (auto n : moduli)
+        REDC_test_all(n);
+}
+TEST(MontgomeryArithmetic, REDC16) {
+    std::vector<uint16_t> moduli { 3, 17, UINT16_C(65535),
+                          UINT16_C(65533), UINT16_C(357), UINT16_C(32253),
+                          UINT16_C(11111) };
+    for (auto n : moduli)
+        REDC_test_all(n);
+}
+TEST(MontgomeryArithmetic, REDC32) {
+    std::vector<uint32_t> moduli { 3, 13, UINT32_C(4294967295),
+                          UINT32_C(4294967293), UINT32_C(2147483347),
+                          UINT32_C(246098243), UINT32_C(1111111) };
+    for (auto n : moduli)
+        REDC_test_all(n);
+}
+TEST(MontgomeryArithmetic, REDC64) {
+    std::vector<uint64_t> moduli { 3, 11, UINT64_C(18446744073709551615),
+                          UINT64_C(18446744073709551613),
+                          UINT64_C(4294967295),
+                          UINT64_C(3194806714689), UINT64_C(11111111311) };
+    for (auto n : moduli)
+        REDC_test_all(n);
+}
 
 #if !defined(__GNUC__) || __GNUC__ >= 11 || defined(__INTEL_COMPILER) || \
                                             defined(__clang__)
@@ -362,24 +352,24 @@ namespace {
 // to be in the gcc 11 release.
 // For now, the #if above disables the following tests on gcc, since they will
 // fail on gcc at optimization level -O1 or higher due to the compiler bug.
-#  if HURCHALLA_COMPILER_HAS_UINT128_T()
-    TEST(MontgomeryArithmetic, REDC128) {
-        __uint128_t zero = 0;
-        std::vector<__uint128_t> moduli { 3, 11, zero-1, zero-3,
-                      static_cast<__uint128_t>(UINT64_C(18446744073709551613)) *
-                                                 UINT64_C(18446744073709551611),
-                      static_cast<__uint128_t>(UINT64_C(35698723439051265)) *
-                                                    UINT64_C(70945870135873583),
-                      static_cast<__uint128_t>(UINT64_C(34069834503)) *
-                                                  UINT64_C(895835939) };
-        for (auto n : moduli)
-            REDC_test_all(n);
-    }
-#  endif
+# if HURCHALLA_COMPILER_HAS_UINT128_T()
+TEST(MontgomeryArithmetic, REDC128) {
+    __uint128_t zero = 0;
+    std::vector<__uint128_t> moduli { 3, 11, zero-1, zero-3,
+                  static_cast<__uint128_t>(UINT64_C(18446744073709551613)) *
+                                             UINT64_C(18446744073709551611),
+                  static_cast<__uint128_t>(UINT64_C(35698723439051265)) *
+                                                UINT64_C(70945870135873583),
+                  static_cast<__uint128_t>(UINT64_C(34069834503)) *
+                                              UINT64_C(895835939) };
+    for (auto n : moduli)
+        REDC_test_all(n);
+}
+# endif
 #endif
 
-}
 
+} // end unnamed namespace
 
 #if defined(_MSC_VER)
 #  pragma warning(pop)

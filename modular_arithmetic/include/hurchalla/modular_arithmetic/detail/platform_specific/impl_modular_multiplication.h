@@ -17,21 +17,17 @@
 #  include <intrin.h>
 #endif
 
-
 #ifdef __GNUC__
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wold-style-cast"
 #endif
 
-
 // Please consider using the montgomery_arithmetic MontgomeryForm's multiply
 // function instead of the standard modular multiplication of this file, if you
 // are heavily using modular multiplication in your code, or if you are in
-// danger of (or certain of) getting the slow_modular_multiplication function.
-// In such cases, there's a good chance that montgomery multiplication will
-// greatly improve your code's performance.
-
-
+// danger of (or certain of) getting the slow_modular_multiplication function
+// below.  In such cases, there's a good chance that montgomery multiplication
+// will greatly improve your code's performance.
 
 // By default, if an inline asm modmult function is available we use it unless
 // explicitly disallowed via HURCHALLA_DISALLOW_INLINE_ASM_MODMUL.  We do this
@@ -43,28 +39,28 @@
 #  undef HURCHALLA_DISALLOW_INLINE_ASM_MODMUL
 #endif
 
-
 namespace hurchalla { namespace detail {
 
 
 /*  Generic (non-platform specific) implementation for
 T modular_multiplication_prereduced_inputs(T a, T b, T modulus).
 Ideally for best performance, call with a >= b.
-Notes:  This code was adapted from mulmod() at
+Credit: this code was adapted from mulmod() at
  http://community.topcoder.com/tc?module=Static&d1=tutorials&d2=primalityTesting
 */
 template <typename T>
 T slow_modular_multiplication(T a, T b, T modulus)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a>=0 && a<modulus);
-    HPBC_PRECONDITION2(b>=0 && b<modulus);
+    HPBC_PRECONDITION2(a<modulus);
+    HPBC_PRECONDITION2(b<modulus);
 
     T result = 0;
     while (b > 0) {
-        if (b & 1)
-            result = modular_addition_prereduced_inputs(result, a, modulus);
+        T tmp = modular_addition_prereduced_inputs(result, a, modulus);
+        HURCHALLA_CMOV(b & 1, result, tmp);
         a = modular_addition_prereduced_inputs(a, a, modulus);
         b = static_cast<T>(b >> 1);
     }
@@ -72,9 +68,7 @@ T slow_modular_multiplication(T a, T b, T modulus)
 }
 
 
-
-
-// ---- TEMPLATE versions of impl_modular_multiplication_prereduced_inputs ----
+// ---- TEMPLATE version of impl_modular_multiplication_prereduced_inputs ----
 
 /*
    Note first that I've made faster non-template function overloads of
@@ -97,48 +91,21 @@ T slow_modular_multiplication(T a, T b, T modulus)
    (effectively) a 64bit result.
 */
 
-
-// True for signed integral types *KNOWN* to std::type_traits, otherwise false.
-// I.e. true for the integer types that are both signed and native (int, short,
-// long, int64_t, etc).
-template <typename T>
-struct IsSignedAndNativeInteger : std::integral_constant<
-            bool,
-            std::is_integral<T>::value && std::is_signed<T>::value
-        > {};
-
-
-// Enabled for matching to any T that is *not* a signed-and-native integer type.
-// Note that typically, unsigned integer types resolve to one of the platform
+// Note that in most cases a type will match and resolve to one of the platform
 // specific nontemplate overloads below instead of to this template (nontemplate
 // functions get first priority for potential matches).
 template <typename T>
-typename std::enable_if<!(IsSignedAndNativeInteger<T>::value), T>::type
 #ifdef HURCHALLA_COMPILE_ERROR_ON_SLOW_MATH
   // cause a compile error instead of falling back to the slow template function
-  impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus) = delete;
+  T impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus) = delete;
 #else
-  impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
+  T impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
   {
+      static_assert(ut_numeric_limits<T>::is_integer, "");
+      static_assert(!(ut_numeric_limits<T>::is_signed), "");
       return slow_modular_multiplication(a, b, modulus);
   }
 #endif
-
-// Enabled for matching to any signed-and-native integer type T.  The internal
-// call typically resolves to one of the platform specific overloads below.  If
-// not, it resolves to the template just above enabled for not-signed-and-native
-// types.
-template <typename T> HURCHALLA_FORCE_INLINE
-typename std::enable_if<IsSignedAndNativeInteger<T>::value, T>::type
-impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
-{
-    HPBC_PRECONDITION2(a>=0 && b>=0 && modulus>0 && a<modulus && b<modulus);
-    using U = typename std::make_unsigned<T>::type;
-    static_assert(!IsSignedAndNativeInteger<U>::value, "");
-    return (T)impl_modular_multiplication_prereduced_inputs((U)a, (U)b,
-                                                                (U)modulus);
-}
-
 
 
 
@@ -148,6 +115,7 @@ impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
 // called (see http://www.gotw.ca/publications/mill17.htm ), when both one of
 // these nontemplate functions and the generic template function match the
 // caller's provided argument type(s).
+
 
 
 #if !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
@@ -164,7 +132,6 @@ std::uint8_t impl_modular_multiplication_prereduced_inputs(
 }
 #endif
 
-
 #if !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
                    HURCHALLA_TARGET_BIT_WIDTH >= 32
 HURCHALLA_FORCE_INLINE
@@ -175,7 +142,6 @@ std::uint16_t impl_modular_multiplication_prereduced_inputs(
     return (std::uint16_t)((P)a*(P)b % (P)modulus);
 }
 #endif
-
 
 
 
@@ -240,11 +206,15 @@ std::uint32_t impl_modular_multiplication_prereduced_inputs(
     // [output operands]: result = EDX
     // [clobber list]:    both mull and divl clobber the FLAGS register ["cc"]
     std::uint32_t result;
-    std::uint32_t tmp = a;  // in C++ we prefer not to overwrite an input (a)
+    std::uint32_t tmp = a;  // we prefer not to overwrite an input (a)
     __asm__ ("mull %[b] \n\t"
              "divl %[m] \n\t"
              : "=&d"(result), "+&a"(tmp)
+# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [b]"r"(b), [m]"r"(modulus)
+# else
              : [b]"rm"(b), [m]"rm"(modulus)
+# endif
              : "cc");
     HPBC_POSTCONDITION2((P)result == (P)a*(P)b % (P)modulus);
     return result;
@@ -259,7 +229,6 @@ std::uint32_t impl_modular_multiplication_prereduced_inputs(
     return (std::uint32_t)((P)a*(P)b % (P)modulus);
 }
 #endif
-
 
 
 
@@ -307,11 +276,15 @@ std::uint64_t impl_modular_multiplication_prereduced_inputs(
     // [output operands]: result = RDX
     // [clobber list]:    both mulq and divq clobber the FLAGS register ["cc"]
     std::uint64_t result;
-    std::uint64_t tmp = a;  // in C++ we prefer not to overwrite an input (a)
+    std::uint64_t tmp = a;  // we prefer not to overwrite an input (a)
     __asm__ ("mulq %[b] \n\t"
              "divq %[m] \n\t"
              : "=&d"(result), "+&a"(tmp)
+# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [b]"r"(b), [m]"r"(modulus)
+# else
              : [b]"rm"(b), [m]"rm"(modulus)
+# endif
              : "cc");
     HPBC_POSTCONDITION3(result == slow_modular_multiplication(a, b, modulus));
     return result;

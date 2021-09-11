@@ -24,11 +24,14 @@
 #include "gtest/gtest.h"
 #include <cstdint>
 
+namespace {
+
+
+namespace hc = ::hurchalla;
 
 template <typename T>
 T brute_modular_pow(T base, T power, T modulus)
 {
-    namespace hc = hurchalla;
     T result = 1;
     for (T i=0; i<power; ++i)
         result = hc::modular_multiplication_prereduced_inputs(result, base,
@@ -41,8 +44,6 @@ template <typename T>
 void test_modulus(T modulus)
 {
     static_cast<void>(modulus);
-
-    namespace hc = hurchalla;
 
     T base = 0;
     T power = 0;
@@ -99,8 +100,6 @@ void test_modulus(T modulus)
 template <typename T>
 void test_modular_pow()
 {
-    namespace hc = hurchalla;
-
     // test with a few basic examples first
     T modulus = 13;
     T base = 5;
@@ -152,46 +151,33 @@ void test_modular_pow()
 
 
 
-namespace {
-    TEST(ModularArithmetic, modular_pow) {
-        test_modular_pow<std::uint8_t>();
-        test_modular_pow<std::uint16_t>();
-        test_modular_pow<std::uint32_t>();
-        test_modular_pow<std::uint64_t>();
+TEST(ModularArithmetic, modular_pow) {
+    test_modular_pow<std::uint8_t>();
+    test_modular_pow<std::uint16_t>();
+    test_modular_pow<std::uint32_t>();
+    test_modular_pow<std::uint64_t>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
-        test_modular_pow<__uint128_t>();
+    test_modular_pow<__uint128_t>();
 #endif
-
-        test_modular_pow<std::int8_t>();
-        test_modular_pow<std::int16_t>();
-        test_modular_pow<std::int32_t>();
-        test_modular_pow<std::int64_t>();
-
-// It's a slight hack here to use a macro that tells us whether or not the
-// compiler supports  __uint128_t, when what we really want is to know is
-// whether we can use __int128_t.  Nevertheless in practice, if we have
-// __uint128_t then we almost certainly have __int128_t too.
-#if HURCHALLA_COMPILER_HAS_UINT128_T()
-        test_modular_pow<__int128_t>();
-#endif
-    }
-
-    TEST(ModularArithmetic, modular_pow_large_exponents) {
-        namespace hc = hurchalla;
-        // test a couple large exponent cases
-        std::uint32_t base = 81452;
-        std::uint32_t exponent = 113;
-        std::uint32_t modulus = 2951486173u;
-        std::uint32_t result = hc::modular_pow(base, exponent, modulus);
-        EXPECT_TRUE(result == brute_modular_pow(base, exponent, modulus));
-
-        base = 81451;
-        exponent = 113;
-        result = hc::modular_pow(base, exponent, modulus);
-        EXPECT_TRUE(result == brute_modular_pow(base, exponent, modulus));
-
-        exponent = 114;
-        result = hc::modular_pow(base, exponent, modulus);
-        EXPECT_TRUE(result == brute_modular_pow(base, exponent, modulus));
-    }
 }
+
+TEST(ModularArithmetic, modular_pow_large_exponents) {
+    // test a couple large exponent cases
+    std::uint32_t base = 81452;
+    std::uint32_t exponent = 113;
+    std::uint32_t modulus = 2951486173u;
+    std::uint32_t result = hc::modular_pow(base, exponent, modulus);
+    EXPECT_TRUE(result == brute_modular_pow(base, exponent, modulus));
+
+    base = 81451;
+    exponent = 113;
+    result = hc::modular_pow(base, exponent, modulus);
+    EXPECT_TRUE(result == brute_modular_pow(base, exponent, modulus));
+
+    exponent = 114;
+    result = hc::modular_pow(base, exponent, modulus);
+    EXPECT_TRUE(result == brute_modular_pow(base, exponent, modulus));
+}
+
+
+} // end unnamed namespace

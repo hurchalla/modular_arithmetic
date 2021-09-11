@@ -23,16 +23,17 @@ template <typename T>
 T modular_multiplication_prereduced_inputs(T a, T b, T modulus)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION(modulus>0);
-    HPBC_PRECONDITION(a>=0 && a<modulus);   // i.e. the input must be prereduced
-    HPBC_PRECONDITION(b>=0 && b<modulus);   // i.e. the input must be prereduced
+    HPBC_PRECONDITION(a<modulus);   // i.e. the input must be prereduced
+    HPBC_PRECONDITION(b<modulus);   // i.e. the input must be prereduced
 
     T result =
            detail::impl_modular_multiplication_prereduced_inputs(a, b, modulus);
 
     // POSTCONDITION: Returns (a*b)%modulus, theoretically calculated at
     //                infinite precision to avoid overflow.
-    HPBC_POSTCONDITION(0<=result && result<modulus);
+    HPBC_POSTCONDITION(result<modulus);
     return result;
 }
 

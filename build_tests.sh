@@ -8,7 +8,7 @@
 # This is my working rough-draft script for invoking the testing builds and
 # then running the tests.
 # The syntax is 
-# ./build_tests [-c<compiler_name>] [-r] [-a] [-m<Release|Debug>]
+# ./build_tests [-c<compiler_name>] [-r] [-a] [-u] [-m<Release|Debug>]
 #
 # -c allows you to select the compiler, rather than using the default.
 # -r specifies to run all tests after the build.  Without -r, no tests will run.

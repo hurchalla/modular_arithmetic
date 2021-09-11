@@ -223,53 +223,20 @@ public:
         return impl.multiply(x, y, isZero, PTAG());
     }
 
-    // Calculates and returns the modular exponentiation of the montgomery value
-    // 'base' to the power of (the type T variable) 'exponent'.
-    MontgomeryValue pow(MontgomeryValue base, T exponent) const
+    // This overload is an optimized equivalent of doing
+    //    MontgomeryValue result = multiply(x, y);
+    //    bool resultIsZero = (getCanonicalValue(result) == getZeroValue());
+    // Note on the optimization: for some Monty Types (e.g. MontyQuarterRange),
+    // setting resultIsZero via delegation to a lower level (as we do here) lets
+    // us avoid an extra conditional move for getCanonicalValue().
+    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
+    MontgomeryValue multiply(MontgomeryValue x, MontgomeryValue y,
+                                                       bool& resultIsZero) const
     {
-        HPBC_PRECONDITION(exponent >= 0);
-        return detail::montgomery_pow(*this, base, exponent);
-    }
-
-    // This is a specially optimized version of the pow() function above.
-    // It computes the results of multiple bases raised to the same power, and
-    // takes advantage of CPU instruction level parallelism for efficiency.  You
-    // can expect that calling this function multiple times with a small/optimal
-    // value for NUM_BASES will be more efficient than calling this function a
-    // single time using a large/suboptimal value for NUM_BASES.  Typically you
-    // might expect an optimal NUM_BASES to be somewhere in the range of 3 to 6,
-    // but you need to benchmark to find the best efficiency on your CPU.  FYI,
-    // you should probably not expect to use a value of NUM_BASES significantly
-    // greater than the number of (non-SIMD) integer multiply instructions that
-    // can be simultaneously in-flight on your CPU on a single thread (via
-    // pipelined and/or superscalar hardware multiply).  For example on the
-    // Intel Skylake CPU, 3 IMUL instructions can be in-flight at once per core,
-    // and so NUM_BASES == 3 is likely to be fairly close to optimal, whereas
-    // NUM_BASES == 10 would likely be suboptimal; you need to benchmark to find
-    // an optimal value though, and that value may differ from expectations.
-    // Also note that as NUM_BASES increases, this function requires more and
-    // more space in the instruction cache, and this can negatively effect
-    // performance for the rest of your program.  Therefore, when measured
-    // performance with two different values of NUM_BASES is similar, you should
-    // almost always prefer the smaller NUM_BASES value.
-    template <std::size_t NUM_BASES>
-    std::array<MontgomeryValue, NUM_BASES>
-    pow(std::array<MontgomeryValue, NUM_BASES>& bases, T exponent) const
-    {
-        HPBC_PRECONDITION(exponent >= 0);
-        return detail::montgomery_pow<MontyType>(*this, bases, exponent);
-    }
-
-    // Returns the greatest common denominator of the standard representations
-    // (non-montgomery) of both x and the modulus, using the supplied functor.
-    // The functor must take two integral arguments of the same type and return
-    // the gcd of its two arguments.
-    // Calling  gcd_with_modulus(x)  is more efficient than computing the
-    // equivalent value  gcd_functor(convertOut(x), modulus).
-    template <class F> HURCHALLA_FORCE_INLINE
-    T gcd_with_modulus(MontgomeryValue x, const F& gcd_functor) const
-    {
-        return static_cast<T>(impl.gcd_with_modulus(x, gcd_functor));
+        MontgomeryValue ret = impl.multiply(x, y, resultIsZero, PTAG());
+        HPBC_POSTCONDITION(resultIsZero ==
+                                      (getCanonicalValue(ret)==getZeroValue()));
+        return ret;
     }
 
     // "Fused multiply-subtract" operation:  Returns the modular evaluation of
@@ -319,20 +286,53 @@ public:
         return ret;
     }
 
-    // "Multiply, with test for result congruent to zero":
-    // The operation's results are identical to
-    //    MontgomeryValue result = multiply(x, y);
-    //    bool isZero = (getCanonicalValue(result) == getZeroValue());
-    // Note on the optimization: for certain Monty Types (e.g.
-    // MontyQuarterRange), setting isZero via delegation to a lower level (as we
-    // do here) lets us avoid an extra conditional move for getCanonicalValue().
-    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
-    MontgomeryValue multiplyIsZero(MontgomeryValue x, MontgomeryValue y,
-                                                             bool& isZero) const
+    // Calculates and returns the modular exponentiation of the montgomery value
+    // 'base' to the power of (the type T variable) 'exponent'.
+    MontgomeryValue pow(MontgomeryValue base, T exponent) const
     {
-        MontgomeryValue ret = impl.multiply(x, y, isZero, PTAG());
-        HPBC_POSTCONDITION(isZero == (getCanonicalValue(ret)==getZeroValue()));
-        return ret;
+        HPBC_PRECONDITION(exponent >= 0);
+        return detail::montgomery_pow(*this, base, exponent);
+    }
+
+    // This is a specially optimized version of the pow() function above.
+    // It computes the results of multiple bases raised to the same power, and
+    // takes advantage of CPU instruction level parallelism for efficiency.  You
+    // can expect that calling this function multiple times with a small/optimal
+    // value for NUM_BASES will be more efficient than calling this function a
+    // single time using a large/suboptimal value for NUM_BASES.  Typically you
+    // might expect an optimal NUM_BASES to be somewhere in the range of 3 to 6,
+    // but you need to benchmark to find the best efficiency on your CPU.  FYI,
+    // you should probably not expect to use a value of NUM_BASES significantly
+    // greater than the number of (non-SIMD) integer multiply instructions that
+    // can be simultaneously in-flight on your CPU on a single thread (via
+    // pipelined and/or superscalar hardware multiply).  For example on the
+    // Intel Skylake CPU, 3 IMUL instructions can be in-flight at once per core,
+    // and so NUM_BASES == 3 is likely to be fairly close to optimal, whereas
+    // NUM_BASES == 10 would likely be suboptimal; you need to benchmark to find
+    // an optimal value though, and that value may differ from expectations.
+    // Also note that as NUM_BASES increases, this function requires more and
+    // more space in the instruction cache, and this can negatively effect
+    // performance for the rest of your program.  Therefore, when measured
+    // performance with two different values of NUM_BASES is similar, you should
+    // almost always prefer the smaller NUM_BASES value.
+    template <std::size_t NUM_BASES>
+    std::array<MontgomeryValue, NUM_BASES>
+    pow(std::array<MontgomeryValue, NUM_BASES>& bases, T exponent) const
+    {
+        HPBC_PRECONDITION(exponent >= 0);
+        return detail::montgomery_pow<MontyType>(*this, bases, exponent);
+    }
+
+    // Returns the greatest common denominator of the standard representations
+    // (non-montgomery) of both x and the modulus, using the supplied functor.
+    // The functor must take two integral arguments of the same type and return
+    // the gcd of its two arguments.
+    // Calling  gcd_with_modulus(x)  is more efficient than computing the
+    // equivalent value  gcd_functor(convertOut(x), modulus).
+    template <class F> HURCHALLA_FORCE_INLINE
+    T gcd_with_modulus(MontgomeryValue x, const F& gcd_functor) const
+    {
+        return static_cast<T>(impl.gcd_with_modulus(x, gcd_functor));
     }
 };
 

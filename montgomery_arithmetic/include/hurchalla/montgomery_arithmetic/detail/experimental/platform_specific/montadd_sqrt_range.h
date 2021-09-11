@@ -59,7 +59,12 @@ HURCHALLA_FORCE_INLINE T montadd_sqrt_range(T a, T b, T n)
     T tmp = static_cast<T>(n - b);
     T sum = static_cast<T>(a + b);
     T tmp2 = static_cast<T>(a - tmp);
+# if 0
     T result = (a <= tmp) ? sum : tmp2;
+# else
+    T result = tmp2;
+    HURCHALLA_CMOV(a <= tmp, result, sum);
+# endif
 
     HPBC_POSTCONDITION2(0 < result && result <= n);
     return result;
@@ -91,11 +96,15 @@ HURCHALLA_FORCE_INLINE std::uint64_t montadd_sqrt_range(std::uint64_t a,
     // https://en.wikipedia.org/wiki/Loop-invariant_code_motion
     uint64_t tmp = n - b;
     uint64_t sum = a + b;
-    uint64_t tmp2 = a;  // in C++ we prefer not to overwrite an input (a)
+    uint64_t tmp2 = a;  // we prefer not to overwrite an input (a)
     __asm__ ("subq %[tmp], %[tmp2] \n\t"     /* tmp2 = a - tmp */
              "cmovbeq %[sum], %[tmp2] \n\t"  /* tmp2 = (a<=tmp) ? sum : tmp2 */
              : [tmp2]"+&r"(tmp2)
+# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [tmp]"r"(tmp), [sum]"r"(sum)
+# else
              : [tmp]"rm"(tmp), [sum]"r"(sum)
+# endif
              : "cc");
     uint64_t result = tmp2;
 

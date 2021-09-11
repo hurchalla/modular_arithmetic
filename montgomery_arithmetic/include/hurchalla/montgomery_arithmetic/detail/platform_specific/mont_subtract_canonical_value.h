@@ -24,8 +24,12 @@ HURCHALLA_FORCE_INLINE T mont_subtract_canonical_value(T x, T y, T n)
 
     T diff = static_cast<T>(x - y);
     T result = static_cast<T>(diff + n);
+# if 0
     // encourage compiler to use conditional move via ternary operator
     result = (x>=y) ? diff : result;
+# else
+    HURCHALLA_CMOV(x>=y, result, diff);
+# endif
 
     HPBC_POSTCONDITION2(result <= std::max(x, static_cast<T>(n-1)));
     return result;
@@ -52,13 +56,25 @@ HURCHALLA_FORCE_INLINE std::uint64_t mont_subtract_canonical_value(
     __asm__ ("subq %[y], %[tmp] \n\t"            /* tmp = x - y */
              "leaq (%[tmp], %[n]), %[res] \n\t"  /* res = tmp + n */
              "cmovaeq %[tmp], %[res] \n\t"       /* res = (x>=y) ? tmp : res */
-#  if defined(__INTEL_COMPILER) || defined(__clang__)
+
+# if defined(__INTEL_COMPILER)
              : [tmp]"+&abcdSD"(tmp), [res]"=r"(result)
-#  else
+# elif defined(__clang__)    /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+                             /* clang seems to use the first register listed. */
+                             /* rcx is probably a good first choice. */
+             : [tmp]"+&cabdSD"(tmp), [res]"=r"(result)
+# else
              : [tmp]"+&UabcdSD"(tmp), [res]"=r"(result)
-#  endif
+# endif
+
+# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [n]"r"(n), [y]"r"(y)
+# else
              : [n]"r"(n), [y]"rm"(y)
+# endif
+
              : "cc");
+
     HPBC_POSTCONDITION2(result <= std::max(x, static_cast<std::uint64_t>(n-1)));
     HPBC_POSTCONDITION2(result ==
                          mont_subtract_canonical_value<std::uint64_t>(x, y, n));
@@ -76,13 +92,25 @@ HURCHALLA_FORCE_INLINE std::uint32_t mont_subtract_canonical_value(
     __asm__ ("subl %[y], %[tmp] \n\t"             /* tmp = x - y */
              "leal (%q[tmp], %q[n]), %[res] \n\t" /* res = tmp + n */
              "cmovael %[tmp], %[res] \n\t"        /* res = (x>=y) ? tmp : res */
-#  if defined(__INTEL_COMPILER) || defined(__clang__)
+
+# if defined(__INTEL_COMPILER)
              : [tmp]"+&abcdSD"(tmp), [res]"=r"(result)
-#  else
+# elif defined(__clang__)    /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+                             /* clang seems to use the first register listed. */
+                             /* rcx is probably a good first choice. */
+             : [tmp]"+&cabdSD"(tmp), [res]"=r"(result)
+# else
              : [tmp]"+&UabcdSD"(tmp), [res]"=r"(result)
-#  endif
+# endif
+
+# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [n]"r"(n), [y]"r"(y)
+# else
              : [n]"r"(n), [y]"rm"(y)
+# endif
+
              : "cc");
+
     HPBC_POSTCONDITION2(result <= std::max(x, static_cast<std::uint32_t>(n-1)));
     HPBC_POSTCONDITION2(result ==
                          mont_subtract_canonical_value<std::uint32_t>(x, y, n));

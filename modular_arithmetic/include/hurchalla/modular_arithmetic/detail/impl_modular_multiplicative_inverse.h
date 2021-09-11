@@ -15,59 +15,14 @@
 namespace hurchalla { namespace detail {
 
 
-// Enabled only for signed (integral) types T.
 template <typename T> HURCHALLA_FORCE_INLINE
-typename std::enable_if<ut_numeric_limits<T>::is_signed, T>::type
-impl_modular_multiplicative_inverse(T val, T modulus)
-{
-    static_assert(ut_numeric_limits<T>::is_integer, "");
-    static_assert(ut_numeric_limits<T>::is_signed, "");
-    HPBC_PRECONDITION2(val >= 0);
-    // I decided not to support modulus<=1, since it's not likely to be used and
-    // it complicates the return type and adds conditional branches.
-    HPBC_PRECONDITION2(modulus > 1);
-
-    // POSTCONDITION: Returns 0 if the inverse doesn't exist. Otherwise returns
-    //    the inverse (which is never 0, given that modulus>1).
-
-    // The following algorithm is simplified from Figure 1 of
-    // https://jeffhurchalla.com/2018/10/13/implementing-the-extended-euclidean-algorithm-with-unsigned-inputs/
-    // calculating only what is needed for the modular multiplicative inverse.
-    T gcd, y;
-    {
-       T y0=0, a0=modulus;
-       T y1=1, a1=val;
-
-       while (a1 != 0) {
-          T q = static_cast<T>(a0/a1);
-          T a2 = static_cast<T>(a0 - q*a1);
-          T y2 = static_cast<T>(y0 - q*y1);
-          y0=y1; a0=a1;
-          y1=y2; a1=a2;
-       }
-       y = y0;
-       gcd = a0;
-    }
-
-    if (gcd == 1) {
-        T inv = (y < 0) ? static_cast<T>(y + modulus) : y;
-        HPBC_POSTCONDITION2(inv>=0 && inv<modulus);
-        return inv;
-    } else
-        return 0;
-}
-
-
-// Enabled only for unsigned (integral) types T.
-template <typename T> HURCHALLA_FORCE_INLINE
-typename std::enable_if<!(ut_numeric_limits<T>::is_signed), T>::type
-impl_modular_multiplicative_inverse(T val, T modulus)
+T impl_modular_multiplicative_inverse(T val, T modulus)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     // I decided not to support modulus<=1, since it's not likely to be used and
     // it complicates the return type and adds conditional branches.
-    HPBC_PRECONDITION2(modulus>1);
+    HPBC_PRECONDITION2(modulus > 1);
 
     // POSTCONDITION: Returns 0 if the inverse doesn't exist. Otherwise returns
     //    the inverse (which is never 0, given that modulus>1).
@@ -77,6 +32,7 @@ impl_modular_multiplicative_inverse(T val, T modulus)
 
     // The following algorithm is adapted from Figure 6 of
     // https://jeffhurchalla.com/2018/10/13/implementing-the-extended-euclidean-algorithm-with-unsigned-inputs/
+    // calculating only what is needed for the modular multiplicative inverse.
     S y1=0;
     U a1=modulus;
     {
@@ -97,9 +53,14 @@ impl_modular_multiplicative_inverse(T val, T modulus)
     S y = y1;
     U gcd = a1;
     if (gcd == 1) {
+#if 0
         U inv = (y < 0) ? static_cast<U>(static_cast<U>(y) + modulus) :
                                                               static_cast<U>(y);
-        HPBC_POSTCONDITION2(inv<modulus);
+#else
+        U inv = static_cast<U>(y);
+        HURCHALLA_CMOV(y < 0, inv, static_cast<U>(static_cast<U>(y) + modulus));
+#endif
+        HPBC_POSTCONDITION2(inv < modulus);
         return static_cast<T>(inv);
     } else
         return 0;

@@ -21,12 +21,12 @@ template <typename T>
 T modular_multiplicative_inverse(T a, T modulus)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
-    HPBC_PRECONDITION(a >= 0);
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION(modulus > 1);
 
     T inverse = detail::impl_modular_multiplicative_inverse(a, modulus);
 
-    HPBC_POSTCONDITION(0 <= inverse && inverse < modulus);
+    HPBC_POSTCONDITION(inverse < modulus);
     //POSTCONDITION: Returns 0 if the inverse does not exist. Otherwise returns
     //   the value of the inverse (which is never 0, given that modulus>1).
     HPBC_POSTCONDITION(inverse == 0 || modular_multiplication_prereduced_inputs(

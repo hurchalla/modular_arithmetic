@@ -22,11 +22,13 @@
 #include "gtest/gtest.h"
 #include <cstdint>
 
+namespace {
+
 
 template <typename T>
 void test_absolute_value_difference()
 {
-    namespace hc = hurchalla;
+    namespace hc = ::hurchalla;
 
     // Test with a few basic examples first
     T a = 5;
@@ -86,27 +88,16 @@ void test_absolute_value_difference()
 }
 
 
-namespace {
-    TEST(ModularArithmetic, absolute_value_difference) {
-        test_absolute_value_difference<std::uint8_t>();
-        test_absolute_value_difference<std::uint16_t>();
-        test_absolute_value_difference<std::uint32_t>();
-        test_absolute_value_difference<std::uint64_t>();
-#if HURCHALLA_COMPILER_HAS_UINT128_T()
-        test_absolute_value_difference<__uint128_t>();
-#endif
 
-        test_absolute_value_difference<std::int8_t>();
-        test_absolute_value_difference<std::int16_t>();
-        test_absolute_value_difference<std::int32_t>();
-        test_absolute_value_difference<std::int64_t>();
-
-// It's a slight hack here to use a macro that tells us whether or not the
-// compiler supports  __uint128_t, when what we really want is to know is
-// whether we can use __int128_t.  Nevertheless in practice, if we have
-// __uint128_t then we almost certainly have __int128_t too.
+TEST(ModularArithmetic, absolute_value_difference) {
+    test_absolute_value_difference<std::uint8_t>();
+    test_absolute_value_difference<std::uint16_t>();
+    test_absolute_value_difference<std::uint32_t>();
+    test_absolute_value_difference<std::uint64_t>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
-        test_absolute_value_difference<__int128_t>();
+    test_absolute_value_difference<__uint128_t>();
 #endif
-    }
 }
+
+
+} // end unnamed namespace

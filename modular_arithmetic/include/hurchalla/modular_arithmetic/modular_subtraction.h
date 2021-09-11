@@ -23,8 +23,7 @@ namespace hurchalla {
 // lower) than modular subtraction.
 //    This comparison is written based on the performance of x86 architecture.
 // If possible, these relative performance characteristic will be maintained
-// across architectures and into the future, but these characteristics can not
-// be guaranteed.
+// across architectures and into the future (but this is not guaranteed).
 //
 // If you will be adding or subtracting the same value over every iteration of
 // a loop, then if you wish, you can convert a loop's add into a subtract, or a
@@ -42,9 +41,10 @@ template <typename T>
 T modular_subtraction_prereduced_inputs(T a, T b, T modulus)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION(modulus>0);
-    HPBC_PRECONDITION(a>=0 && a<modulus);   // i.e. the input must be prereduced
-    HPBC_PRECONDITION(b>=0 && b<modulus);   // i.e. the input must be prereduced
+    HPBC_PRECONDITION(a<modulus);   // i.e. the input must be prereduced
+    HPBC_PRECONDITION(b<modulus);   // i.e. the input must be prereduced
 
     T result= detail::impl_modular_subtraction_prereduced_inputs(a, b, modulus);
 
@@ -54,7 +54,7 @@ T modular_subtraction_prereduced_inputs(T a, T b, T modulus)
     // This function returns (a-b) %% modulus, performed as if a and b are
     // infinite precision signed ints (and thus as if it is impossible for the
     // subtraction (a-b) to overflow).
-    HPBC_POSTCONDITION(0<=result && result<modulus);
+    HPBC_POSTCONDITION(result<modulus);
     return result;
 }
 

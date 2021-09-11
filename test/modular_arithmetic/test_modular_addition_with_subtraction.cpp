@@ -25,10 +25,11 @@
 #include "gtest/gtest.h"
 #include <cstdint>
 
-
 namespace {
+
+
 TEST(ModularArithmetic, modular_addition_with_subtraction) {
-    namespace hc = hurchalla;
+    namespace hc = ::hurchalla;
     using T = std::uint8_t;
 
     for (T modulus=255; modulus>0; --modulus) {
@@ -41,4 +42,6 @@ TEST(ModularArithmetic, modular_addition_with_subtraction) {
         }
     }
 }
-}
+
+
+} // end unnamed namespace

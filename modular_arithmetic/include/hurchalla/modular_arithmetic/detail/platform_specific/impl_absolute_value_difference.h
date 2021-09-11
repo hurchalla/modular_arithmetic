@@ -17,12 +17,17 @@ template <typename T>
 HURCHALLA_FORCE_INLINE T impl_absolute_value_difference(T a, T b)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
-    HPBC_PRECONDITION(a >= 0);
-    HPBC_PRECONDITION(b >= 0);
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+
+#if 0
+    T result = (a > b) ? static_cast<T>(a - b) : static_cast<T>(b - a);
+#else
+    T result = static_cast<T>(b - a);
+    HURCHALLA_CMOV(a > b, result, static_cast<T>(a - b));
+#endif
 
     // POSTCONDITION:
     // This function returns absolute_value(a-b).
-    T result = (a > b) ? static_cast<T>(a - b) : static_cast<T>(b - a);
     HPBC_POSTCONDITION(result<=a || result<=b);
     return result;
 }
@@ -43,10 +48,8 @@ HURCHALLA_FORCE_INLINE
 std::uint32_t impl_absolute_value_difference(std::uint32_t a, std::uint32_t b)
 {
     using std::uint32_t;
-    // Type uint32_t guarantees a>=0 and b>=0.
-
     uint32_t diff = b - a;
-    uint32_t tmp = a;  // in C++ we prefer not to overwrite an input (a)
+    uint32_t tmp = a;  // we prefer not to overwrite an input (a)
     __asm__ ("subl %[b], %[tmp] \n\t"       /* tmp = a - b */
              "cmovbl %[diff], %[tmp] \n\t"  /* tmp = (a < b) ? diff : tmp */
              : [tmp]"+&r"(tmp)
@@ -63,10 +66,8 @@ HURCHALLA_FORCE_INLINE
 std::uint64_t impl_absolute_value_difference(std::uint64_t a, std::uint64_t b)
 {
     using std::uint64_t;
-    // Type uint64_t guarantees a>=0 and b>=0.
-
     uint64_t diff = b - a;
-    uint64_t tmp = a;  // in C++ we prefer not to overwrite an input (a)
+    uint64_t tmp = a;  // we prefer not to overwrite an input (a)
     __asm__ ("subq %[b], %[tmp] \n\t"       /* tmp = a - b */
              "cmovbq %[diff], %[tmp] \n\t"  /* tmp = (a < b) ? diff : tmp */
              : [tmp]"+&r"(tmp)

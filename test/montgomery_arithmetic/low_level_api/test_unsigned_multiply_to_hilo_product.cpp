@@ -7,11 +7,13 @@
 #include "gtest/gtest.h"
 #include <cstdint>
 
+namespace {
+
 
 template <typename T>
 void test_unsigned_multiply_to_hilo_product()
 {
-    namespace hc = hurchalla;
+    namespace hc = ::hurchalla;
     static_assert(hc::ut_numeric_limits<T>::is_integer, "");
     static_assert(!(hc::ut_numeric_limits<T>::is_signed), "");
     T tmax = hc::ut_numeric_limits<T>::max();
@@ -84,14 +86,16 @@ void test_unsigned_multiply_to_hilo_product()
 }
 
 
-namespace {
-    TEST(MontgomeryArithmetic, unsigned_multiply_to_hilo_product) {
-        test_unsigned_multiply_to_hilo_product<std::uint8_t>();
-        test_unsigned_multiply_to_hilo_product<std::uint16_t>();
-        test_unsigned_multiply_to_hilo_product<std::uint32_t>();
-        test_unsigned_multiply_to_hilo_product<std::uint64_t>();
+
+TEST(MontgomeryArithmetic, unsigned_multiply_to_hilo_product) {
+    test_unsigned_multiply_to_hilo_product<std::uint8_t>();
+    test_unsigned_multiply_to_hilo_product<std::uint16_t>();
+    test_unsigned_multiply_to_hilo_product<std::uint32_t>();
+    test_unsigned_multiply_to_hilo_product<std::uint64_t>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
-        test_unsigned_multiply_to_hilo_product<__uint128_t>();
+    test_unsigned_multiply_to_hilo_product<__uint128_t>();
 #endif
-    }
 }
+
+
+} // end unnamed namespace

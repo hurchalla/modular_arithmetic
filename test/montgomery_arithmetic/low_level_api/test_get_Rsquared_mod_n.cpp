@@ -15,11 +15,14 @@
 #include <cstdint>
 #include <type_traits>
 
+namespace {
+
+
+namespace hc = ::hurchalla;
 
 template <typename T, class MTAG>
 T get_max_allowable_modulus()
 {
-    namespace hc = hurchalla;
     static_assert(hc::ut_numeric_limits<T>::digits >= 1, "");
     T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
                                         (hc::ut_numeric_limits<T>::digits - 1));
@@ -39,7 +42,6 @@ T get_max_allowable_modulus()
 template <typename T, class MTAG>
 void test_single_R2(T n)
 {
-    namespace hc = hurchalla;
     using P = typename hc::safely_promote_unsigned<T>::type;
     // a failure on the next line would mean the test case was written wrong.
     T max = get_max_allowable_modulus<T, MTAG>();
@@ -98,31 +100,31 @@ void test_R2()
 }
 
 
-namespace {
-    TEST(MontgomeryArithmetic, get_Rsquared_mod_N) {
-        namespace hc = hurchalla;
 
-        test_R2<std::uint8_t, hc::FullrangeTag>();
-        test_R2<std::uint8_t, hc::QuarterrangeTag>();
+TEST(MontgomeryArithmetic, get_Rsquared_mod_N) {
+    test_R2<std::uint8_t, hc::FullrangeTag>();
+    test_R2<std::uint8_t, hc::QuarterrangeTag>();
 
-        test_R2<std::uint16_t, hc::FullrangeTag>();
-        test_R2<std::uint16_t, hc::QuarterrangeTag>();
+    test_R2<std::uint16_t, hc::FullrangeTag>();
+    test_R2<std::uint16_t, hc::QuarterrangeTag>();
 
-        test_R2<std::uint32_t, hc::FullrangeTag>();
-        test_R2<std::uint32_t, hc::QuarterrangeTag>();
+    test_R2<std::uint32_t, hc::FullrangeTag>();
+    test_R2<std::uint32_t, hc::QuarterrangeTag>();
 
-        test_R2<std::uint64_t, hc::FullrangeTag>();
-        test_R2<std::uint64_t, hc::QuarterrangeTag>();
+    test_R2<std::uint64_t, hc::FullrangeTag>();
+    test_R2<std::uint64_t, hc::QuarterrangeTag>();
 
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
-        test_R2<__uint128_t, hc::FullrangeTag>();
-        test_R2<__uint128_t, hc::QuarterrangeTag>();
+    test_R2<__uint128_t, hc::FullrangeTag>();
+    test_R2<__uint128_t, hc::QuarterrangeTag>();
 #endif
 
-        test_R2_exhaustive<std::uint8_t, hc::FullrangeTag>();
-        test_R2_exhaustive<std::uint8_t, hc::QuarterrangeTag>();
+    test_R2_exhaustive<std::uint8_t, hc::FullrangeTag>();
+    test_R2_exhaustive<std::uint8_t, hc::QuarterrangeTag>();
 
-        test_R2_exhaustive<std::uint16_t, hc::FullrangeTag>();
-        test_R2_exhaustive<std::uint16_t, hc::QuarterrangeTag>();
-    }
+    test_R2_exhaustive<std::uint16_t, hc::FullrangeTag>();
+    test_R2_exhaustive<std::uint16_t, hc::QuarterrangeTag>();
 }
+
+
+} // end unnamed namespace

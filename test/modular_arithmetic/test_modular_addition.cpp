@@ -21,12 +21,14 @@
 #include "gtest/gtest.h"
 #include <cstdint>
 
+namespace {
+
+
+namespace hc = ::hurchalla;
 
 template <typename T>
 void test_modulus(T modulus)
 {
-    namespace hc = hurchalla;
-
     T a = 0;
     T b = 0;
     EXPECT_TRUE(static_cast<T>(0) ==
@@ -87,8 +89,6 @@ void test_modulus(T modulus)
 template <typename T>
 void test_modular_addition()
 {
-    namespace hc = hurchalla;
-
     // test with a few basic examples first
     T modulus = 13;
     T a = 5;
@@ -130,27 +130,15 @@ void test_modular_addition()
 
 
 
-namespace {
-    TEST(ModularArithmetic, modular_addition) {
-        test_modular_addition<std::uint8_t>();
-        test_modular_addition<std::uint16_t>();
-        test_modular_addition<std::uint32_t>();
-        test_modular_addition<std::uint64_t>();
+TEST(ModularArithmetic, modular_addition) {
+    test_modular_addition<std::uint8_t>();
+    test_modular_addition<std::uint16_t>();
+    test_modular_addition<std::uint32_t>();
+    test_modular_addition<std::uint64_t>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
-        test_modular_addition<__uint128_t>();
+    test_modular_addition<__uint128_t>();
 #endif
-
-        test_modular_addition<std::int8_t>();
-        test_modular_addition<std::int16_t>();
-        test_modular_addition<std::int32_t>();
-        test_modular_addition<std::int64_t>();
-
-// It's a slight hack here to use a macro that tells us whether or not the
-// compiler supports  __uint128_t, when what we really want is to know is
-// whether we can use __int128_t.  Nevertheless in practice, if we have
-// __uint128_t then we almost certainly have __int128_t too.
-#if HURCHALLA_COMPILER_HAS_UINT128_T()
-        test_modular_addition<__int128_t>();
-#endif
-    }
 }
+
+
+} // end unnamed namespace

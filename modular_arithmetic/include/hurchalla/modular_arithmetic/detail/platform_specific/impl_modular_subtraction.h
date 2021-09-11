@@ -17,9 +17,10 @@ template <typename T> HURCHALLA_FORCE_INLINE
 T impl_modular_subtraction_prereduced_inputs(T a, T b, T modulus)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a>=0 && a<modulus);  // i.e. the input must be prereduced
-    HPBC_PRECONDITION2(b>=0 && b<modulus);  // i.e. the input must be prereduced
+    HPBC_PRECONDITION2(a<modulus);  // i.e. the input must be prereduced
+    HPBC_PRECONDITION2(b<modulus);  // i.e. the input must be prereduced
 
     // POSTCONDITION:
     // Let a conceptual "%%" operator represent a modulo operator that always
@@ -28,18 +29,23 @@ T impl_modular_subtraction_prereduced_inputs(T a, T b, T modulus)
     // infinite precision signed ints (and thus as if it is impossible for the
     // subtraction (a-b) to overflow).
 
-    // We want essentially-  result = (a-b < 0) ? a-b+modulus : a-b
-    //    But (a-b) overflows whenever b>a, so instead of testing if (a-b < 0),
-    //   we test the alternative predicate (a < b).  This gives us our desired
+    // We want essentially-  result = (a-b >= 0) ? a-b : a-b+modulus
+    //    But (a-b) overflows whenever b>a, so instead of testing if (a-b >= 0),
+    //   we test the alternative predicate (a >= b).  This gives us our desired
     //   result without any problem of overflow.  So we can and should use:
-    //   result = (a < b) ? a-b+modulus : a-b
+    //   result = (a>=b) ? a-b : a-b+modulus
 
     // This implementation is designed for low uop count and low register use.
     // An implementation is possible with expected lower latency and higher uop
-    // count and higher register use, but it's not preferred (see older git
-    // commits of this file for this alternative).
+    // count and higher register use, but it's not preferred (see the comments
+    // below for that alternative).
     T diff = static_cast<T>(a - b);
-    T result = (a < b) ? static_cast<T>(modulus + diff) : diff;
+    T result = static_cast<T>(diff + modulus);
+# if 0
+    result = (a >= b) ? diff : result;
+# else
+    HURCHALLA_CMOV(a >= b, result, diff);
+# endif
 
     HPBC_POSTCONDITION2(0<=result && result<modulus);
     return result;
@@ -111,17 +117,28 @@ std::uint32_t impl_modular_subtraction_prereduced_inputs(std::uint32_t a,
     // convention, and  RAX, RCX, RDX, R8, R9, R10, R11  for the Microsoft x64
     // convention.  ICC (intel compiler) and clang don't support "U", so we use
     // "abcdSD" for them (allowing rax, rbx, rcx, rdx, rsi, rdi).
-    uint32_t tmp = a;  // in C++ we prefer not to overwrite an input (a)
+    uint32_t tmp = a;  // we prefer not to overwrite an input (a)
     uint32_t result;
     __asm__ ("subl %[b], %[tmp] \n\t"             /* tmp = a - b */
              "leal (%q[tmp], %q[m]), %[res] \n\t" /* res = tmp + modulus */
              "cmovael %[tmp], %[res] \n\t"        /* res = (a>=b) ? tmp : res */
-#  if defined(__INTEL_COMPILER) || defined(__clang__)
+
+# if defined(__INTEL_COMPILER)
              : [tmp]"+&abcdSD"(tmp), [res]"=r"(result)
-#  else
+# elif defined(__clang__)    /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+                             /* clang seems to use the first register listed. */
+                             /* rcx is probably a good first choice. */
+             : [tmp]"+&cabdSD"(tmp), [res]"=r"(result)
+# else
              : [tmp]"+&UabcdSD"(tmp), [res]"=r"(result)
-#  endif
+# endif
+
+# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [m]"r"(modulus), [b]"r"(b)
+# else
              : [m]"r"(modulus), [b]"rm"(b)
+# endif
+
              : "cc");
 
     HPBC_POSTCONDITION2(result<modulus);  // uint32_t guarantees result>=0.
@@ -141,17 +158,28 @@ std::uint64_t impl_modular_subtraction_prereduced_inputs(std::uint64_t a,
 
     // Note: the issues and solutions with LEA and RBP/EBP/R13 are the same here
     // as for the uint32_t version of this function above.
-    uint64_t tmp = a;  // in C++ we prefer not to overwrite an input (a)
+    uint64_t tmp = a;  // we prefer not to overwrite an input (a)
     uint64_t result;
     __asm__ ("subq %[b], %[tmp] \n\t"            /* tmp = a - b */
              "leaq (%[tmp], %[m]), %[res] \n\t"  /* res = tmp + modulus */
              "cmovaeq %[tmp], %[res] \n\t"       /* res = (a>=b) ? tmp : res */
-#  if defined(__INTEL_COMPILER) || defined(__clang__)
+
+# if defined(__INTEL_COMPILER)
              : [tmp]"+&abcdSD"(tmp), [res]"=r"(result)
-#  else
+# elif defined(__clang__)    /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+                             /* clang seems to use the first register listed. */
+                             /* rcx is probably a good first choice. */
+             : [tmp]"+&cabdSD"(tmp), [res]"=r"(result)
+# else
              : [tmp]"+&UabcdSD"(tmp), [res]"=r"(result)
-#  endif
+# endif
+
+# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [m]"r"(modulus), [b]"r"(b)
+# else
              : [m]"r"(modulus), [b]"rm"(b)
+# endif
+
              : "cc");
 
     HPBC_POSTCONDITION2(result<modulus);  // uint64_t guarantees result>=0.

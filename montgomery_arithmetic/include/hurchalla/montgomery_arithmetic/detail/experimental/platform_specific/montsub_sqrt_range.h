@@ -64,7 +64,12 @@ HURCHALLA_FORCE_INLINE T montsub_sqrt_range(T a, T b, T n)
     // count and higher register use, but it's not preferred (see older git
     // commits of this file for this alternative).
     T diff = static_cast<T>(a - b);
+# if 0
     T result = (a <= b) ? static_cast<T>(diff + n) : diff;
+# else
+    T result = diff;
+    HURCHALLA_CMOV(a <= b, result, static_cast<T>(diff + n));
+# endif
 
     HPBC_POSTCONDITION2(0 < result && result <= n);
     return result;
@@ -97,16 +102,27 @@ HURCHALLA_FORCE_INLINE std::uint64_t montsub_sqrt_range(std::uint64_t a,
     // Note: the issues and solutions with LEA and RBP/EBP/R13 are the same here
     // as described in impl_modular_subtraction.h
     uint64_t dummy;
-    uint64_t result = a;  // in C++ we prefer not to overwrite an input (a)
+    uint64_t result = a;  // we prefer not to overwrite an input (a)
     __asm__ ("subq %[b], %[res] \n\t"            /* res = a - b */
              "leaq (%[res], %[n]), %[tmp] \n\t"  /* tmp = res + n */
              "cmovbeq %[tmp], %[res] \n\t"       /* res = (a<=b) ? tmp : res */
-#  if defined(__INTEL_COMPILER) || defined(__clang__)
+
+# if defined(__INTEL_COMPILER)
                  : [res]"+&abcdSD"(result), [tmp]"=r"(dummy)
-#  else
+# elif defined(__clang__)    /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+                             /* clang seems to use the first register listed. */
+                             /* rcx is probably a good first choice. */
+                 : [res]"+&cabdSD"(result), [tmp]"=r"(dummy)
+# else
                  : [res]"+&UabcdSD"(result), [tmp]"=r"(dummy)
-#  endif
+# endif
+
+# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [b]"r"(b), [n]"r"(n)
+# else
              : [b]"rm"(b), [n]"r"(n)
+# endif
+
              : "cc");
 
     HPBC_POSTCONDITION2(0 < result && result <= n);

@@ -24,37 +24,40 @@
 #include "gtest/gtest.h"
 #include <cstdint>
 
-
 // do exhaustive test of all uint8_t?
 
+namespace {
 
-// For details, see https://en.wikipedia.org/wiki/Greatest_common_divisor
-template <typename T>
-T gcd(T a, T b)
-{
-    namespace hc = hurchalla;
-    static_assert(hc::ut_numeric_limits<T>::is_integer, "");
-    HPBC_PRECONDITION(a >= 0);
-    HPBC_PRECONDITION(b >= 0);
 
-    while (a != 0) {
-        T tmp = a;
-        a = static_cast<T>(b % a);
-        b = tmp;
+namespace hc = ::hurchalla;
+
+namespace testmmi {
+    // For details, see https://en.wikipedia.org/wiki/Greatest_common_divisor
+    template <typename T>
+    T gcd(T a, T b)
+    {
+        static_assert(hc::ut_numeric_limits<T>::is_integer, "");
+        HPBC_PRECONDITION(a >= 0);
+        HPBC_PRECONDITION(b >= 0);
+
+        while (a != 0) {
+            T tmp = a;
+            a = static_cast<T>(b % a);
+            b = tmp;
+        }
+        return b;
     }
-    return b;
-}
+}  // end namespace testmmi
 
 
 void exhaustive_test_uint8_t();
 void exhaustive_test_uint8_t()
 {
-    namespace hc = hurchalla;
     for (std::uint8_t modulus=255; modulus>1; --modulus) {
         for (std::uint8_t a=0; a<modulus; ++a) {
             std::uint8_t inv = hc::modular_multiplicative_inverse(a, modulus);
             if (inv == 0)
-                EXPECT_TRUE(1 < gcd(a, modulus));
+                EXPECT_TRUE(1 < testmmi::gcd(a, modulus));
             else
                 EXPECT_TRUE(static_cast<std::uint8_t>(1) ==
                     hc::modular_multiplication_prereduced_inputs(a, inv,
@@ -67,8 +70,6 @@ void exhaustive_test_uint8_t()
 template <typename T>
 void test_modulus(T modulus)
 {
-    namespace hc = hurchalla;
-
     T a = 0;
     EXPECT_TRUE(static_cast<T>(0) ==
                                 hc::modular_multiplicative_inverse(a, modulus));
@@ -89,7 +90,7 @@ void test_modulus(T modulus)
     a = 2;
     T inverse = hc::modular_multiplicative_inverse(a, modulus);
     if (inverse == 0)
-        EXPECT_TRUE(1 < gcd(a, modulus));
+        EXPECT_TRUE(1 < testmmi::gcd(a, modulus));
     else
         EXPECT_TRUE(static_cast<T>(1) ==
              hc::modular_multiplication_prereduced_inputs(
@@ -98,7 +99,7 @@ void test_modulus(T modulus)
     a = 3;
     inverse = hc::modular_multiplicative_inverse(a, modulus);
     if (inverse == 0)
-        EXPECT_TRUE(1 < gcd(a, modulus));
+        EXPECT_TRUE(1 < testmmi::gcd(a, modulus));
     else
         EXPECT_TRUE(static_cast<T>(1) ==
              hc::modular_multiplication_prereduced_inputs(
@@ -112,7 +113,7 @@ void test_modulus(T modulus)
     a = static_cast<T>(modulus - 2);
     inverse = hc::modular_multiplicative_inverse(a, modulus);
     if (inverse == 0)
-        EXPECT_TRUE(1 < gcd(a, modulus));
+        EXPECT_TRUE(1 < testmmi::gcd(a, modulus));
     else
         EXPECT_TRUE(static_cast<T>(1) ==
              hc::modular_multiplication_prereduced_inputs(a, inverse, modulus));
@@ -120,7 +121,7 @@ void test_modulus(T modulus)
     a = static_cast<T>(modulus/2);
     inverse = hc::modular_multiplicative_inverse(a, modulus);
     if (inverse == 0)
-        EXPECT_TRUE(1 < gcd(a, modulus));
+        EXPECT_TRUE(1 < testmmi::gcd(a, modulus));
     else
         EXPECT_TRUE(static_cast<T>(1) ==
              hc::modular_multiplication_prereduced_inputs(a, inverse, modulus));
@@ -128,7 +129,7 @@ void test_modulus(T modulus)
     a++;
     inverse = hc::modular_multiplicative_inverse(a, modulus);
     if (inverse == 0)
-        EXPECT_TRUE(1 < gcd(a, modulus));
+        EXPECT_TRUE(1 < testmmi::gcd(a, modulus));
     else
         EXPECT_TRUE(static_cast<T>(1) ==
              hc::modular_multiplication_prereduced_inputs(a, inverse, modulus));
@@ -139,8 +140,6 @@ void test_modulus(T modulus)
 template <typename T>
 void test_modular_multiplicative_inverse()
 {
-    namespace hc = hurchalla;
-
     // test with a few basic examples first
     T modulus = 13;
     T a = 5;
@@ -221,30 +220,18 @@ void test_modular_multiplicative_inverse()
 
 
 
-namespace {
-    TEST(ModularArithmetic, modular_multiplicative_inverse) {
+TEST(ModularArithmetic, modular_multiplicative_inverse) {
 
-        exhaustive_test_uint8_t();
+    exhaustive_test_uint8_t();
 
-        test_modular_multiplicative_inverse<std::uint8_t>();
-        test_modular_multiplicative_inverse<std::uint16_t>();
-        test_modular_multiplicative_inverse<std::uint32_t>();
-        test_modular_multiplicative_inverse<std::uint64_t>();
+    test_modular_multiplicative_inverse<std::uint8_t>();
+    test_modular_multiplicative_inverse<std::uint16_t>();
+    test_modular_multiplicative_inverse<std::uint32_t>();
+    test_modular_multiplicative_inverse<std::uint64_t>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
-        test_modular_multiplicative_inverse<__uint128_t>();
+    test_modular_multiplicative_inverse<__uint128_t>();
 #endif
-
-        test_modular_multiplicative_inverse<std::int8_t>();
-        test_modular_multiplicative_inverse<std::int16_t>();
-        test_modular_multiplicative_inverse<std::int32_t>();
-        test_modular_multiplicative_inverse<std::int64_t>();
-
-// It's a slight hack here to use a macro that tells us whether or not the
-// compiler supports  __uint128_t, when what we really want is to know is
-// whether we can use __int128_t.  Nevertheless in practice, if we have
-// __uint128_t then we almost certainly have __int128_t too.
-#if HURCHALLA_COMPILER_HAS_UINT128_T()
-        test_modular_multiplicative_inverse<__int128_t>();
-#endif
-    }
 }
+
+
+} // end unnamed namespace

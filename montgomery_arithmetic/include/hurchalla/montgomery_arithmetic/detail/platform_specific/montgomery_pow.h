@@ -55,8 +55,12 @@ struct MontPowImpl {
         // 'base' above depends only on multiply and thus is tagged for lowuops
         // since it is less likely to be a latency bottleneck.
         V tmp = mf.template multiply<LowlatencyTag>(result, base);
+#if 0
         // ternary op generally compiles to conditional moves.
         result = (exponent & static_cast<T>(1)) ? tmp : result;
+#else
+        HURCHALLA_CMOV(exponent & static_cast<T>(1), result, tmp);
+#endif
     }
     return result;
   }
@@ -161,8 +165,12 @@ struct MontPowImpl {
             tmp[i] = mf.template multiply<LowuopsTag>(result[i], bases[i]);
         });
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
+#if 0
             //the ternary operator usually/hopefully results in our desired cmov
             result[i] = (exponent & static_cast<T>(1)) ? tmp[i] : result[i];
+#else
+            HURCHALLA_CMOV(exponent & static_cast<T>(1), result[i], tmp[i]);
+#endif
         });
     }
     return result;

@@ -177,8 +177,12 @@ struct DefaultRedc
     bool ovf;
     T result = REDC_non_finalized(ovf, u_hi, u_lo, n, inv_n);
     // By REDC_non_finalized()'s Postcondition #1, we get
+#if 0
     T final_result = (ovf) ? static_cast<T>(result + n) : result;
-
+#else
+    T final_result = result;
+    HURCHALLA_CMOV(ovf, final_result, static_cast<T>(result + n));
+#endif
     HPBC_POSTCONDITION2(final_result < n);
     return final_result;
   }

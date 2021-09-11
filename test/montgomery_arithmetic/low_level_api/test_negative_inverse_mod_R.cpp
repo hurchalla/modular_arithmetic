@@ -8,6 +8,10 @@
 #include "gtest/gtest.h"
 #include <cstdint>
 
+namespace {
+
+
+namespace hc = ::hurchalla;
 
 #if defined(_MSC_VER)
 #  pragma warning(push)
@@ -17,7 +21,6 @@
 template <typename T>
 void test_single_negative_inverse(T a)
 {
-    namespace hc = hurchalla;
     using P = typename hc::safely_promote_unsigned<T>::type;
     T minusOne = static_cast<T>(static_cast<P>(0) - static_cast<P>(1));
 
@@ -34,7 +37,6 @@ void test_single_negative_inverse(T a)
 template <typename T>
 void test_negative_inverse_exhaustive()
 {
-    namespace hc = hurchalla;
     T tmax = hc::ut_numeric_limits<T>::max();
     T evenmax = static_cast<T>((tmax/2)*2);
     T oddmax = (evenmax != tmax) ? tmax : static_cast<T>(tmax - 1);
@@ -48,7 +50,6 @@ void test_negative_inverse_exhaustive()
 template <typename T>
 void test_negative_inverse_mod_R()
 {
-    namespace hc = hurchalla;
     T tmax = hc::ut_numeric_limits<T>::max();
     T evenmax = static_cast<T>((tmax/2)*2);
     T oddmax = (evenmax != tmax) ? tmax : static_cast<T>(tmax - 1);
@@ -71,17 +72,19 @@ void test_negative_inverse_mod_R()
 }
 
 
-namespace {
-    TEST(MontgomeryArithmetic, negative_inverse_mod_r) {
-        test_negative_inverse_mod_R<std::uint8_t>();
-        test_negative_inverse_mod_R<std::uint16_t>();
-        test_negative_inverse_mod_R<std::uint32_t>();
-        test_negative_inverse_mod_R<std::uint64_t>();
+
+TEST(MontgomeryArithmetic, negative_inverse_mod_r) {
+    test_negative_inverse_mod_R<std::uint8_t>();
+    test_negative_inverse_mod_R<std::uint16_t>();
+    test_negative_inverse_mod_R<std::uint32_t>();
+    test_negative_inverse_mod_R<std::uint64_t>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
-        test_negative_inverse_mod_R<__uint128_t>();
+    test_negative_inverse_mod_R<__uint128_t>();
 #endif
 
-        test_negative_inverse_exhaustive<std::uint8_t>();
-        test_negative_inverse_exhaustive<std::uint16_t>();
-    }
+    test_negative_inverse_exhaustive<std::uint8_t>();
+    test_negative_inverse_exhaustive<std::uint16_t>();
 }
+
+
+} // end unnamed namespace

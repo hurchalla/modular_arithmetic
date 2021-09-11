@@ -16,8 +16,7 @@ template <typename T>
 T absolute_value_difference(T a, T b)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
-    HPBC_PRECONDITION(a >= 0);
-    HPBC_PRECONDITION(b >= 0);
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
 
     T result = detail::impl_absolute_value_difference(a, b);
 
