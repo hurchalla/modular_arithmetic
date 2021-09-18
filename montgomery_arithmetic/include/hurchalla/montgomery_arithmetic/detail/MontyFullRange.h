@@ -17,7 +17,7 @@ namespace hurchalla { namespace detail {
 
 // Let the theoretical constant R = 2^(ut_numeric_limits<T>::digits).
 template <typename T>
-class MontyFullRange : public MontyCommonBase<MontyFullRange, T> {
+class MontyFullRange final : public MontyCommonBase<MontyFullRange, T> {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     static_assert(ut_numeric_limits<T>::is_modulo, "");

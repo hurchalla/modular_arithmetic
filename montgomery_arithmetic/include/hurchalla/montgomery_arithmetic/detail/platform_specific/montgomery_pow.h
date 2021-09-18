@@ -18,14 +18,13 @@
 namespace hurchalla { namespace detail {
 
 
-// The montgomery_pow() function at bottom of this file implements the class
-// MontgomeryForm's member function pow().
+// This file is intended to implement the class MontgomeryForm's member
+// functions pow() and array_pow().
 
-// This MontPowImpl struct is intended solely for internal use by this file.
 // MF should be a MontgomeryForm type
 template<class MF>
-struct MontPowImpl {
-  using T = typename MF::T_type;
+struct montgomery_pow {
+  using T = typename MF::IntegerType;
   using V = typename MF::MontgomeryValue;
   static_assert(ut_numeric_limits<T>::is_integer, "");
 
@@ -216,7 +215,7 @@ struct MontPowImpl {
 // MF should be a MontgomeryForm type
 template<class MF>
 struct DefaultMontArrayPow {
-    using T = typename MF::T_type;
+    using T = typename MF::IntegerType;
     using V = typename MF::MontgomeryValue;
     static_assert(ut_numeric_limits<T>::is_integer, "");
     // Below is a catch-all template version of pow(), followed by overloads of
@@ -248,7 +247,7 @@ struct DefaultMontArrayPow {
         static_assert(NUM_BASES > 0, "");
         // conditional branching seems to typically work best for large-ish
         // array sizes.  And so long as the array isn't huge, unrolling helps.
-        return MontPowImpl<MF>::arraypow_cond_branch_unrolled(
+        return montgomery_pow<MF>::arraypow_cond_branch_unrolled(
                                                            mf, bases, exponent);
     }
     template <std::size_t NUM_BASES>
@@ -259,23 +258,22 @@ struct DefaultMontArrayPow {
         static_assert(NUM_BASES > 0, "");
         // When NUM_BASES gets huge we no longer want to force-unroll loops, but
         // other than that we'll do the same as arraypow_cond_branch_unrolled().
-        return MontPowImpl<MF>::arraypow_cond_branch(mf, bases, exponent);
+        return montgomery_pow<MF>::arraypow_cond_branch(mf, bases, exponent);
     }
 
     // delegate a size 1 array call to the scalar (non-array) montgomery_pow
     static HURCHALLA_FORCE_INLINE
     std::array<V,1> pow(const MF& mf, const std::array<V,1>& bases, T exponent)
     {
-        HPBC_PRECONDITION(exponent >= 0);
         std::array<V,1> result;
-        result[0] = MontPowImpl<MF>::scalarpow(mf, bases[0], exponent);
+        result[0] = montgomery_pow<MF>::scalarpow(mf, bases[0], exponent);
         return result;
     }
 
     static HURCHALLA_FORCE_INLINE
     std::array<V,2> pow(const MF& mf, const std::array<V,2>& bases, T exponent)
     {
-        return MontPowImpl<MF>::arraypow_cmov(mf, bases, exponent);
+        return montgomery_pow<MF>::arraypow_cmov(mf, bases, exponent);
     }
 };
 
@@ -283,13 +281,13 @@ struct DefaultMontArrayPow {
 
 // Primary template.  Forwards all work to DefaultMontArrayPow.
 template<class MontyType, class MF, class Enable = void>
-struct WrapperMontArrayPow {
+struct montgomery_array_pow {
     using V = typename MF::MontgomeryValue;
     template <std::size_t NUM_BASES>
     static HURCHALLA_FORCE_INLINE
     std::array<V, NUM_BASES> pow(const MF& mf,
                                  const std::array<V, NUM_BASES>& bases,
-                                 typename MF::T_type exponent)
+                                 typename MF::IntegerType exponent)
     {
         return DefaultMontArrayPow<MF>::pow(mf, bases, exponent);
     }
@@ -308,10 +306,10 @@ struct WrapperMontArrayPow {
 // compiler will just give up on attempting the match (it will instead match to
 // the primary template above).
 template<class MontyType, class MF>
-struct WrapperMontArrayPow<MontyType, MF, typename std::enable_if<
+struct montgomery_array_pow<MontyType, MF, typename std::enable_if<
               std::is_same<typename MontyType::MontyTag, QuarterrangeTag>::value
           >::type> {
-    using T = typename MF::T_type;
+    using T = typename MF::IntegerType;
     using V = typename MF::MontgomeryValue;
 
     template <std::size_t NUM_BASES>
@@ -334,48 +332,28 @@ struct WrapperMontArrayPow<MontyType, MF, typename std::enable_if<
     static HURCHALLA_FORCE_INLINE
     std::array<V,2> pow(const MF& mf, const std::array<V,2>& bases, T exponent)
     {
-        return MontPowImpl<MF>::arraypow_cmov(mf, bases, exponent);
+        return montgomery_pow<MF>::arraypow_cmov(mf, bases, exponent);
     }
     static HURCHALLA_FORCE_INLINE
     std::array<V,3> pow(const MF& mf, const std::array<V,3>& bases, T exponent)
     {
-        return MontPowImpl<MF>::arraypow_cmov(mf, bases, exponent);
+        return montgomery_pow<MF>::arraypow_cmov(mf, bases, exponent);
     }
 
 #  else
     static HURCHALLA_FORCE_INLINE
     std::array<V,2> pow(const MF& mf, const std::array<V,2>& bases, T exponent)
     {
-        return MontPowImpl<MF>::arraypow_masked(mf, bases, exponent);
+        return montgomery_pow<MF>::arraypow_masked(mf, bases, exponent);
     }
     static HURCHALLA_FORCE_INLINE
     std::array<V,3> pow(const MF& mf, const std::array<V,3>& bases, T exponent)
     {
-        return MontPowImpl<MF>::arraypow_masked(mf, bases, exponent);
+        return montgomery_pow<MF>::arraypow_masked(mf, bases, exponent);
     }
 #  endif
 };
 #endif
-
-
-
-template <class MF>
-HURCHALLA_FORCE_INLINE typename MF::MontgomeryValue
-montgomery_pow(const MF& mf,
-               typename MF::MontgomeryValue base,
-               typename MF::T_type exponent)
-{
-    return MontPowImpl<MF>::scalarpow(mf, base, exponent);
-}
-
-template <class MontyType, class MF, std::size_t NUM_BASES>
-HURCHALLA_FORCE_INLINE std::array<typename MF::MontgomeryValue, NUM_BASES>
-montgomery_pow(const MF& mf,
-               const std::array<typename MF::MontgomeryValue, NUM_BASES>& bases,
-               typename MF::T_type exponent)
-{
-    return WrapperMontArrayPow<MontyType, MF>::pow(mf, bases, exponent);
-}
 
 
 }} // end namespace

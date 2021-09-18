@@ -13,11 +13,11 @@
 #include "hurchalla/montgomery_arithmetic/low_level_api/get_Rsquared_mod_n.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/get_R_mod_n.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/inverse_mod_R.h"
-#include "hurchalla/montgomery_arithmetic/low_level_api/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/modular_arithmetic/absolute_value_difference.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 
@@ -38,7 +38,7 @@ class MontyCommonBase {
 public:
     class MontgomeryValue {
         friend Derived<T>; friend MontyCommonBase;
-        template <class> friend struct MontPowImpl;
+        template <class> friend struct montgomery_pow;
         HURCHALLA_FORCE_INLINE explicit MontgomeryValue(T val) : value(val) {}
     public:
 #ifdef __GNUC__
@@ -187,7 +187,7 @@ public:
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isCanonical(y));
         HPBC_PRECONDITION2(y.get() < n_); // isCanonical() should guarantee this
-        T z = mont_add_canonical_value(x.get(), y.get(), n_);
+        T z = mont_add_canonical_value<T>::call(x.get(), y.get(), n_);
         // mont_add_canonical_value guarantees that z <= std::max(x, n-1).
         // Thus if x < n, then z < n.  Or in other words, if x is canonical,
         // then z is canonical.
@@ -211,7 +211,7 @@ public:
         HPBC_PRECONDITION2(isCanonical(y));
         HPBC_PRECONDITION2(y.get() < n_); // isCanonical() should guarantee this
         HPBC_PRECONDITION2(isValid(x));
-        T z = mont_subtract_canonical_value(x.get(), y.get(), n_);
+        T z = mont_subtract_canonical_value<T>::call(x.get(), y.get(), n_);
         // mont_subtract_canonical_value guarantees that z <= std::max(x, n-1).
         // Thus if x < n, then z < n.  Or in other words, if x is canonical,
         // then z is canonical.

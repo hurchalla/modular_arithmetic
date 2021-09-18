@@ -13,13 +13,17 @@
 namespace hurchalla { namespace detail {
 
 
-// mont_subtract_canonical_value()  returns x-y (mod n).
+// mont_subtract_canonical_value::call()  returns x-y (mod n).
 // y must be canonical (meaning: 0 <= y < n).
 // The return value is not necessarily canonical, but it is less than or equal
 // to max(x, n-1).
-template <typename T>
-HURCHALLA_FORCE_INLINE T mont_subtract_canonical_value(T x, T y, T n)
-{
+
+
+// minor note: uses a static member function to disallow ADL.
+struct default_mont_subtract_canonical_value {
+  template <typename T>
+  HURCHALLA_FORCE_INLINE static T call(T x, T y, T n)
+  {
     HPBC_PRECONDITION2(y < n);  // the subtrahend must be canonical
 
     T diff = static_cast<T>(x - y);
@@ -33,19 +37,28 @@ HURCHALLA_FORCE_INLINE T mont_subtract_canonical_value(T x, T y, T n)
 
     HPBC_POSTCONDITION2(result <= std::max(x, static_cast<T>(n-1)));
     return result;
-}
+  }
+};
+
+
+// primary template
+template <typename T>
+struct mont_subtract_canonical_value {
+  HURCHALLA_FORCE_INLINE static T call(T x, T y, T n)
+  {
+    return default_mont_subtract_canonical_value::call(x, y, n);
+  }
+};
 
 
 #if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
      defined(HURCHALLA_ALLOW_INLINE_ASM_MONT_SUBTRACT_CANONICAL)) && \
       defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
-// -----------------------------------------------------------------------------
-// These non-template functions have first priority for argument matching.
-// They have the same descriptions as the generic template version above.
-// -----------------------------------------------------------------------------
-HURCHALLA_FORCE_INLINE std::uint64_t mont_subtract_canonical_value(
-                              std::uint64_t x, std::uint64_t y, std::uint64_t n)
-{
+template <>
+struct mont_subtract_canonical_value<std::uint64_t> {
+  HURCHALLA_FORCE_INLINE
+  static std::uint64_t call(std::uint64_t x, std::uint64_t y, std::uint64_t n)
+  {
     HPBC_PRECONDITION2(y < n);  // the subtrahend must be canonical
 
     // We use the "UabcdSD" constraint below so that the LEA instruction doesn't
@@ -77,16 +90,19 @@ HURCHALLA_FORCE_INLINE std::uint64_t mont_subtract_canonical_value(
 
     HPBC_POSTCONDITION2(result <= std::max(x, static_cast<std::uint64_t>(n-1)));
     HPBC_POSTCONDITION2(result ==
-                         mont_subtract_canonical_value<std::uint64_t>(x, y, n));
+                          default_mont_subtract_canonical_value::call(x, y, n));
     return result;
-}
+  }
+};
 
-HURCHALLA_FORCE_INLINE std::uint32_t mont_subtract_canonical_value(
-                              std::uint32_t x, std::uint32_t y, std::uint32_t n)
-{
+template <>
+struct mont_subtract_canonical_value<std::uint32_t> {
+  HURCHALLA_FORCE_INLINE
+  static std::uint32_t call(std::uint32_t x, std::uint32_t y, std::uint32_t n)
+  {
     HPBC_PRECONDITION2(y < n);  // the subtrahend must be canonical
 
-    // Regarding the "UabcdSD" constraint, see the the uint64_t overload above
+    // Regarding the "UabcdSD" constraint, see the uint64_t specialization above
     std::uint32_t tmp = x;
     std::uint32_t result;
     __asm__ ("subl %[y], %[tmp] \n\t"             /* tmp = x - y */
@@ -113,9 +129,10 @@ HURCHALLA_FORCE_INLINE std::uint32_t mont_subtract_canonical_value(
 
     HPBC_POSTCONDITION2(result <= std::max(x, static_cast<std::uint32_t>(n-1)));
     HPBC_POSTCONDITION2(result ==
-                         mont_subtract_canonical_value<std::uint32_t>(x, y, n));
+                          default_mont_subtract_canonical_value::call(x, y, n));
     return result;
-}
+  }
+};
 #endif
 
 

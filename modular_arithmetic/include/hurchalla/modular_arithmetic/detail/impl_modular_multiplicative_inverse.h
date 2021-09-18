@@ -15,9 +15,11 @@
 namespace hurchalla { namespace detail {
 
 
-template <typename T> HURCHALLA_FORCE_INLINE
-T impl_modular_multiplicative_inverse(T val, T modulus)
-{
+// note: uses a static member function to disallow ADL.
+struct impl_modular_multiplicative_inverse {
+  template <typename T>
+  HURCHALLA_FORCE_INLINE static T call(T val, T modulus)
+  {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     // I decided not to support modulus<=1, since it's not likely to be used and
@@ -64,7 +66,8 @@ T impl_modular_multiplicative_inverse(T val, T modulus)
         return static_cast<T>(inv);
     } else
         return 0;
-}
+  }
+};
 
 
 }}  // end namespace

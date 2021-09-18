@@ -18,11 +18,9 @@ T absolute_value_difference(T a, T b)
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
 
-    T result = detail::impl_absolute_value_difference(a, b);
+    T result = detail::impl_absolute_value_difference<T>::call(a, b);
 
-    // POSTCONDITION:
-    // This function returns absolute_value(a-b).  A simple potential
-    // implementation could be  result = (a>b) ? a-b : b-a.
+    HPBC_POSTCONDITION(result == ((a>b) ? a-b : b-a));
     HPBC_POSTCONDITION(result<=a || result<=b);
     return result;
 }

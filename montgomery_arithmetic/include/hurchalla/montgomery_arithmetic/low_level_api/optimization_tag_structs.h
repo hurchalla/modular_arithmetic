@@ -19,8 +19,8 @@ struct PrivateAnyTag {};
 // LowuopsTag potentially offers optimizations targeted toward reducing the
 // number of instructions generated/executed by functions.
 
-struct LowlatencyTag : public PrivateAnyTag {};
-struct LowuopsTag : public PrivateAnyTag {};
+struct LowlatencyTag final : public PrivateAnyTag {};
+struct LowuopsTag final : public PrivateAnyTag {};
 
 
 } // end namespace

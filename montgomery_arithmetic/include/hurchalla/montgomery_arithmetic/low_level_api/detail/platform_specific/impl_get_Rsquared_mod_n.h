@@ -6,11 +6,11 @@
 
 
 #include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
-#include "hurchalla/montgomery_arithmetic/low_level_api/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/monty_tag_structs.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 
@@ -27,9 +27,11 @@ namespace hurchalla { namespace detail {
 // R = 2^64.
 
 // Compute (R*R) % n
-template <typename T, class MTAG = FullrangeTag> HURCHALLA_FORCE_INLINE
-T impl_get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
-{
+// Minor note: uses static member function to disallow ADL.
+struct impl_get_Rsquared_mod_n {
+  template <typename T, class MTAG = FullrangeTag> HURCHALLA_FORCE_INLINE
+  static T call(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
+  {
     HPBC_PRECONDITION2(n % 2 == 1);
     HPBC_PRECONDITION2(n > 1);
 
@@ -94,7 +96,8 @@ T impl_get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
 
     HPBC_POSTCONDITION2(rSquaredModN < n);
     return rSquaredModN;
-}
+  }
+};
 
 
 }} // end namespace

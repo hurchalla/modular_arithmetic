@@ -21,7 +21,7 @@ namespace hurchalla { namespace detail {
 // The name "sqrt_range" signifies that this function is intended to be used
 // with MontySqrtRange.h.
 
-// Our function montsub_sqrt_range() requires an unusual input range:
+// montsub_sqrt_range::call() requires an unusual input range:
 // 0 <= a <= n,  and  0 <= b <= n  (so long as !(a==0 && b==n)).
 // The output return value range will be  0 < returnValue <= n.
 // Obviously neither the inputs nor outputs necessarily belong to the minimal
@@ -34,9 +34,11 @@ namespace hurchalla { namespace detail {
 // MontySqrtRange.
 
 
-template <typename T>
-HURCHALLA_FORCE_INLINE T montsub_sqrt_range(T a, T b, T n)
-{
+// minor note: uses a static member function to disallow ADL.
+struct default_montsub_sqrt_range {
+  template <typename T>
+  HURCHALLA_FORCE_INLINE static T call(T a, T b, T n)
+  {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     static_assert(ut_numeric_limits<T>::is_modulo, "");
@@ -73,26 +75,30 @@ HURCHALLA_FORCE_INLINE T montsub_sqrt_range(T a, T b, T n)
 
     HPBC_POSTCONDITION2(0 < result && result <= n);
     return result;
-}
+  }
+};
 
 
-// -------- PLATFORM SPECIFIC nontemplate overloads ----------
-
-// Note: a nontemplate function overload gets first priority for being called
-// (see http://www.gotw.ca/publications/mill17.htm ), when both the nontemplate
-// function and the generic template function match the caller's provided
-// argument type(s).
+// primary template
+template <typename T>
+struct montsub_sqrt_range {
+  HURCHALLA_FORCE_INLINE static T call(T a, T b, T n)
+  {
+    return default_montsub_sqrt_range::call(a, b, n);
+  }
+};
 
 #if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
      defined(HURCHALLA_ALLOW_INLINE_ASM_MONTSUB_SQRT_RANGE)) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
-// This function is an asm version of the template montsub_sqrt_range()
-HURCHALLA_FORCE_INLINE std::uint64_t montsub_sqrt_range(std::uint64_t a,
-                                               std::uint64_t b, std::uint64_t n)
-{
+template <>
+struct montsub_sqrt_range<std::uint64_t> {
+  HURCHALLA_FORCE_INLINE
+  static std::uint64_t call(std::uint64_t a, std::uint64_t b, std::uint64_t n)
+  {
     using std::uint64_t;
     HPBC_PRECONDITION2(n > 0);
-    // See the discussion in the above template function regarding the next
+    // See the discussion in the primary template above regarding the next
     // preconditions, which allow a==0 and/or b==0 so long as we don't have the
     // combination a==0 with b==n.
     HPBC_PRECONDITION2(b <= n);  // 0 <= b is guaranteed by uint64_t
@@ -126,9 +132,10 @@ HURCHALLA_FORCE_INLINE std::uint64_t montsub_sqrt_range(std::uint64_t a,
              : "cc");
 
     HPBC_POSTCONDITION2(0 < result && result <= n);
-    HPBC_POSTCONDITION2(result == montsub_sqrt_range<uint64_t>(a, b, n));
+    HPBC_POSTCONDITION2(result == default_montsub_sqrt_range::call(a, b, n));
     return result;
-}
+  }
+};
 #endif
 
 

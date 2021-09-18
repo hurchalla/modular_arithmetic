@@ -21,7 +21,7 @@ namespace hurchalla {
 // A custom MontyType may have different requirements for type T (e.g. that T is
 // an unsigned integral type).
 template<class T, class MontyType = typename detail::MontgomeryDefault<T>::type>
-class MontgomeryForm {
+class MontgomeryForm final {
     const MontyType impl;
     using U = typename MontyType::uint_type;
     static_assert(ut_numeric_limits<U>::is_integer, "");
@@ -31,9 +31,9 @@ class MontgomeryForm {
                   ut_numeric_limits<T>::digits, "");
 public:
     using MontgomeryValue = typename MontyType::montvalue_type;
-    using T_type = T;
+    using IntegerType = T;
 
-    class CanonicalValue : public MontgomeryValue {
+    class CanonicalValue final : public MontgomeryValue {
         friend MontgomeryForm;
         HURCHALLA_FORCE_INLINE
         explicit CanonicalValue(MontgomeryValue val) : MontgomeryValue(val) {}
@@ -291,7 +291,8 @@ public:
     MontgomeryValue pow(MontgomeryValue base, T exponent) const
     {
         HPBC_PRECONDITION(exponent >= 0);
-        return detail::montgomery_pow(*this, base, exponent);
+        using MF = MontgomeryForm;
+        return detail::montgomery_pow<MF>::scalarpow(*this, base, exponent);
     }
 
     // This is a specially optimized version of the pow() function above.
@@ -320,7 +321,8 @@ public:
     pow(std::array<MontgomeryValue, NUM_BASES>& bases, T exponent) const
     {
         HPBC_PRECONDITION(exponent >= 0);
-        return detail::montgomery_pow<MontyType>(*this, bases, exponent);
+        return detail::montgomery_array_pow<MontyType,MontgomeryForm>::pow(
+                                                        *this, bases, exponent);
     }
 
     // Returns the greatest common denominator of the standard representations

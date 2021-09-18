@@ -93,7 +93,7 @@ using MontgomeryStandardMathWrapper =
 
 // You should not use this class (it's intended for the alias implementations)
 template <typename T, template <typename> class M>
-class MontyAliasHelper {
+class MontyAliasHelper final {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!ut_numeric_limits<T>::is_signed, "");
     static_assert(ut_numeric_limits<T>::is_modulo, "");

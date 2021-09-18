@@ -18,19 +18,19 @@ namespace hurchalla { namespace detail {
 // For discussion purposes, let R = 2^(ut_numeric_limits<T>::digits).  For
 // example if T is uint64_t, then R = 2^64.
 
-
-namespace detail_nimr {
+// minor note: uses static member functions to disallow ADL.
+struct nimr_helper {
     template <int n>
-    constexpr int log2()
+    constexpr static int log2()
     {
       // PRECONDITION: n!=0 (this isn't possible to express via static_assert)
       static_assert(n>=0, "");
       static_assert(n==1 || (n/2)*2 == n, "");
       return (n<=1) ? 0 : 1 + log2<n/2>();
     }
-    #ifndef HURCHALLA_TARGET_BIT_WIDTH
-    #error "HURCHALLA_TARGET_BIT_WIDTH must be defined"
-    #endif
+#ifndef HURCHALLA_TARGET_BIT_WIDTH
+#  error "HURCHALLA_TARGET_BIT_WIDTH must be defined"
+#endif
 
     // This algorithm is an adaptation of the algorithm described in
     // https://github.com/hurchalla/modular_arithmetic/blob/master/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/low_level_api/detail/integer_inverse.pdf
@@ -49,7 +49,7 @@ namespace detail_nimr {
     // Note: This alg only makes sense to use for the native integral types -
     // Newton's method becomes more efficient when larger types are required.
     template <typename T, int bits>
-    HURCHALLA_FORCE_INLINE
+    static HURCHALLA_FORCE_INLINE
     typename std::enable_if<bits<=HURCHALLA_TARGET_BIT_WIDTH, T>::type
     impl_neg_inverse(T a)
     {
@@ -82,7 +82,7 @@ namespace detail_nimr {
     // To get the starting bits of 'x' we recurse until we can use the more
     // efficient algorithm above, at which point we switch to it.
     template <typename T, int bits>
-    HURCHALLA_FORCE_INLINE
+    static HURCHALLA_FORCE_INLINE
     typename std::enable_if<!(bits<=HURCHALLA_TARGET_BIT_WIDTH), T>::type
     impl_neg_inverse(T a)
     {
@@ -99,7 +99,7 @@ namespace detail_nimr {
         // to double the number of good bits.
         return static_cast<T>(x * (2 + static_cast<P>(a)*x));
     }
-}
+};
 
 
 #if defined(_MSC_VER)
@@ -116,7 +116,7 @@ T negative_inverse_mod_R(T a)
     static_assert(ut_numeric_limits<T>::is_modulo, "");
     HPBC_PRECONDITION2(a % 2 == 1);
 
-    T inv= detail_nimr::impl_neg_inverse<T, ut_numeric_limits<T>::digits>(a);
+    T inv= nimr_helper::impl_neg_inverse<T, ut_numeric_limits<T>::digits>(a);
 
     // guarantee inv*a ≡ -1 (mod R)
     using P = typename safely_promote_unsigned<T>::type;

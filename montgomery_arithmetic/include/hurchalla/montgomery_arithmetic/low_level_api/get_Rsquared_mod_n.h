@@ -49,8 +49,8 @@ T get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
     HPBC_PRECONDITION2(
        static_cast<T>(static_cast<P>(n) * static_cast<P>(inverse_n_modR)) == 1);
 
-    T rSquaredModN =
-             detail::impl_get_Rsquared_mod_n(n, inverse_n_modR, Rmod_n, MTAG());
+    T rSquaredModN = detail::impl_get_Rsquared_mod_n::call(
+                                             n, inverse_n_modR, Rmod_n, MTAG());
 
     HPBC_POSTCONDITION2(rSquaredModN < n);
     return rSquaredModN;

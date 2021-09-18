@@ -5,11 +5,11 @@
 #include "hurchalla/montgomery_arithmetic/low_level_api/inverse_mod_R.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/get_Rsquared_mod_n.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/get_R_mod_n.h"
-#include "hurchalla/montgomery_arithmetic/low_level_api/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/monty_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 

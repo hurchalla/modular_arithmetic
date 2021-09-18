@@ -17,7 +17,7 @@ namespace hurchalla { namespace detail {
 
 
 template <typename T>
-class MontgomeryDefault {
+class MontgomeryDefault final {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     using U = typename extensible_make_unsigned<T>::type;
     static constexpr int bitsT = ut_numeric_limits<T>::digits;

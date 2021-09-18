@@ -5,7 +5,7 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_LLAPI_REDC_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/low_level_api/detail/platform_specific/impl_REDC.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/detail/platform_specific/ImplRedc.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/monty_tag_structs.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
@@ -68,7 +68,7 @@ T REDC(T u_hi, T u_lo, T n, T inv_n, MTAG = MTAG(), PTAG = PTAG())
                 static_cast<T>(static_cast<P>(n) * static_cast<P>(inv_n)) == 1);
     HPBC_PRECONDITION2(u_hi < n);  // verify that (u_hi*R + u_lo) < n*R
 
-    T result = detail::impl_REDC(u_hi, u_lo, n, inv_n, MTAG(), PTAG());
+    T result = detail::ImplRedc::REDC(u_hi, u_lo, n, inv_n, MTAG(), PTAG());
 
     HPBC_POSTCONDITION2((std::is_same<MTAG, FullrangeTag>::value) ?
                         result < n :
@@ -85,10 +85,9 @@ HURCHALLA_FORCE_INLINE
 T REDC(T u_hi, T u_lo, T n, T inv_n, bool& resultIsZero, MTAG = MTAG(),
                                                                   PTAG = PTAG())
 {
-    // All preconditions and postconditions are the same as REDC() above, since
-    // we just call it from here.
+    // All preconditions and postconditions are the same as for REDC() above.
     T result = REDC(u_hi, u_lo, n, inv_n, MTAG(), PTAG());
-    resultIsZero = detail::isZeroRedcResult(result, n, MTAG());
+    resultIsZero = detail::ImplRedc::isZeroResult(result, n, MTAG());
     return result;
 }
 

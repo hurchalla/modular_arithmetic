@@ -42,15 +42,15 @@
 namespace hurchalla { namespace detail {
 
 
-/*  Generic (non-platform specific) implementation for
-T modular_multiplication_prereduced_inputs(T a, T b, T modulus).
-Ideally for best performance, call with a >= b.
-Credit: this code was adapted from mulmod() at
- http://community.topcoder.com/tc?module=Static&d1=tutorials&d2=primalityTesting
-*/
-template <typename T>
-T slow_modular_multiplication(T a, T b, T modulus)
-{
+// Slow implementation that works for all compilers and architectures.
+// Ideally for best performance, call with a >= b.
+// Credit: this code was adapted from mulmod() at
+//   http://community.topcoder.com/tc?module=Static&d1=tutorials&d2=primalityTesting
+// Note: uses a static member function to disallow ADL.
+struct slow_modular_multiplication {
+  template <typename T>
+  HURCHALLA_FORCE_INLINE static T call(T a, T b, T modulus)
+  {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION2(modulus>0);
@@ -59,90 +59,83 @@ T slow_modular_multiplication(T a, T b, T modulus)
 
     T result = 0;
     while (b > 0) {
-        T tmp = modular_addition_prereduced_inputs(result, a, modulus);
+        namespace hc = ::hurchalla;
+        T tmp = hc::modular_addition_prereduced_inputs(result, a, modulus);
         HURCHALLA_CMOV(b & 1, result, tmp);
-        a = modular_addition_prereduced_inputs(a, a, modulus);
+        a = hc::modular_addition_prereduced_inputs(a, a, modulus);
         b = static_cast<T>(b >> 1);
     }
     return result;
-}
+  }
+};
 
 
-// ---- TEMPLATE version of impl_modular_multiplication_prereduced_inputs ----
+// Note that there are fast specializations of impl_modular_multiplication
+// available below in this file whenever possible. They are platform specific,
+// though the uint8_t version is available for any 16 bit or greater target;
+// likewise uint16_t, uint32_t, and uint64_t versions are available for any
+// platform target with bit width that is at least twice the size of the
+// prospective uint_t's bit width.
+// Additionally for the x86/x64 ISAs I've made versions using assembly language
+// for uint32_t and uint64_t.
+// From preliminary investigation I did on ARM, I don't believe ARM would get
+// any significant gain by writing assembly language versions (though like any
+// ISA it benefits from the non-asm specializations, if available for the type
+// T). At the time of this writing none of the ARM ISAs appear to provide an
+// instruction for division of a 128 bit dividend by a 64 bit divisor (with a 64
+// bit quotient); ARM also doesn't seem to have any instruction to divide a 64
+// bit dividend by a 32 bit divisor. Not all ARM ISAs even have the standard
+// division instructions (32bit by 32bit, or 64bit by 64 bit). ARM does have a
+// UMULL instruction though, which does 32bit by 32bit multiplication for
+// (effectively) a 64bit result. ARM64 also has UMULH for the high 64 bits of
+// a 64bit x 64bit -> 128 bit multiply (for MSVC this is instrinsic __umulh).
 
-/*
-   Note first that I've made faster non-template function overloads of
-   impl_modular_multiplication_prereduced_inputs() later in this file when
-   possible. They are platform specific, though the uint8_t version is available
-   for any 16 bit or greater target; likewise uint16_t, uint32_t, and uint64_t
-   versions are available for any platform target with bit width that is at
-   least twice the size of the prospective uint_t's bit width.
-   Additionally for the x86/x64 ISAs I've made overloads using assembly language
-   for uint32_t and uint64_t, later in this file.
-   From preliminary investigation I did on ARM, I don't believe ARM would get
-   any significant gain by writing assembly language overloads of the function
-   (though like any ISA it benefits from the non-asm overloads where available
-   for the type T). At the time of this writing none of the ARM ISAs appear to
-   provide an instruction for division of a 128 bit dividend by a 64 bit divisor
-   (with a 64 bit quotient); ARM also doesn't seem to have any instruction to
-   divide a 64 bit dividend by a 32 bit divisor. Not all ARM ISAs even have the
-   standard division instructions (32bit by 32bit, or 64bit by 64 bit). ARM does
-   have a UMULL instruction though, which does 32bit by 32bit multiplication for
-   (effectively) a 64bit result.
-*/
 
-// Note that in most cases a type will match and resolve to one of the platform
-// specific nontemplate overloads below instead of to this template (nontemplate
-// functions get first priority for potential matches).
+// primary template
+// In most cases a type will match and resolve to one of the specializations
+// below, instead of this primary template.
 template <typename T>
+struct impl_modular_multiplication {
 #ifdef HURCHALLA_COMPILE_ERROR_ON_SLOW_MATH
-  // cause a compile error instead of falling back to the slow template function
-  T impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus) = delete;
+  // cause compile error instead of falling back to slow modular multiplication.
+  HURCHALLA_FORCE_INLINE static T call(T a, T b, T modulus) = delete;
 #else
-  T impl_modular_multiplication_prereduced_inputs(T a, T b, T modulus)
+  HURCHALLA_FORCE_INLINE static T call(T a, T b, T modulus)
   {
-      static_assert(ut_numeric_limits<T>::is_integer, "");
-      static_assert(!(ut_numeric_limits<T>::is_signed), "");
-      return slow_modular_multiplication(a, b, modulus);
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+    return slow_modular_multiplication::call(a, b, modulus);
   }
 #endif
-
-
-
-// -------- PLATFORM SPECIFIC nontemplate overloads ----------
-
-// Note: these fast nontemplate function overloads get first priority for being
-// called (see http://www.gotw.ca/publications/mill17.htm ), when both one of
-// these nontemplate functions and the generic template function match the
-// caller's provided argument type(s).
-
+};
 
 
 #if !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
                    HURCHALLA_TARGET_BIT_WIDTH >= 16
-HURCHALLA_FORCE_INLINE
-std::uint8_t impl_modular_multiplication_prereduced_inputs(
-                           std::uint8_t a, std::uint8_t b, std::uint8_t modulus)
-{
+template <> struct impl_modular_multiplication<std::uint8_t> {
+  HURCHALLA_FORCE_INLINE static
+  std::uint8_t call(std::uint8_t a, std::uint8_t b, std::uint8_t modulus)
+  {
     // Calculate (a*b)%modulus, guaranteeing no overflow on a*b.
     // We use safely_promote_unsigned<T> to avoid undefined behavior.  See
     // https://jeffhurchalla.com/2019/01/16/c-c-surprises-and-undefined-behavior-due-to-unsigned-integer-promotion/
     using P = safely_promote_unsigned<std::uint16_t>::type;
     return (std::uint8_t)((P)a*(P)b % (P)modulus);
-}
+  }
+};
 #endif
 
 #if !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
                    HURCHALLA_TARGET_BIT_WIDTH >= 32
-HURCHALLA_FORCE_INLINE
-std::uint16_t impl_modular_multiplication_prereduced_inputs(
-                        std::uint16_t a, std::uint16_t b, std::uint16_t modulus)
-{
+template <> struct impl_modular_multiplication<std::uint16_t> {
+  HURCHALLA_FORCE_INLINE static
+  std::uint16_t call(std::uint16_t a, std::uint16_t b, std::uint16_t modulus)
+  {
     using P = safely_promote_unsigned<std::uint32_t>::type;
     return (std::uint16_t)((P)a*(P)b % (P)modulus);
-}
+  }
+};
 #endif
-
 
 
 // Note: for HURCHALLA_TARGET_ISA_X86_32 and HURCHALLA_TARGET_ISA_X86_64, 32bit
@@ -154,10 +147,10 @@ std::uint16_t impl_modular_multiplication_prereduced_inputs(
   (defined(HURCHALLA_TARGET_ISA_X86_64) || defined(HURCHALLA_TARGET_ISA_X86_32))
 // _MSC_VER >= 1920 indicates Visual Studio 2019 or higher. VS2019 (for x86/x64)
 // is the first version to support _udiv64 used below.
-HURCHALLA_FORCE_INLINE
-std::uint32_t impl_modular_multiplication_prereduced_inputs(
+template <> struct impl_modular_multiplication<std::uint32_t> {
+  HURCHALLA_FORCE_INLINE static std::uint32_t call(
                         std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
-{
+  {
     using P = safely_promote_unsigned<std::uint64_t>::type;
     std::uint32_t result;
     // Note: at the time of this writing (April 2020), the MS documentation of
@@ -167,19 +160,20 @@ std::uint32_t impl_modular_multiplication_prereduced_inputs(
     _udiv64(__emulu(a, b), modulus, &result);
     HPBC_POSTCONDITION2((P)result == (P)a*(P)b % (P)modulus);
     return result;
-}
+  }
+};
 #elif !defined(HURCHALLA_DISALLOW_INLINE_ASM_MODMUL) && defined(_MSC_VER) && \
       defined(HURCHALLA_TARGET_ISA_X86_32)
 // Since this is x86 msvc and we will use inline asm, we must ensure this
 // function doesn't use __fastcall or __vectorcall (see
 // https://docs.microsoft.com/en-us/cpp/assembler/inline/using-and-preserving-registers-in-inline-assembly ).
-// To do this, we declare this function with the __cdecl modifier, which forces
+// To do this, we declare the function with the __cdecl modifier, which forces
 // the function to use cdecl calling convention.  This overrides any potential
 // compiler flag that might specify __fastcall or __vectorcall.
-HURCHALLA_FORCE_INLINE
-std::uint32_t __cdecl impl_modular_multiplication_prereduced_inputs(
+template <> struct impl_modular_multiplication<std::uint32_t> {
+  HURCHALLA_FORCE_INLINE static std::uint32_t __cdecl call(
                         std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
-{
+  {
     using P = safely_promote_unsigned<std::uint64_t>::type;
     std::uint32_t result;
     __asm {
@@ -190,14 +184,15 @@ std::uint32_t __cdecl impl_modular_multiplication_prereduced_inputs(
     }
     HPBC_POSTCONDITION2((P)result == (P)a*(P)b % (P)modulus);
     return result;
-}
+  }
+};
 #elif !defined(HURCHALLA_DISALLOW_INLINE_ASM_MODMUL) && !defined(_MSC_VER) && \
       ( defined(HURCHALLA_TARGET_ISA_X86_64) || \
         defined(HURCHALLA_TARGET_ISA_X86_32) )
-HURCHALLA_FORCE_INLINE
-std::uint32_t impl_modular_multiplication_prereduced_inputs(
+template <> struct impl_modular_multiplication<std::uint32_t> {
+  HURCHALLA_FORCE_INLINE static std::uint32_t call(
                         std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
-{
+  {
     using P = safely_promote_unsigned<std::uint64_t>::type;
     // gnu/AT&T style inline asm
     // [inout operands]:  EAX = tmp  (inout lets us safely overwrite EAX)
@@ -218,28 +213,29 @@ std::uint32_t impl_modular_multiplication_prereduced_inputs(
              : "cc");
     HPBC_POSTCONDITION2((P)result == (P)a*(P)b % (P)modulus);
     return result;
-}
+  }
+};
 #elif !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
                      HURCHALLA_TARGET_BIT_WIDTH >= 64
-HURCHALLA_FORCE_INLINE
-std::uint32_t impl_modular_multiplication_prereduced_inputs(
+template <> struct impl_modular_multiplication<std::uint32_t> {
+  HURCHALLA_FORCE_INLINE static std::uint32_t call(
                         std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
-{
+  {
     using P = safely_promote_unsigned<std::uint64_t>::type;
     return (std::uint32_t)((P)a*(P)b % (P)modulus);
-}
+  }
+};
 #endif
-
 
 
 #if defined(_MSC_VER) && _MSC_VER >= 1920 && \
           defined(HURCHALLA_TARGET_ISA_X86_64)
 // _MSC_VER >= 1920 indicates Visual Studio 2019 or higher. VS2019 (for x64)
 // is the first version to support _udiv128 used below.
-HURCHALLA_FORCE_INLINE
-std::uint64_t impl_modular_multiplication_prereduced_inputs(
+template <> struct impl_modular_multiplication<std::uint64_t> {
+  HURCHALLA_FORCE_INLINE static std::uint64_t call(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
-{
+  {
     // Note: at the time of this writing (April 2020), the MS documentation of
     // udiv128 is likely incomplete.  udiv128 is almost certainly a direct
     // translation of the x64 assembly "div" instruction (which we want!).
@@ -247,29 +243,33 @@ std::uint64_t impl_modular_multiplication_prereduced_inputs(
     std::uint64_t productHigh, result;
     std::uint64_t productLow = _umul128(a, b, &productHigh);
     _udiv128(productHigh, productLow, modulus, &result);
-    HPBC_POSTCONDITION3(result == slow_modular_multiplication(a, b, modulus));
+    HPBC_POSTCONDITION3(result ==
+                              slow_modular_multiplication::call(a, b, modulus));
     return result;
-}
+  }
+};
 #elif defined(_MSC_VER) && defined(HURCHALLA_TARGET_ISA_X86_64)
 extern "C" std::uint64_t modular_multiply_uint64_asm_UID7b5f83fc983(
               std::uint64_t a, std::uint64_t b, std::uint64_t modulus) noexcept;
-HURCHALLA_FORCE_INLINE
-std::uint64_t impl_modular_multiplication_prereduced_inputs(
+template <> struct impl_modular_multiplication<std::uint64_t> {
+  HURCHALLA_FORCE_INLINE static std::uint64_t call(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
-{
+  {
     using std::uint64_t;
     // The older versions of MSVC don't have the _udiv128 intrinsic.  Since
     // MSVC doesn't support inline asm for 64 bit targets, use an asm function
     uint64_t result = modular_multiply_uint64_asm_UID7b5f83fc983(a, b, modulus);
-    HPBC_POSTCONDITION3(result == slow_modular_multiplication(a, b, modulus));
+    HPBC_POSTCONDITION3(result ==
+                              slow_modular_multiplication::call(a, b, modulus));
     return result;
-}
+  }
+};
 #elif !defined(HURCHALLA_DISALLOW_INLINE_ASM_MODMUL) && \
       defined(HURCHALLA_TARGET_ISA_X86_64)    // inline asm with gnu/AT&T syntax
-HURCHALLA_FORCE_INLINE
-std::uint64_t impl_modular_multiplication_prereduced_inputs(
+template <> struct impl_modular_multiplication<std::uint64_t> {
+  HURCHALLA_FORCE_INLINE static std::uint64_t call(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
-{
+  {
     // [inout operands]:  RAX = tmp  (inout lets us safely overwrite RAX)
     // mulq %[b]:         RDX:RAX = RAX*b; high-order bits of the product in RDX
     // divq %[m]:         (quotient RAX, remainder RDX) = RDX:RAX/modulus
@@ -286,38 +286,40 @@ std::uint64_t impl_modular_multiplication_prereduced_inputs(
              : [b]"rm"(b), [m]"rm"(modulus)
 # endif
              : "cc");
-    HPBC_POSTCONDITION3(result == slow_modular_multiplication(a, b, modulus));
+    HPBC_POSTCONDITION3(result ==
+                              slow_modular_multiplication::call(a, b, modulus));
     return result;
-}
+  }
+};
 #elif !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
                     HURCHALLA_TARGET_BIT_WIDTH >= 128
 // this is speculative since I don't know of any 128 bit ALUs.
-HURCHALLA_FORCE_INLINE
-std::uint64_t impl_modular_multiplication_prereduced_inputs(
+template <> struct impl_modular_multiplication<std::uint64_t> {
+  HURCHALLA_FORCE_INLINE static std::uint64_t call(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
-{
+  {
     using P = safely_promote_unsigned<std::uint128_t>::type;
     return (std::uint64_t)((P)a*(P)b % (P)modulus);
-}
-/*
-// For the next #elif, it's uncertain that division using __uint128_t on a 64bit
-// system would be any better than the generic template version of this
-// function.
-// The code below should be correct as-is. If you wish to try it, you can
-// optionally uncomment this section to enable it.
-//
+  }
+};
 #elif !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
                                             (HURCHALLA_COMPILER_HAS_UINT128_T())
-HURCHALLA_FORCE_INLINE
-std::uint64_t impl_modular_multiplication_prereduced_inputs(
+// It's uncertain that division using __uint128_t on a 64bit system would be any
+// better than letting ourselves fall back to the primary template
+// impl_modular_multiplication that uses slow_modular_multiplication.  The code
+// below should be correct as-is. If you wish to try it, you can optionally
+// uncomment the following section.
+/*
+template <> struct impl_modular_multiplication<std::uint64_t> {
+  HURCHALLA_FORCE_INLINE static std::uint64_t call(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
-{
+  {
     using P = safely_promote_unsigned<__uint128_t>::type;
     return (std::uint64_t)((P)a*(P)b % (P)modulus);
-}
+  }
+};
 */
 #endif
-
 
 
 }}  // end namespace

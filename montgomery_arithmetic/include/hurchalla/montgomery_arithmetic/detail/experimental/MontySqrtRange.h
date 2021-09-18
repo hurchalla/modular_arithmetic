@@ -10,10 +10,10 @@
 #include "hurchalla/montgomery_arithmetic/detail/experimental/negative_inverse_mod_R.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/monty_tag_structs.h"
-#include "hurchalla/montgomery_arithmetic/low_level_api/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 
@@ -28,120 +28,6 @@ namespace hurchalla { namespace detail {
 
 // For discussion purposes, let R = 2^(ut_numeric_limits<T>::digits).  For
 // example if T is uint64_t, then R = 2^64.
-//
-// This function is based on REDC_non_minimized() in https://github.com/hurchalla/modular_arithmetic/blob/66281af1639031b04bdaf9b916e5d5638d3ded25/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/platform_specific/RedcLargeR.h#L44
-// It is an adaptation of REDC_non_minimized that omits calculations that are
-// not needed, given this function's preconditions of n < sqrt(R), and u < R
-// (i.e. u_hi == 0).  The precondition of u_hi == 0 is expressed simply by the
-// lack of a u_hi parameter; u_hi is implicitly treated as zero inside this
-// function.
-
-template <typename T>
-HURCHALLA_FORCE_INLINE T msr_REDC_non_minimized(T u_lo, T n, T neg_inv_n)
-{
-    static_assert(ut_numeric_limits<T>::is_integer, "");
-    static_assert(!(ut_numeric_limits<T>::is_signed), "");
-    static_assert(ut_numeric_limits<T>::is_modulo, "");
-
-    // For casts, we want to use types that are protected from surprises and
-    // undefined behavior due to the unsigned integral promotion rules in C++.
-    // https://jeffhurchalla.com/2019/01/16/c-c-surprises-and-undefined-behavior-due-to-unsigned-integer-promotion/
-    using P = typename safely_promote_unsigned<T>::type;
-    static_assert(ut_numeric_limits<P>::is_modulo, "");
-
-    HPBC_PRECONDITION2(n > 1);
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(u_lo != 0);
-    // Implicitly, u_hi == 0.  And thus u = (u_hi*R + u_lo) == u_lo < R.  Since
-    // we have the precondition n > 1, u < R < n*R, which satisfies the basic
-    // requirement of montgomery REDC that u < n*R.
-
-    // assert(n * neg_inv_n ≡ -1 (mod R))
-    HPBC_PRECONDITION2(
-                static_cast<T>(static_cast<P>(n) * static_cast<P>(neg_inv_n)) ==
-                static_cast<T>(static_cast<P>(0) - static_cast<P>(1))
-                );
-
-    // compute  m = (u * neg_inv_n) % R
-    T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(neg_inv_n));
-
-    T mn_lo;
-    T mn_hi = unsigned_multiply_to_hilo_product(mn_lo, m, n);
-
-    // mn = m*n.  Since m=(u_lo*neg_inv_n)%R, we know m < R, and thus  mn < R*n.
-    // Therefore mn == mn_hi*R + mn_lo < R*n, and mn_hi*R < R*n - mn_lo <= R*n,
-    // and thus  mn_hi < n.
-    // *** Assertion #1 ***
-    HPBC_ASSERT2(mn_hi < n);
-
-    // compute t_hi = (u_hi + mn_hi) % R.  Since we know u_hi == 0, we simply
-    // omit the addition of u_hi.
-    T t_hi = mn_hi;
-
-    // The REDC algorithm guarantees (u_lo + mn_lo) % R == 0.
-    HPBC_ASSERT2(static_cast<T>(u_lo + mn_lo) == static_cast<T>(0));
-    // REDC_non_minimized() would normally next calculate
-    // t_hi += (u_lo != 0);
-    // However, we have know by precondition that u_lo != 0.  The calculation of
-    // t_hi simplifies to
-    t_hi = static_cast<T>(t_hi + static_cast<T>(1));
-
-    // REDC_non_minimized() would normally next calculate
-    // ovf = (t_hi < u_hi);
-    // But we know u_hi == 0, so ovf = (t_hi < u_hi) == (t_hi < 0) == false.
-    // Thus  ovf = false.
-
-    // The discussion prior to Assertion #1 proves that mn_hi < n, and therefore
-    // 0 < mn_hi + 1 < n + 1.  Since t_hi = mn_hi + 1, we know  0 < t_hi <= n.
-    HPBC_POSTCONDITION2(0 < t_hi && t_hi <= n);
-    // From REDC_non_minimized()'s Postcondition #1, we know
-    //   T minimized_result = (ovf || t_hi >= n) ? (t_hi - n) : t_hi;
-    //   HPBC_POSTCONDITION2(minimized_result < n);
-    // Since  ovf == false  and  0 < t_hi <= n,  we can simplify this to
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
-        T minimized_result = (t_hi == n) ? static_cast<T>(0) : t_hi;
-        HPBC_POSTCONDITION2(minimized_result < n);
-    }
-
-    // From REDC_non_minimized() Postcondition #3, we know
-    //    HPBC_POSTCONDITION2((u_hi == 0 && u_lo < n) ? t_hi < n : true);
-    // Since u_hi == 0, we can simplify this to
-    HPBC_POSTCONDITION2((u_lo < n) ? t_hi < n : true);
-
-    // return the non-minimized result
-    return t_hi;
-}
-
-
-template <typename T>
-HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
-{
-    static_assert(ut_numeric_limits<T>::is_integer, "");
-    static_assert(!(ut_numeric_limits<T>::is_signed), "");
-    static_assert(ut_numeric_limits<T>::is_modulo, "");
-    // As in msr_REDC_non_minimized(), protect against undefined behavior:
-    using P = typename safely_promote_unsigned<T>::type;
-    static_assert(ut_numeric_limits<P>::is_modulo, "");
-
-    static constexpr int bit_width_T = ut_numeric_limits<T>::digits;
-    static_assert(bit_width_T % 2 == 0, "");   // bit_width_T divisible by 2
-    // MontySqrtRange requires  modulus < sqrt(R)
-    static constexpr T sqrtR = static_cast<T>(1) << (bit_width_T / 2);
-    HPBC_PRECONDITION2(1 < n && n < sqrtR);
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(0 < x && x < sqrtR);
-    HPBC_PRECONDITION2(0 < y && y < sqrtR);
-
-    // Since x < sqrtR and y < sqrtR,  x*y < sqrtR*sqrtR == R.
-    // We have x*y < R, so x*y will fit in type T without overflow.
-    T u_lo = static_cast<T>(static_cast<P>(x) * static_cast<P>(y));
-    T result = msr_REDC_non_minimized(u_lo, n, neg_inv_n);
-
-    HPBC_POSTCONDITION2(0 < result && result <= n);
-    return result;
-}
-
-
 
 // MontySqrtRange uses optimizations based on input and output V values being
 // 0 < val <= n_, and on modulus < sqrtR.
@@ -152,11 +38,11 @@ HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y, T n, T neg_inv_n)
 // The class member variable names are based on the webpage
 // https://en.wikipedia.org/wiki/Montgomery_modular_multiplication
 template <typename T>
-class MontySqrtRange {
+class MontySqrtRange final {
 public:
     class MontgomeryValue {
         friend MontySqrtRange;
-        template <class> friend struct MontPowImpl;
+        template <class> friend struct montgomery_pow;
         HURCHALLA_FORCE_INLINE explicit MontgomeryValue(T val) : value(val) {}
     public:
 #ifdef __GNUC__
@@ -235,6 +121,93 @@ private:
         return rModN;
     }
 
+    // This function is based on REDC_non_minimized() in https://github.com/hurchalla/modular_arithmetic/blob/66281af1639031b04bdaf9b916e5d5638d3ded25/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/platform_specific/RedcLargeR.h#L44
+    // It is an adaptation of REDC_non_minimized that omits calculations that
+    // are not needed, given this function's preconditions of n < sqrt(R), and
+    // u < R (i.e. u_hi == 0).  The precondition of u_hi == 0 is expressed
+    // simply by the lack of a u_hi parameter; u_hi is implicitly treated as
+    // zero inside this function.
+    HURCHALLA_FORCE_INLINE T msr_REDC_non_minimized(T u_lo) const
+    {
+        // For casts, we want to use types that are protected from surprises and
+        // undefined behavior caused by unsigned integral promotion rules in C++
+        // https://jeffhurchalla.com/2019/01/16/c-c-surprises-and-undefined-behavior-due-to-unsigned-integer-promotion/
+        using P = typename safely_promote_unsigned<T>::type;
+        static_assert(ut_numeric_limits<P>::is_modulo, "");
+        HPBC_PRECONDITION2(u_lo != 0);
+        // Implicitly, u_hi == 0.  And thus u = (u_hi*R + u_lo) == u_lo < R.
+        // Since this class guarantees n_ > 1, we know u < R < n_*R, which
+        // satisfies the basic requirement of montgomery REDC that u < n_*R.
+
+        // assert(n_ * neg_inv_n_ ≡ -1 (mod R))
+        HPBC_PRECONDITION2(
+              static_cast<T>(static_cast<P>(n_) * static_cast<P>(neg_inv_n_)) ==
+              static_cast<T>(static_cast<P>(0) - static_cast<P>(1))
+              );
+
+        // compute  m = (u * neg_inv_n_) % R
+        T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(neg_inv_n_));
+        T mn_lo;
+        T mn_hi = unsigned_multiply_to_hilo_product(mn_lo, m, n_);
+        // mn = m*n_.  Since m=(u_lo*neg_inv_n_)%R, we know m < R, and thus
+        // mn < R*n_.  Therefore mn == mn_hi*R + mn_lo < R*n_, and
+        // mn_hi*R < R*n_ - mn_lo <= R*n_, and thus  mn_hi < n_.
+        // *** Assertion #1 ***
+        HPBC_ASSERT2(mn_hi < n_);
+        // compute t_hi = (u_hi + mn_hi) % R.  Since we know u_hi == 0, we
+        // simply omit the addition of u_hi.
+        T t_hi = mn_hi;
+        // The REDC algorithm guarantees (u_lo + mn_lo) % R == 0.
+        HPBC_ASSERT2(static_cast<T>(u_lo + mn_lo) == static_cast<T>(0));
+        // REDC_non_minimized() would normally next calculate
+        // t_hi += (u_lo != 0);
+        // However, we have know by precondition that u_lo != 0.  And so the
+        // calculation of t_hi simplifies to
+        t_hi = static_cast<T>(t_hi + static_cast<T>(1));
+        // REDC_non_minimized() would normally next calculate
+        // ovf = (t_hi < u_hi);
+        // But we know u_hi == 0, so ovf = (t_hi < u_hi) == (t_hi < 0) == false.
+        // Thus  ovf = false.
+
+        // The discussion prior to Assertion #1 proves that mn_hi < n_.
+        // Therefore, 0 < mn_hi + 1 < n_ + 1.  Since t_hi = mn_hi + 1, we know
+        HPBC_POSTCONDITION2(0 < t_hi && t_hi <= n_);
+        // From REDC_non_minimized()'s Postcondition #1, we know
+        //   T minimized_result = (ovf || t_hi >= n_) ? (t_hi - n_) : t_hi;
+        //   HPBC_POSTCONDITION2(minimized_result < n_);
+        // Since  ovf == false  and  0 < t_hi <= n_,  we can simplify this to
+        if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
+            T minimized_result = (t_hi == n_) ? static_cast<T>(0) : t_hi;
+            HPBC_POSTCONDITION2(minimized_result < n_);
+        }
+        // From REDC_non_minimized() Postcondition #3, we know
+        //    HPBC_POSTCONDITION2((u_hi == 0 && u_lo < n_) ? t_hi < n_ : true);
+        // Since u_hi == 0, we can simplify this to
+        HPBC_POSTCONDITION2((u_lo < n_) ? t_hi < n_ : true);
+        // return the non-minimized result
+        return t_hi;
+    }
+
+    HURCHALLA_FORCE_INLINE T msr_montmul_non_minimized(T x, T y) const
+    {
+        // As in msr_REDC_non_minimized(), protect against undefined behavior:
+        using P = typename safely_promote_unsigned<T>::type;
+        static_assert(ut_numeric_limits<P>::is_modulo, "");
+        static constexpr int bit_width_T = ut_numeric_limits<T>::digits;
+        static_assert(bit_width_T % 2 == 0, "");   // bit_width_T divisible by 2
+        static constexpr T sqrtR = static_cast<T>(1) << (bit_width_T / 2);
+        HPBC_PRECONDITION2(0 < x && x < sqrtR);
+        HPBC_PRECONDITION2(0 < y && y < sqrtR);
+
+        // Since x < sqrtR and y < sqrtR,  x*y < sqrtR*sqrtR == R.
+        // We have x*y < R, so x*y will fit in type T without overflow.
+        T u_lo = static_cast<T>(static_cast<P>(x) * static_cast<P>(y));
+        T result = msr_REDC_non_minimized(u_lo);
+
+        HPBC_POSTCONDITION2(0 < result && result <= n_);
+        return result;
+    }
+
 public:
     HURCHALLA_FORCE_INLINE bool isValid(V x) const
     {
@@ -279,8 +252,7 @@ public:
         if HURCHALLA_LIKELY(a > 0) {
             // We have  0 < a < sqrtR  and  0 < r_squared_mod_n_ < sqrtR,  which
             // satisfies the preconditions for msr_montmul_non_minimized().
-            result = msr_montmul_non_minimized(a, r_squared_mod_n_, n_,
-                                                                    neg_inv_n_);
+            result = msr_montmul_non_minimized(a, r_squared_mod_n_);
         } else {
             HPBC_ASSERT2(a == 0);
             // We can't use msr_montmul_non_minimized() here, because it
@@ -333,7 +305,7 @@ public:
     {
         HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
 
-        T prod = msr_REDC_non_minimized(x.get(), n_, neg_inv_n_);
+        T prod = msr_REDC_non_minimized(x.get());
 
         // msr_REDC_non_minimized() postconditions guarantee the following
         HPBC_POSTCONDITION2(0 < prod && prod <= n_);
@@ -361,7 +333,7 @@ public:
         HPBC_PRECONDITION2(0 < b && b <= n_);
         HPBC_INVARIANT2(n_ > 0);
 
-        T result = montadd_sqrt_range(a, b, n_);
+        T result = montadd_sqrt_range<T>::call(a, b, n_);
 
         HPBC_POSTCONDITION2(0 < result && result <= n_);
         return V(result);
@@ -375,7 +347,7 @@ public:
         HPBC_PRECONDITION2(0 < b && b <= n_);
         HPBC_INVARIANT2(n_ > 0);
 
-        T result = montsub_sqrt_range(a, b, n_);
+        T result = montsub_sqrt_range<T>::call(a, b, n_);
 
         HPBC_POSTCONDITION2(0 < result && result <= n_);
         return V(result);
@@ -419,7 +391,7 @@ public:
         // Since we know n < sqrtR  (guaranteed by the constructor),  and x < n
         // and  y < n,  we have  x < sqrtR  and  y < sqrtR,  which satisfies the
         // preconditions of msr_montmul_non_minimized().
-        T prod = msr_montmul_non_minimized(x.get(), y.get(), n_, neg_inv_n_);
+        T prod = msr_montmul_non_minimized(x.get(), y.get());
         isZero = (getCanonicalValue(V(prod)).get() == getZeroValue().get());
 
         // msr_montmul_non_minimized() postconditions guarantee the following

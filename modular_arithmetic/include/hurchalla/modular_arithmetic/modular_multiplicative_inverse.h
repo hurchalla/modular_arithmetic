@@ -24,7 +24,7 @@ T modular_multiplicative_inverse(T a, T modulus)
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION(modulus > 1);
 
-    T inverse = detail::impl_modular_multiplicative_inverse(a, modulus);
+    T inverse = detail::impl_modular_multiplicative_inverse::call(a, modulus);
 
     HPBC_POSTCONDITION(inverse < modulus);
     //POSTCONDITION: Returns 0 if the inverse does not exist. Otherwise returns

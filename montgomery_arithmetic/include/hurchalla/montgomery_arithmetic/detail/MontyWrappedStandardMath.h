@@ -25,7 +25,7 @@ class MontyWrappedStandardMath final {
 public:
     class MontgomeryValue {
         friend MontyWrappedStandardMath;
-        template <class> friend struct MontPowImpl;
+        template <class> friend struct montgomery_pow;
         HURCHALLA_FORCE_INLINE explicit MontgomeryValue(T val) : value(val) {}
     public:
 #ifdef __GNUC__

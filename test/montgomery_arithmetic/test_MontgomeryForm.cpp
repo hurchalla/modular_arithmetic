@@ -111,7 +111,7 @@ namespace testmf_adapters {
 
 template <typename M>
 void test_multiply_variants(const M& mf, typename M::MontgomeryValue x,
-              typename M::MontgomeryValue y, typename M::T_type expected_result)
+         typename M::MontgomeryValue y, typename M::IntegerType expected_result)
 {
     EXPECT_TRUE(mf.convertOut(mf.multiply(x,y)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
@@ -135,7 +135,7 @@ void test_multiply_variants(const M& mf, typename M::MontgomeryValue x,
 template <typename M>
 void test_fmadd_variants(const M& mf, typename M::MontgomeryValue x,
                    typename M::MontgomeryValue y, typename M::CanonicalValue zc,
-                   typename M::T_type expected_result)
+                   typename M::IntegerType expected_result)
 {
     EXPECT_TRUE(mf.convertOut(mf.fmadd(x,y,zc)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
@@ -147,7 +147,7 @@ void test_fmadd_variants(const M& mf, typename M::MontgomeryValue x,
 template <typename M>
 void test_fmsub_variants(const M& mf, typename M::MontgomeryValue x,
                    typename M::MontgomeryValue y, typename M::CanonicalValue zc,
-                   typename M::T_type expected_result)
+                   typename M::IntegerType expected_result)
 {
     EXPECT_TRUE(mf.convertOut(mf.fmsub(x,y,zc)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
@@ -159,12 +159,12 @@ void test_fmsub_variants(const M& mf, typename M::MontgomeryValue x,
 
 
 template <typename M>
-void test_mf_general_checks(M& mf, typename M::T_type a, typename M::T_type b,
-                                                           typename M::T_type c)
+void test_mf_general_checks(M& mf, typename M::IntegerType a,
+                           typename M::IntegerType b, typename M::IntegerType c)
 {
     namespace tma = ::testmf_adapters;
 
-    using T = typename M::T_type;
+    using T = typename M::IntegerType;
     using V = typename M::MontgomeryValue;
     using C = typename M::CanonicalValue;
     T modulus = mf.getModulus();
@@ -262,8 +262,8 @@ struct GcdFunctor {
     template <typename T>
     T operator()(T a, T b) const
     {
-        static_assert(hurchalla::ut_numeric_limits<T>::is_integer, "");
-        static_assert(!hurchalla::ut_numeric_limits<T>::is_signed, "");
+        static_assert(hc::ut_numeric_limits<T>::is_integer, "");
+        static_assert(!hc::ut_numeric_limits<T>::is_signed, "");
         HPBC_PRECONDITION2(a > 0 || b > 0);
         while (a != 0) {
             T tmp = a;
@@ -280,7 +280,7 @@ struct GcdFunctor {
 template <typename M>
 void test_MontgomeryForm()
 {
-    using T = typename M::T_type;
+    using T = typename M::IntegerType;
     using V = typename M::MontgomeryValue;
     using C = typename M::CanonicalValue;
 

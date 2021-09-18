@@ -21,7 +21,7 @@ namespace hurchalla { namespace detail {
 // The name "sqrt_range" signifies that this function is intended to be used
 // with MontySqrtRange.h.
 
-// montadd_sqrt_range() requires/allows an unusual input range:  we allow
+// montadd_sqrt_range::call() requires/allows an unusual input range:  we allow
 // 0 < a <= n,  and  0 < b <= n.
 // Similarly, the output return value range will be  0 < returnValue <= n.
 // Obviously neither inputs nor outputs necessarily belong to the minimal
@@ -36,9 +36,11 @@ namespace hurchalla { namespace detail {
 // example if T is uint64_t, then R = 2^64.
 
 
-template <typename T>
-HURCHALLA_FORCE_INLINE T montadd_sqrt_range(T a, T b, T n)
-{
+// minor note: uses a static member function to disallow ADL.
+struct default_montadd_sqrt_range {
+  template <typename T>
+  HURCHALLA_FORCE_INLINE static T call(T a, T b, T n)
+  {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     static_assert(ut_numeric_limits<T>::is_modulo, "");
@@ -68,24 +70,27 @@ HURCHALLA_FORCE_INLINE T montadd_sqrt_range(T a, T b, T n)
 
     HPBC_POSTCONDITION2(0 < result && result <= n);
     return result;
-}
+  }
+};
 
 
-// -------- PLATFORM SPECIFIC nontemplate overloads ----------
-
-// Note: a nontemplate function overload gets first priority for being called
-// (see http://www.gotw.ca/publications/mill17.htm ), when both the nontemplate
-// function and the generic template function match the caller's provided
-// argument type(s).
-
+// primary template
+template <typename T>
+struct montadd_sqrt_range {
+  HURCHALLA_FORCE_INLINE static T call(T a, T b, T n)
+  {
+    return default_montadd_sqrt_range::call(a, b, n);
+  }
+};
 
 #if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
      defined(HURCHALLA_ALLOW_INLINE_ASM_MONTADD_SQRT_RANGE)) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
-// This function is an asm version of the template montadd_sqrt_range()
-HURCHALLA_FORCE_INLINE std::uint64_t montadd_sqrt_range(std::uint64_t a,
-                                               std::uint64_t b, std::uint64_t n)
-{
+template <>
+struct montadd_sqrt_range<std::uint64_t> {
+  HURCHALLA_FORCE_INLINE
+  static std::uint64_t call(std::uint64_t a, std::uint64_t b, std::uint64_t n)
+  {
     using std::uint64_t;
     HPBC_PRECONDITION2(n > 0);
     HPBC_PRECONDITION2(0 < a && a <= n);
@@ -109,9 +114,10 @@ HURCHALLA_FORCE_INLINE std::uint64_t montadd_sqrt_range(std::uint64_t a,
     uint64_t result = tmp2;
 
     HPBC_POSTCONDITION2(0 < result && result <= n);
-    HPBC_POSTCONDITION2(result == montadd_sqrt_range<uint64_t>(a, b, n));
+    HPBC_POSTCONDITION2(result == default_montadd_sqrt_range::call(a, b, n));
     return result;
-}
+  }
+};
 #endif
 
 

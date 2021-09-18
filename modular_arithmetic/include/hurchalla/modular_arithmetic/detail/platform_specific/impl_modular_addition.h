@@ -15,16 +15,9 @@
 namespace hurchalla { namespace detail {
 
 
-// -----------------------------------------------------------------------------
-// Template function versions.  By C++ rules, these have second priority for
-// function argument matching - the non-template versions below it have first
-// priority.
-// -----------------------------------------------------------------------------
-
-
 #if 0
 // --- Version #1 ---
-// This is an easy to understand version of the templated function.
+// This is an easy to understand default implementation version.
 //
 // However, on x86, Version #1's use of (modulus - b) will very often require
 // two uops because the compiler will see 'modulus' stays constant over a long
@@ -42,9 +35,10 @@ namespace hurchalla { namespace detail {
 // function versions.  In all situations, we can expect the latency of the two
 // versions to be the same.
 
-template <typename T> HURCHALLA_FORCE_INLINE
-T impl_modular_addition_prereduced_inputs(T a, T b, T modulus)
-{
+struct default_impl_modadd {
+  template <typename T>
+  HURCHALLA_FORCE_INLINE static T call(T a, T b, T modulus)
+  {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION2(modulus>0);
@@ -63,16 +57,20 @@ T impl_modular_addition_prereduced_inputs(T a, T b, T modulus)
 
     HPBC_POSTCONDITION2(static_cast<T>(0) <= result && result < modulus);
     return result;
-}
+  }
+};
 #else
 // --- Version #2 ---
-// This is a more difficult to understand version of the template function.  The
+// This is a more difficult to understand default implementation version.  The
 // proof of this function's correctness is given by the theorem in the comments
 // at the end of this file.  See the notes at the end of those comments to
 // understand the implementation details.
-template <typename T> HURCHALLA_FORCE_INLINE
-T impl_modular_addition_prereduced_inputs(T a, T b, T modulus)
-{
+
+// note: uses a static member function to disallow ADL.
+struct default_impl_modadd {
+  template <typename T>
+  HURCHALLA_FORCE_INLINE static T call(T a, T b, T modulus)
+  {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION2(modulus>0);
@@ -92,24 +90,33 @@ T impl_modular_addition_prereduced_inputs(T a, T b, T modulus)
     HPBC_POSTCONDITION2(static_cast<U>(0) <= result &&
                                               result < static_cast<U>(modulus));
     return static_cast<T>(result);
-}
+  }
+};
 #endif
 
 
+// primary template
+template <typename T>
+struct impl_modular_addition {
+  HURCHALLA_FORCE_INLINE static T call(T a, T b, T modulus)
+  {
+    return default_impl_modadd::call(a, b, modulus);
+  }
+};
 
-// -----------------------------------------------------------------------------
-// These non-template functions get first priority for argument matching.
-// -----------------------------------------------------------------------------
 
-// These inline asm functions implement version #2 of the template function.
+// These inline asm functions implement optimizations of version #2.
 // MSVC doesn't support inline asm, so we skip it.
 
 #if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
      defined(HURCHALLA_ALLOW_INLINE_ASM_MODADD)) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
-HURCHALLA_FORCE_INLINE std::uint32_t impl_modular_addition_prereduced_inputs(
-                        std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
-{
+
+template <>
+struct impl_modular_addition<std::uint32_t> {
+  HURCHALLA_FORCE_INLINE static
+  std::uint32_t call(std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
+  {
     using std::uint32_t;
     HPBC_PRECONDITION2(modulus>0);
     HPBC_PRECONDITION2(a<modulus);  // uint32_t guarantees a>=0.
@@ -133,14 +140,16 @@ HURCHALLA_FORCE_INLINE std::uint32_t impl_modular_addition_prereduced_inputs(
     uint32_t result = sum;
 
     HPBC_POSTCONDITION2(result < modulus);  // uint32_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
-              impl_modular_addition_prereduced_inputs<uint32_t>(a, b, modulus));
+    HPBC_POSTCONDITION2(result == default_impl_modadd::call(a, b, modulus));
     return result;
-}
+  }
+};
 
-HURCHALLA_FORCE_INLINE std::uint64_t impl_modular_addition_prereduced_inputs(
-                        std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
-{
+template <>
+struct impl_modular_addition<std::uint64_t> {
+  HURCHALLA_FORCE_INLINE static
+  std::uint64_t call(std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
+  {
     using std::uint64_t;
     HPBC_PRECONDITION2(modulus>0);
     HPBC_PRECONDITION2(a<modulus);  // uint64_t guarantees a>=0.
@@ -164,10 +173,11 @@ HURCHALLA_FORCE_INLINE std::uint64_t impl_modular_addition_prereduced_inputs(
     uint64_t result = sum;
 
     HPBC_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
-              impl_modular_addition_prereduced_inputs<uint64_t>(a, b, modulus));
+    HPBC_POSTCONDITION2(result == default_impl_modadd::call(a, b, modulus));
     return result;
-}
+  }
+};
+
 #endif
 
 
@@ -256,7 +266,8 @@ HURCHALLA_FORCE_INLINE std::uint64_t impl_modular_addition_prereduced_inputs(
 //    seems to do fairly well at this, gcc less well, and icc least well.
 //
 // Putting together [4], [10], and [11], in C++ we could write
-// modular_addition_prereduced(unsigned T a, T b, T m) {
+// template <typename T>
+// T modular_addition(T a, T b, T m) {
 //    static_assert( !(ut_numeric_limits<T>::is_signed), "" );
 //    T tmp = b-m;
 //    return (a+tmp >= a) ? a+b : a+tmp;

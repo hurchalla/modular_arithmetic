@@ -28,7 +28,7 @@ T inverse_mod_R(T a)
     static_assert(ut_numeric_limits<T>::is_modulo, "");
     HPBC_CONSTEXPR_PRECONDITION(a % 2 == 1);
 
-    T inv = detail::impl_inverse_mod_R<T, ut_numeric_limits<T>::digits>(a);
+    T inv = detail::impl_inverse_mod_R::call<T,ut_numeric_limits<T>::digits>(a);
 
     // guarantee inv*a ≡ 1 (mod R)
     using P = typename safely_promote_unsigned<T>::type;

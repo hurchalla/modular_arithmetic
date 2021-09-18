@@ -19,6 +19,7 @@
 #include "hurchalla/modular_arithmetic/modular_pow.h"
 #include "hurchalla/montgomery_arithmetic/MontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/montgomery_form_aliases.h"
+#include "hurchalla/montgomery_arithmetic/detail/experimental/MontySqrtRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/montgomery_pow.h"
 #include "gtest/gtest.h"
 #include <cstdint>
@@ -31,9 +32,10 @@ namespace {
 namespace hc = ::hurchalla;
 
 template <std::size_t NUM_BASES, typename M>
-void test_pow_array(M& mf, typename M::T_type base, typename M::T_type exponent)
+void test_pow_array(M& mf, typename M::IntegerType base,
+                           typename M::IntegerType exponent)
 {
-    using T = typename M::T_type;
+    using T = typename M::IntegerType;
     using V = typename M::MontgomeryValue;
 
     T modulus = mf.getModulus();
@@ -53,9 +55,10 @@ void test_pow_array(M& mf, typename M::T_type base, typename M::T_type exponent)
 }
 
 template <typename M>
-void test_pow(M& mf, typename M::T_type base, typename M::T_type exponent)
+void test_pow(M& mf, typename M::IntegerType base,
+                     typename M::IntegerType exponent)
 {
-    using T = typename M::T_type;
+    using T = typename M::IntegerType;
     T modulus = mf.getModulus();
 
     // first try the non-array overload of pow
@@ -82,7 +85,7 @@ void test_pow(M& mf, typename M::T_type base, typename M::T_type exponent)
 template <typename M>
 void run_pow_tests()
 {
-    using T = typename M::T_type;
+    using T = typename M::IntegerType;
 
     // Try a basic test case first that is valid for all possible Monty types
     // (including even type M == MontySqrtRange<std::uint8_t>).
@@ -180,6 +183,9 @@ TEST(MontgomeryArithmetic, montgomery_pow) {
     run_pow_tests<hc::MontgomeryForm<std::uint64_t>>();
     run_pow_tests<hc::MontgomeryQuarter<std::uint64_t>>();
     run_pow_tests<hc::MontgomeryStandardMathWrapper<std::uint64_t>>();
+
+    run_pow_tests<hc::MontgomeryForm<std::uint32_t,
+                              hc::detail::MontySqrtRange<std::uint64_t>>>();
 
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
     run_pow_tests<hc::MontgomeryForm<__uint128_t>>();

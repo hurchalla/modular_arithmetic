@@ -13,13 +13,17 @@
 namespace hurchalla { namespace detail {
 
 
-// mont_add_canonical_value()  returns x+y (mod n).
+// mont_add_canonical_value::call()  returns x+y (mod n).
 // y must be canonical (meaning: 0 <= y < n).
 // The return value is not necessarily canonical, but it is less than or equal
 // to max(x, n-1).
-template <typename T>
-HURCHALLA_FORCE_INLINE T mont_add_canonical_value(T x, T y, T n)
-{
+
+
+// minor note: uses a static member function to disallow ADL.
+struct default_mont_add_canonical_value {
+  template <typename T>
+  HURCHALLA_FORCE_INLINE static T call(T x, T y, T n)
+  {
     HPBC_PRECONDITION2(y < n);  // the second addend must be canonical
 
     // Naively, we would like to set  result = (x+y >= n) ? (x+y-n) : x+y.
@@ -40,19 +44,28 @@ HURCHALLA_FORCE_INLINE T mont_add_canonical_value(T x, T y, T n)
 
     HPBC_POSTCONDITION2(result <= std::max(x, static_cast<T>(n-1)));
     return result;
-}
+  }
+};
+
+
+// primary template
+template <typename T>
+struct mont_add_canonical_value {
+  HURCHALLA_FORCE_INLINE static T call(T x, T y, T n)
+  {
+    return default_mont_add_canonical_value::call(x, y, n);
+  }
+};
 
 
 #if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
      defined(HURCHALLA_ALLOW_INLINE_ASM_MONT_ADD_CANONICAL)) && \
       defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
-// -----------------------------------------------------------------------------
-// These non-template functions have first priority for argument matching.
-// They have the same descriptions as the generic template version above.
-// -----------------------------------------------------------------------------
-HURCHALLA_FORCE_INLINE std::uint64_t mont_add_canonical_value(std::uint64_t x,
-                                               std::uint64_t y, std::uint64_t n)
-{
+template <>
+struct mont_add_canonical_value<std::uint64_t> {
+  HURCHALLA_FORCE_INLINE
+  static std::uint64_t call(std::uint64_t x, std::uint64_t y, std::uint64_t n)
+  {
     HPBC_PRECONDITION2(y < n);  // the second addend must be canonical
     std::uint64_t tmp = static_cast<std::uint64_t>(n - y);
     std::uint64_t sum = static_cast<std::uint64_t>(x + y);
@@ -69,13 +82,16 @@ HURCHALLA_FORCE_INLINE std::uint64_t mont_add_canonical_value(std::uint64_t x,
     std::uint64_t result = sum;
     HPBC_POSTCONDITION2(result <= std::max(x, static_cast<std::uint64_t>(n-1)));
     HPBC_POSTCONDITION2(result ==
-                              mont_add_canonical_value<std::uint64_t>(x, y, n));
+                               default_mont_add_canonical_value::call(x, y, n));
     return result;
-}
+  }
+};
 
-HURCHALLA_FORCE_INLINE std::uint32_t mont_add_canonical_value(std::uint32_t x,
-                                               std::uint32_t y, std::uint32_t n)
-{
+template <>
+struct mont_add_canonical_value<std::uint32_t> {
+  HURCHALLA_FORCE_INLINE
+  static std::uint32_t call(std::uint32_t x, std::uint32_t y, std::uint32_t n)
+  {
     HPBC_PRECONDITION2(y < n);
     std::uint32_t tmp = static_cast<std::uint32_t>(n - y);
     std::uint32_t sum = static_cast<std::uint32_t>(x + y);
@@ -92,9 +108,10 @@ HURCHALLA_FORCE_INLINE std::uint32_t mont_add_canonical_value(std::uint32_t x,
     std::uint32_t result = sum;
     HPBC_POSTCONDITION2(result <= std::max(x, static_cast<std::uint32_t>(n-1)));
     HPBC_POSTCONDITION2(result ==
-                              mont_add_canonical_value<std::uint32_t>(x, y, n));
+                               default_mont_add_canonical_value::call(x, y, n));
     return result;
-}
+  }
+};
 #endif
 
 

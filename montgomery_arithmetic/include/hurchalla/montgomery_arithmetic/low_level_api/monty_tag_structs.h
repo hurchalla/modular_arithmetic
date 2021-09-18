@@ -8,8 +8,8 @@
 namespace hurchalla {
 
 
-struct FullrangeTag {};
-struct QuarterrangeTag {};
+struct FullrangeTag final {};
+struct QuarterrangeTag final {};
 
 // The name "Fullrange" signifies that there are essentially no preconditions on
 // the value of the modulus.  Although montgomery multiplication always requires
