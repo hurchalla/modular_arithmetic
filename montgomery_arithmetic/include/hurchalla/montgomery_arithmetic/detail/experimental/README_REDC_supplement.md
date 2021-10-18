@@ -1,8 +1,8 @@
 This file supplements the document [README_REDC.md](../../low_level_api/detail/platform_specific/README_REDC.md).
 
-We can improve upon the inline assembly we saw for traditional REDC, though the code becomes hard to understand.  The improvements also can't be expressed well in standard C; none of the major compilers (gcc, clang, MSVC, icc) are able to compile standard C versions of these functions without adding significant extra latency and uops, even with idiomatic use of the ternary operator for conditional move.
+We can improve upon the inline assembly we saw for traditional REDC, though the code becomes harder to understand.  The improvements also can't be implemented well in standard C; none of the major compilers (gcc, clang, MSVC, icc) are able to compile standard C versions of these functions without adding significant extra latency and uops, even with idiomatic use of the ternary operator for conditional move.
 
-Since the alternate REDC function from [README_REDC.md](../../low_level_api/detail/platform_specific/README_REDC.md) does better on uops and equals or betters the latency, all while being easier to understand, and friendlier for compilers if expressed as standard C, we should certainly prefer the alternate REDC to the functions that follow.  Nevertheless the functions below do improve the traditional REDC inline asm, so they could be useful as an easy drop-in replacement of an existing REDC function (which will almost certainly be traditional REDC with the negative inverse), or they might be interesting for anyone curious.
+Since the alternate REDC function from [README_REDC.md](../../low_level_api/detail/platform_specific/README_REDC.md) does better on uops and equals or betters the latency, all while being easier to understand, and friendlier for compilers if written in standard C, we should certainly prefer the alternate REDC to the functions that follow.  Nevertheless the functions below do improve the traditional REDC inline asm, so they could be useful as an easy drop-in replacement of an existing REDC function (which will almost certainly be traditional REDC with the negative inverse), or they might be interesting for anyone curious.
 
 The improved functions below are correct and produce output equivalent to the previous inline asm we saw for the traditional REDC.  You can find a rough proof of correctness in comments of the C++ function ["REDC(T u_hi, T u_lo, T n, T neg_inv_n, FullrangeTag, InplaceLowlatencyTag)" of an old git commit](https://github.com/hurchalla/modular_arithmetic/blob/66281af1639031b04bdaf9b916e5d5638d3ded25/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/platform_specific/RedcLargeR.h#L365).
 
@@ -10,7 +10,7 @@ The first function below is optimized for lowest latency(REDC_traditional_improv
 
 
 <pre>
-// 9 cycles latency, 11 fused uops
+// On Intel Skylake: 9 cycles latency, 11 fused uops
 inline uint64_t REDC_traditional_improved1(uint64_t T_hi, uint64_t T_lo,
                                                    uint64_t N, uint64_t negInvN)
 {
@@ -40,7 +40,7 @@ inline uint64_t REDC_traditional_improved1(uint64_t T_hi, uint64_t T_lo,
 </br>
 
 <pre>
-// 10 cycles latency, 9 fused uops.
+// On Intel Skylake: 10 cycles latency, 9 fused uops.
 inline uint64_t REDC_traditional_improved2(uint64_t T_hi, uint64_t T_lo,
                                                    uint64_t N, uint64_t negInvN)
 {

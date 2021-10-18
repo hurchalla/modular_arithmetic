@@ -25,7 +25,7 @@ So we have a way to calculate both m and <span class="nowrap">TR<sup>-1</sup> (m
 Finally, let's deduce bounds for t, assuming we have bounds on the inputs of <span class="nowrap">0 < N < R</span>, and <span class="nowrap">0 <= T < RN</span>.  Since m is calculated mod R, we know <span class="nowrap">0 <= m < R</span>, and so <span class="nowrap">-R < -m <= 0</span> and <span class="nowrap">-RN < -mN <= 0</span>.  Thus, <span class="nowrap">-RN <= T - RN < T - mN <= T < RN</span>.  This gives us  <span class="nowrap">-RN < T - mN < RN</span>, and since all parts are divisible by R, we have  <span class="nowrap">-N < (T - mN)/R < N</span>.  And thus we have the bounds for t:</br>
 <span class="nowrap">-N < t < N</span>.
 
-We can now write our alternate REDC algorithm:
+We can now write the alternate REDC algorithm:
 
 <pre><b>function</b> REDC2 <b>is</b>
     <b>input:</b> Integers <i>R</i> and <i>N</i> with <span class="nowrap">gcd(<i>R</i>, <i>N</i>) = 1</span>, and <i>N</i> in <span class="nowrap">[0, <i>R</i> &#8722; 1]</span>,
@@ -50,12 +50,12 @@ On the surface, the alternate REDC algorithm and the traditional 1985 version lo
 
 It may be easiest to see the differences by comparing assembly code.  We'll look at two x86_64 inline assembly C functions, implementing the traditional REDC and the alternate REDC for a 64 bit unsigned integer type.</br></br>
 
-#### x86_64 Assembly Implementations
+#### x86_64 Assembly Implementations Comparison
 
-We'll first consider the traditional REDC x86_64 inline asm implementation:
+We'll first present an implementation of the traditional REDC (using x86_64 assembly):
 
 <pre>
-// ~11 cycles latency, 11 fused uops.
+// On Intel Skylake: ~11 cycles latency, 11 fused uops.
 inline uint64_t REDC_traditional(uint64_t T_hi, uint64_t T_lo, uint64_t N,
                                                                uint64_t negInvN)
 {
@@ -88,10 +88,10 @@ Another argument against this code (as given) is simply that it is inline asm.  
 
 We'll briefly note that we could rewrite the inline asm above to [improve the traditional REDC](https://github.com/hurchalla/modular_arithmetic/blob/master/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/detail/experimental/README_REDC_supplement.md).  However, in nearly all respects the alternate REDC will provide an even greater improvement, so this is mentioned for curiosity sake, or for the case that you happen to want a drop-in replacement for an existing traditional REDC function.
 
-Below we have the alternate REDC algorithm inline asm C function, which comes close to our ideal.  Note that it uses the positive inverse as a parameter, whereas the traditional algorithm uses the negative inverse as a parameter.  The function consists of a relatively straightforward translation of the alternate algorithm into inline asm, and thus it's fairly easy to understand.  It can be expressed as standard C code almost as effectively as with inline asm; clang produces close to optimal assembly from a standard C version of it (other major compilers produce assembly that is acceptable but not as good).  For x86_64, it provides us with the best performance we've seen, with both lowest latency and fewest used instructions/uops/registers.  I would expect the alternate REDC to provide similar benefits for ARM and other architectures.</br></br>
+Below we have the alternate REDC algorithm inline asm C function, which comes close to our ideal.  Note that it uses the positive inverse as a parameter, whereas the traditional algorithm uses the negative inverse as a parameter.  The function consists of a relatively straightforward translation of the alternate algorithm into inline asm, and thus it's fairly easy to understand.  It can be implemented with standard C code almost as effectively as with inline asm; clang produces close to optimal assembly from a standard C version of it (other major compilers produce assembly that is acceptable but not as good).  For x86_64, it provides us with the best performance we've seen, with both lowest latency and fewest used instructions/uops/registers.  I would expect the alternate REDC to provide similar benefits for ARM and other architectures.</br></br>
 
 <pre>
-// 9 cycles latency, 7 fused uops.
+// On Intel Skylake: 9 cycles latency, 7 fused uops.
 inline uint64_t REDC_alternate(uint64_t T_hi, uint64_t T_lo, uint64_t N,
                                                                   uint64_t invN)
 {

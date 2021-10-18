@@ -5,8 +5,8 @@
 
 
 # Description of this script -----------
-# This is my working rough-draft script for invoking the testing builds and
-# then running the tests.
+# This is a working convenience script for invoking the testing builds and then
+# running the tests.
 # The syntax is 
 # ./build_tests [-c<compiler_name>] [-r] [-a] [-u] [-m<Release|Debug>]
 #

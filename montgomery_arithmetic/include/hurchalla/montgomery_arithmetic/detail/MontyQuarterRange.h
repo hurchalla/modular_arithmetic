@@ -24,10 +24,14 @@ class MontyQuarterRange final : public MontyCommonBase<MontyQuarterRange, T> {
     static_assert(ut_numeric_limits<T>::digits >= 2, "");
     using BC = MontyCommonBase<::hurchalla::detail::MontyQuarterRange, T>;
     using BC::n_;
-    using BC::inv_n_;
-    using V = typename BC::MontgomeryValue;
-public:
+    using typename BC::W;
+    using typename BC::V;
+    using typename BC::C;
+ public:
+    using widevalue_type = W;
     using montvalue_type = V;
+    using canonvalue_type = C;
+//    using squaringvalue_type = SQ;
     using uint_type = T;
     using MontyTag = QuarterrangeTag;
 
@@ -52,17 +56,19 @@ public:
         return static_cast<T>(2*n_);
     }
 
-    HURCHALLA_FORCE_INLINE V getCanonicalValue(V x) const
+    HURCHALLA_FORCE_INLINE C getCanonicalValue(W x) const
     {
+        // this static_assert guarantees 0 <= x.get()
+        static_assert(!(ut_numeric_limits<decltype(x.get())>::is_signed), "");
         HPBC_PRECONDITION2(x.get() < 2*n_);
-        T cv = static_cast<T>(x.get() - n_);
+        T c = static_cast<T>(x.get() - n_);
 #if 0
-        cv = (x.get() < n_) ? x.get() : cv;
+        c = (x.get() < n_) ? x.get() : c;
 #else
-        HURCHALLA_CMOV(x.get() < n_, cv, x.get());
+        HURCHALLA_CMOV(x.get() < n_, c, x.get());
 #endif
-        HPBC_POSTCONDITION2(cv < n_);
-        return V(cv);
+        HPBC_POSTCONDITION2(c < n_);
+        return C(c);
     }
 };
 

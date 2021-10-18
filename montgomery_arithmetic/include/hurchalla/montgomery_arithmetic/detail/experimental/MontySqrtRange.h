@@ -8,6 +8,7 @@
 #include "hurchalla/montgomery_arithmetic/detail/experimental/platform_specific/montadd_sqrt_range.h"
 #include "hurchalla/montgomery_arithmetic/detail/experimental/platform_specific/montsub_sqrt_range.h"
 #include "hurchalla/montgomery_arithmetic/detail/experimental/negative_inverse_mod_R.h"
+#include "hurchalla/montgomery_arithmetic/detail/BaseMontgomeryValue.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/monty_tag_structs.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
@@ -39,27 +40,6 @@ namespace hurchalla { namespace detail {
 // https://en.wikipedia.org/wiki/Montgomery_modular_multiplication
 template <typename T>
 class MontySqrtRange final {
-public:
-    class MontgomeryValue {
-        friend MontySqrtRange;
-        template <class> friend struct montgomery_pow;
-        HURCHALLA_FORCE_INLINE explicit MontgomeryValue(T val) : value(val) {}
-    public:
-#ifdef __GNUC__
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Weffc++"
-#endif
-        // This next constructor purposely does not initialize 'value' - the
-        // contents are undefined until the object is assigned to.
-        HURCHALLA_FORCE_INLINE MontgomeryValue() {}
-#ifdef __GNUC__
-#  pragma GCC diagnostic pop
-#endif
-    protected:
-        HURCHALLA_FORCE_INLINE T get() const { return value; }
-        T value;
-    };
-private:
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     static_assert(ut_numeric_limits<T>::is_modulo, "");
@@ -67,9 +47,19 @@ private:
     const T r_mod_n_;
     const T neg_inv_n_;
     const T r_squared_mod_n_;
-    using V = MontgomeryValue;
-public:
+    struct W : public BaseMontgomeryValue<T> { // wide montgomery value type
+        using BaseMontgomeryValue<T>::BaseMontgomeryValue;
+    };
+    struct SQ : public BaseMontgomeryValue<T> { //squaring montgomery value type
+        using BaseMontgomeryValue<T>::BaseMontgomeryValue;
+    };
+    struct V : public W { using W::W; };  // regular montomery value type
+    struct C : public V { using V::V; };  // canonical montgomery value type
+ public:
+    using widevalue_type = W;
     using montvalue_type = V;
+    using canonvalue_type = C;
+    using squaringvalue_type = SQ;
     using uint_type = T;
 
     explicit MontySqrtRange(T modulus) :
@@ -103,7 +93,7 @@ public:
         return (static_cast<T>(1) << (ut_numeric_limits<T>::digits/2)) - 1;
     }
 
-private:
+ private:
     static T getRModN(T n)
     {
         HPBC_PRECONDITION2(n % 2 == 1);
@@ -208,20 +198,20 @@ private:
         return result;
     }
 
-public:
-    HURCHALLA_FORCE_INLINE bool isValid(V x) const
+    HURCHALLA_FORCE_INLINE bool isValid(W x) const
     {
         return (0 < x.get() && x.get() <= n_);
     }
 
     // intended for use in postconditions/preconditions
-    HURCHALLA_FORCE_INLINE bool isCanonical(V x) const
+    HURCHALLA_FORCE_INLINE bool isCanonical(W x) const
     {
-        V cfx = getCanonicalValue(x);
+        C cfx = getCanonicalValue(x);
         bool good = isValid(x);
         return (x.get() == cfx.get() && good);
     }
 
+ public:
     HURCHALLA_FORCE_INLINE T getModulus() const { return n_; }
 
     // We require a < sqrtR, which is a bit of a hack since MontgomeryForm class
@@ -268,23 +258,23 @@ public:
         return V(result);
     }
 
-    HURCHALLA_FORCE_INLINE V getUnityValue() const
+    HURCHALLA_FORCE_INLINE C getUnityValue() const
     {
         // as noted in constructor, unityValue == (1*R)%n_ == r_mod_n_,
         // and 0 < r_mod_n_ < n_.
-        HPBC_POSTCONDITION2(isCanonical(V(r_mod_n_)));
-        return V(r_mod_n_);
+        HPBC_INVARIANT2(isCanonical(W(r_mod_n_)));
+        return C(r_mod_n_);
     }
 
-    HURCHALLA_FORCE_INLINE V getZeroValue() const
+    HURCHALLA_FORCE_INLINE C getZeroValue() const
     {
         // We want returnVal == (0*R)%n_, but since isValid() requires
         // 0 < returnVal <= n_, we return n_ (n_ ≡ 0 (mod n_))
-        HPBC_POSTCONDITION2(isCanonical(V(n_)));
-        return V(n_);
+        HPBC_INVARIANT2(isCanonical(W(n_)));
+        return C(n_);
     } 
 
-    HURCHALLA_FORCE_INLINE V getNegativeOneValue() const
+    HURCHALLA_FORCE_INLINE C getNegativeOneValue() const
     {
         // We want to get returnVal = getCanonicalValue(subtract(getZeroValue(),
         //                                               getUnityValue())).
@@ -297,11 +287,11 @@ public:
         T negOne = static_cast<T>(n_ - r_mod_n_);
         HPBC_ASSERT2(0 < negOne && negOne < n_);
 
-        HPBC_POSTCONDITION2(isCanonical(V(negOne)));
-        return V(negOne);
+        HPBC_INVARIANT2(isCanonical(W(negOne)));
+        return C(negOne);
     }
 
-    HURCHALLA_FORCE_INLINE T convertOut(V x) const
+    HURCHALLA_FORCE_INLINE T convertOut(W x) const
     {
         HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
 
@@ -319,10 +309,10 @@ public:
         return minimized_result;
     }
 
-    HURCHALLA_FORCE_INLINE V getCanonicalValue(V x) const
+    HURCHALLA_FORCE_INLINE C getCanonicalValue(W x) const
     {
         HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
-        return x;
+        return C(x.get());
     }
 
     HURCHALLA_FORCE_INLINE V add(V x, V y) const
@@ -360,7 +350,14 @@ public:
         return subtract(x, y);
     }
 
-    HURCHALLA_FORCE_INLINE V subtract_canonical_value(V x, V y) const
+    HURCHALLA_FORCE_INLINE V subtract_canonical_value(V x, C y) const
+    {
+        // All montgomery values are canonical for this class, so we just
+        // delegate to subtract.
+        return subtract(x, y);
+    }
+
+    HURCHALLA_FORCE_INLINE C subtract_dual_canonical_values(C x, C y) const
     {
         // All montgomery values are canonical for this class, so we just
         // delegate to subtract.
@@ -368,18 +365,14 @@ public:
         // subtract returns a result such that 0 < result <= n.  Thus our
         // result z satisfies:
         HPBC_POSTCONDITION2(isCanonical(z));
-        return z;
+        return C(z.get());
     }
 
-    HURCHALLA_FORCE_INLINE V add_canonical_value(V x, V y) const
+    HURCHALLA_FORCE_INLINE V add_canonical_value(V x, C y) const
     {
         // All montgomery values are canonical for this class, so we just
         // delegate to add.
-        V z = add(x, y);
-        // add returns a result such that 0 < result <= n.  Thus our
-        // result z satisfies:
-        HPBC_POSTCONDITION2(isCanonical(z));
-        return z;
+        return add(x, y);
     }
 
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
@@ -402,7 +395,7 @@ public:
     }
 
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V fmadd(V x, V y, V z, PTAG) const
+    HURCHALLA_FORCE_INLINE V fmadd(V x, V y, C z, PTAG) const
     {
         HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
         HPBC_PRECONDITION2(0 < y.get() && y.get() <= n_);
@@ -436,7 +429,7 @@ public:
     }
 
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V fmsub(V x, V y, V z, PTAG) const
+    HURCHALLA_FORCE_INLINE V fmsub(V x, V y, C z, PTAG) const
     {
         HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
         HPBC_PRECONDITION2(0 < y.get() && y.get() <= n_);
@@ -452,15 +445,16 @@ public:
         return diff;
     }
 
-    // Returns the greatest common denominator of the standard representations
+    // Returns the greatest common divisor of the standard representations
     // (non-montgomery) of both x and the modulus, using the supplied functor.
     // The functor must take two integral arguments of the same type and return
     // the gcd of those two arguments.
-    template <class F> HURCHALLA_FORCE_INLINE
-    T gcd_with_modulus(MontgomeryValue x, const F& gcd_functor) const
+    template <class F>
+    HURCHALLA_FORCE_INLINE T gcd_with_modulus(W x, const F& gcd_functor) const
     {
-        // See the member function gcd_with_modulus() in MontyCommonBases.h for
-        // proof that gcd(x.get(), n_) == gcd(convertOut(x), n_)
+        HPBC_INVARIANT2(n_ > 0);
+        // See the member function gcd_with_modulus() in MontyCommonBase.h for
+        // proof that gcd(x.get(), n_) == gcd(convertOut(x), n_).
         // We want to return the value  q = gcd(convertOut(x), n_).
         // By relying on the equivalence of those two gcds, we can instead
         // compute and return p = gcd(x.get(), n_)  which we can compute more

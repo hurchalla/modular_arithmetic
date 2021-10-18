@@ -13,6 +13,7 @@
 #include "hurchalla/montgomery_arithmetic/low_level_api/get_Rsquared_mod_n.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/get_R_mod_n.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/inverse_mod_R.h"
+#include "hurchalla/montgomery_arithmetic/detail/BaseMontgomeryValue.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/modular_arithmetic/absolute_value_difference.h"
@@ -35,33 +36,33 @@ namespace hurchalla { namespace detail {
 // MontySqrtRange is an exception).
 template <template <typename> class Derived, typename T>
 class MontyCommonBase {
-public:
-    class MontgomeryValue {
-        friend Derived<T>; friend MontyCommonBase;
-        template <class> friend struct montgomery_pow;
-        HURCHALLA_FORCE_INLINE explicit MontgomeryValue(T val) : value(val) {}
-    public:
-#ifdef __GNUC__
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Weffc++"
-#endif
-        // This next constructor purposely does not initialize 'value' - the
-        // contents are undefined until the object is assigned to.
-        HURCHALLA_FORCE_INLINE MontgomeryValue() {}
-#ifdef __GNUC__
-#  pragma GCC diagnostic pop
-#endif
-    protected:
-        HURCHALLA_FORCE_INLINE T get() const { return value; }
-        T value;
-    };
-private:
+/*
+    MontgomeryValue getMontgomeryValue(WideMontValue x) const
+    MontgomeryValue getMontgomeryValue(SquaringValue x) const
+    CanonicalValue getCanonicalValue(WideMontValue x) const
+    CanonicalValue getCanonicalValue(SquaringValue x) const
+    template <class PTAG = LowlatencyTag>
+    WideMontValue multiply(WideMontValue x, MontgomeryValue y, bool& resultIsZero) const
+    template <class PTAG = LowlatencyTag>
+    SquaringValue square(SquaringValue x) const
+    template <class PTAG = LowlatencyTag>
+    SquaringValue fusedSquareSub(SquaringValue x, CanonicalValue cv) const
+    template <class PTAG = LowlatencyTag>
+    SquaringValue fusedSquareAdd(SquaringValue x, CanonicalValue cv) const
+*/
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     static_assert(ut_numeric_limits<T>::is_modulo, "");
     using D = Derived<T>;
-    using V = MontgomeryValue;
-protected:
+ protected:
+    struct W : public BaseMontgomeryValue<T> { // wide montgomery value type
+        using BaseMontgomeryValue<T>::BaseMontgomeryValue;
+    };
+    struct SQ : public BaseMontgomeryValue<T> { //squaring montgomery value type
+        using BaseMontgomeryValue<T>::BaseMontgomeryValue;
+    };
+    struct V : public W { using W::W; };  // regular montomery value type
+    struct C : public V { using V::V; };  // canonical montgomery value type
     const T n_;   // the modulus
     const T r_mod_n_;
     const T inv_n_;
@@ -93,19 +94,18 @@ protected:
         return (x.get() < em);
     }
 
-public:
     // intended for use in preconditions/postconditions
-    HURCHALLA_FORCE_INLINE bool isCanonical(V x) const
+    HURCHALLA_FORCE_INLINE bool isCanonical(W x) const
     {
         V cfx = static_cast<const D*>(this)->getCanonicalValue(x);
         // Any fully reduced value (0 <= value < n_) must be canonical.  Class
         // Derived must be implemented to respect this.
         HPBC_INVARIANT2((0 <= x.get() && x.get() < n_) ? x.get() == cfx.get() :
                                                          x.get() != cfx.get());
-        bool good = isValid(x);
-        return (x.get() == cfx.get() && good);
+        return (x.get() == cfx.get());
     }
 
+ public:
     HURCHALLA_FORCE_INLINE T getModulus() const { return n_; }
 
     HURCHALLA_FORCE_INLINE V convertIn(T a) const
@@ -127,9 +127,8 @@ public:
         return V(result);
     }
 
-    HURCHALLA_FORCE_INLINE T convertOut(V x) const
+    HURCHALLA_FORCE_INLINE T convertOut(W x) const
     {
-        HPBC_PRECONDITION2(isValid(x));
         T u_hi = 0;
         T u_lo = x.get();
         T result= REDC(u_hi, u_lo, n_, inv_n_, FullrangeTag(), LowlatencyTag());
@@ -137,21 +136,21 @@ public:
         return result;
     }
 
-    HURCHALLA_FORCE_INLINE V getUnityValue() const
+    HURCHALLA_FORCE_INLINE C getUnityValue() const
     {
         // as noted in constructor, unityValue == (1*R)%n_ == r_mod_n_
-        HPBC_POSTCONDITION2(isCanonical(V(r_mod_n_)));
-        return V(r_mod_n_);
+        HPBC_INVARIANT2(isCanonical(W(r_mod_n_)));
+        return C(r_mod_n_);
     }
 
-    HURCHALLA_FORCE_INLINE V getZeroValue() const
+    HURCHALLA_FORCE_INLINE C getZeroValue() const
     {
         // zeroValue == (0*R)%n_
-        HPBC_POSTCONDITION2(isCanonical(V(0)));
-        return V(0);
+        HPBC_INVARIANT2(isCanonical(W(0)));
+        return C(0);
     }
 
-    HURCHALLA_FORCE_INLINE V getNegativeOneValue() const
+    HURCHALLA_FORCE_INLINE C getNegativeOneValue() const
     {
         // We want to get returnVal = getCanonicalValue(subtract(getZeroValue(),
         //                                               getUnityValue())).
@@ -164,12 +163,12 @@ public:
         //   The constructor established the invariant  0 < r_mod_n_ < n_
         //   Thus we also know  0 < n_ - r_mod_n_ < n_.  This means
         //   (n_ - r_mod_n_)  is fully reduced, and thus canonical.
-        HPBC_INVARIANT2(n_ > r_mod_n_);
+        HPBC_INVARIANT2(0 < r_mod_n_ && r_mod_n_ < n_);
         T ret = static_cast<T>(n_ - r_mod_n_);
         HPBC_ASSERT2(0 < ret && ret < n_);
 
-        HPBC_POSTCONDITION2(isCanonical(V(ret)));
-        return V(ret);
+        HPBC_POSTCONDITION2(isCanonical(W(ret)));
+        return C(ret);
     }
 
     HURCHALLA_FORCE_INLINE V add(V x, V y) const
@@ -182,7 +181,7 @@ public:
         return V(z);
     }
 
-    HURCHALLA_FORCE_INLINE V add_canonical_value(V x, V y) const
+    HURCHALLA_FORCE_INLINE V add_canonical_value(V x, C y) const
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isCanonical(y));
@@ -206,7 +205,7 @@ public:
         return V(z);
     }
 
-    HURCHALLA_FORCE_INLINE V subtract_canonical_value(V x, V y) const
+    HURCHALLA_FORCE_INLINE V subtract_canonical_value(V x, C y) const
     {
         HPBC_PRECONDITION2(isCanonical(y));
         HPBC_PRECONDITION2(y.get() < n_); // isCanonical() should guarantee this
@@ -218,6 +217,17 @@ public:
         HPBC_POSTCONDITION2(isCanonical(x) ? isCanonical(V(z)) : true);
         HPBC_POSTCONDITION2(isValid(V(z)));
         return V(z);
+    }
+
+    HURCHALLA_FORCE_INLINE C subtract_dual_canonical_values(C x, C y) const
+    {
+        HPBC_PRECONDITION2(isCanonical(x));
+        HPBC_PRECONDITION2(x.get() < n_); // isCanonical() should guarantee this
+        HPBC_PRECONDITION2(isCanonical(y));
+        HPBC_PRECONDITION2(y.get() < n_); // isCanonical() should guarantee this
+        T z = modular_subtraction_prereduced_inputs(x.get(), y.get(), n_);
+        HPBC_POSTCONDITION2(isCanonical(W(z)));
+        return C(z);
     }
 
     HURCHALLA_FORCE_INLINE V unordered_subtract(V x, V y) const
@@ -239,13 +249,17 @@ public:
         // As a precondition, REDC requires  x*y < n*R.  This will always be
         // satisfied for all Monty classes known to derive from this class --
         // For MontyFullRange: its constructor requires modulus < R, which
-        //   means n < R.  Since MontyFullRange's isValid(a) returns (a < n),
+        //   means n < R.  For MontyFullRange, isValid(a) returns (a < n), so
         //   we know by this function's preconditions that x < n and y < n.
         //   Therefore  x*y < n*n < n*R.
+        // For MontyHalfRange: its constructor requires modulus < R/2, which
+        //   means n < R/2 < R.  For MontyHalfRange, isValid(a) returns (a < n),
+        //   so we know by this function's preconditions that x < n and y < n.
+        //   Therefore  x*y < n*n < n*R.
         // For MontyQuarterRange: its constructor requires modulus < R/4, which
-        //   means n < R/4.  Its isValid(a) returns (a < 2*n), so we know by
-        //   this function's preconditions that x < 2*n and y < 2*n.  Thus
-        //   x*y < (2*n)*(2*n) == 4*n*n < 4*n*R/4 == n*R.
+        //   means n < R/4.  For MontyQuarterRange isValid(a) returns (a < 2*n),
+        //   so we know by this function's preconditions that x < 2*n and
+        //   y < 2*n.  Thus  x*y < (2*n)*(2*n) == 4*n*n < 4*n*R/4 == n*R.
         T u_lo;
         T u_hi = unsigned_multiply_to_hilo_product(u_lo, x.get(), y.get());
         // u_hi < n  implies that  x*y == u < n*R.  See REDC_non_finalized()
@@ -261,10 +275,10 @@ public:
         return V(result);
     }
 
-    // Multiplies two montgomery values x and y, and then subtracts montgomery
+    // Multiplies two montgomery values x and y, and then subtracts canonical
     // value z from the product.  Returns the resulting montgomery value.
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V fmsub(V x, V y, V z, PTAG) const
+    HURCHALLA_FORCE_INLINE V fmsub(V x, V y, C z, PTAG) const
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isValid(y));
@@ -293,10 +307,10 @@ public:
         return V(result);
     }
 
-    // Multiplies two montgomery values x and y, and then adds montgomery
+    // Multiplies two montgomery values x and y, and then adds canonical
     // value z to the product.  Returns the resulting montgomery value.
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
-    HURCHALLA_FORCE_INLINE V fmadd(V x, V y, V z, PTAG) const
+    HURCHALLA_FORCE_INLINE V fmadd(V x, V y, C z, PTAG) const
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isValid(y));
@@ -378,12 +392,12 @@ public:
         return V(final_result);
     }
 
-    // Returns the greatest common denominator of the standard representations
+    // Returns the greatest common divisor of the standard representations
     // (non-montgomery) of both x and the modulus, using the supplied functor.
     // The functor must take two integral arguments of the same type and return
     // the gcd of those two arguments.
-    template <class F> HURCHALLA_FORCE_INLINE
-    T gcd_with_modulus(MontgomeryValue x, const F& gcd_functor) const
+    template <class F>
+    HURCHALLA_FORCE_INLINE T gcd_with_modulus(W x, const F& gcd_functor) const
     {
         // Proof that gcd(x.get(), n_) == gcd(convertOut(x), n_)
         // -----------------------------------------------------

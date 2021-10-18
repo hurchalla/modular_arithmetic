@@ -23,10 +23,14 @@ class MontyFullRange final : public MontyCommonBase<MontyFullRange, T> {
     static_assert(ut_numeric_limits<T>::is_modulo, "");
     using BC = MontyCommonBase<::hurchalla::detail::MontyFullRange, T>;
     using BC::n_;
-    using BC::inv_n_;
-    using V = typename BC::MontgomeryValue;
-public:
+    using typename BC::W;
+    using typename BC::V;
+    using typename BC::C;
+ public:
+    using widevalue_type = W;
     using montvalue_type = V;
+    using canonvalue_type = C;
+//    using squaringvalue_type = SQ;
     using uint_type = T;
     using MontyTag = FullrangeTag;
 
@@ -43,10 +47,12 @@ public:
 
     HURCHALLA_FORCE_INLINE T getExtendedModulus() const { return n_; }
 
-    HURCHALLA_FORCE_INLINE V getCanonicalValue(V x) const
+    HURCHALLA_FORCE_INLINE C getCanonicalValue(W x) const
     {
+        // this static_assert guarantees 0 <= x.get()
+        static_assert(!(ut_numeric_limits<decltype(x.get())>::is_signed), "");
         HPBC_PRECONDITION2(x.get() < n_);
-        return x;
+        return C(x.get());
     }
 };
 

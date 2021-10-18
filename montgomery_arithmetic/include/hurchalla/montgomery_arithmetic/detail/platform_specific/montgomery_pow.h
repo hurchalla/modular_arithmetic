@@ -192,7 +192,7 @@ struct montgomery_pow {
         });
     }
     while (exponent > static_cast<T>(1)) {
-        using U = decltype(result[0].get());
+        using U = decltype(result[0].value);
         static_assert(ut_numeric_limits<U>::is_integer, "");
         static_assert(!(ut_numeric_limits<U>::is_signed), "");
         static_assert(ut_numeric_limits<U>::digits >=
@@ -204,7 +204,7 @@ struct montgomery_pow {
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
             bases[i] = mf.template multiply<LowuopsTag>(bases[i], bases[i]);
             V tmp = mf.template multiply<LowuopsTag>(result[i], bases[i]);
-            result[i]= V((mask & (tmp.get())) | (maskflip & (result[i].get())));
+            result[i].value = (mask & tmp.value) | (maskflip & result[i].value);
         });
     }
     return result;

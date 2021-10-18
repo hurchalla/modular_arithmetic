@@ -8,9 +8,11 @@
 #include "hurchalla/montgomery_arithmetic/detail/MontgomeryDefault.h"
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/montgomery_pow.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
+#include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
+#include <type_traits>
 #include <array>
 #include <cstddef>
 
@@ -30,15 +32,19 @@ class MontgomeryForm final {
     static_assert(ut_numeric_limits<U>::digits >=
                   ut_numeric_limits<T>::digits, "");
 public:
-    using MontgomeryValue = typename MontyType::montvalue_type;
     using IntegerType = T;
 
-    class CanonicalValue final : public MontgomeryValue {
+    // A CanonicalValue is the unique representation for any value in Montgomery
+    // form; a value of type MontgomeryValue (or WideMontValue, SquaringValue)
+    // may or may not be a unique representation.  Use getCanonicalValue() to
+    // get a CanonicalValue.  A CanonicalValue can be implicitly converted to
+    // a MontgomeryValue at zero cost.
+    class CanonicalValue final : protected MontyType::canonvalue_type {
         friend MontgomeryForm;
-        HURCHALLA_FORCE_INLINE
-        explicit CanonicalValue(MontgomeryValue val) : MontgomeryValue(val) {}
+        using Base = typename MontyType::canonvalue_type;
+        HURCHALLA_FORCE_INLINE CanonicalValue(Base v) : Base(v) {}
     public:
-        HURCHALLA_FORCE_INLINE CanonicalValue() : MontgomeryValue() {}
+        HURCHALLA_FORCE_INLINE CanonicalValue() = default;
         HURCHALLA_FORCE_INLINE
         friend bool operator==(const CanonicalValue& x, const CanonicalValue& y)
         {
@@ -50,10 +56,29 @@ public:
             return !(x == y);
         }
     };
+    // If you need to compare MontgomeryValues (and/or WideMontValues and/or
+    // SquaringValues)for equality or inequality, call getCanonicalValue() and
+    // compare the resulting CanonicalValues.
+    class MontgomeryValue : protected MontyType::montvalue_type {
+        template <class> friend struct ::hurchalla::detail::montgomery_pow;
+        friend MontgomeryForm;
+        using Base = typename MontyType::montvalue_type;
+        HURCHALLA_FORCE_INLINE MontgomeryValue(Base v) : Base(v) {}
+    public:
+        HURCHALLA_FORCE_INLINE MontgomeryValue() = default;
+        // It's zero cost to get a MontgomeryValue from a CanonicalValue.
+        HURCHALLA_FORCE_INLINE MontgomeryValue(CanonicalValue cv)
+        {
+            static_assert(std::is_same<decltype(cv.value),
+                                       decltype(Base::value)>::value, "");
+            Base::value = cv.value;
+        }
+    };
 
     explicit MontgomeryForm(T modulus) : impl(static_cast<U>(modulus))
     {
-        // usually odd modulus is required, but not for MontyWrappedStandardMath
+        // usually odd modulus is required, but since MontyWrappedStandardMath
+        // is an exception to the rule, we do not require odd modulus here.
         //HPBC_PRECONDITION(modulus % 2 == 1);
         HPBC_PRECONDITION(modulus > 1);
     }
@@ -101,8 +126,7 @@ public:
     HURCHALLA_FORCE_INLINE
     CanonicalValue getCanonicalValue(MontgomeryValue x) const
     {
-        MontgomeryValue ret = impl.getCanonicalValue(x);
-        return CanonicalValue(ret);
+        return impl.getCanonicalValue(x);
     }
     // Returns the canonical monty value that represents the type T value 1.
     // The call is equivalent to getCanonicalValue(convertIn(static_cast<T>(1)))
@@ -110,9 +134,7 @@ public:
     HURCHALLA_FORCE_INLINE
     CanonicalValue getUnityValue() const
     {
-        MontgomeryValue ret = impl.getUnityValue();
-        HPBC_ASSERT(impl.isCanonical(ret));
-        return CanonicalValue(ret);
+        return impl.getUnityValue();
     }
     // Returns the canonical monty value that represents the type T value 0.
     // The call is equivalent to getCanonicalValue(convertIn(static_cast<T>(0)))
@@ -120,9 +142,7 @@ public:
     HURCHALLA_FORCE_INLINE
     CanonicalValue getZeroValue() const
     {
-        MontgomeryValue ret = impl.getZeroValue();
-        HPBC_ASSERT(impl.isCanonical(ret));
-        return CanonicalValue(ret);
+        return impl.getZeroValue();
     }
     // Returns the canonical monty value that represents the type T value
     // modulus-1 (which equals -1 (mod modulus)).  The call is equivalent to
@@ -131,9 +151,7 @@ public:
     HURCHALLA_FORCE_INLINE
     CanonicalValue getNegativeOneValue() const
     {
-        MontgomeryValue ret = impl.getNegativeOneValue();
-        HPBC_ASSERT(impl.isCanonical(ret));
-        return CanonicalValue(ret);
+        return impl.getNegativeOneValue();
     }
 
     // Returns the modular sum of (the montgomery values) x and y.  Performance
@@ -178,8 +196,14 @@ public:
         MontgomeryValue ret = impl.subtract_canonical_value(x, y);
         HPBC_ASSERT(getCanonicalValue(ret) ==
                getCanonicalValue(subtract(x, static_cast<MontgomeryValue>(y))));
-        // all implementations of subtract_canonical_value() guarantee:
-        HPBC_ASSERT(impl.isCanonical(x) ? impl.isCanonical(ret) : true);
+        return ret;
+    }
+    HURCHALLA_FORCE_INLINE
+    CanonicalValue subtract(CanonicalValue x, CanonicalValue y) const
+    {
+        CanonicalValue ret = impl.subtract_dual_canonical_values(x, y);
+        HPBC_ASSERT(ret == getCanonicalValue(subtract(
+            static_cast<MontgomeryValue>(x), static_cast<MontgomeryValue>(y))));
         return ret;
     }
 
@@ -205,10 +229,7 @@ public:
     HURCHALLA_FORCE_INLINE
     CanonicalValue negate(CanonicalValue x) const
     {
-        MontgomeryValue ret = subtract(getZeroValue(), x);
-        // Since both getZeroValue() and x are canonical, subtract() guarantees:
-        HPBC_ASSERT(impl.isCanonical(ret));
-        return CanonicalValue(ret);
+        return subtract(getZeroValue(), x);
     }
 
     // Returns the modular product of (the montgomery values) x and y.
@@ -247,8 +268,8 @@ public:
     // almost always prefer to use it over the combination of subtract/multiply.
     // An exception to this rule about efficiency might occur if you are forced
     // to call getCanonicalValue for every time you call this function (i.e. you
-    // are unable to reuse z), but even in that situation this function will
-    // likely have lower latency.
+    // are unable to reuse z), but even in that situation this function may
+    // still have lower latency.
     // Usually you don't want to specify PTAG (just accept the default).  For
     // advanced use: PTAG can be LowlatencyTag or LowuopsTag
     template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
@@ -312,7 +333,7 @@ public:
     // NUM_BASES == 10 would likely be suboptimal; you need to benchmark to find
     // an optimal value though, and that value may differ from expectations.
     // Also note that as NUM_BASES increases, this function requires more and
-    // more space in the instruction cache, and this can negatively effect
+    // more space in the instruction cache, and this can negatively affect
     // performance for the rest of your program.  Therefore, when measured
     // performance with two different values of NUM_BASES is similar, you should
     // almost always prefer the smaller NUM_BASES value.
@@ -321,21 +342,129 @@ public:
     pow(std::array<MontgomeryValue, NUM_BASES>& bases, T exponent) const
     {
         HPBC_PRECONDITION(exponent >= 0);
-        return detail::montgomery_array_pow<MontyType,MontgomeryForm>::pow(
-                                                        *this, bases, exponent);
+        using MAP = detail::montgomery_array_pow<MontyType, MontgomeryForm>;
+        return MAP::pow(*this, bases, exponent);
     }
 
-    // Returns the greatest common denominator of the standard representations
+
+// -----------------
+
+    class WideMontValue : protected MontyType::widevalue_type {
+        friend MontgomeryForm;
+        using Base = typename MontyType::widevalue_type;
+        HURCHALLA_FORCE_INLINE WideMontValue(Base v) : Base(v) {}
+    public:
+        HURCHALLA_FORCE_INLINE WideMontValue() = default;
+        // It's zero cost to get a WideMontValue from a CanonicalValue.
+        HURCHALLA_FORCE_INLINE WideMontValue(CanonicalValue cv)
+        {
+            static_assert(std::is_same<decltype(cv.value),
+                                       decltype(Base::value)>::value, "");
+            Base::value = cv.value;
+        }
+        // It's zero cost to get a WideMontValue from a MontgomeryValue.
+        HURCHALLA_FORCE_INLINE WideMontValue(MontgomeryValue mv)
+        {
+            static_assert(std::is_same<decltype(mv.value),
+                                       decltype(Base::value)>::value, "");
+            Base::value = mv.value;
+        }
+    };
+
+    // Returns the "greatest common divisor" of the standard representations
     // (non-montgomery) of both x and the modulus, using the supplied functor.
     // The functor must take two integral arguments of the same type and return
     // the gcd of its two arguments.
     // Calling  gcd_with_modulus(x)  is more efficient than computing the
     // equivalent value  gcd_functor(convertOut(x), modulus).
     template <class F> HURCHALLA_FORCE_INLINE
-    T gcd_with_modulus(MontgomeryValue x, const F& gcd_functor) const
+    T gcd_with_modulus(WideMontValue x, const F& gcd_functor) const
     {
         return static_cast<T>(impl.gcd_with_modulus(x, gcd_functor));
     }
+
+/*
+    class SquaringValue final : protected MontyType::squaringvalue_type {
+        friend MontgomeryForm;
+        HURCHALLA_FORCE_INLINE
+        SquaringValue(typename MontyType::squaringvalue_type val) :
+                                           MontyType::squaringvalue_type(val) {}
+    public:
+        HURCHALLA_FORCE_INLINE SquaringValue() = default;
+        // It's zero cost to get a SquaringValue from a CanonicalValue.
+        HURCHALLA_FORCE_INLINE SquaringValue(CanonicalValue cv)
+        {
+            using US = extensible_make_unsigned<decltype(value)>::type;
+            static_assert(std::is_same<US, decltype(cv.value)>::value, "");
+            value = static_cast<decltype(value)>(cv.value);
+        }
+        // It's zero cost to get a SquaringValue from a MontgomeryValue.
+        HURCHALLA_FORCE_INLINE SquaringValue(MontgomeryValue mv)
+        {
+            using US = extensible_make_unsigned<decltype(value)>::type;
+            static_assert(std::is_same<US, decltype(mv.value)>::value, "");
+            value = static_cast<decltype(value)>(mv.value);
+        }
+    };
+
+    HURCHALLA_FORCE_INLINE
+    MontgomeryValue getMontgomeryValue(WideMontValue x) const
+    {
+        return MontgomeryValue(impl.getMontgomeryValue(x));
+    }
+    HURCHALLA_FORCE_INLINE
+    MontgomeryValue getMontgomeryValue(SquaringValue x) const
+    {
+        return MontgomeryValue(impl.getMontgomeryValue(x));
+    }
+
+    HURCHALLA_FORCE_INLINE
+    CanonicalValue getCanonicalValue(WideMontValue x) const
+    {
+        return getCanonicalValue(getMontgomeryValue(x));
+    }
+    HURCHALLA_FORCE_INLINE
+    CanonicalValue getCanonicalValue(SquaringValue x) const
+    {
+        return getCanonicalValue(getMontgomeryValue(x));
+    }
+
+    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
+    WideMontValue multiply(WideMontValue x, MontgomeryValue y,
+                                                       bool& resultIsZero) const
+    {
+        WideMontValue ret = impl.multiplyWide(x, y, resultIsZero, PTAG());
+        HPBC_POSTCONDITION(resultIsZero ==
+                                    (getCanonicalValue(ret) == getZeroValue()));
+        return ret;
+    }
+
+    template <class PTAG = LowlatencyTag>
+    HURCHALLA_FORCE_INLINE SquaringValue square(SquaringValue x) const
+    {
+        SquaringValue ret = impl.square(x, PTAG());
+        HPBC_POSTCONDITION(getCanonicalValue(ret) == getCanonicalValue(
+                       multiply(getMontgomeryValue(x), getMontgomeryValue(x))));
+        return ret;
+    }
+
+    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
+    SquaringValue fusedSquareSub(SquaringValue x, CanonicalValue cv) const
+    {
+        SquaringValue ret = impl.fusedSquareSub(x, cv, PTAG());
+        HPBC_POSTCONDITION(getCanonicalValue(ret) == getCanonicalValue(
+                      fmsub(getMontgomeryValue(x), getMontgomeryValue(x), cv)));
+        return ret;
+    }
+    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
+    SquaringValue fusedSquareAdd(SquaringValue x, CanonicalValue cv) const
+    {
+        SquaringValue ret = impl.fusedSquareAdd(x, cv, PTAG());
+        HPBC_POSTCONDITION(getCanonicalValue(ret) == getCanonicalValue(
+                      fmadd(getMontgomeryValue(x), getMontgomeryValue(x), cv)));
+        return ret;
+    }
+*/
 };
 
 
