@@ -6,7 +6,6 @@
 
 
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
-#include "hurchalla/montgomery_arithmetic/low_level_api/monty_tag_structs.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
@@ -22,7 +21,7 @@
 namespace hurchalla { namespace detail {
 
 
-// Generic Montgomery REDC algorithm
+// Montgomery REDC algorithm
 //
 // This file implements the REDC algorithm as described at
 // https://github.com/hurchalla/modular_arithmetic/blob/master/montgomery_arithmetic/include/hurchalla/montgomery_arithmetic/low_level_api/detail/platform_specific/README_REDC.md
@@ -53,14 +52,14 @@ namespace hurchalla { namespace detail {
 // then R = 2^64.
 
 
-// The name "RedcNonFinalized" reflects the fact that this function's return
-// value is not finalized to the least residual class mod n (i.e. so that
-// 0 <= return_value < n).  See the starred* comment under Postcondition #1 for
-// more info.
+// The name "RedcIncomplete" reflects the fact that the call() function's return
+// value is not finalized to the least residue mod n (i.e. the return value does
+// not necessarily satisfy 0 <= return_value < n).  See the starred* comment
+// under Postcondition #1 for more info.
 // Minor note: uses static member function to disallow ADL.
-struct RedcNonFinalized {
+struct RedcIncomplete {
   template <typename T>
-  static HURCHALLA_FORCE_INLINE T REDC(bool& ovf, T u_hi, T u_lo, T n, T inv_n)
+  static HURCHALLA_FORCE_INLINE T call(bool& ovf, T u_hi, T u_lo, T n, T inv_n)
   {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
@@ -168,66 +167,45 @@ struct RedcNonFinalized {
 };
 
 
+
 template <typename T>
-struct DefaultImplRedc
+struct DefaultRedcStandard
 {
   static_assert(ut_numeric_limits<T>::is_integer, "");
   static_assert(!(ut_numeric_limits<T>::is_signed), "");
   static_assert(ut_numeric_limits<T>::is_modulo, "");
 
   static HURCHALLA_FORCE_INLINE
-  T REDC(T u_hi, T u_lo, T n, T inv_n, FullrangeTag)
+  T call(T u_hi, T u_lo, T n, T inv_n)
   {
     bool ovf;
-    T result = RedcNonFinalized::REDC(ovf, u_hi, u_lo, n, inv_n);
-    // By RedcNonFinalized::REDC()'s Postcondition #1, we get
-#if 0
-    T final_result = (ovf) ? static_cast<T>(result + n) : result;
-#else
+    T result = RedcIncomplete::call(ovf, u_hi, u_lo, n, inv_n);
+    // By RedcIncomplete::call()'s Postcondition #1, we get
+    // T final_result = (ovf) ? static_cast<T>(result + n) : result;
     T final_result = result;
     HURCHALLA_CMOV(ovf, final_result, static_cast<T>(result + n));
-#endif
+
     HPBC_POSTCONDITION2(final_result < n);
     return final_result;
-  }
-
-  static HURCHALLA_FORCE_INLINE
-  T REDC(T u_hi, T u_lo, T n, T inv_n, QuarterrangeTag)
-  {
-    static_assert(ut_numeric_limits<T>::digits >= 2, "");
-    // QuarterrangeTag has the precondition requirement that n < R/4 (see
-    // MontyQuarterRange for more on this).
-    T Rdiv4 = static_cast<T>(static_cast<T>(1) <<
-                                            (ut_numeric_limits<T>::digits - 2));
-    HPBC_PRECONDITION2(n < Rdiv4);
-
-    bool ovf;
-    T result = RedcNonFinalized::REDC(ovf, u_hi, u_lo, n, inv_n);
-    result = static_cast<T>(result + n);
-    // Since we have the precondition n<R/4, we know from RedcNonFinalized::REDC
-    // Postcondition #2 that  0 < result < 2*n.
-    HPBC_POSTCONDITION2(0 < result && result < 2*n);
-    // MontyQuarterRange (and hence QuarterrangeTag) allows any montgomery
-    // values that satisfy 0 <= value < 2*n, so this result doesn't need to be
-    // further reduced.
-    return result;
   }
 };
 
 
 // primary template
 template <typename T>
-struct ImplRedcSpecialized
+struct RedcStandard
 {
   static_assert(ut_numeric_limits<T>::is_integer, "");
   static_assert(!(ut_numeric_limits<T>::is_signed), "");
   static_assert(ut_numeric_limits<T>::is_modulo, "");
 
-  // For MTAGs see monty_tag_structs.h; for PTAGs see optimization_tag_structs.h
-  template <class MTAG, class PTAG>
-  static HURCHALLA_FORCE_INLINE T REDC(T u_hi, T u_lo, T n, T inv_n, MTAG, PTAG)
+  // For PTAGs see optimization_tag_structs.h
+  template <class PTAG>
+  static HURCHALLA_FORCE_INLINE T call(T u_hi, T u_lo, T n, T inv_n, PTAG)
   {
-    return DefaultImplRedc<T>::REDC(u_hi, u_lo, n, inv_n, MTAG());
+    T result = DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n);
+    HPBC_POSTCONDITION2(result < n);
+    return result;
   }
 };
 
@@ -237,20 +215,21 @@ struct ImplRedcSpecialized
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 // specialization for uint64_t (for x86_64)
 template <>
-struct ImplRedcSpecialized<std::uint64_t>
+struct RedcStandard<std::uint64_t>
 {
   using T = std::uint64_t;
 
-  // This REDC should have: cycles latency 9, fused uops 7
+  // This function should have: cycles latency 9, fused uops 7
   static HURCHALLA_FORCE_INLINE
-  T REDC(T u_hi, T u_lo, T n, T inv_n, FullrangeTag, LowlatencyTag)
+  T call(T u_hi, T u_lo, T n, T inv_n, LowlatencyTag)
   {
     using P = typename safely_promote_unsigned<T>::type;
-    // This implementation is based closely on DefaultImplRedc<uint64_t>::REDC
-    // for FullrangeTag, and the RedcNonFinalized::REDC that it in turn calls.
+    // This implementation is based closely on
+    // DefaultRedcStandard<uint64_t>::call and the RedcIncomplete::call that it
+    // in turn calls.
     // Thus the algorithm should be correct for the same reasons given there.
     // We require u = (u_hi*R + u_lo) < n*R.  As shown in precondition #1 in
-    // RedcNonFinalized's REDC, u_hi < n guarantees this.
+    // RedcIncomplete's call, u_hi < n guarantees this.
     HPBC_PRECONDITION2(u_hi < n);
     HPBC_PRECONDITION2(
                 static_cast<T>(static_cast<P>(n) * static_cast<P>(inv_n)) == 1);
@@ -271,73 +250,26 @@ struct ImplRedcSpecialized<std::uint64_t>
         : [mnhi]"r"(mn_hi)
         : "cc");
     T result = reg;
-    HPBC_ASSERT2(result ==
-                DefaultImplRedc<T>::REDC(u_hi, u_lo, n, inv_n, FullrangeTag()));
+    HPBC_ASSERT2(result == DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n));
     HPBC_POSTCONDITION2(result < n);
     return result;
   }
 
-  // This REDC should have: cycles latency 10, fused uops 6
+  // This function should have: cycles latency 10, fused uops 6
   static HURCHALLA_FORCE_INLINE
-  T REDC(T u_hi, T u_lo, T n, T inv_n, FullrangeTag, LowuopsTag)
+  T call(T u_hi, T u_lo, T n, T inv_n, LowuopsTag)
   {
-    // Calling DefaultImplRedc::REDC will give us optimal code (we're relying
-    // upon modular_subtract_prereduced_inputs() being optimized for low uops -
-    // which it is, at least at the time of writing this)
-    T result = DefaultImplRedc<T>::REDC(u_hi, u_lo, n, inv_n, FullrangeTag());
+    // Calling DefaultRedcStandard::call will give us optimal code (we're
+    // relying upon modular_subtract_prereduced_inputs() being optimized for low
+    // uops - which it is, at least at the time of writing this)
+    T result = DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n);
     HPBC_POSTCONDITION2(result < n);
-    return result;
-  }
-
-  // This REDC should have: cycles latency 8, fused uops 5.
-  static HURCHALLA_FORCE_INLINE
-  T REDC(T u_hi, T u_lo, T n, T inv_n, QuarterrangeTag, PrivateAnyTag)
-  {
-    // DefaultImplRedc's REDC for QuarterrangeTag should already be optimal for
-    // use here, regardless of whether we prefer low uops or low latency
-    T result= DefaultImplRedc<T>::REDC(u_hi, u_lo, n, inv_n, QuarterrangeTag());
-    HPBC_POSTCONDITION2(0 < result && result < 2*n);
     return result;
   }
 };
 #endif   // (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) ||
          //  defined(HURCHALLA_ALLOW_INLINE_ASM_REDC)) &&
          // defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
-
-
-// Minor note: uses static member functions to disallow ADL.
-struct ImplRedc {
-  template <typename T, class MTAG, class PTAG>
-  static HURCHALLA_FORCE_INLINE T REDC(T u_hi, T u_lo, T n, T inv_n, MTAG, PTAG)
-  {
-    T result= ImplRedcSpecialized<T>::REDC(u_hi, u_lo, n, inv_n, MTAG(),PTAG());
-    HPBC_POSTCONDITION2((std::is_same<MTAG, FullrangeTag>::value) ?
-                        result < n :
-                        0 < result && result < 2*n);
-    return result;
-  }
-
-  template <typename T>
-  static HURCHALLA_FORCE_INLINE bool isZeroResult(T x, T, FullrangeTag)
-  {
-    // The montgomery zero ≡ (0*R) ≡ 0 (mod n).  The equivalence class for zero
-    // therefore is composed of values that satisfy  0 + m*n, where m is any
-    // integer.  Since REDC() guarantees its return result satisfies result < n
-    // for FullrangeTag, its only result that can belong to the zero equivalence
-    // class is result == 0.
-    return x == 0;
-  }
-  template <typename T>
-  static HURCHALLA_FORCE_INLINE bool isZeroResult(T x, T n, QuarterrangeTag)
-  {
-    // The montgomery zero ≡ (0*R) ≡ 0 (mod n).  The equivalence class for zero
-    // therefore is composed of values that satisfy  0 + m*n, where m is any
-    // integer.  Since REDC() guarantees its return result satisfies
-    // 0 < result < 2*n for QuarterrangeTag, its only result that can belong to
-    // the zero equivalence class is result == n.
-    return x == n;
-  }
-};
 
 
 }} // end namespace

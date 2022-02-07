@@ -9,6 +9,7 @@
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/montgomery_pow.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
 #include "hurchalla/util/traits/extensible_make_unsigned.h"
+#include "hurchalla/util/traits/is_equality_comparable.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
@@ -34,51 +35,40 @@ class MontgomeryForm final {
 public:
     using IntegerType = T;
 
-    // A CanonicalValue is the unique representation for any value in Montgomery
-    // form; a value of type MontgomeryValue (or WideMontValue, SquaringValue)
-    // may or may not be a unique representation.  Use getCanonicalValue() to
-    // get a CanonicalValue.  A CanonicalValue can be implicitly converted to
-    // a MontgomeryValue at zero cost.
-    class CanonicalValue final : protected MontyType::canonvalue_type {
-        friend MontgomeryForm;
-        using Base = typename MontyType::canonvalue_type;
-        HURCHALLA_FORCE_INLINE CanonicalValue(Base v) : Base(v) {}
-    public:
-        HURCHALLA_FORCE_INLINE CanonicalValue() = default;
-        HURCHALLA_FORCE_INLINE
-        friend bool operator==(const CanonicalValue& x, const CanonicalValue& y)
-        {
-            return x.value == y.value;
-        }
-        HURCHALLA_FORCE_INLINE
-        friend bool operator!=(const CanonicalValue& x, const CanonicalValue& y)
-        {
-            return !(x == y);
-        }
-    };
-    // If you need to compare MontgomeryValues (and/or WideMontValues and/or
-    // SquaringValues)for equality or inequality, call getCanonicalValue() and
-    // compare the resulting CanonicalValues.
-    class MontgomeryValue : protected MontyType::montvalue_type {
-        template <class> friend struct ::hurchalla::detail::montgomery_pow;
-        friend MontgomeryForm;
-        using Base = typename MontyType::montvalue_type;
-        HURCHALLA_FORCE_INLINE MontgomeryValue(Base v) : Base(v) {}
-    public:
-        HURCHALLA_FORCE_INLINE MontgomeryValue() = default;
-        // It's zero cost to get a MontgomeryValue from a CanonicalValue.
-        HURCHALLA_FORCE_INLINE MontgomeryValue(CanonicalValue cv)
-        {
-            static_assert(std::is_same<decltype(cv.value),
-                                       decltype(Base::value)>::value, "");
-            Base::value = cv.value;
-        }
-    };
+    // If you need to compare MontgomeryValues for equality or inequality, call
+    // getCanonicalValue() and compare the resulting CanonicalValues.
+    using MontgomeryValue = typename MontyType::montvalue_type;
+    static_assert(std::is_default_constructible<MontgomeryValue>::value, "");
+    static_assert(std::is_copy_constructible<MontgomeryValue>::value, "");
+
+    // A CanonicalValue is the unique representation of any value in Montgomery
+    // form; a value of type MontgomeryValue may or may not be a unique
+    // representation.  Since it represents a unique value, you can compare
+    // CanonicalValues for equality and inequality.  Use getCanonicalValue() to
+    // get a CanonicalValue from a MontgomeryValue.
+    // CanonicalValue is implicitly convertible to MontgomeryValue; thus you can
+    // use a CanonicalValue anywhere that requires a MontgomeryValue.
+    using CanonicalValue = typename MontyType::canonvalue_type;
+    static_assert(std::is_default_constructible<CanonicalValue>::value, "");
+    static_assert(std::is_copy_constructible<CanonicalValue>::value, "");
+    static_assert(is_equality_comparable<CanonicalValue>::value, "");
+    static_assert(
+               std::is_convertible<CanonicalValue, MontgomeryValue>::value, "");
+
+    // A FusingValue is used for the addend or subtrahend for fused-multiply-
+    // add (fmadd) or fused-multiply-subtract (fmsub).
+    using FusingValue = typename MontyType::fusingvalue_type;
+    static_assert(std::is_default_constructible<FusingValue>::value, "");
+    static_assert(std::is_copy_constructible<FusingValue>::value, "");
+    static_assert(std::is_convertible<FusingValue, MontgomeryValue>::value, "");
+
 
     explicit MontgomeryForm(T modulus) : impl(static_cast<U>(modulus))
     {
-        // usually odd modulus is required, but since MontyWrappedStandardMath
+        // Usually odd modulus is required, but since MontyWrappedStandardMath
         // is an exception to the rule, we do not require odd modulus here.
+        // We leave it to the constructor of the MontyType member (impl) to
+        // enforce the requirement of an odd modulus, if applicable.
         //HPBC_PRECONDITION(modulus % 2 == 1);
         HPBC_PRECONDITION(modulus > 1);
     }
@@ -128,6 +118,15 @@ public:
     {
         return impl.getCanonicalValue(x);
     }
+    // Returns a value representing the equivalence class of x modulo the
+    // modulus, which can be used as an argument for the fused-multiply-add/sub
+    // functions "fmadd" and "fmsub".
+    HURCHALLA_FORCE_INLINE
+    FusingValue getFusingValue(MontgomeryValue x) const
+    {
+        return impl.getFusingValue(x);
+    }
+
     // Returns the canonical monty value that represents the type T value 1.
     // The call is equivalent to getCanonicalValue(convertIn(static_cast<T>(1)))
     // but it's more efficient (essentially zero cost) and more convenient.
@@ -154,6 +153,7 @@ public:
         return impl.getNegativeOneValue();
     }
 
+
     // Returns the modular sum of (the montgomery values) x and y.  Performance
     // note: add may have lower latency than subtract (it should never have
     // higher latency), and subtract may use fewer uops than add (it should
@@ -163,7 +163,7 @@ public:
     {
         return impl.add(x, y);
     }
-    // Returns the modular sum of the montgomery value x and the *canonical*
+    // Returns the modular sum of the montgomery value x and the canonical
     // value y.  Performance note: this function is sometimes more efficient
     // than the above add() function and should never be less efficient, so it
     // can be useful to call getCanonicalValue outside of a loop to get 'y' as
@@ -171,11 +171,26 @@ public:
     HURCHALLA_FORCE_INLINE
     MontgomeryValue add(MontgomeryValue x, CanonicalValue y) const
     {
-        MontgomeryValue ret = impl.add_canonical_value(x, y);
+        MontgomeryValue ret = impl.add(x, y);
         HPBC_ASSERT(getCanonicalValue(ret) ==
                     getCanonicalValue(add(x, static_cast<MontgomeryValue>(y))));
         return ret;
     }
+    HURCHALLA_FORCE_INLINE
+    MontgomeryValue add(CanonicalValue x, MontgomeryValue y) const
+    {
+        return add(y, x);
+    }
+    // Adding CanonicalValues can be more efficient than the above functions
+    HURCHALLA_FORCE_INLINE
+    CanonicalValue add(CanonicalValue x, CanonicalValue y) const
+    {
+        CanonicalValue ret = impl.add(x, y);
+        HPBC_ASSERT(ret == getCanonicalValue(add(
+            static_cast<MontgomeryValue>(x), static_cast<MontgomeryValue>(y))));
+        return ret;
+    }
+
 
     // Returns the modular difference of (the montgomery values) x and y.  More
     // precisely, x minus y.
@@ -185,7 +200,7 @@ public:
         return impl.subtract(x, y);
     }
     // Returns the modular difference of the montgomery value x minus the
-    // *canonical* value y.  Performance note: this function is sometimes more
+    // canonical value y.  Performance note: this function is sometimes more
     // efficient than the above subtract() function and should never be less
     // efficient, so it can be useful to call getCanonicalValue outside of a
     // loop to get 'y' as a CanonicalValue, when you are calling subtract()
@@ -193,15 +208,24 @@ public:
     HURCHALLA_FORCE_INLINE
     MontgomeryValue subtract(MontgomeryValue x, CanonicalValue y) const
     {
-        MontgomeryValue ret = impl.subtract_canonical_value(x, y);
+        MontgomeryValue ret = impl.subtract(x, y);
         HPBC_ASSERT(getCanonicalValue(ret) ==
                getCanonicalValue(subtract(x, static_cast<MontgomeryValue>(y))));
         return ret;
     }
     HURCHALLA_FORCE_INLINE
+    MontgomeryValue subtract(CanonicalValue x, MontgomeryValue y) const
+    {
+        MontgomeryValue ret = impl.subtract(x, y);
+        HPBC_ASSERT(getCanonicalValue(ret) ==
+               getCanonicalValue(subtract(static_cast<MontgomeryValue>(x), y)));
+        return ret;
+    }
+    // Subtracting CanonicalValues can be more efficient than the above funcs
+    HURCHALLA_FORCE_INLINE
     CanonicalValue subtract(CanonicalValue x, CanonicalValue y) const
     {
-        CanonicalValue ret = impl.subtract_dual_canonical_values(x, y);
+        CanonicalValue ret = impl.subtract(x, y);
         HPBC_ASSERT(ret == getCanonicalValue(subtract(
             static_cast<MontgomeryValue>(x), static_cast<MontgomeryValue>(y))));
         return ret;
@@ -214,6 +238,18 @@ public:
     // of instructions, number of registers used, and possibly total latency].
     HURCHALLA_FORCE_INLINE
     MontgomeryValue unorderedSubtract(MontgomeryValue x,
+                                       MontgomeryValue y) const
+    {
+        return impl.unordered_subtract(x, y);
+    }
+    HURCHALLA_FORCE_INLINE
+    MontgomeryValue unorderedSubtract(MontgomeryValue x,
+                                       CanonicalValue y) const
+    {
+        return impl.unordered_subtract(x, y);
+    }
+    HURCHALLA_FORCE_INLINE
+    MontgomeryValue unorderedSubtract(CanonicalValue x,
                                        MontgomeryValue y) const
     {
         return impl.unordered_subtract(x, y);
@@ -231,6 +267,7 @@ public:
     {
         return subtract(getZeroValue(), x);
     }
+
 
     // Returns the modular product of (the montgomery values) x and y.
     // Usually you don't want to specify PTAG (just accept the default).  For
@@ -273,8 +310,25 @@ public:
     // Usually you don't want to specify PTAG (just accept the default).  For
     // advanced use: PTAG can be LowlatencyTag or LowuopsTag
     template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
-    MontgomeryValue fmsub(MontgomeryValue x, MontgomeryValue y,
+    MontgomeryValue fmsubCV(MontgomeryValue x, MontgomeryValue y,
                                                          CanonicalValue z) const
+    {
+        MontgomeryValue ret = impl.fmsub(x, y, z, PTAG());
+        HPBC_POSTCONDITION(getCanonicalValue(ret) ==
+                                getCanonicalValue(subtract(multiply(x, y), z)));
+        return ret;
+    }
+    // The same comments as above apply, but this function uses a FusingValue
+    // parameter z, which can be more efficient for some MontyTypes.  It is
+    // never less efficient.
+    // Note: when using a MontyType that receives a performance benefit from
+    // using a FusingValue, calling getFusingValue() to initialize the
+    // FusingValue (presumably initialized outside a loop where this really
+    // wouldn't matter) is less efficient than calling getCanonicalValue() to
+    // initialize a CanonicalValue.
+    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
+    MontgomeryValue fmsub(MontgomeryValue x, MontgomeryValue y,
+                                                            FusingValue z) const
     {
         MontgomeryValue ret = impl.fmsub(x, y, z, PTAG());
         HPBC_POSTCONDITION(getCanonicalValue(ret) ==
@@ -298,7 +352,7 @@ public:
     // Usually you don't want to specify PTAG (just accept the default).  For
     // advanced use: PTAG can be LowlatencyTag or LowuopsTag
     template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
-    MontgomeryValue fmadd(MontgomeryValue x, MontgomeryValue y,
+    MontgomeryValue fmaddCV(MontgomeryValue x, MontgomeryValue y,
                                                          CanonicalValue z) const
     {
         MontgomeryValue ret = impl.fmadd(x, y, z, PTAG());
@@ -306,6 +360,62 @@ public:
                                      getCanonicalValue(add(multiply(x, y), z)));
         return ret;
     }
+    // The same comments as above apply, but this function uses a FusingValue
+    // parameter z, which can be more efficient for some MontyTypes.  It is
+    // never less efficient.
+    // Note: the comments under fmsub() regarding initializing a FusingValue
+    // apply here as well.
+    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
+    MontgomeryValue fmadd(MontgomeryValue x, MontgomeryValue y,
+                                                            FusingValue z) const
+    {
+        MontgomeryValue ret = impl.fmadd(x, y, z, PTAG());
+        HPBC_POSTCONDITION(getCanonicalValue(ret) ==
+                                     getCanonicalValue(add(multiply(x, y), z)));
+        return ret;
+    }
+
+
+    // Returns the modular evaluation of  x * x.
+    // Performance notes:
+    //   For some MontyTypes, this function can offer better performance than
+    // multiply(x, x), so long as type T is the same size or smaller than the
+    // CPU's native integer register size.  If type T is larger than the CPU's
+    // integer register size, this function is likely to perform worse or no
+    // better than multiply(x, x).
+    template <class PTAG = LowlatencyTag>
+    HURCHALLA_FORCE_INLINE MontgomeryValue square(MontgomeryValue x) const
+    {
+        MontgomeryValue ret = impl.square(x, PTAG());
+        HPBC_POSTCONDITION(getCanonicalValue(ret) == getCanonicalValue(
+                                                               multiply(x, x)));
+        return ret;
+    }
+    // "Fused square with subtract" operation.  Returns the modular evaluation
+    // of (x * x) - cv.  Note that this function is usually but not always a
+    // good performance replacement for fmsub(x, x, cv); see the comments under
+    // square() for details.
+    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
+    MontgomeryValue fusedSquareSub(MontgomeryValue x, CanonicalValue cv) const
+    {
+        MontgomeryValue ret = impl.fusedSquareSub(x, cv, PTAG());
+        HPBC_POSTCONDITION(getCanonicalValue(ret) ==
+                               getCanonicalValue(subtract(multiply(x, x), cv)));
+        return ret;
+    }
+    // "Fused square with add" operation.  Returns the modular evaluation
+    // of (x * x) + cv.  Note that this function is usually but not always a
+    // good performance replacement for fmsub(x, x, cv); see the comments under
+    // square() for details.
+    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
+    MontgomeryValue fusedSquareAdd(MontgomeryValue x, CanonicalValue cv) const
+    {
+        MontgomeryValue ret = impl.fusedSquareAdd(x, cv, PTAG());
+        HPBC_POSTCONDITION(getCanonicalValue(ret) ==
+                                    getCanonicalValue(add(multiply(x, x), cv)));
+        return ret;
+    }
+
 
     // Calculates and returns the modular exponentiation of the montgomery value
     // 'base' to the power of (the type T variable) 'exponent'.
@@ -342,129 +452,25 @@ public:
     pow(std::array<MontgomeryValue, NUM_BASES>& bases, T exponent) const
     {
         HPBC_PRECONDITION(exponent >= 0);
-        using MAP = detail::montgomery_array_pow<MontyType, MontgomeryForm>;
-        return MAP::pow(*this, bases, exponent);
+        return detail::montgomery_array_pow<typename MontyType::MontyTag,
+                                   MontgomeryForm>::pow(*this, bases, exponent);
     }
 
-
-// -----------------
-
-    class WideMontValue : protected MontyType::widevalue_type {
-        friend MontgomeryForm;
-        using Base = typename MontyType::widevalue_type;
-        HURCHALLA_FORCE_INLINE WideMontValue(Base v) : Base(v) {}
-    public:
-        HURCHALLA_FORCE_INLINE WideMontValue() = default;
-        // It's zero cost to get a WideMontValue from a CanonicalValue.
-        HURCHALLA_FORCE_INLINE WideMontValue(CanonicalValue cv)
-        {
-            static_assert(std::is_same<decltype(cv.value),
-                                       decltype(Base::value)>::value, "");
-            Base::value = cv.value;
-        }
-        // It's zero cost to get a WideMontValue from a MontgomeryValue.
-        HURCHALLA_FORCE_INLINE WideMontValue(MontgomeryValue mv)
-        {
-            static_assert(std::is_same<decltype(mv.value),
-                                       decltype(Base::value)>::value, "");
-            Base::value = mv.value;
-        }
-    };
 
     // Returns the "greatest common divisor" of the standard representations
     // (non-montgomery) of both x and the modulus, using the supplied functor.
     // The functor must take two integral arguments of the same type and return
-    // the gcd of its two arguments.
+    // the gcd of its two arguments.  [Usually you would make the functor's
+    // operator() a templated function, where the template parameter represents
+    // the integral argument type.  Or more simply, you can just use a lambda,
+    // with 'auto' type for its function parameters.]
     // Calling  gcd_with_modulus(x)  is more efficient than computing the
     // equivalent value  gcd_functor(convertOut(x), modulus).
     template <class F> HURCHALLA_FORCE_INLINE
-    T gcd_with_modulus(WideMontValue x, const F& gcd_functor) const
+    T gcd_with_modulus(MontgomeryValue x, const F& gcd_functor) const
     {
         return static_cast<T>(impl.gcd_with_modulus(x, gcd_functor));
     }
-
-/*
-    class SquaringValue final : protected MontyType::squaringvalue_type {
-        friend MontgomeryForm;
-        HURCHALLA_FORCE_INLINE
-        SquaringValue(typename MontyType::squaringvalue_type val) :
-                                           MontyType::squaringvalue_type(val) {}
-    public:
-        HURCHALLA_FORCE_INLINE SquaringValue() = default;
-        // It's zero cost to get a SquaringValue from a CanonicalValue.
-        HURCHALLA_FORCE_INLINE SquaringValue(CanonicalValue cv)
-        {
-            using US = extensible_make_unsigned<decltype(value)>::type;
-            static_assert(std::is_same<US, decltype(cv.value)>::value, "");
-            value = static_cast<decltype(value)>(cv.value);
-        }
-        // It's zero cost to get a SquaringValue from a MontgomeryValue.
-        HURCHALLA_FORCE_INLINE SquaringValue(MontgomeryValue mv)
-        {
-            using US = extensible_make_unsigned<decltype(value)>::type;
-            static_assert(std::is_same<US, decltype(mv.value)>::value, "");
-            value = static_cast<decltype(value)>(mv.value);
-        }
-    };
-
-    HURCHALLA_FORCE_INLINE
-    MontgomeryValue getMontgomeryValue(WideMontValue x) const
-    {
-        return MontgomeryValue(impl.getMontgomeryValue(x));
-    }
-    HURCHALLA_FORCE_INLINE
-    MontgomeryValue getMontgomeryValue(SquaringValue x) const
-    {
-        return MontgomeryValue(impl.getMontgomeryValue(x));
-    }
-
-    HURCHALLA_FORCE_INLINE
-    CanonicalValue getCanonicalValue(WideMontValue x) const
-    {
-        return getCanonicalValue(getMontgomeryValue(x));
-    }
-    HURCHALLA_FORCE_INLINE
-    CanonicalValue getCanonicalValue(SquaringValue x) const
-    {
-        return getCanonicalValue(getMontgomeryValue(x));
-    }
-
-    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
-    WideMontValue multiply(WideMontValue x, MontgomeryValue y,
-                                                       bool& resultIsZero) const
-    {
-        WideMontValue ret = impl.multiplyWide(x, y, resultIsZero, PTAG());
-        HPBC_POSTCONDITION(resultIsZero ==
-                                    (getCanonicalValue(ret) == getZeroValue()));
-        return ret;
-    }
-
-    template <class PTAG = LowlatencyTag>
-    HURCHALLA_FORCE_INLINE SquaringValue square(SquaringValue x) const
-    {
-        SquaringValue ret = impl.square(x, PTAG());
-        HPBC_POSTCONDITION(getCanonicalValue(ret) == getCanonicalValue(
-                       multiply(getMontgomeryValue(x), getMontgomeryValue(x))));
-        return ret;
-    }
-
-    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
-    SquaringValue fusedSquareSub(SquaringValue x, CanonicalValue cv) const
-    {
-        SquaringValue ret = impl.fusedSquareSub(x, cv, PTAG());
-        HPBC_POSTCONDITION(getCanonicalValue(ret) == getCanonicalValue(
-                      fmsub(getMontgomeryValue(x), getMontgomeryValue(x), cv)));
-        return ret;
-    }
-    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
-    SquaringValue fusedSquareAdd(SquaringValue x, CanonicalValue cv) const
-    {
-        SquaringValue ret = impl.fusedSquareAdd(x, cv, PTAG());
-        HPBC_POSTCONDITION(getCanonicalValue(ret) == getCanonicalValue(
-                      fmadd(getMontgomeryValue(x), getMontgomeryValue(x), cv)));
-        return ret;
-    }
-*/
 };
 
 

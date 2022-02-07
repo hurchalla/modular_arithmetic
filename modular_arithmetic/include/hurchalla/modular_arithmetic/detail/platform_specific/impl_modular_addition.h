@@ -15,25 +15,32 @@
 namespace hurchalla { namespace detail {
 
 
-#if 0
+#if !defined(__clang__)
+// Note: only clang (on x64 and arm32/64) seems to produce optimal code from
+// the theoretically preferable Version 2 further below.  And so for gcc(x64 and
+// arm32/64 and risc-V), MSVC (x64 and arm64), and icc, Version #1 here tends to
+// compile to better machine code in practice.  Gcc in particular tends to
+// generate conditional branches for Version 2, which we don't want.
+
 // --- Version #1 ---
 // This is an easy to understand default implementation version.
 //
-// However, on x86, Version #1's use of (modulus - b) will very often require
-// two uops because the compiler will see 'modulus' stays constant over a long
-// period of time, and hence it will choose not to overwrite its register -
-// necessitating an extra uop for a copy of the register.  This fact may be
-// inconsequential, for example if the compiler is able to hoist both the copy 
-// and the subtraction out of a loop, but if 'b' does not stay constant within
-// a loop, then hoisting is not possible and Version #1 would require 2 uops
-// for the subtraction in a perhaps critical loop.
+// However, on x86, Version #1's use of (modulus - b) will often require two
+// uops because the compiler will see 'modulus' stays constant over a long
+// period of time, and hence it will likely choose not to overwrite its
+// register - necessitating an extra uop for a copy of the register.  This may
+// be inconsequential, for example if the compiler is able to hoist both the
+// copy and the subtraction out of a loop, but if 'b' does not stay constant
+// within a loop, then hoisting is not possible and we would expect Version #1
+// to require 2 uops for the subtraction in a perhaps critical loop.
 // In contrast, Version #2 uses (b - modulus) which requires only one uop when
-// 'b' does not stay constant within a loop.  This fact is why we slightly
-// prefer Version #2, and why we have disabled Version #1 and enabled Version #2
-// via #if.  Note that if 'b' stays constant for a period of time, or if we are
-// compiling for ARM, we can expect total uops to be the same between the two
-// function versions.  In all situations, we can expect the latency of the two
-// versions to be the same.
+// 'b' does not stay constant within a loop.  This fact is why we (in theory)
+// slightly prefer Version #2, although the results will vary from compiler to
+// compiler.  Note that if 'b' stays constant for a period of time, or if we are
+// compiling for ARM, we would generally expect total uops to be the same
+// between the two function versions.  We would generally expect the latency of
+// the two versions to be the same, but as always this depends on whether the
+// compiler generates good (or not good) machine code.
 
 struct default_impl_modadd {
   template <typename T>
@@ -52,8 +59,9 @@ struct default_impl_modadd {
     //   result = (a < modulus-b) ? a+b : a+b-modulus
     T tmp = static_cast<T>(modulus - b);
     T sum = static_cast<T>(a + b);
-    T tmp2 = static_cast<T>(a - tmp);
-    T result = (a < tmp) ? sum : tmp2;
+    T result = static_cast<T>(a - tmp);
+    // result = (a < tmp) ? sum : result;
+    HURCHALLA_CMOV(a < tmp, result, sum);
 
     HPBC_POSTCONDITION2(static_cast<T>(0) <= result && result < modulus);
     return result;
@@ -81,11 +89,8 @@ struct default_impl_modadd {
     U sum = static_cast<U>(static_cast<U>(a) + static_cast<U>(b));
     U tmp = static_cast<U>(static_cast<U>(b) - static_cast<U>(modulus));
     U result = static_cast<U>(static_cast<U>(a) + tmp);
-# if 0
-    result = (result >= static_cast<U>(a)) ? sum : result;
-# else
+    // result = (result >= static_cast<U>(a)) ? sum : result;
     HURCHALLA_CMOV(result >= static_cast<U>(a), result, sum);
-# endif
 
     HPBC_POSTCONDITION2(static_cast<U>(0) <= result &&
                                               result < static_cast<U>(modulus));

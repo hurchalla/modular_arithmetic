@@ -96,6 +96,7 @@ struct slow_modular_multiplication {
 // below, instead of this primary template.
 template <typename T>
 struct impl_modular_multiplication {
+  HURCHALLA_FORCE_INLINE static constexpr bool has_slow_perf() { return true; }
 #ifdef HURCHALLA_COMPILE_ERROR_ON_SLOW_MATH
   // cause compile error instead of falling back to slow modular multiplication.
   HURCHALLA_FORCE_INLINE static T call(T a, T b, T modulus) = delete;
@@ -113,6 +114,7 @@ struct impl_modular_multiplication {
 #if !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
                    HURCHALLA_TARGET_BIT_WIDTH >= 16
 template <> struct impl_modular_multiplication<std::uint8_t> {
+  HURCHALLA_FORCE_INLINE static constexpr bool has_slow_perf() { return false; }
   HURCHALLA_FORCE_INLINE static
   std::uint8_t call(std::uint8_t a, std::uint8_t b, std::uint8_t modulus)
   {
@@ -128,6 +130,7 @@ template <> struct impl_modular_multiplication<std::uint8_t> {
 #if !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
                    HURCHALLA_TARGET_BIT_WIDTH >= 32
 template <> struct impl_modular_multiplication<std::uint16_t> {
+  HURCHALLA_FORCE_INLINE static constexpr bool has_slow_perf() { return false; }
   HURCHALLA_FORCE_INLINE static
   std::uint16_t call(std::uint16_t a, std::uint16_t b, std::uint16_t modulus)
   {
@@ -148,6 +151,7 @@ template <> struct impl_modular_multiplication<std::uint16_t> {
 // _MSC_VER >= 1920 indicates Visual Studio 2019 or higher. VS2019 (for x86/x64)
 // is the first version to support _udiv64 used below.
 template <> struct impl_modular_multiplication<std::uint32_t> {
+  HURCHALLA_FORCE_INLINE static constexpr bool has_slow_perf() { return false; }
   HURCHALLA_FORCE_INLINE static std::uint32_t call(
                         std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
   {
@@ -171,6 +175,7 @@ template <> struct impl_modular_multiplication<std::uint32_t> {
 // the function to use cdecl calling convention.  This overrides any potential
 // compiler flag that might specify __fastcall or __vectorcall.
 template <> struct impl_modular_multiplication<std::uint32_t> {
+  HURCHALLA_FORCE_INLINE static constexpr bool has_slow_perf() { return false; }
   HURCHALLA_FORCE_INLINE static std::uint32_t __cdecl call(
                         std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
   {
@@ -190,6 +195,7 @@ template <> struct impl_modular_multiplication<std::uint32_t> {
       ( defined(HURCHALLA_TARGET_ISA_X86_64) || \
         defined(HURCHALLA_TARGET_ISA_X86_32) )
 template <> struct impl_modular_multiplication<std::uint32_t> {
+  HURCHALLA_FORCE_INLINE static constexpr bool has_slow_perf() { return false; }
   HURCHALLA_FORCE_INLINE static std::uint32_t call(
                         std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
   {
@@ -218,6 +224,7 @@ template <> struct impl_modular_multiplication<std::uint32_t> {
 #elif !defined(HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE) && \
                      HURCHALLA_TARGET_BIT_WIDTH >= 64
 template <> struct impl_modular_multiplication<std::uint32_t> {
+  HURCHALLA_FORCE_INLINE static constexpr bool has_slow_perf() { return false; }
   HURCHALLA_FORCE_INLINE static std::uint32_t call(
                         std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
   {
@@ -233,6 +240,7 @@ template <> struct impl_modular_multiplication<std::uint32_t> {
 // _MSC_VER >= 1920 indicates Visual Studio 2019 or higher. VS2019 (for x64)
 // is the first version to support _udiv128 used below.
 template <> struct impl_modular_multiplication<std::uint64_t> {
+  HURCHALLA_FORCE_INLINE static constexpr bool has_slow_perf() { return false; }
   HURCHALLA_FORCE_INLINE static std::uint64_t call(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
   {
@@ -252,6 +260,7 @@ template <> struct impl_modular_multiplication<std::uint64_t> {
 extern "C" std::uint64_t modular_multiply_uint64_asm_UID7b5f83fc983(
               std::uint64_t a, std::uint64_t b, std::uint64_t modulus) noexcept;
 template <> struct impl_modular_multiplication<std::uint64_t> {
+  HURCHALLA_FORCE_INLINE static constexpr bool has_slow_perf() { return false; }
   HURCHALLA_FORCE_INLINE static std::uint64_t call(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
   {
@@ -267,6 +276,7 @@ template <> struct impl_modular_multiplication<std::uint64_t> {
 #elif !defined(HURCHALLA_DISALLOW_INLINE_ASM_MODMUL) && \
       defined(HURCHALLA_TARGET_ISA_X86_64)    // inline asm with gnu/AT&T syntax
 template <> struct impl_modular_multiplication<std::uint64_t> {
+  HURCHALLA_FORCE_INLINE static constexpr bool has_slow_perf() { return false; }
   HURCHALLA_FORCE_INLINE static std::uint64_t call(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
   {
@@ -295,6 +305,7 @@ template <> struct impl_modular_multiplication<std::uint64_t> {
                     HURCHALLA_TARGET_BIT_WIDTH >= 128
 // this is speculative since I don't know of any 128 bit ALUs.
 template <> struct impl_modular_multiplication<std::uint64_t> {
+  HURCHALLA_FORCE_INLINE static constexpr bool has_slow_perf() { return false; }
   HURCHALLA_FORCE_INLINE static std::uint64_t call(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
   {
@@ -311,6 +322,7 @@ template <> struct impl_modular_multiplication<std::uint64_t> {
 // uncomment the following section.
 /*
 template <> struct impl_modular_multiplication<std::uint64_t> {
+  HURCHALLA_FORCE_INLINE static constexpr bool has_slow_perf() { return false; }
   HURCHALLA_FORCE_INLINE static std::uint64_t call(
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
   {

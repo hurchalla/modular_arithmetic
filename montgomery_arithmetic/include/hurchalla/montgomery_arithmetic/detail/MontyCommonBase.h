@@ -9,7 +9,6 @@
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/mont_subtract_canonical_value.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
-#include "hurchalla/montgomery_arithmetic/low_level_api/monty_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/get_Rsquared_mod_n.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/get_R_mod_n.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/inverse_mod_R.h"
@@ -34,45 +33,26 @@ namespace hurchalla { namespace detail {
 // https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern
 // This is the base class shared by most montgomery forms (the experimental
 // MontySqrtRange is an exception).
-template <template <typename> class Derived, typename T>
+template <template<typename> class Derived,
+          template<typename> class MVTypes,
+          typename T>
 class MontyCommonBase {
-/*
-    MontgomeryValue getMontgomeryValue(WideMontValue x) const
-    MontgomeryValue getMontgomeryValue(SquaringValue x) const
-    CanonicalValue getCanonicalValue(WideMontValue x) const
-    CanonicalValue getCanonicalValue(SquaringValue x) const
-    template <class PTAG = LowlatencyTag>
-    WideMontValue multiply(WideMontValue x, MontgomeryValue y, bool& resultIsZero) const
-    template <class PTAG = LowlatencyTag>
-    SquaringValue square(SquaringValue x) const
-    template <class PTAG = LowlatencyTag>
-    SquaringValue fusedSquareSub(SquaringValue x, CanonicalValue cv) const
-    template <class PTAG = LowlatencyTag>
-    SquaringValue fusedSquareAdd(SquaringValue x, CanonicalValue cv) const
-*/
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     static_assert(ut_numeric_limits<T>::is_modulo, "");
     using D = Derived<T>;
  protected:
-    struct W : public BaseMontgomeryValue<T> { // wide montgomery value type
-        using BaseMontgomeryValue<T>::BaseMontgomeryValue;
-    };
-    struct SQ : public BaseMontgomeryValue<T> { //squaring montgomery value type
-        using BaseMontgomeryValue<T>::BaseMontgomeryValue;
-    };
-    struct V : public W { using W::W; };  // regular montomery value type
-    struct C : public V { using V::V; };  // canonical montgomery value type
+    using V = typename MVTypes<T>::V;   // the MontgomeryValue type
+    using C = typename MVTypes<T>::C;   // the CanonicalValue type
     const T n_;   // the modulus
     const T r_mod_n_;
     const T inv_n_;
     const T r_squared_mod_n_;
 
     explicit MontyCommonBase(T modulus) : n_(modulus),
-                       r_mod_n_(get_R_mod_n(n_)),
-                       inv_n_(inverse_mod_R(n_)),
-                       r_squared_mod_n_(get_Rsquared_mod_n(n_, inv_n_, r_mod_n_,
-                                        typename D::MontyTag()))
+                      r_mod_n_(get_R_mod_n(n_)),
+                      inv_n_(inverse_mod_R(n_)),
+                      r_squared_mod_n_(get_Rsquared_mod_n(n_, inv_n_, r_mod_n_))
     {
         HPBC_PRECONDITION2(modulus % 2 == 1);
         HPBC_PRECONDITION2(modulus > 1);
@@ -86,25 +66,6 @@ class MontyCommonBase {
     MontyCommonBase(const MontyCommonBase&) = delete;
     MontyCommonBase& operator=(const MontyCommonBase&) = delete;
 
-
-    // intended for use in preconditions/postconditions
-    HURCHALLA_FORCE_INLINE bool isValid(V x) const
-    {
-        T em = static_cast<const D*>(this)->getExtendedModulus();
-        return (x.get() < em);
-    }
-
-    // intended for use in preconditions/postconditions
-    HURCHALLA_FORCE_INLINE bool isCanonical(W x) const
-    {
-        V cfx = static_cast<const D*>(this)->getCanonicalValue(x);
-        // Any fully reduced value (0 <= value < n_) must be canonical.  Class
-        // Derived must be implemented to respect this.
-        HPBC_INVARIANT2((0 <= x.get() && x.get() < n_) ? x.get() == cfx.get() :
-                                                         x.get() != cfx.get());
-        return (x.get() == cfx.get());
-    }
-
  public:
     HURCHALLA_FORCE_INLINE T getModulus() const { return n_; }
 
@@ -114,24 +75,25 @@ class MontyCommonBase {
         // As a precondition, REDC requires  a * r_squared_mod_n < n*R.  This
         // will always be satisfied-  we know from the invariant above that
         // r_squared_mod_n < n.  Since a is a type T variable, we know a < R.
-        // Therefore,  a * r_squared_mod_n < n * R.
+        // Therefore,  a * r_squared_mod_n < n * a < n * R.
         T u_lo;
         T u_hi = unsigned_multiply_to_hilo_product(u_lo, a, r_squared_mod_n_);
-        // u_hi < n  guarantees we had  a * r_squared_mod_n == u < n*R.  See
-        // REDC_non_finalized() in Redc.h for proof.
-        HPBC_PRECONDITION2(u_hi < n_);
-
-        T result = REDC(u_hi, u_lo, n_, inv_n_, typename D::MontyTag(),
-                                                               LowlatencyTag());
-        HPBC_POSTCONDITION2(isValid(V(result)));
-        return V(result);
+        // Let u = a * r_squared_mod_n.  When u_hi < n, we always have u < n*R.
+        // See RedcIncomplete() in ImplRedc.h for proof.
+        HPBC_ASSERT2(u_hi < n_);
+        const D* child = static_cast<const D*>(this);
+        V result = child->montyREDC(u_hi, u_lo, LowlatencyTag());
+        HPBC_POSTCONDITION2(child->isValid(result));
+        return result;
     }
 
-    HURCHALLA_FORCE_INLINE T convertOut(W x) const
+    HURCHALLA_FORCE_INLINE T convertOut(V x) const
     {
         T u_hi = 0;
-        T u_lo = x.get();
-        T result= REDC(u_hi, u_lo, n_, inv_n_, FullrangeTag(), LowlatencyTag());
+        // get a Natural number (i.e. number >= 0) congruent to x (mod n)
+        T u_lo = static_cast<const D*>(this)->getNaturalEquivalence(x);
+        T result = REDC_standard(u_hi, u_lo, n_, inv_n_, LowlatencyTag());
+
         HPBC_POSTCONDITION2(result < n_);
         return result;
     }
@@ -139,15 +101,13 @@ class MontyCommonBase {
     HURCHALLA_FORCE_INLINE C getUnityValue() const
     {
         // as noted in constructor, unityValue == (1*R)%n_ == r_mod_n_
-        HPBC_INVARIANT2(isCanonical(W(r_mod_n_)));
+        HPBC_INVARIANT2(r_mod_n_ < n_);
         return C(r_mod_n_);
     }
 
     HURCHALLA_FORCE_INLINE C getZeroValue() const
     {
-        // zeroValue == (0*R)%n_
-        HPBC_INVARIANT2(isCanonical(W(0)));
-        return C(0);
+        return C(0);  // zeroValue == (0*R)%n_
     }
 
     HURCHALLA_FORCE_INLINE C getNegativeOneValue() const
@@ -166,173 +126,147 @@ class MontyCommonBase {
         HPBC_INVARIANT2(0 < r_mod_n_ && r_mod_n_ < n_);
         T ret = static_cast<T>(n_ - r_mod_n_);
         HPBC_ASSERT2(0 < ret && ret < n_);
-
-        HPBC_POSTCONDITION2(isCanonical(W(ret)));
         return C(ret);
     }
 
-    HURCHALLA_FORCE_INLINE V add(V x, V y) const
+
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V square(V x, PTAG) const
     {
-        HPBC_PRECONDITION2(isValid(x));
-        HPBC_PRECONDITION2(isValid(y));
-        T em = static_cast<const D*>(this)->getExtendedModulus();
-        T z = modular_addition_prereduced_inputs(x.get(), y.get(), em);
-        HPBC_POSTCONDITION2(isValid(V(z)));
-        return V(z);
+        const D* child = static_cast<const D*>(this);
+        HPBC_PRECONDITION2(child->isValid(x));
+        T u_lo;
+        T u_hi = child->squareToHiLo(u_lo, x);
+        HPBC_ASSERT2(u_hi < n_);  // verifies  u < n*R, as required for REDC
+        V result = child->montyREDC(u_hi, u_lo, PTAG());
+        HPBC_POSTCONDITION2(child->isValid(result));
+        return result;
+    }
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V fusedSquareSub(V x, C cv, PTAG) const
+    {
+        const D* child = static_cast<const D*>(this);
+        HPBC_PRECONDITION2(child->isValid(x));
+        HPBC_INVARIANT2(cv.get() < n_);
+        T u_lo;
+        T u_hi = child->squareToHiLo(u_lo, x);
+        HPBC_ASSERT2(u_hi < n_);
+        // Performing the modular sub prior to the REDC will always give
+        // equivalent results to performing the REDC and then the modular
+        // subtraction.  See fmadd() below for a proof which could be easily
+        // adapted for the modular subtraction in here; it also describes
+        // why this order of operations is more efficient.
+        u_hi = modular_subtraction_prereduced_inputs(u_hi, cv.get(), n_);
+        HPBC_ASSERT2(u_hi < n_);  // verifies  u < n*R, as required for REDC
+        V result = child->montyREDC(u_hi, u_lo, PTAG());
+        HPBC_POSTCONDITION2(child->isValid(result));
+        return result;
+    }
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V fusedSquareAdd(V x, C cv, PTAG) const
+    {
+        const D* child = static_cast<const D*>(this);
+        HPBC_PRECONDITION2(child->isValid(x));
+        HPBC_INVARIANT2(cv.get() < n_);
+        T u_lo;
+        T u_hi = child->squareToHiLo(u_lo, x);
+        HPBC_ASSERT2(u_hi < n_);
+        // Performing the modular add prior to the REDC will always give
+        // equivalent results to performing the REDC and then the modular
+        // addition.  See fmadd() below for a proof which applies directly
+        // to this function; it also describes why this order of operations
+        // is more efficient.
+        u_hi = modular_addition_prereduced_inputs(u_hi, cv.get(), n_);
+        HPBC_ASSERT2(u_hi < n_);  // verifies  u < n*R, as required for REDC
+        V result = child->montyREDC(u_hi, u_lo, PTAG());
+        HPBC_POSTCONDITION2(child->isValid(result));
+        return result;
     }
 
-    HURCHALLA_FORCE_INLINE V add_canonical_value(V x, C y) const
-    {
-        HPBC_PRECONDITION2(isValid(x));
-        HPBC_PRECONDITION2(isCanonical(y));
-        HPBC_PRECONDITION2(y.get() < n_); // isCanonical() should guarantee this
-        T z = mont_add_canonical_value<T>::call(x.get(), y.get(), n_);
-        // mont_add_canonical_value guarantees that z <= std::max(x, n-1).
-        // Thus if x < n, then z < n.  Or in other words, if x is canonical,
-        // then z is canonical.
-        HPBC_POSTCONDITION2(isCanonical(x) ? isCanonical(V(z)) : true);
-        HPBC_POSTCONDITION2(isValid(V(z)));
-        return V(z);
-    }
-
-    HURCHALLA_FORCE_INLINE V subtract(V x, V y) const
-    {
-        HPBC_PRECONDITION2(isValid(x));
-        HPBC_PRECONDITION2(isValid(y));
-        T em = static_cast<const D*>(this)->getExtendedModulus();
-        T z = modular_subtraction_prereduced_inputs(x.get(), y.get(), em);
-        HPBC_POSTCONDITION2(isValid(V(z)));
-        return V(z);
-    }
-
-    HURCHALLA_FORCE_INLINE V subtract_canonical_value(V x, C y) const
-    {
-        HPBC_PRECONDITION2(isCanonical(y));
-        HPBC_PRECONDITION2(y.get() < n_); // isCanonical() should guarantee this
-        HPBC_PRECONDITION2(isValid(x));
-        T z = mont_subtract_canonical_value<T>::call(x.get(), y.get(), n_);
-        // mont_subtract_canonical_value guarantees that z <= std::max(x, n-1).
-        // Thus if x < n, then z < n.  Or in other words, if x is canonical,
-        // then z is canonical.
-        HPBC_POSTCONDITION2(isCanonical(x) ? isCanonical(V(z)) : true);
-        HPBC_POSTCONDITION2(isValid(V(z)));
-        return V(z);
-    }
-
-    HURCHALLA_FORCE_INLINE C subtract_dual_canonical_values(C x, C y) const
-    {
-        HPBC_PRECONDITION2(isCanonical(x));
-        HPBC_PRECONDITION2(x.get() < n_); // isCanonical() should guarantee this
-        HPBC_PRECONDITION2(isCanonical(y));
-        HPBC_PRECONDITION2(y.get() < n_); // isCanonical() should guarantee this
-        T z = modular_subtraction_prereduced_inputs(x.get(), y.get(), n_);
-        HPBC_POSTCONDITION2(isCanonical(W(z)));
-        return C(z);
-    }
-
-    HURCHALLA_FORCE_INLINE V unordered_subtract(V x, V y) const
-    {
-        HPBC_PRECONDITION2(isValid(x));
-        HPBC_PRECONDITION2(isValid(y));
-        T result = absolute_value_difference(x.get(), y.get());
-        HPBC_POSTCONDITION2(isValid(V(result)));
-        return V(result);
-    }
 
     // Multiplies two montgomery values x and y, and returns the product as a
     // montgomery value.  Sets isZero to indicate if the product ≡ 0 (mod n).
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
     HURCHALLA_FORCE_INLINE V multiply(V x, V y, bool& isZero, PTAG) const
     {
-        HPBC_PRECONDITION2(isValid(x));
-        HPBC_PRECONDITION2(isValid(y));
-        // As a precondition, REDC requires  x*y < n*R.  This will always be
-        // satisfied for all Monty classes known to derive from this class --
-        // For MontyFullRange: its constructor requires modulus < R, which
-        //   means n < R.  For MontyFullRange, isValid(a) returns (a < n), so
-        //   we know by this function's preconditions that x < n and y < n.
-        //   Therefore  x*y < n*n < n*R.
-        // For MontyHalfRange: its constructor requires modulus < R/2, which
-        //   means n < R/2 < R.  For MontyHalfRange, isValid(a) returns (a < n),
-        //   so we know by this function's preconditions that x < n and y < n.
-        //   Therefore  x*y < n*n < n*R.
-        // For MontyQuarterRange: its constructor requires modulus < R/4, which
-        //   means n < R/4.  For MontyQuarterRange isValid(a) returns (a < 2*n),
-        //   so we know by this function's preconditions that x < 2*n and
-        //   y < 2*n.  Thus  x*y < (2*n)*(2*n) == 4*n*n < 4*n*R/4 == n*R.
+        const D* child = static_cast<const D*>(this);
+        HPBC_PRECONDITION2(child->isValid(x));
+        HPBC_PRECONDITION2(child->isValid(y));
         T u_lo;
-        T u_hi = unsigned_multiply_to_hilo_product(u_lo, x.get(), y.get());
-        // u_hi < n  implies that  x*y == u < n*R.  See REDC_non_finalized()
-        // in Redc.h for proof.
-        HPBC_ASSERT2(u_hi < n_);
-
-        T result = REDC(u_hi, u_lo, n_, inv_n_, isZero, typename D::MontyTag(),
-                                                                        PTAG());
+        T u_hi = child->multiplyToHiLo(u_lo, x, y);
+        // u_hi < n  implies that  x*y == u < n*R.  See RedcIncomplete() in
+        // ImplRedc.h for proof.
+        HPBC_ASSERT2(u_hi < n_);  // verify u < n*R, as required for REDC
+        V result = child->montyREDC(isZero, u_hi, u_lo, PTAG());
+        HPBC_POSTCONDITION2(child->isValid(result));
         HPBC_POSTCONDITION2(isZero ==
-             (static_cast<const D*>(this)->getCanonicalValue(V(result)).get() ==
-              getZeroValue().get()));
-        HPBC_POSTCONDITION2(isValid(V(result)));
-        return V(result);
+                          (child->getCanonicalValue(result) == getZeroValue()));
+        return result;
     }
+
+// the Derived class might overload fmsub and fmadd in order to offer better
+// efficiency, using a dedicated type FV (FusingValue) rather than C
+// (CanonicalValue) for the addend/subtrahend z.
 
     // Multiplies two montgomery values x and y, and then subtracts canonical
     // value z from the product.  Returns the resulting montgomery value.
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
     HURCHALLA_FORCE_INLINE V fmsub(V x, V y, C z, PTAG) const
     {
-        HPBC_PRECONDITION2(isValid(x));
-        HPBC_PRECONDITION2(isValid(y));
-        HPBC_PRECONDITION2(isCanonical(z));
-        HPBC_PRECONDITION2(z.get() < n_); // isCanonical() should guarantee this
+        const D* child = static_cast<const D*>(this);
+        HPBC_PRECONDITION2(child->isValid(x));
+        HPBC_PRECONDITION2(child->isValid(y));
+        HPBC_INVARIANT2(z.get() < n_);
         T u_lo;
-        T u_hi = unsigned_multiply_to_hilo_product(u_lo, x.get(), y.get());
+        T u_hi = child->multiplyToHiLo(u_lo, x, y);
         // Assuming theoretical unlimited precision standard multiplication,
-        // REDC requires  u = x*y < n*R.  See multiply() for why this function
-        // will always satisfy the requirement.  u_hi < n guarantees we had
-        // x*y == u < n*R.  See REDC_non_finalized() in Redc.h for proof.
+        // REDC requires  u = x*y < n*R.  multiplyToHiLo() guarantees that we
+        // will receive values for  u_hi, u_lo  that satisfy this requirement.
+        // u_hi < n implies that  x*y == u < n*R.  See RedcIncomplete() in
+        // ImplRedc.h for proof.
         HPBC_ASSERT2(u_hi < n_);
 
         // Performing the modular sub prior to the REDC will always give
         // equivalent results to performing the REDC and then the modular
         // subtraction.  See fmadd() below for a proof which could be easily
-        // adapted for the modular subtraction in fmsub().
-        // The following calculations should execute in parallel with the first
-        // two multiplies in REDC(), since those mutiplies do not depend on
-        // these calculations.  (Instruction level parallelism)
-        T diff = modular_subtraction_prereduced_inputs(u_hi, z.get(), n_);
-        HPBC_ASSERT2(diff < n_);
-        T result = REDC(diff, u_lo, n_, inv_n_, typename D::MontyTag(), PTAG());
+        // adapted for the modular subtraction in here.
+        // Note that the modular subtraction will usually execute in parallel
+        // with the first two multiplies in REDC(), since those mutiplies do not
+        // depend on the subtraction result.  (Instruction level parallelism)
+        u_hi = modular_subtraction_prereduced_inputs(u_hi, z.get(), n_);
+        HPBC_ASSERT2(u_hi < n_);
+        V result = child->montyREDC(u_hi, u_lo, PTAG());
 
-        HPBC_POSTCONDITION2(isValid(V(result)));
-        return V(result);
+        HPBC_POSTCONDITION2(child->isValid(result));
+        return result;
     }
-
     // Multiplies two montgomery values x and y, and then adds canonical
     // value z to the product.  Returns the resulting montgomery value.
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
     HURCHALLA_FORCE_INLINE V fmadd(V x, V y, C z, PTAG) const
     {
-        HPBC_PRECONDITION2(isValid(x));
-        HPBC_PRECONDITION2(isValid(y));
-        HPBC_PRECONDITION2(isCanonical(z));
-        HPBC_PRECONDITION2(z.get() < n_); // isCanonical() should guarantee this
+        const D* child = static_cast<const D*>(this);
+        HPBC_PRECONDITION2(child->isValid(x));
+        HPBC_PRECONDITION2(child->isValid(y));
+        HPBC_INVARIANT2(z.get() < n_);
         T u_lo;
-        T u_hi = unsigned_multiply_to_hilo_product(u_lo, x.get(), y.get());
+        T u_hi = child->multiplyToHiLo(u_lo, x, y);
         // Assuming theoretical unlimited precision standard multiplication,
-        // REDC requires  u = x*y < n*R.  See multiply() for why this function
-        // will always satisfy the requirement.  u_hi < n guarantees we had
-        // x*y == u < n*R.  See REDC_non_finalized() in Redc.h for proof.
+        // REDC requires  u = u_hi*R + u_lo = x*y < n*R.  multiplyToHiLo()
+        // guarantees that  u_hi and u_lo  will satisfy this requirement.
+        // u_hi < n implies that  x*y == u < n*R.  See RedcIncomplete() in
+        // ImplRedc.h for proof.
         HPBC_ASSERT2(u_hi < n_);
 
         // The most obvious way to carry out this function would be as follows:
-        // result = REDC(u_hi, u_lo, n_, inv_n_, typename D::MontyTag(), PTAG())
+        // result = this->montyREDC(u_hi, u_lo, PTAG())
         // and then performing a modular addition of result with z
         // sum = this->add(result, z).
         // However we'll show we can perform a modular addition first, and then
         // the REDC, and our final result will be congruent to sum above, and
         // our final result will satisfy
-        // this->isValid(final_result) == true.  If we can achieve this, then
-        // for our purposes final_result is equivalent to the sum above.
+        // isValid(final_result) == true.  If we can achieve this, then for our
+        // purposes final_result is equivalent to the sum above.
         //
         // The advantage of this alternate method is that the modular addition
         // should execute in parallel with the first two multiplies inside
@@ -347,8 +281,8 @@ class MontyCommonBase {
         // Proof:
         // Let Rinverse ≡ R^(-1) (mod n_)       ("R^(-1)" is R to the power -1)
         // Note that since R is a power of 2 and n_ is odd, Rinverse always
-        // exists.  Let u = u_hi*R + u_lo.  If we call
-        // result = REDC(u_hi, u_lo, n_, inv_n_, typename D::MontyTag(), PTAG())
+        // exists.  Let u = u_hi*R + u_lo.  If we let
+        // result = this->montyREDC(u_hi, u_lo, PTAG())
         // REDC guarantees that result satisfies
         // result     ≡ u*Rinverse  (mod n_).   And therefore,
         // result     ≡ (u_hi*R + u_lo)*Rinverse  (mod n_)
@@ -381,33 +315,38 @@ class MontyCommonBase {
         // algorithm guarantees it will return the value
         // final_result ≡ (v_hi*R + u_lo)*Rinverse  (mod n_).  And thus,
         // final_result ≡ sum  (mod n_).
-        T final_result =
-                   REDC(v_hi, u_lo, n_, inv_n_, typename D::MontyTag(), PTAG());
-        // REDC's postcondition guarantees it will return a valid value for
-        // the given MontyTag, and so
-        HPBC_POSTCONDITION2(isValid(V(final_result)));
+        V final_result = child->montyREDC(v_hi, u_lo, PTAG());
+        // REDC's postcondition guarantees it will return a valid value, and so
+        HPBC_POSTCONDITION2(child->isValid(final_result));
         // We showed  final_result ≡ sum  (mod n_),  and that
         // final_result is valid.  For our purposes this means final_result is
         // equivalent to sum, and thus we can return it instead of sum.
-        return V(final_result);
+        return final_result;
     }
+
 
     // Returns the greatest common divisor of the standard representations
     // (non-montgomery) of both x and the modulus, using the supplied functor.
     // The functor must take two integral arguments of the same type and return
-    // the gcd of those two arguments.
+    // the gcd of those two arguments.  Usually you would make the functor's
+    // operator() a templated function, where the template parameter is the
+    // unknown type of the integral arguments.  Or more simply, you can just use
+    // a lambda, with 'auto' type for the function parameters.
     template <class F>
-    HURCHALLA_FORCE_INLINE T gcd_with_modulus(W x, const F& gcd_functor) const
+    HURCHALLA_FORCE_INLINE T gcd_with_modulus(V x, const F& gcd_functor) const
     {
-        // Proof that gcd(x.get(), n_) == gcd(convertOut(x), n_)
-        // -----------------------------------------------------
-        // Let the integer g = x.get(), and let the integer c = convertOut(x).
+        // Proof that GCD(getNaturalEquivalence(x), n) == GCD(convertOut(x), n)
+        // --------------------------------------------------------------------
+        // Let the integer g = ((const D*)this)->getNaturalEquivalence(x),
+        // and let the integer c = convertOut(x).
         // Let the integer d be a divisor of n_.
         // We will use mathematical integers (with infinite precision and no
         // overflow) throughout this discussion.
         //
-        // Because g is a value in montgomery domain, we know g ≡ c*R (mod n_),
-        // and thus there exists some integer k such that  g == c*R + k*n_.
+        // GetNaturalEquivalence(x) guarantees that its returned integer g
+        // satisfies  g ≡ x (mod n_), and because x is a value in Montgomery
+        // domain, we know g ≡ x ≡ c*R (mod n_).  Thus there exists some integer
+        // k such that  g == c*R + k*n_.
         // Since n_ (by constructor precondition) is odd, we know n_ and R are
         // coprime, and thus d can not be a divisor of R (unless d==1, in which
         // case d divides all integers).
@@ -432,13 +371,33 @@ class MontyCommonBase {
         //
         // We want to return the value  q = gcd(convertOut(x), n_).
         // By the proof above, we can instead return the equivalent value
-        // p = gcd(x.get(), n_)  which we can compute more efficiently.
-        T p = gcd_functor(x.get(), n_);
+        // p = gcd(((const D*)this)->getNaturalEquivalence(x), n_)
+        // which we can compute more efficiently.
+        T g = static_cast<const D*>(this)->getNaturalEquivalence(x);
+        T p = gcd_functor(g, n_);
         // Our postconditions assume the functor implementation is correct.
-        HPBC_POSTCONDITION2(0 < p && p <= n_ && (x.get() == 0 || p <= x.get()));
+        HPBC_POSTCONDITION2(0 < p && p <= n_ && (g == 0 || p <= g));
         HPBC_POSTCONDITION2(n_ % p == 0);
-        HPBC_POSTCONDITION2(x.get() % p == 0);
+        HPBC_POSTCONDITION2(g % p == 0);
         return p;
+    }
+
+
+    HURCHALLA_FORCE_INLINE C subtract(C x, C y) const
+    {
+        HPBC_INVARIANT2(x.get() < n_);
+        HPBC_INVARIANT2(y.get() < n_);
+        T z = modular_subtraction_prereduced_inputs(x.get(), y.get(), n_);
+        HPBC_POSTCONDITION2(z < n_);
+        return C(z);
+    }
+    HURCHALLA_FORCE_INLINE C add(C x, C y) const
+    {
+        HPBC_INVARIANT2(x.get() < n_);
+        HPBC_INVARIANT2(y.get() < n_);
+        T z = modular_addition_prereduced_inputs(x.get(), y.get(), n_);
+        HPBC_POSTCONDITION2(z < n_);
+        return C(z);
     }
 };
 

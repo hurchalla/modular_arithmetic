@@ -20,6 +20,11 @@ namespace hurchalla { namespace detail {
 // This class provides a standard modular arithmetic implementation, wrapped
 // inside a Monty template.  This allows standard modular arithmetic to be used
 // with a generic MontgomeryForm interface.
+
+
+struct TagMontyWrappedmath final {};  //IDs MontyWrappedStandardMath without T
+
+
 template <typename T>
 class MontyWrappedStandardMath final {
     static_assert(ut_numeric_limits<T>::is_integer, "");
@@ -27,27 +32,38 @@ class MontyWrappedStandardMath final {
     static_assert(ut_numeric_limits<T>::is_modulo, "");
     T modulus_;
 
-    struct W : public BaseMontgomeryValue<T> { // wide montgomery value type
-        using BaseMontgomeryValue<T>::BaseMontgomeryValue;
+    struct V : public BaseMontgomeryValue<T> {  // regular montgomery value type
+        HURCHALLA_FORCE_INLINE V() = default;
+     protected:
+        friend MontyWrappedStandardMath;
+        HURCHALLA_FORCE_INLINE explicit V(T a) : BaseMontgomeryValue<T>(a) {}
     };
-    struct SQ : public BaseMontgomeryValue<T> { //squaring montgomery value type
-        using BaseMontgomeryValue<T>::BaseMontgomeryValue;
+    struct C : public V {                     // canonical montgomery value type
+        HURCHALLA_FORCE_INLINE C() = default;
+        HURCHALLA_FORCE_INLINE friend bool operator==(const C& x, const C& y)
+            { return x.get() == y.get(); }
+        HURCHALLA_FORCE_INLINE friend bool operator!=(const C& x, const C& y)
+            { return !(x == y); }
+     protected:
+        friend MontyWrappedStandardMath;
+        HURCHALLA_FORCE_INLINE explicit C(T a) : V(a) {}
     };
-    struct V : public W { using W::W; };  // regular montomery value type
-    struct C : public V { using V::V; };  // canonical montgomery value type
+    // fusing montgomery value (addend/subtrahend for fmadd/fmsub)
+    using FV = C;
 
     // intended for use in postconditions/preconditions
-    HURCHALLA_FORCE_INLINE bool isCanonical(W x) const
+    HURCHALLA_FORCE_INLINE bool isCanonical(V x) const
     {
         // this static_assert guarantees 0 <= x.get()
         static_assert(!(ut_numeric_limits<T>::is_signed), "");
         return (x.get() < modulus_);
     }
+
  public:
-    using widevalue_type = W;
+    using MontyTag = TagMontyWrappedmath;
     using montvalue_type = V;
     using canonvalue_type = C;
-    using squaringvalue_type = SQ;
+    using fusingvalue_type = FV;
     using uint_type = T;
 
     explicit MontyWrappedStandardMath(T modulus) : modulus_(modulus)
@@ -75,7 +91,7 @@ class MontyWrappedStandardMath final {
         else
             return V(static_cast<T>(a % modulus_));
     }
-    HURCHALLA_FORCE_INLINE T convertOut(W x) const
+    HURCHALLA_FORCE_INLINE T convertOut(V x) const
     {
         HPBC_PRECONDITION2(isCanonical(x));
         T ret = x.get();
@@ -83,27 +99,36 @@ class MontyWrappedStandardMath final {
         return ret;
     }
 
-    HURCHALLA_FORCE_INLINE C getCanonicalValue(W x) const
+    HURCHALLA_FORCE_INLINE C getCanonicalValue(V x) const
     {
         HPBC_PRECONDITION2(isCanonical(x));
         return C(x.get());
     }
 
+    static_assert(std::is_same<FV, C>::value, "");
+    // Note: fmsub and fmadd with FusingValue (FV) arguments will match to
+    // fmsub and fmadd with CanonicalValue args, since C is_same as FV.
+
+    HURCHALLA_FORCE_INLINE FV getFusingValue(V x) const
+    {
+        return getCanonicalValue(x);
+    }
+
     HURCHALLA_FORCE_INLINE C getUnityValue() const
     {
-        HPBC_INVARIANT2(isCanonical(W(static_cast<T>(1))));
+        HPBC_INVARIANT2(isCanonical(V(static_cast<T>(1))));
         return C(static_cast<T>(1));
     }
     HURCHALLA_FORCE_INLINE C getZeroValue() const
     {
-        HPBC_INVARIANT2(isCanonical(W(static_cast<T>(0))));
+        HPBC_INVARIANT2(isCanonical(V(static_cast<T>(0))));
         return C(static_cast<T>(0));
     }
     HURCHALLA_FORCE_INLINE C getNegativeOneValue() const
     {
         HPBC_INVARIANT2(modulus_ > 0);
         T negOne = static_cast<T>(modulus_ - static_cast<T>(1));
-        HPBC_INVARIANT2(isCanonical(W(negOne)));
+        HPBC_INVARIANT2(isCanonical(V(negOne)));
         return C(negOne);
     }
 
@@ -114,8 +139,8 @@ class MontyWrappedStandardMath final {
         HPBC_PRECONDITION2(isCanonical(y));
         T result = modular_multiplication_prereduced_inputs(x.get(),
                                                              y.get(), modulus_);
-        isZero = (getCanonicalValue(W(result)).get() == getZeroValue().get());
-        HPBC_POSTCONDITION2(isCanonical(W(result)));
+        isZero = (getCanonicalValue(V(result)).get() == getZeroValue().get());
+        HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
     template <class PTAG>   // Performance TAG (ignored by this class)
@@ -130,6 +155,7 @@ class MontyWrappedStandardMath final {
         HPBC_POSTCONDITION2(isCanonical(result));
         return result;
     }
+    // Note: fmsub(V, V, FV)  will match to fmsub(V x, V y, C z) above.
     template <class PTAG>   // Performance TAG (ignored by this class)
     HURCHALLA_FORCE_INLINE V fmadd(V x, V y, C z, PTAG) const
     {
@@ -142,56 +168,61 @@ class MontyWrappedStandardMath final {
         HPBC_POSTCONDITION2(isCanonical(result));
         return result;
     }
+    // Note: fmadd(V, V, FV)  will match to fmadd(V x, V y, C z) above.
+
     HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
         HPBC_PRECONDITION2(isCanonical(x));
         HPBC_PRECONDITION2(isCanonical(y));
         T result=modular_addition_prereduced_inputs(x.get(), y.get(), modulus_);
-        HPBC_POSTCONDITION2(isCanonical(W(result)));
+        HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
-    HURCHALLA_FORCE_INLINE V add_canonical_value(V x, C y) const
+    // Note: add(V, C) and add(C, V) will match to add(V x, V y) above.
+    HURCHALLA_FORCE_INLINE C add(C x, C y) const
     {
-        V z = add(x, y);
-        HPBC_POSTCONDITION2(isCanonical(z));  // add() guarantees this
-        return z;
+        V v = add(V(x), V(y));
+        return C(v.get());
     }
+
     HURCHALLA_FORCE_INLINE V subtract(V x, V y) const
     {
         HPBC_PRECONDITION2(isCanonical(x));
         HPBC_PRECONDITION2(isCanonical(y));
         T result =
               modular_subtraction_prereduced_inputs(x.get(), y.get(), modulus_);
-        HPBC_POSTCONDITION2(isCanonical(W(result)));
+        HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
-    HURCHALLA_FORCE_INLINE V subtract_canonical_value(V x, C y) const
+    // Note: subtract(V, C) and subtract(C, V) will match to subtract(V x, V y)
+    // above.
+    HURCHALLA_FORCE_INLINE C subtract(C x, C y) const
     {
-        V z = subtract(x, y);
-        HPBC_POSTCONDITION2(isCanonical(z));  // subtract() guarantees this
-        return z;
+        V v = subtract(V(x), V(y));
+        return C(v.get());
     }
-    HURCHALLA_FORCE_INLINE C subtract_dual_canonical_values(C x, C y) const
-    {
-        V z = subtract(x, y);
-        HPBC_POSTCONDITION2(isCanonical(z));  // subtract() guarantees this
-        return C(z.get());
-    }
+
     HURCHALLA_FORCE_INLINE V unordered_subtract(V x, V y) const
     {
         HPBC_PRECONDITION2(isCanonical(x));
         HPBC_PRECONDITION2(isCanonical(y));
         T result = absolute_value_difference(x.get(), y.get());
-        HPBC_POSTCONDITION2(isCanonical(W(result)));
+        HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
+    // Note: unordered_subtract(V, C) and unordered_subtract(C, V) will match
+    // to unordered_subtract(V x, V y) above.
+
 
     // Returns the greatest common divisor of the standard representations
     // (non-montgomery) of both x and the modulus, using the supplied functor.
     // The functor must take two integral arguments of the same type and return
-    // the gcd of those two arguments.
+    // the gcd of those two arguments.  Usually you would make the functor's
+    // operator() a templated function, where the template parameter is the
+    // unknown type of the integral arguments.  Or more simply, you can just use
+    // a lambda, with 'auto' type for the function parameters.
     template <class F>
-    HURCHALLA_FORCE_INLINE T gcd_with_modulus(W x, const F& gcd_functor) const
+    HURCHALLA_FORCE_INLINE T gcd_with_modulus(V x, const F& gcd_functor) const
     {
         HPBC_INVARIANT2(modulus_ > 0);
         // We want to return the value  q = gcd(convertOut(x), modulus_).  Since
@@ -204,6 +235,29 @@ class MontyWrappedStandardMath final {
         HPBC_POSTCONDITION2(modulus_ % p == 0);
         HPBC_POSTCONDITION2(x.get() % p == 0);
         return p;
+    }
+
+    // This class doesn't do anything special for square functions.
+    // It just delegates to the functions above.
+    // --------
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V square(V x, PTAG) const
+    {
+        HPBC_PRECONDITION2(isCanonical(x));
+        bool isZero;
+        return multiply(x, x, isZero, PTAG());
+    }
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V fusedSquareSub(V x, C cv, PTAG) const
+    {
+        HPBC_PRECONDITION2(isCanonical(x));
+        return fmsub(x, x, cv, PTAG());
+    }
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V fusedSquareAdd(V x, C cv, PTAG) const
+    {
+        HPBC_PRECONDITION2(isCanonical(x));
+        return fmadd(x, x, cv, PTAG());
     }
 };
 

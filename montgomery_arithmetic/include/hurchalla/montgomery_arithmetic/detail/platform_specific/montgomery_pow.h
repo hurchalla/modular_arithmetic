@@ -6,7 +6,7 @@
 
 
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
-#include "hurchalla/montgomery_arithmetic/low_level_api/monty_tag_structs.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontyQuarterRange.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/Unroll.h"
 #include "hurchalla/util/compiler_macros.h"
@@ -14,6 +14,7 @@
 #include <array>
 #include <cstddef>
 #include <type_traits>
+#include <utility>
 
 namespace hurchalla { namespace detail {
 
@@ -34,32 +35,23 @@ struct montgomery_pow {
     // This is an optimized version of Algorithm 14.76, from
     // Applied Handbook of Cryptography- http://cacr.uwaterloo.ca/hac/
     // See also: hurchalla/modular_arithmetic/detail/impl_modular_pow.h
-    V result;
-    if (exponent & static_cast<T>(1))
-        result = base;
-    else
-        result = mf.getUnityValue();
+    V result = (exponent & static_cast<T>(1)) ? base : mf.getUnityValue();
     while (exponent > static_cast<T>(1)) {
         exponent = static_cast<T>(exponent >> static_cast<T>(1));
-        base = mf.template multiply<LowuopsTag>(base, base);
-        // The multiply above is a loop carried dependency.  Thus, a second loop
+        base = mf.template square<LowuopsTag>(base);
+        // The square above is a loop carried dependency.  Thus, a second loop
         // carried dependency with the same length can be essentially free due
         // to instruction level parallelism, so long as it does not introduce
         // any branch mispredictions.
-        // So we will always compute the second multiply, instead of
+        // So we will always compute the following multiply, instead of
         // conditionally computing it, and we will encourage the compiler to use
         // a (branchless) conditional move instruction.
         // We use lowlatencyTag below because the 'result' loop carried
         // dependency depends upon both multiply and a conditional move, whereas
-        // 'base' above depends only on multiply and thus is tagged for lowuops
-        // since it is less likely to be a latency bottleneck.
+        // 'base' above depends only on square (multiply) and thus is tagged for
+        // lowuops since it is less likely to be a latency bottleneck.
         V tmp = mf.template multiply<LowlatencyTag>(result, base);
-#if 0
-        // ternary op generally compiles to conditional moves.
-        result = (exponent & static_cast<T>(1)) ? tmp : result;
-#else
-        HURCHALLA_CMOV(exponent & static_cast<T>(1), result, tmp);
-#endif
+        result.cmov(exponent & static_cast<T>(1), tmp);
     }
     return result;
   }
@@ -100,7 +92,7 @@ struct montgomery_pow {
     while (exponent > static_cast<T>(1)) {
         exponent = static_cast<T>(exponent >> static_cast<T>(1));
         for (std::size_t i=0; i<NUM_BASES; ++i)
-            bases[i] = mf.template multiply<LowuopsTag>(bases[i], bases[i]);
+            bases[i] = mf.template square<LowuopsTag>(bases[i]);
         if (exponent & static_cast<T>(1)) {
             for (std::size_t i=0; i<NUM_BASES; ++i)
                 result[i]= mf.template multiply<LowuopsTag>(result[i],bases[i]);
@@ -129,7 +121,7 @@ struct montgomery_pow {
     while (exponent > static_cast<T>(1)) {
         exponent = static_cast<T>(exponent >> static_cast<T>(1));
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
-            bases[i] = mf.template multiply<LowuopsTag>(bases[i], bases[i]);
+            bases[i] = mf.template square<LowuopsTag>(bases[i]);
         });
         if (exponent & static_cast<T>(1)) {
             Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
@@ -160,16 +152,11 @@ struct montgomery_pow {
         exponent = static_cast<T>(exponent >> static_cast<T>(1));
         std::array<V, NUM_BASES> tmp;
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
-            bases[i] = mf.template multiply<LowuopsTag>(bases[i], bases[i]);
+            bases[i] = mf.template square<LowuopsTag>(bases[i]);
             tmp[i] = mf.template multiply<LowuopsTag>(result[i], bases[i]);
         });
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
-#if 0
-            //the ternary operator usually/hopefully results in our desired cmov
-            result[i] = (exponent & static_cast<T>(1)) ? tmp[i] : result[i];
-#else
-            HURCHALLA_CMOV(exponent & static_cast<T>(1), result[i], tmp[i]);
-#endif
+            result[i].cmov(exponent & static_cast<T>(1), tmp[i]);
         });
     }
     return result;
@@ -192,19 +179,11 @@ struct montgomery_pow {
         });
     }
     while (exponent > static_cast<T>(1)) {
-        using U = decltype(result[0].value);
-        static_assert(ut_numeric_limits<U>::is_integer, "");
-        static_assert(!(ut_numeric_limits<U>::is_signed), "");
-        static_assert(ut_numeric_limits<U>::digits >=
-                      ut_numeric_limits<T>::digits, "");
         exponent = static_cast<T>(exponent >> 1u);
-        U lowbit = static_cast<U>(static_cast<U>(exponent) & static_cast<U>(1));
-        U mask = static_cast<U>(static_cast<U>(0) - lowbit);
-        U maskflip = static_cast<U>(lowbit - static_cast<U>(1));
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
-            bases[i] = mf.template multiply<LowuopsTag>(bases[i], bases[i]);
+            bases[i] = mf.template square<LowuopsTag>(bases[i]);
             V tmp = mf.template multiply<LowuopsTag>(result[i], bases[i]);
-            result[i].value = (mask & tmp.value) | (maskflip & result[i].value);
+            result[i].cmov_masked(exponent & static_cast<T>(1), tmp);
         });
     }
     return result;
@@ -280,7 +259,7 @@ struct DefaultMontArrayPow {
 
 
 // Primary template.  Forwards all work to DefaultMontArrayPow.
-template<class MontyType, class MF, class Enable = void>
+template<class MontyTag, class MF>
 struct montgomery_array_pow {
     using V = typename MF::MontgomeryValue;
     template <std::size_t NUM_BASES>
@@ -294,21 +273,11 @@ struct montgomery_array_pow {
 };
 
 #if defined(HURCHALLA_TARGET_ISA_X86_64)
-// Partial specialization using QuarterrangeTag (x86-64 only).
+// Partial specialization using TagMontyQuarterrange (x86-64 only).
 // I haven't measured performance for any ISAs except x86-64, and so all other
 // ISAs default to the primary template above.
-//
-// We use the awkward "enable_if" syntax in this template because we want to
-// match MontyType::MontyTag to QuarterrangeTag - but the client code can't
-// provide MontyType::MontyTag because sometimes it might not exist and the
-// client would get a compile error if so.  But in the template parameters below
-// if MontyType::MontyTag doesn't exist that's ok, because due to SFINAE the
-// compiler will just give up on attempting the match (it will instead match to
-// the primary template above).
-template<class MontyType, class MF>
-struct montgomery_array_pow<MontyType, MF, typename std::enable_if<
-              std::is_same<typename MontyType::MontyTag, QuarterrangeTag>::value
-          >::type> {
+template<class MF>
+struct montgomery_array_pow<TagMontyQuarterrange, MF> {
     using T = typename MF::IntegerType;
     using V = typename MF::MontgomeryValue;
 
@@ -321,13 +290,13 @@ struct montgomery_array_pow<MontyType, MF, typename std::enable_if<
         return DefaultMontArrayPow<MF>::pow(mf, bases, exponent);
     }
 
-    // For x86-64 Montgomery QuarterrangeTag and 2 or 3 bases and compiling with
+    // For x86-64, with TagMontyQuarterrange and 2 or 3 bases and compiling with
     // clang, arraypow_cmov() always had better measured performance than any of
     // the alternative functions.  For gcc and icc compilers, arraypow_masked()
     // resulted in the best measured performance.  But in general we expect
     // conditional moves (cmovs) to perform better than masks, so we default for
-    // any unmeasured compiler to using arraypow_cmov().  I haven't measured
-    // perf on MSVC, for example.
+    // any unmeasured compiler to use arraypow_cmov().  For example, I haven't
+    // measured perf on MSVC and so it uses cmov.
 #  if !defined(__GNUC__) || defined(__clang__)
     static HURCHALLA_FORCE_INLINE
     std::array<V,2> pow(const MF& mf, const std::array<V,2>& bases, T exponent)

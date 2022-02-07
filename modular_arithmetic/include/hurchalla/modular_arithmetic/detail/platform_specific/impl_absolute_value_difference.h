@@ -21,10 +21,10 @@ struct default_impl_absdiff {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
 #if 0
-    T result = (a > b) ? static_cast<T>(a - b) : static_cast<T>(b - a);
+    T result = (a < b) ? static_cast<T>(b - a) : static_cast<T>(a - b);
 #else
-    T result = static_cast<T>(b - a);
-    HURCHALLA_CMOV(a > b, result, static_cast<T>(a - b));
+    T result = static_cast<T>(a - b);
+    HURCHALLA_CMOV(a < b, result, static_cast<T>(b - a));
 #endif
     // POSTCONDITION:
     // This function returns absolute_value(a-b).

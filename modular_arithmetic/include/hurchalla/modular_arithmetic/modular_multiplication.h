@@ -7,6 +7,7 @@
 
 #include "hurchalla/modular_arithmetic/detail/platform_specific/impl_modular_multiplication.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 
 namespace hurchalla {
@@ -34,6 +35,17 @@ T modular_multiplication_prereduced_inputs(T a, T b, T modulus)
     //                infinite precision to avoid overflow.
     HPBC_POSTCONDITION(result<modulus);
     return result;
+}
+
+// You may find the function modular_multiplication_has_slow_perf() to be useful
+// when you have a calculation that seems borderline as to whether standard
+// modular multiplication or montgomery multiplication would perform better, in
+// general across systems.  You can use this function to choose at compile-time
+// between using montgomery or standard modmult (e.g. with constexpr if).
+template <typename T>
+HURCHALLA_FORCE_INLINE constexpr bool modular_multiplication_has_slow_perf()
+{
+    return detail::impl_modular_multiplication<T>::has_slow_perf();
 }
 
 

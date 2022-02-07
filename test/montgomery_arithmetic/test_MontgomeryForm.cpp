@@ -22,6 +22,8 @@
 #include "hurchalla/modular_arithmetic/modular_pow.h"
 #include "hurchalla/montgomery_arithmetic/MontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyFullRange.h"
+//#include "hurchalla/montgomery_arithmetic/detail/MontyFullRangeMasked.h"
+//#include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyQuarterRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/experimental/MontySqrtRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyWrappedStandardMath.h"
@@ -134,28 +136,68 @@ void test_multiply_variants(const M& mf, typename M::MontgomeryValue x,
 
 template <typename M>
 void test_fmadd_variants(const M& mf, typename M::MontgomeryValue x,
-                   typename M::MontgomeryValue y, typename M::CanonicalValue zc,
-                   typename M::IntegerType expected_result)
+            typename M::MontgomeryValue y, typename M::CanonicalValue zc,
+            typename M::FusingValue zf, typename M::IntegerType expected_result)
 {
-    EXPECT_TRUE(mf.convertOut(mf.fmadd(x,y,zc)) == expected_result);
+    EXPECT_TRUE(mf.convertOut(mf.fmadd(x,y,zf)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-          mf.template fmadd<hc::LowlatencyTag>(x,y,zc)) == expected_result);
+          mf.template fmadd<hc::LowlatencyTag>(x,y,zf)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-          mf.template fmadd<hc::LowuopsTag>(x,y,zc)) == expected_result);
+          mf.template fmadd<hc::LowuopsTag>(x,y,zf)) == expected_result);
+
+    EXPECT_TRUE(mf.convertOut(mf.fmaddCV(x,y,zc)) == expected_result);
+    EXPECT_TRUE(mf.convertOut(
+          mf.template fmaddCV<hc::LowlatencyTag>(x,y,zc)) == expected_result);
+    EXPECT_TRUE(mf.convertOut(
+          mf.template fmaddCV<hc::LowuopsTag>(x,y,zc)) == expected_result);
 }
 
 template <typename M>
 void test_fmsub_variants(const M& mf, typename M::MontgomeryValue x,
-                   typename M::MontgomeryValue y, typename M::CanonicalValue zc,
-                   typename M::IntegerType expected_result)
+            typename M::MontgomeryValue y, typename M::CanonicalValue zc,
+            typename M::FusingValue zf, typename M::IntegerType expected_result)
 {
-    EXPECT_TRUE(mf.convertOut(mf.fmsub(x,y,zc)) == expected_result);
+    EXPECT_TRUE(mf.convertOut(mf.fmsub(x,y,zf)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-          mf.template fmsub<hc::LowlatencyTag>(x,y,zc)) == expected_result);
+          mf.template fmsub<hc::LowlatencyTag>(x,y,zf)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-          mf.template fmsub<hc::LowuopsTag>(x,y,zc)) == expected_result);
+          mf.template fmsub<hc::LowuopsTag>(x,y,zf)) == expected_result);
+
+    EXPECT_TRUE(mf.convertOut(mf.fmsubCV(x,y,zc)) == expected_result);
+    EXPECT_TRUE(mf.convertOut(
+          mf.template fmsubCV<hc::LowlatencyTag>(x,y,zc)) == expected_result);
+    EXPECT_TRUE(mf.convertOut(
+          mf.template fmsubCV<hc::LowuopsTag>(x,y,zc)) == expected_result);
 }
 
+
+template <typename M>
+void test_square_variants(const M& mf, typename M::MontgomeryValue x,
+                                                  typename M::CanonicalValue zc)
+{
+    typename M::CanonicalValue answer;
+
+    answer = mf.getCanonicalValue(mf.multiply(x,x));
+    EXPECT_TRUE(mf.getCanonicalValue(mf.square(x)) == answer);
+    EXPECT_TRUE(mf.getCanonicalValue(mf.template square<hc::LowlatencyTag>(x))
+                == answer);
+    EXPECT_TRUE(mf.getCanonicalValue(mf.template square<hc::LowuopsTag>(x))
+                == answer);
+
+    answer = mf.getCanonicalValue(mf.subtract(mf.multiply(x,x),zc));
+    EXPECT_TRUE(mf.getCanonicalValue(mf.fusedSquareSub(x,zc)) == answer);
+    EXPECT_TRUE(mf.getCanonicalValue(mf.template
+                            fusedSquareSub<hc::LowlatencyTag>(x,zc)) == answer);
+    EXPECT_TRUE(mf.getCanonicalValue(mf.template
+                            fusedSquareSub<hc::LowuopsTag>(x,zc)) == answer);
+
+    answer = mf.getCanonicalValue(mf.add(mf.multiply(x,x),zc));
+    EXPECT_TRUE(mf.getCanonicalValue(mf.fusedSquareAdd(x,zc)) == answer);
+    EXPECT_TRUE(mf.getCanonicalValue(mf.template
+                            fusedSquareAdd<hc::LowlatencyTag>(x,zc)) == answer);
+    EXPECT_TRUE(mf.getCanonicalValue(mf.template
+                            fusedSquareAdd<hc::LowuopsTag>(x,zc)) == answer);
+}
 
 
 template <typename M>
@@ -167,6 +209,7 @@ void test_mf_general_checks(M& mf, typename M::IntegerType a,
     using T = typename M::IntegerType;
     using V = typename M::MontgomeryValue;
     using C = typename M::CanonicalValue;
+    using FV = typename M::FusingValue;
     T modulus = mf.getModulus();
     V x = mf.convertIn(a);
     V y = mf.convertIn(b);
@@ -174,6 +217,7 @@ void test_mf_general_checks(M& mf, typename M::IntegerType a,
     C xc = mf.getCanonicalValue(x);
     C yc = mf.getCanonicalValue(y);
     C zc = mf.getCanonicalValue(z);
+    FV zf = mf.getFusingValue(z);
 
     EXPECT_TRUE(mf.getCanonicalValue(mf.negate(x)) ==
                 mf.getCanonicalValue(mf.subtract(mf.getZeroValue(), x)));
@@ -218,18 +262,21 @@ void test_mf_general_checks(M& mf, typename M::IntegerType a,
     T ref_product = tma::modmul(a, b, modulus);
     test_multiply_variants(mf, x, y, ref_product);
     test_multiply_variants(mf, y, x, ref_product);
-    test_fmadd_variants(mf, x, y, zc, tma::modadd(ref_product,c,modulus));
-    test_fmsub_variants(mf, x, y, zc, tma::modsub(ref_product,c,modulus));
+    test_fmadd_variants(mf, x, y, zc, zf, tma::modadd(ref_product,c,modulus));
+    test_fmsub_variants(mf, x, y, zc, zf, tma::modsub(ref_product,c,modulus));
 
     T a_squared = tma::modmul(a, a, modulus);
     test_multiply_variants(mf, x, x, a_squared);
-    test_fmadd_variants(mf, x, x, zc, tma::modadd(a_squared,c,modulus));
-    test_fmsub_variants(mf, x, x, zc, tma::modsub(a_squared,c,modulus));
+    test_fmadd_variants(mf, x, x, zc, zf, tma::modadd(a_squared,c,modulus));
+    test_fmsub_variants(mf, x, x, zc, zf, tma::modsub(a_squared,c,modulus));
 
     T b_squared = tma::modmul(b, b, modulus);
     test_multiply_variants(mf, y, y, b_squared);
-    test_fmadd_variants(mf, y, y, zc, tma::modadd(b_squared,c,modulus));
-    test_fmsub_variants(mf, y, y, zc, tma::modsub(b_squared,c,modulus));
+    test_fmadd_variants(mf, y, y, zc, zf, tma::modadd(b_squared,c,modulus));
+    test_fmsub_variants(mf, y, y, zc, zf, tma::modsub(b_squared,c,modulus));
+
+    test_square_variants(mf, x, zc);
+    test_square_variants(mf, y, zc);
 
     EXPECT_TRUE(mf.convertOut(mf.pow(y,0)) == 1);
     EXPECT_TRUE(mf.convertOut(mf.pow(y,1)) == b);
@@ -283,6 +330,7 @@ void test_MontgomeryForm()
     using T = typename M::IntegerType;
     using V = typename M::MontgomeryValue;
     using C = typename M::CanonicalValue;
+    using FV = typename M::FusingValue;
 
     // Try a basic test case first that is valid for all possible Monty types
     // (including even type M == MontySqrtRange<std::uint8_t>).
@@ -322,12 +370,13 @@ void test_MontgomeryForm()
 
         V z = mf.convertIn(9);
         C zc = mf.getCanonicalValue(z);
-        test_fmadd_variants(mf, x, y, zc, 10);
-        test_fmadd_variants(mf, x, x, zc, 6);
-        test_fmadd_variants(mf, y, y, zc, 0);
-        test_fmsub_variants(mf, x, y, zc, 5);
-        test_fmsub_variants(mf, x, x, zc, 1);
-        test_fmsub_variants(mf, y, y, zc, 8);
+        FV zf = mf.getFusingValue(z);
+        test_fmadd_variants(mf, x, y, zc, zf, 10);
+        test_fmadd_variants(mf, x, x, zc, zf, 6);
+        test_fmadd_variants(mf, y, y, zc, zf, 0);
+        test_fmsub_variants(mf, x, y, zc, zf, 5);
+        test_fmsub_variants(mf, x, x, zc, zf, 1);
+        test_fmsub_variants(mf, y, y, zc, zf, 8);
 
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 0)) == 1);
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 1)) == 11);
@@ -388,12 +437,13 @@ void test_MontgomeryForm()
 
         V z = mf.convertIn(1);
         C zc = mf.getCanonicalValue(z);
-        test_fmadd_variants(mf, x, y, zc, 0);
-        test_fmadd_variants(mf, x, x, zc, 2);
-        test_fmadd_variants(mf, y, y, zc, 2);
-        test_fmsub_variants(mf, x, y, zc, 1);
-        test_fmsub_variants(mf, x, x, zc, 0);
-        test_fmsub_variants(mf, y, y, zc, 0);
+        FV zf = mf.getFusingValue(z);
+        test_fmadd_variants(mf, x, y, zc, zf, 0);
+        test_fmadd_variants(mf, x, x, zc, zf, 2);
+        test_fmadd_variants(mf, y, y, zc, zf, 2);
+        test_fmsub_variants(mf, x, y, zc, zf, 1);
+        test_fmsub_variants(mf, x, x, zc, zf, 0);
+        test_fmsub_variants(mf, y, y, zc, zf, 0);
 
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 0)) == 1);
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 1)) == 2);
@@ -438,10 +488,11 @@ void test_MontgomeryForm()
 
         V z = mf.convertIn(1);
         C zc = mf.getCanonicalValue(z);
-        test_fmadd_variants(mf, x, y, zc, static_cast<T>(modulus - 1));
-        test_fmadd_variants(mf, x, x, zc, 2);
-        test_fmsub_variants(mf, x, y, zc, static_cast<T>(modulus - 3));
-        test_fmsub_variants(mf, x, x, zc, 0);
+        FV zf = mf.getFusingValue(z);
+        test_fmadd_variants(mf, x, y, zc, zf, static_cast<T>(modulus - 1));
+        test_fmadd_variants(mf, x, x, zc, zf, 2);
+        test_fmsub_variants(mf, x, y, zc, zf, static_cast<T>(modulus - 3));
+        test_fmsub_variants(mf, x, x, zc, zf, 0);
 
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 1)) == 2);
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 2)) == 4);
@@ -576,7 +627,14 @@ TEST(MontgomeryArithmetic, MontyWrappedStandardMath) {
 TEST(MontgomeryArithmetic, MontyFullRange) {
     test_custom_monty<hc::detail::MontyFullRange>();
 }
-
+/*
+TEST(MontgomeryArithmetic, MontyHalfRange) {
+    test_custom_monty<hc::detail::MontyHalfRange>();
+}
+TEST(MontgomeryArithmetic, MontyFullRangeMasked) {
+    test_custom_monty<hc::detail::MontyFullRangeMasked>();
+}
+*/
 TEST(MontgomeryArithmetic, MontyQuarterRange) {
     test_custom_monty<hc::detail::MontyQuarterRange>();
 }

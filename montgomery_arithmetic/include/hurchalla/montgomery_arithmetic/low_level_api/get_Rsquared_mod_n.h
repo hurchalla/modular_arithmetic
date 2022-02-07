@@ -6,7 +6,6 @@
 
 
 #include "hurchalla/montgomery_arithmetic/low_level_api/detail/platform_specific/impl_get_Rsquared_mod_n.h"
-#include "hurchalla/montgomery_arithmetic/low_level_api/monty_tag_structs.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/programming_by_contract.h"
@@ -28,20 +27,12 @@ namespace hurchalla {
 // You can get the argument inverse_n_modR by calling inverse_mod_r().  You can
 // get Rmod_n by calling get_R_mod_n().
 
-template <typename T, class MTAG = FullrangeTag>
-T get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
+template <typename T>
+T get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     static_assert(ut_numeric_limits<T>::is_modulo, "");
-    if (HPBC_PRECONDITION2_MACRO_IS_ACTIVE) {
-        static_assert(ut_numeric_limits<T>::digits >= 2, "");
-        // Using QuarterrangeTag requires n < R/4.
-        T Rdiv4 = static_cast<T>(
-                   static_cast<T>(1) << (ut_numeric_limits<T>::digits - 2));
-        HPBC_PRECONDITION2((std::is_same<MTAG, QuarterrangeTag>::value) ? 
-                           n < (Rdiv4) : true);
-    }
     HPBC_PRECONDITION2(n % 2 == 1);  // REDC requires an odd modulus.
     HPBC_PRECONDITION2(n > 1);
     using P = typename safely_promote_unsigned<T>::type;
@@ -49,8 +40,8 @@ T get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
     HPBC_PRECONDITION2(
        static_cast<T>(static_cast<P>(n) * static_cast<P>(inverse_n_modR)) == 1);
 
-    T rSquaredModN = detail::impl_get_Rsquared_mod_n::call(
-                                             n, inverse_n_modR, Rmod_n, MTAG());
+    T rSquaredModN =
+               detail::impl_get_Rsquared_mod_n::call(n, inverse_n_modR, Rmod_n);
 
     HPBC_POSTCONDITION2(rSquaredModN < n);
     return rSquaredModN;

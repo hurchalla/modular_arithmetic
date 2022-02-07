@@ -10,7 +10,6 @@
 #include "hurchalla/montgomery_arithmetic/detail/experimental/negative_inverse_mod_R.h"
 #include "hurchalla/montgomery_arithmetic/detail/BaseMontgomeryValue.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
-#include "hurchalla/montgomery_arithmetic/low_level_api/monty_tag_structs.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
@@ -36,6 +35,10 @@ namespace hurchalla { namespace detail {
 // algorithm  (in the function msr_REDC_non_minimized()), by omitting some
 // conditionals and calculations that would normally be needed.
 
+
+struct TagMontySqrtrange final {};  //identifies MontySqrtRange independent of T
+
+
 // The class member variable names are based on the webpage
 // https://en.wikipedia.org/wiki/Montgomery_modular_multiplication
 template <typename T>
@@ -47,19 +50,32 @@ class MontySqrtRange final {
     const T r_mod_n_;
     const T neg_inv_n_;
     const T r_squared_mod_n_;
-    struct W : public BaseMontgomeryValue<T> { // wide montgomery value type
-        using BaseMontgomeryValue<T>::BaseMontgomeryValue;
+
+    struct V : public BaseMontgomeryValue<T> {  // regular montgomery value type
+        HURCHALLA_FORCE_INLINE V() = default;
+     protected:
+        friend MontySqrtRange;
+        HURCHALLA_FORCE_INLINE explicit V(T a) : BaseMontgomeryValue<T>(a) {}
     };
-    struct SQ : public BaseMontgomeryValue<T> { //squaring montgomery value type
-        using BaseMontgomeryValue<T>::BaseMontgomeryValue;
+    struct C : public V {                     // canonical montgomery value type
+        HURCHALLA_FORCE_INLINE C() = default;
+        HURCHALLA_FORCE_INLINE friend bool operator==(const C& x, const C& y)
+            { return x.get() == y.get(); }
+        HURCHALLA_FORCE_INLINE friend bool operator!=(const C& x, const C& y)
+            { return !(x == y); }
+     protected:
+        friend MontySqrtRange;
+        HURCHALLA_FORCE_INLINE explicit C(T a) : V(a) {}
     };
-    struct V : public W { using W::W; };  // regular montomery value type
-    struct C : public V { using V::V; };  // canonical montgomery value type
+    // fusing montgomery value (addend/subtrahend for fmadd/fmsub)
+    using FV = C;
+
  public:
-    using widevalue_type = W;
+    using MontyTag = TagMontySqrtrange;
+
     using montvalue_type = V;
     using canonvalue_type = C;
-    using squaringvalue_type = SQ;
+    using fusingvalue_type = FV;
     using uint_type = T;
 
     explicit MontySqrtRange(T modulus) :
@@ -198,13 +214,13 @@ class MontySqrtRange final {
         return result;
     }
 
-    HURCHALLA_FORCE_INLINE bool isValid(W x) const
+    HURCHALLA_FORCE_INLINE bool isValid(V x) const
     {
         return (0 < x.get() && x.get() <= n_);
     }
 
     // intended for use in postconditions/preconditions
-    HURCHALLA_FORCE_INLINE bool isCanonical(W x) const
+    HURCHALLA_FORCE_INLINE bool isCanonical(V x) const
     {
         C cfx = getCanonicalValue(x);
         bool good = isValid(x);
@@ -262,7 +278,7 @@ class MontySqrtRange final {
     {
         // as noted in constructor, unityValue == (1*R)%n_ == r_mod_n_,
         // and 0 < r_mod_n_ < n_.
-        HPBC_INVARIANT2(isCanonical(W(r_mod_n_)));
+        HPBC_INVARIANT2(isCanonical(V(r_mod_n_)));
         return C(r_mod_n_);
     }
 
@@ -270,7 +286,7 @@ class MontySqrtRange final {
     {
         // We want returnVal == (0*R)%n_, but since isValid() requires
         // 0 < returnVal <= n_, we return n_ (n_ ≡ 0 (mod n_))
-        HPBC_INVARIANT2(isCanonical(W(n_)));
+        HPBC_INVARIANT2(isCanonical(V(n_)));
         return C(n_);
     } 
 
@@ -287,11 +303,11 @@ class MontySqrtRange final {
         T negOne = static_cast<T>(n_ - r_mod_n_);
         HPBC_ASSERT2(0 < negOne && negOne < n_);
 
-        HPBC_INVARIANT2(isCanonical(W(negOne)));
+        HPBC_INVARIANT2(isCanonical(V(negOne)));
         return C(negOne);
     }
 
-    HURCHALLA_FORCE_INLINE T convertOut(W x) const
+    HURCHALLA_FORCE_INLINE T convertOut(V x) const
     {
         HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
 
@@ -309,10 +325,19 @@ class MontySqrtRange final {
         return minimized_result;
     }
 
-    HURCHALLA_FORCE_INLINE C getCanonicalValue(W x) const
+    HURCHALLA_FORCE_INLINE C getCanonicalValue(V x) const
     {
         HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
         return C(x.get());
+    }
+
+    static_assert(std::is_same<FV, C>::value, "");
+    // Note: fmsub and fmadd with FusingValue (FV) arguments will match to
+    // fmsub and fmadd with CanonicalValue args, since C is_same as FV.
+
+    HURCHALLA_FORCE_INLINE FV getFusingValue(V x) const
+    {
+        return getCanonicalValue(x);
     }
 
     HURCHALLA_FORCE_INLINE V add(V x, V y) const
@@ -328,6 +353,15 @@ class MontySqrtRange final {
         HPBC_POSTCONDITION2(0 < result && result <= n_);
         return V(result);
     }
+    // Note: add(V, C) and add(C, V) will match to add(V x, V y) above.
+    HURCHALLA_FORCE_INLINE C add(C x, C y) const
+    {
+        V v = add(V(x), V(y));
+        // add(V,V) returns a result such that 0 < result <= n.  Thus our
+        // result v satisfies:
+        HPBC_POSTCONDITION2(isCanonical(v));
+        return C(v.get());
+    }
 
     HURCHALLA_FORCE_INLINE V subtract(V x, V y) const
     {
@@ -342,6 +376,16 @@ class MontySqrtRange final {
         HPBC_POSTCONDITION2(0 < result && result <= n_);
         return V(result);
     }
+    // Note: subtract(V, C) and subtract(C, V) will match to subtract(V x, V y)
+    // above.
+    HURCHALLA_FORCE_INLINE C subtract(C x, C y) const
+    {
+        V v = subtract(V(x), V(y));
+        // subtract(V,V) returns a result such that 0 < result <= n.  Thus our
+        // result v satisfies:
+        HPBC_POSTCONDITION2(isCanonical(v));
+        return C(v.get());
+    }
 
     HURCHALLA_FORCE_INLINE V unordered_subtract(V x, V y) const
     {
@@ -349,31 +393,9 @@ class MontySqrtRange final {
         // so just delegate to subtract
         return subtract(x, y);
     }
+    // Note: unordered_subtract(V, C) and unordered_subtract(C, V) will match
+    // to unordered_subtract(V x, V y) above.
 
-    HURCHALLA_FORCE_INLINE V subtract_canonical_value(V x, C y) const
-    {
-        // All montgomery values are canonical for this class, so we just
-        // delegate to subtract.
-        return subtract(x, y);
-    }
-
-    HURCHALLA_FORCE_INLINE C subtract_dual_canonical_values(C x, C y) const
-    {
-        // All montgomery values are canonical for this class, so we just
-        // delegate to subtract.
-        V z = subtract(x, y);
-        // subtract returns a result such that 0 < result <= n.  Thus our
-        // result z satisfies:
-        HPBC_POSTCONDITION2(isCanonical(z));
-        return C(z.get());
-    }
-
-    HURCHALLA_FORCE_INLINE V add_canonical_value(V x, C y) const
-    {
-        // All montgomery values are canonical for this class, so we just
-        // delegate to add.
-        return add(x, y);
-    }
 
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
     HURCHALLA_FORCE_INLINE V multiply(V x, V y, bool& isZero, PTAG) const
@@ -427,6 +449,7 @@ class MontySqrtRange final {
         // canonical form required by most of the class functions.
         return sum;
     }
+    // Note: fmadd(V, V, FV)  will match to fmadd(V x, V y, C z) above.
 
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
     HURCHALLA_FORCE_INLINE V fmsub(V x, V y, C z, PTAG) const
@@ -444,13 +467,17 @@ class MontySqrtRange final {
         // canonical form required by most of the class functions.
         return diff;
     }
+    // Note: fmsub(V, V, FV)  will match to fmsub(V x, V y, C z) above.
 
     // Returns the greatest common divisor of the standard representations
     // (non-montgomery) of both x and the modulus, using the supplied functor.
     // The functor must take two integral arguments of the same type and return
-    // the gcd of those two arguments.
+    // the gcd of those two arguments.  Usually you would make the functor's
+    // operator() a templated function, where the template parameter is the
+    // unknown type of the integral arguments.  Or more simply, you can just use
+    // a lambda, with 'auto' type for the function parameters.
     template <class F>
-    HURCHALLA_FORCE_INLINE T gcd_with_modulus(W x, const F& gcd_functor) const
+    HURCHALLA_FORCE_INLINE T gcd_with_modulus(V x, const F& gcd_functor) const
     {
         HPBC_INVARIANT2(n_ > 0);
         // See the member function gcd_with_modulus() in MontyCommonBase.h for
@@ -465,6 +492,29 @@ class MontySqrtRange final {
         HPBC_POSTCONDITION2(n_ % p == 0);
         HPBC_POSTCONDITION2(x.get() % p == 0);
         return p;
+    }
+
+    // This class doesn't do anything special for square functions.
+    // It just delegates to the functions above.
+    // --------
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V square(V x, PTAG) const
+    {
+        HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
+        bool isZero;
+        return multiply(x, x, isZero, PTAG());
+    }
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V fusedSquareSub(V x, C cv, PTAG) const
+    {
+        HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
+        return fmsub(x, x, cv, PTAG());
+    }
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V fusedSquareAdd(V x, C cv, PTAG) const
+    {
+        HPBC_PRECONDITION2(0 < x.get() && x.get() <= n_);
+        return fmadd(x, x, cv, PTAG());
     }
 };
 

@@ -6,7 +6,6 @@
 
 
 #include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
-#include "hurchalla/montgomery_arithmetic/low_level_api/monty_tag_structs.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
@@ -29,63 +28,36 @@ namespace hurchalla { namespace detail {
 // Compute (R*R) % n
 // Minor note: uses static member function to disallow ADL.
 struct impl_get_Rsquared_mod_n {
-  template <typename T, class MTAG = FullrangeTag> HURCHALLA_FORCE_INLINE
-  static T call(T n, T inverse_n_modR, T Rmod_n, MTAG = MTAG())
+  template <typename T>
+  HURCHALLA_FORCE_INLINE static T call(T n, T inverse_n_modR, T Rmod_n)
   {
     HPBC_PRECONDITION2(n % 2 == 1);
     HPBC_PRECONDITION2(n > 1);
 
-#ifndef HURCHALLA_TARGET_BIT_WIDTH
-#  error HURCHALLA_TARGET_BIT_WIDTH must be defined
-#endif
-#if defined(HURCHALLA_TARGET_ISA_X86_32) || defined(HURCHALLA_TARGET_ISA_X86_64)
-    // x86 has a division instruction that has a dividend parameter that is
-    // twice the CPU word size (word size == HURCHALLA_TARGET_BIT_WIDTH).
-    // Modular multiplication produces a temporary product that is twice its
-    // operand bit width, and also divides a temporary dividend that is twice
-    // the operand bit width.  That's why we flag if we're on x86.
-    constexpr bool is_x86 = true;
-#else
-    constexpr bool is_x86 = false;
-#endif
-#ifdef HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE
-    constexpr bool no_native_divide = true;
-#else
-    constexpr bool no_native_divide = false;
-#endif
-#ifdef HURCHALLA_TESTING_RSQUARED_MOD_N
-    constexpr bool is_a_test = true;
-#else
-    constexpr bool is_a_test = false;
-#endif
-    constexpr int bitsT = ut_numeric_limits<T>::digits;
-
     T rSquaredModN;
-    if (no_native_divide || (bitsT > HURCHALLA_TARGET_BIT_WIDTH) ||
-              ((bitsT == HURCHALLA_TARGET_BIT_WIDTH) && !is_x86) || is_a_test) {
+#ifdef HURCHALLA_TESTING_RSQUARED_MOD_N
+    if (true) {
+#else
+    if (modular_multiplication_has_slow_perf<T>()) {
+#endif
         HPBC_ASSERT2(Rmod_n < n);
-        T tmp = Rmod_n;   // Rmod_n == 1*R (mod n)
+        T tmp = Rmod_n;   // Rmod_n ≡ 1*R (mod n)
         int i=0;
         for (; i<4; ++i)
             tmp = modular_addition_prereduced_inputs(tmp, tmp, n);
-        // at this point,  tmp == 16*R (mod n)
+        // at this point,  tmp ≡ 16*R (mod n)
+        constexpr int bitsT = ut_numeric_limits<T>::digits;
         for (; i<bitsT; i*=2) {
             // use montgomery multiplication to square tmp on each iteration
             T u_hi, u_lo;
             u_hi = unsigned_multiply_to_hilo_product(u_lo, tmp, tmp);
-            tmp = REDC(u_hi, u_lo, n, inverse_n_modR, MTAG(), LowlatencyTag());
+            tmp = REDC_standard(u_hi, u_lo, n, inverse_n_modR, LowlatencyTag());
         }
         HPBC_ASSERT2(i == bitsT);
-        // we should now have  tmp ≡ R*R (mod n).
+        // We should now have  tmp ≡ R*R (mod n).
+        // REDC_standard's postcondition guarantees the following:
+        HPBC_ASSERT2(tmp < n);
 
-        // REDC's postcondition guarantees the following
-        HPBC_ASSERT2((std::is_same<MTAG, FullrangeTag>::value) ?
-                     tmp < n :
-                     0 < tmp && tmp < 2*n);
-        if (!(std::is_same<MTAG, FullrangeTag>::value)) {
-            if (tmp >= n)
-                tmp = static_cast<T>(tmp - n);  // fully reduce tmp, mod n.
-        }
         rSquaredModN = tmp;
         HPBC_POSTCONDITION2(rSquaredModN ==
                    modular_multiplication_prereduced_inputs(Rmod_n, Rmod_n, n));
@@ -102,9 +74,9 @@ struct impl_get_Rsquared_mod_n {
 
 }} // end namespace
 
-
 #if defined(_MSC_VER)
 #  pragma warning(pop)
 #endif
+
 
 #endif
