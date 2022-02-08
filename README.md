@@ -15,7 +15,7 @@ Released.  All planned functionality and unit tests are finished and working cor
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.TXT](LICENSE.TXT) file for details
+This project is licensed under the MPL 2.0 License - see the [LICENSE.TXT](LICENSE.TXT) file for details
 
 ## TODO
 

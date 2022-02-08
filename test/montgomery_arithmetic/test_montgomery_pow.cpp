@@ -1,5 +1,9 @@
-// --- This file is distributed under the MIT Open Source License, as detailed
-// by the file "LICENSE.TXT" in the root of this repository ---
+// Copyright (c) 2020-2022 Jeffrey Hurchalla.
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 
 // Strictly for testing purposes,  we'll define HURCHALLA_ALLOW_INLINE_ASM_ALL,

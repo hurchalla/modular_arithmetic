@@ -1,5 +1,9 @@
 
 @echo off
+REM This Source Code Form is subject to the terms of the Mozilla Public
+REM License, v. 2.0. If a copy of the MPL was not distributed with this
+REM file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 set build_dir=build\msvc
 
 REM Example of how to use an earlier version of MSVC than the default:
