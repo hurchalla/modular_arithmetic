@@ -26,8 +26,8 @@
 #include "hurchalla/modular_arithmetic/modular_pow.h"
 #include "hurchalla/montgomery_arithmetic/MontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyFullRange.h"
-//#include "hurchalla/montgomery_arithmetic/detail/MontyFullRangeMasked.h"
-//#include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontyFullRangeMasked.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyQuarterRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/experimental/MontySqrtRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyWrappedStandardMath.h"
@@ -631,14 +631,14 @@ TEST(MontgomeryArithmetic, MontyWrappedStandardMath) {
 TEST(MontgomeryArithmetic, MontyFullRange) {
     test_custom_monty<hc::detail::MontyFullRange>();
 }
-/*
+
 TEST(MontgomeryArithmetic, MontyHalfRange) {
     test_custom_monty<hc::detail::MontyHalfRange>();
 }
 TEST(MontgomeryArithmetic, MontyFullRangeMasked) {
     test_custom_monty<hc::detail::MontyFullRangeMasked>();
 }
-*/
+
 TEST(MontgomeryArithmetic, MontyQuarterRange) {
     test_custom_monty<hc::detail::MontyQuarterRange>();
 }
