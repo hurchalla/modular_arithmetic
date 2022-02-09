@@ -30,8 +30,8 @@
 namespace hurchalla { namespace detail {
 
 
-// For discussion purposes, let R = 2^(ut_numeric_limits<T>::digits).  For
-// example if T is uint64_t, then R = 2^64.
+// For discussion purposes, let R = 1<<(ut_numeric_limits<T>::digits).  For
+// example if T is uint64_t, then R = 1<<64.
 
 // MontySqrtRange uses optimizations based on input and output V values being
 // 0 < val <= n_, and on modulus < sqrtR.
@@ -72,7 +72,12 @@ class MontySqrtRange final {
         HURCHALLA_FORCE_INLINE explicit C(T a) : V(a) {}
     };
     // fusing montgomery value (addend/subtrahend for fmadd/fmsub)
-    using FV = C;
+    struct FV : public V {
+        HURCHALLA_FORCE_INLINE FV() = default;
+     protected:
+        friend MontySqrtRange;
+        HURCHALLA_FORCE_INLINE explicit FV(T a) : V(a) {}
+    };
 
  public:
     using MontyTag = TagMontySqrtrange;
@@ -100,7 +105,8 @@ class MontySqrtRange final {
         // getRModN() guarantees the below.  getUnityValue() and
         // getNegativeOneValue() rely on it.
         HPBC_INVARIANT2(0 < r_mod_n_ && r_mod_n_ < n_);
-        // Since n_ == modulus is odd and n_ > 1, n_ can not divide R*R==2^y.
+        // Since n_ == modulus is odd and n_ > 1, n_ can not divide R*R because
+        // R is a power of 2.
         // Thus  r_squared_mod_n_ == R*R (mod n_) != 0.  convertIn relies on it.
         HPBC_INVARIANT2(0 < r_squared_mod_n_ && r_squared_mod_n_ < n_);
     }
@@ -122,11 +128,13 @@ class MontySqrtRange final {
         // expression, in order to avoid a negative value (and a wrong answer)
         // in cases where 'n' would be promoted to type 'int'.
         T tmp = static_cast<T>(static_cast<T>(0) - n);
-        // Compute R%n.  For example, if R==2^64, arithmetic wraparound behavior
+        // Compute R%n.  For example if R==1<<64, arithmetic wraparound behavior
         // of the unsigned integral type T results in (0 - n) representing
-        // (2^64 - n).  Thus, rModN = R%n == (2^64)%n == (2^64 - n)%n == (0-n)%n
+        // ((1<<64) - n).  Thus,
+        // rModN = R%n == (1<<64)%n == ((1<<64) - n)%n == (0-n)%n
         T rModN = static_cast<T>(tmp % n);
-        // Since n is odd and > 1, n does not divide R==2^x.  Thus, rModN != 0
+        // Since n is odd and > 1, n does not divide R because R is a power of
+        // 2.  Thus, rModN != 0
         HPBC_POSTCONDITION2(0 < rModN && rModN < n);
         return rModN;
     }
@@ -335,15 +343,6 @@ class MontySqrtRange final {
         return C(x.get());
     }
 
-    static_assert(std::is_same<FV, C>::value, "");
-    // Note: fmsub and fmadd with FusingValue (FV) arguments will match to
-    // fmsub and fmadd with CanonicalValue args, since C is_same as FV.
-
-    HURCHALLA_FORCE_INLINE FV getFusingValue(V x) const
-    {
-        return getCanonicalValue(x);
-    }
-
     HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
         T a = x.get();
@@ -453,7 +452,6 @@ class MontySqrtRange final {
         // canonical form required by most of the class functions.
         return sum;
     }
-    // Note: fmadd(V, V, FV)  will match to fmadd(V x, V y, C z) above.
 
     template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
     HURCHALLA_FORCE_INLINE V fmsub(V x, V y, C z, PTAG) const
@@ -471,7 +469,28 @@ class MontySqrtRange final {
         // canonical form required by most of the class functions.
         return diff;
     }
-    // Note: fmsub(V, V, FV)  will match to fmsub(V x, V y, C z) above.
+
+    // Note: internal to MontySqrtRange, the contents of FusingValue (FV) and
+    // CanonicalValue (C) variables are interchangeable.  Other Monty types
+    // use FV and C as completely distinct types, and so for genericity we
+    // always present C and FV to the outside world as being unrelated.
+    HURCHALLA_FORCE_INLINE FV getFusingValue(V x) const
+    {
+        C cv = getCanonicalValue(x);
+        return FV(cv.get());
+    }
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V fmadd(V x, V y, FV fv, PTAG) const
+    {
+        C cv = C(fv.get());
+        return fmadd(x, y, cv, PTAG());
+    }
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V fmsub(V x, V y, FV fv, PTAG) const
+    {
+        C cv = C(fv.get());
+        return fmsub(x, y, cv, PTAG());
+    }
 
     // Returns the greatest common divisor of the standard representations
     // (non-montgomery) of both x and the modulus, using the supplied functor.

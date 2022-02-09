@@ -38,8 +38,8 @@ namespace hurchalla {
 // details.
 //
 // For discussion purposes below, let the unlimited precision constant R
-// represent  R = 2^(ut::ut_numeric_limits<T>::digits).  For example, if T is
-// uint64_t, then R = 2^64.
+// represent  R = 1<<(ut::ut_numeric_limits<T>::digits).  For example, if T is
+// uint64_t, then R = 1<<64.
 
 
 //   REDC_standard() returns the standard and normally expected value from REDC,

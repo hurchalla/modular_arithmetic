@@ -149,11 +149,11 @@ void test_fmadd_variants(const M& mf, typename M::MontgomeryValue x,
     EXPECT_TRUE(mf.convertOut(
           mf.template fmadd<hc::LowuopsTag>(x,y,zf)) == expected_result);
 
-    EXPECT_TRUE(mf.convertOut(mf.fmaddCV(x,y,zc)) == expected_result);
+    EXPECT_TRUE(mf.convertOut(mf.fmadd(x,y,zc)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-          mf.template fmaddCV<hc::LowlatencyTag>(x,y,zc)) == expected_result);
+          mf.template fmadd<hc::LowlatencyTag>(x,y,zc)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-          mf.template fmaddCV<hc::LowuopsTag>(x,y,zc)) == expected_result);
+          mf.template fmadd<hc::LowuopsTag>(x,y,zc)) == expected_result);
 }
 
 template <typename M>
@@ -167,11 +167,11 @@ void test_fmsub_variants(const M& mf, typename M::MontgomeryValue x,
     EXPECT_TRUE(mf.convertOut(
           mf.template fmsub<hc::LowuopsTag>(x,y,zf)) == expected_result);
 
-    EXPECT_TRUE(mf.convertOut(mf.fmsubCV(x,y,zc)) == expected_result);
+    EXPECT_TRUE(mf.convertOut(mf.fmsub(x,y,zc)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-          mf.template fmsubCV<hc::LowlatencyTag>(x,y,zc)) == expected_result);
+          mf.template fmsub<hc::LowlatencyTag>(x,y,zc)) == expected_result);
     EXPECT_TRUE(mf.convertOut(
-          mf.template fmsubCV<hc::LowuopsTag>(x,y,zc)) == expected_result);
+          mf.template fmsub<hc::LowuopsTag>(x,y,zc)) == expected_result);
 }
 
 

@@ -20,7 +20,7 @@ namespace hurchalla { namespace detail {
 
 
 // For discussion purposes, let the unlimited precision constant R equal
-// 2^(ut_numeric_limits<T>::digits).  For example when T is uint64_t, R = 2^64.
+// 1<<(ut_numeric_limits<T>::digits). For example when T is uint64_t, R = 1<<64.
 
 // minor note: we use static member functions to disallow ADL.
 

@@ -52,8 +52,12 @@ class MontyWrappedStandardMath final {
         friend MontyWrappedStandardMath;
         HURCHALLA_FORCE_INLINE explicit C(T a) : V(a) {}
     };
-    // fusing montgomery value (addend/subtrahend for fmadd/fmsub)
-    using FV = C;
+    struct FV : public V {                     // fusing montgomery value type
+        HURCHALLA_FORCE_INLINE FV() = default;
+     protected:
+        friend MontyWrappedStandardMath;
+        HURCHALLA_FORCE_INLINE explicit FV(T a) : V(a) {}
+    };
 
     // intended for use in postconditions/preconditions
     HURCHALLA_FORCE_INLINE bool isCanonical(V x) const
@@ -109,15 +113,6 @@ class MontyWrappedStandardMath final {
         return C(x.get());
     }
 
-    static_assert(std::is_same<FV, C>::value, "");
-    // Note: fmsub and fmadd with FusingValue (FV) arguments will match to
-    // fmsub and fmadd with CanonicalValue args, since C is_same as FV.
-
-    HURCHALLA_FORCE_INLINE FV getFusingValue(V x) const
-    {
-        return getCanonicalValue(x);
-    }
-
     HURCHALLA_FORCE_INLINE C getUnityValue() const
     {
         HPBC_INVARIANT2(isCanonical(V(static_cast<T>(1))));
@@ -159,7 +154,6 @@ class MontyWrappedStandardMath final {
         HPBC_POSTCONDITION2(isCanonical(result));
         return result;
     }
-    // Note: fmsub(V, V, FV)  will match to fmsub(V x, V y, C z) above.
     template <class PTAG>   // Performance TAG (ignored by this class)
     HURCHALLA_FORCE_INLINE V fmadd(V x, V y, C z, PTAG) const
     {
@@ -172,7 +166,28 @@ class MontyWrappedStandardMath final {
         HPBC_POSTCONDITION2(isCanonical(result));
         return result;
     }
-    // Note: fmadd(V, V, FV)  will match to fmadd(V x, V y, C z) above.
+
+    // Note: internal to MontyWrappedStandardMath the contents of FusingValue
+    // (FV) and CanonicalValue (C) variables are interchangeable.  Other Monty
+    // types use FV and C as completely distinct types, and so for genericity we
+    // always present C and FV to the outside world as being unrelated.
+    HURCHALLA_FORCE_INLINE FV getFusingValue(V x) const
+    {
+        C cv = getCanonicalValue(x);
+        return FV(cv.get());
+    }
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V fmadd(V x, V y, FV fv, PTAG) const
+    {
+        C cv = C(fv.get());
+        return fmadd(x, y, cv, PTAG());
+    }
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V fmsub(V x, V y, FV fv, PTAG) const
+    {
+        C cv = C(fv.get());
+        return fmsub(x, y, cv, PTAG());
+    }
 
     HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {

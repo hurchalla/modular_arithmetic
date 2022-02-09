@@ -19,8 +19,8 @@
 namespace hurchalla { namespace detail {
 
 
-// For discussion purposes, let R = 2^(ut_numeric_limits<T>::digits).  For
-// example if T is uint64_t, then R = 2^64.
+// For discussion purposes, let R = 1<<(ut_numeric_limits<T>::digits).  For
+// example if T is uint64_t, then R = 1<<64.
 
 // minor note: uses static member functions to disallow ADL.
 struct nimr_helper {

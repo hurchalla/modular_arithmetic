@@ -21,8 +21,8 @@ namespace hurchalla { namespace detail {
 
 
 // The name "Quarterrange" signifies that the modulus must be less than R/4,
-// where  R = 2^(ut_numeric_limits<T>::digits).  For example, if T is uint64_t
-// then R = 2^64 and R/4 == 2^62, and thus it would require  modulus < 2^62.
+// where  R = 1<<(ut_numeric_limits<T>::digits).  For example, if T is uint64_t
+// then R = 1<<64 and R/4 == 1<<62, and thus it would require  modulus < 1<<62.
 
 // The MontyQuarterRange class functions require/allow an unusual input range:
 // for an input x, they allow  0 <= x < 2*n, where n is the modulus.  Similarly,
@@ -68,11 +68,16 @@ struct MontyQRValueTypes {
         HURCHALLA_FORCE_INLINE explicit C(T a) : V(a) {}
     };
     // fusing montgomery value (addend/subtrahend for fmadd/fmsub)
-    using FV = C;
+    struct FV : public V {
+        HURCHALLA_FORCE_INLINE FV() = default;
+     protected:
+        template <typename> friend class MontyQuarterRange;
+        HURCHALLA_FORCE_INLINE explicit FV(T a) : V(a) {}
+    };
 };
 
 
-// Let the theoretical constant R = 2^(ut_numeric_limits<T>::digits).
+// Let the theoretical constant R = 1<<(ut_numeric_limits<T>::digits).
 template <typename T>
 class MontyQuarterRange final : public
                       MontyCommonBase<MontyQuarterRange, MontyQRValueTypes, T> {
@@ -92,9 +97,6 @@ class MontyQuarterRange final : public
     using montvalue_type = V;
     using canonvalue_type = C;
     using fusingvalue_type = FV;
-
-    using BC::fmadd;
-    using BC::fmsub;
 
     explicit MontyQuarterRange(T modulus) : BC(modulus)
     {
@@ -123,13 +125,28 @@ class MontyQuarterRange final : public
         return C(c);
     }
 
-    static_assert(std::is_same<FV, C>::value, "");
-    // Note: fmsub and fmadd with FusingValue (FV) arguments will match to
-    // fmsub and fmadd with CanonicalValue args, since C is_same as FV.
-
+    // Note: internal to MontyQuarterRange, the contents of FusingValue (FV) and
+    // CanonicalValue (C) variables are interchangeable.  Other Monty types
+    // use FV and C as completely distinct types, and so for genericity we
+    // always present C and FV to the outside world as being unrelated.
     HURCHALLA_FORCE_INLINE FV getFusingValue(V x) const
     {
-        return getCanonicalValue(x);
+        C cv = getCanonicalValue(x);
+        return FV(cv.get());
+    }
+    using BC::fmadd;
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V fmadd(V x, V y, FV fv, PTAG) const
+    {
+        C cv = C(fv.get());
+        return fmadd(x, y, cv, PTAG());
+    }
+    using BC::fmsub;
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V fmsub(V x, V y, FV fv, PTAG) const
+    {
+        C cv = C(fv.get());
+        return fmsub(x, y, cv, PTAG());
     }
 
     using BC::add;

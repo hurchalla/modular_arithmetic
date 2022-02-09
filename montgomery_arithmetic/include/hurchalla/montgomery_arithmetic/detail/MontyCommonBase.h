@@ -29,8 +29,8 @@ namespace hurchalla { namespace detail {
 
 
 // For discussion purposes throughout this file, given an unsigned integral type
-// T, let R = 2^(ut_numeric_limits<T>::digits).  For example: if T is uint64_t
-// then R = 2^64.  The name 'R' is based on the wikipedia presentation
+// T, let R = 1<<(ut_numeric_limits<T>::digits).  For example: if T is uint64_t
+// then R = 1<<64.  The name 'R' is based on the wikipedia presentation
 // https://en.wikipedia.org/wiki/Montgomery_modular_multiplication
 //
 // This base class uses the CRTP idiom

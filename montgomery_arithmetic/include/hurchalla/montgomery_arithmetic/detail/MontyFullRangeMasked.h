@@ -35,6 +35,7 @@ struct MfrmValueTypes {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     struct C; // forward declare C so that V can friend it
+    struct FV; // forward declare FV so that V can friend it
     // regular montgomery value type
     struct V {
         // V is a signed integer abstract data type, internally represented by
@@ -79,11 +80,12 @@ struct MfrmValueTypes {
         }
      protected:
         friend struct C;
+        friend struct FV;
         template <typename> friend class MontyFullRangeMasked;
         HURCHALLA_FORCE_INLINE T getbits() const { return lowbits; }
         HURCHALLA_FORCE_INLINE T getmask() const { return signmask; }
-        HURCHALLA_FORCE_INLINE V(T lobits, T smask):
-                                             lowbits(lobits), signmask(smask) {}
+        HURCHALLA_FORCE_INLINE V(T lbits, T smask):
+                                              lowbits(lbits), signmask(smask) {}
      private:
         T lowbits;
         T signmask;
@@ -104,11 +106,18 @@ struct MfrmValueTypes {
         HURCHALLA_FORCE_INLINE explicit C(T a) : BaseMontgomeryValue<T>(a) {}
     };
     // fusing montgomery value (addend/subtrahend for fmadd/fmsub)
-    using FV = C;
+    struct FV : public BaseMontgomeryValue<T> {
+        HURCHALLA_FORCE_INLINE FV() = default;
+        // implicitly convert from fusing value FV to montgomery value V
+        HURCHALLA_FORCE_INLINE operator V() const { return V(this->get(), 0); }
+     protected:
+        template <typename> friend class MontyFullRangeMasked;
+        HURCHALLA_FORCE_INLINE explicit FV(T a) : BaseMontgomeryValue<T>(a) {}
+    };
 };
 
 
-// Let the theoretical constant R = 2^(ut_numeric_limits<T>::digits).
+// Let the theoretical constant R = 1<<(ut_numeric_limits<T>::digits).
 template <typename T>
 class MontyFullRangeMasked final :
            public MontyCommonBase<MontyFullRangeMasked, MfrmValueTypes, T> {
@@ -127,9 +136,6 @@ class MontyFullRangeMasked final :
     using montvalue_type = V;
     using canonvalue_type = C;
     using fusingvalue_type = FV;
-
-    using BC::fmadd;
-    using BC::fmsub;
 
     explicit MontyFullRangeMasked(T modulus) : BC(modulus) {}
     MontyFullRangeMasked(const MontyFullRangeMasked&) = delete;
@@ -151,13 +157,28 @@ class MontyFullRangeMasked final :
         return result;
     }
 
-    static_assert(std::is_same<FV, C>::value, "");
-    // Note: fmsub and fmadd with FusingValue (FV) arguments will match to
-    // fmsub and fmadd with CanonicalValue args, since C is_same as FV.
-
+    // Note: internal to MontyFullRangeMasked, the contents of FusingValue (FV)
+    // and CanonicalValue (C) variables are interchangeable.  Other Monty types
+    // use FV and C as completely distinct types, and so for genericity we
+    // always present C and FV to the outside world as being unrelated.
     HURCHALLA_FORCE_INLINE FV getFusingValue(V x) const
     {
-        return getCanonicalValue(x);
+        C cv = getCanonicalValue(x);
+        return FV(cv.get());
+    }
+    using BC::fmadd;
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V fmadd(V x, V y, FV fv, PTAG) const
+    {
+        C cv = C(fv.get());
+        return fmadd(x, y, cv, PTAG());
+    }
+    using BC::fmsub;
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V fmsub(V x, V y, FV fv, PTAG) const
+    {
+        C cv = C(fv.get());
+        return fmsub(x, y, cv, PTAG());
     }
 
     using BC::add;

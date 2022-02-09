@@ -24,8 +24,8 @@ namespace hurchalla { namespace detail {
 
 
 // The name "Halfrange" signifies that the modulus must be less than R/2, where
-// R = 2^(ut_numeric_limits<T>::digits).  For example, if T is uint64_t then
-// R = 2^64 and R/2 == 2^63, and thus it would require  modulus < 2^63.
+// R = 1<<(ut_numeric_limits<T>::digits).  For example, if T is uint64_t then
+// R = 1<<64 and R/2 == 1<<63, and thus it would require  modulus < (1<<63).
 
 
 struct TagMontyHalfrange final {};
@@ -85,7 +85,7 @@ struct MontyHRValueTypes {
 };
 
 
-// Let the theoretical constant R = 2^(ut_numeric_limits<T>::digits).
+// Let the theoretical constant R = 1<<(ut_numeric_limits<T>::digits).
 template <typename T>
 class MontyHalfRange final :
                   public MontyCommonBase<MontyHalfRange, MontyHRValueTypes, T> {

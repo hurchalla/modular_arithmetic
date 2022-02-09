@@ -24,8 +24,8 @@ namespace hurchalla {
 
 
 // For discussion purposes, let the unlimited precision constant R represent
-// R = 2^(ut_numeric_limits<T>::digits).  For example, if T is uint64_t, then
-// R = 2^64.
+// R = 1<<(ut_numeric_limits<T>::digits).  For example, if T is uint64_t, then
+// R = 1<<64.
 
 // get_Rsquared_mod_n() computes and returns (R*R) % n.
 // You can get the argument inverse_n_modR by calling inverse_mod_r().  You can

@@ -54,11 +54,16 @@ struct MontyFRValueTypes {
         HURCHALLA_FORCE_INLINE explicit C(T a) : V(a) {}
     };
     // fusing montgomery value (addend/subtrahend for fmadd/fmsub)
-    using FV = C;
+    struct FV : public V {
+        HURCHALLA_FORCE_INLINE FV() = default;
+     protected:
+        template <typename> friend class MontyFullRange;
+        HURCHALLA_FORCE_INLINE explicit FV(T a) : V(a) {}
+    };
 };
 
 
-// Let the theoretical constant R = 2^(ut_numeric_limits<T>::digits).
+// Let the theoretical constant R = 1<<(ut_numeric_limits<T>::digits).
 template <typename T>
 class MontyFullRange final :
                   public MontyCommonBase<MontyFullRange, MontyFRValueTypes, T> {
@@ -77,9 +82,6 @@ class MontyFullRange final :
     using montvalue_type = V;
     using canonvalue_type = C;
     using fusingvalue_type = FV;
-
-    using BC::fmadd;
-    using BC::fmsub;
 
     explicit MontyFullRange(T modulus) : BC(modulus) {}
     MontyFullRange(const MontyFullRange&) = delete;
@@ -100,13 +102,28 @@ class MontyFullRange final :
         return C(x.get());
     }
 
-    static_assert(std::is_same<FV, C>::value, "");
-    // Note: fmsub and fmadd with FusingValue (FV) arguments will match to
-    // fmsub and fmadd with CanonicalValue args, since C is_same as FV.
-
+    // Note: internal to MontyFullRange, the contents of FusingValue (FV) and
+    // CanonicalValue (C) variables are interchangeable.  Other Monty types
+    // use FV and C as completely distinct types, and so for genericity we
+    // always present C and FV to the outside world as being unrelated.
     HURCHALLA_FORCE_INLINE FV getFusingValue(V x) const
     {
-        return getCanonicalValue(x);
+        C cv = getCanonicalValue(x);
+        return FV(cv.get());
+    }
+    using BC::fmadd;
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V fmadd(V x, V y, FV fv, PTAG) const
+    {
+        C cv = C(fv.get());
+        return fmadd(x, y, cv, PTAG());
+    }
+    using BC::fmsub;
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V fmsub(V x, V y, FV fv, PTAG) const
+    {
+        C cv = C(fv.get());
+        return fmsub(x, y, cv, PTAG());
     }
 
     using BC::add;

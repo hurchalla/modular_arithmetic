@@ -195,8 +195,8 @@ struct impl_modular_addition<std::uint64_t> {
 
 // ---------Theorem and proof for Version #2--------
 // The constant "R" used below represents the value
-// R = 2^(ut_numeric_limits<T>::digits).  For example, if T is uint64_t,
-// then R = 2^64.
+// R = 1<<(ut_numeric_limits<T>::digits).  For example, if T is uint64_t,
+// then R = 1<<64.
 // We'll use a psuedo-cast notation of (Z)x to indicate when we are treating x
 // as an infinite precision signed integer - i.e. a member of the set Z of
 // mathematical integers.

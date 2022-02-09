@@ -314,7 +314,7 @@ public:
     // Usually you don't want to specify PTAG (just accept the default).  For
     // advanced use: PTAG can be LowlatencyTag or LowuopsTag
     template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
-    MontgomeryValue fmsubCV(MontgomeryValue x, MontgomeryValue y,
+    MontgomeryValue fmsub(MontgomeryValue x, MontgomeryValue y,
                                                          CanonicalValue z) const
     {
         MontgomeryValue ret = impl.fmsub(x, y, z, PTAG());
@@ -356,7 +356,7 @@ public:
     // Usually you don't want to specify PTAG (just accept the default).  For
     // advanced use: PTAG can be LowlatencyTag or LowuopsTag
     template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
-    MontgomeryValue fmaddCV(MontgomeryValue x, MontgomeryValue y,
+    MontgomeryValue fmadd(MontgomeryValue x, MontgomeryValue y,
                                                          CanonicalValue z) const
     {
         MontgomeryValue ret = impl.fmadd(x, y, z, PTAG());

@@ -36,8 +36,8 @@ namespace hurchalla { namespace detail {
 // and our postconditions ensure we will always provide valid values for
 // MontySqrtRange.
 
-// For discussion purposes, let R = 2^(ut_numeric_limits<T>::digits).  For
-// example if T is uint64_t, then R = 2^64.
+// For discussion purposes, let R = 1<<(ut_numeric_limits<T>::digits).  For
+// example if T is uint64_t, then R = 1<<64.
 
 
 // minor note: uses a static member function to disallow ADL.
