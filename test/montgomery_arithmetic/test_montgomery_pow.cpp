@@ -74,10 +74,6 @@ void test_pow(M& mf, typename M::IntegerType base,
     test_pow_array<2>(mf, base, exponent);
     test_pow_array<3>(mf, base, exponent);
     test_pow_array<4>(mf, base, exponent);
-    test_pow_array<5>(mf, base, exponent);
-    test_pow_array<6>(mf, base, exponent);
-    test_pow_array<7>(mf, base, exponent);
-    test_pow_array<8>(mf, base, exponent);
     test_pow_array<9>(mf, base, exponent);
     test_pow_array<14>(mf, base, exponent);
     test_pow_array<29>(mf, base, exponent);
@@ -117,8 +113,10 @@ void run_pow_tests()
         test_pow(mf, base, exponent);
     }
 
+
     // Try a bunch of general tests...
-    {
+
+    if (M::max_modulus() >= 113) {
         M mf(113);
         T base = 5; T exponent = 6;
         test_pow(mf, base, exponent);
@@ -173,28 +171,65 @@ void run_pow_tests()
 
 TEST(MontgomeryArithmetic, montgomery_pow) {
     run_pow_tests<hc::MontgomeryForm<std::uint8_t>>();
-    run_pow_tests<hc::MontgomeryQuarter<std::uint8_t>>();
-    run_pow_tests<hc::MontgomeryStandardMathWrapper<std::uint8_t>>();
-
-    run_pow_tests<hc::MontgomeryForm<std::uint16_t>>();
-    run_pow_tests<hc::MontgomeryQuarter<std::uint16_t>>();
-    run_pow_tests<hc::MontgomeryStandardMathWrapper<std::uint16_t>>();
-
-    run_pow_tests<hc::MontgomeryForm<std::uint32_t>>();
-    run_pow_tests<hc::MontgomeryQuarter<std::uint32_t>>();
-    run_pow_tests<hc::MontgomeryStandardMathWrapper<std::uint32_t>>();
-
-    run_pow_tests<hc::MontgomeryForm<std::uint64_t>>();
-    run_pow_tests<hc::MontgomeryQuarter<std::uint64_t>>();
-    run_pow_tests<hc::MontgomeryStandardMathWrapper<std::uint64_t>>();
 
     run_pow_tests<hc::MontgomeryForm<std::uint32_t,
                               hc::detail::MontySqrtRange<std::uint64_t>>>();
 
+    run_pow_tests<hc::MontgomeryForm<std::uint8_t,
+                        hc::detail::MontyQuarterRange<std::uint8_t>>>();
+    run_pow_tests<hc::MontgomeryForm<std::uint8_t,
+                        hc::detail::MontyHalfRange<std::uint8_t>>>();
+    run_pow_tests<hc::MontgomeryForm<std::uint8_t,
+                        hc::detail::MontyFullRange<std::uint8_t>>>();
+    run_pow_tests<hc::MontgomeryForm<std::uint8_t,
+                        hc::detail::MontyFullRangeMasked<std::uint8_t>>>();
+    run_pow_tests<hc::MontgomeryForm<std::uint8_t,
+                        hc::detail::MontyWrappedStandardMath<std::uint8_t>>>();
+
+    run_pow_tests<hc::MontgomeryForm<std::uint16_t,
+                        hc::detail::MontyQuarterRange<std::uint16_t>>>();
+    run_pow_tests<hc::MontgomeryForm<std::uint16_t,
+                        hc::detail::MontyHalfRange<std::uint16_t>>>();
+    run_pow_tests<hc::MontgomeryForm<std::uint16_t,
+                        hc::detail::MontyFullRange<std::uint16_t>>>();
+    run_pow_tests<hc::MontgomeryForm<std::uint16_t,
+                        hc::detail::MontyFullRangeMasked<std::uint16_t>>>();
+    run_pow_tests<hc::MontgomeryForm<std::uint16_t,
+                        hc::detail::MontyWrappedStandardMath<std::uint16_t>>>();
+
+    run_pow_tests<hc::MontgomeryForm<std::uint32_t,
+                        hc::detail::MontyQuarterRange<std::uint32_t>>>();
+    run_pow_tests<hc::MontgomeryForm<std::uint32_t,
+                        hc::detail::MontyHalfRange<std::uint32_t>>>();
+    run_pow_tests<hc::MontgomeryForm<std::uint32_t,
+                        hc::detail::MontyFullRange<std::uint32_t>>>();
+    run_pow_tests<hc::MontgomeryForm<std::uint32_t,
+                        hc::detail::MontyFullRangeMasked<std::uint32_t>>>();
+    run_pow_tests<hc::MontgomeryForm<std::uint32_t,
+                        hc::detail::MontyWrappedStandardMath<std::uint32_t>>>();
+
+    run_pow_tests<hc::MontgomeryForm<std::uint64_t,
+                        hc::detail::MontyQuarterRange<std::uint64_t>>>();
+    run_pow_tests<hc::MontgomeryForm<std::uint64_t,
+                        hc::detail::MontyHalfRange<std::uint64_t>>>();
+    run_pow_tests<hc::MontgomeryForm<std::uint64_t,
+                        hc::detail::MontyFullRange<std::uint64_t>>>();
+    run_pow_tests<hc::MontgomeryForm<std::uint64_t,
+                        hc::detail::MontyFullRangeMasked<std::uint64_t>>>();
+    run_pow_tests<hc::MontgomeryForm<std::uint64_t,
+                        hc::detail::MontyWrappedStandardMath<std::uint64_t>>>();
+
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
-    run_pow_tests<hc::MontgomeryForm<__uint128_t>>();
-    run_pow_tests<hc::MontgomeryQuarter<__uint128_t>>();
-    run_pow_tests<hc::MontgomeryStandardMathWrapper<__uint128_t>>();
+    run_pow_tests<hc::MontgomeryForm<__uint128_t,
+                        hc::detail::MontyQuarterRange<__uint128_t>>>();
+    run_pow_tests<hc::MontgomeryForm<__uint128_t,
+                        hc::detail::MontyHalfRange<__uint128_t>>>();
+    run_pow_tests<hc::MontgomeryForm<__uint128_t,
+                        hc::detail::MontyFullRange<__uint128_t>>>();
+    run_pow_tests<hc::MontgomeryForm<__uint128_t,
+                        hc::detail::MontyFullRangeMasked<__uint128_t>>>();
+    run_pow_tests<hc::MontgomeryForm<__uint128_t,
+                        hc::detail::MontyWrappedStandardMath<__uint128_t>>>();
 #endif
 }
 

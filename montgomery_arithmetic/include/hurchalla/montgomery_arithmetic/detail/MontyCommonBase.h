@@ -208,8 +208,8 @@ class MontyCommonBase {
         return result;
     }
 
-// the Derived class might overload fmsub and fmadd in order to offer better
-// efficiency, using a dedicated type FV (FusingValue) rather than C
+// the Derived class will have overloads of fmsub and fmadd that might offer
+// better efficiency, using a dedicated type FV (FusingValue) rather than C
 // (CanonicalValue) for the addend/subtrahend z.
 
     // Multiplies two montgomery values x and y, and then subtracts canonical

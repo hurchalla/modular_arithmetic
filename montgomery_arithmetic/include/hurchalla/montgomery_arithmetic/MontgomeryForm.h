@@ -274,6 +274,12 @@ public:
 
 
     // Returns the modular product of (the montgomery values) x and y.
+    // Performance note: when calling this function and deciding which variable
+    // to supply for its first argument and which to supply for its second
+    // argument, you should prefer to use your variable which has changed less
+    // recently for the second argument.  If possible, it is best to use a non-
+    // loop carried dependency for the second argument.  This can improve
+    // preformance for some Monty types.
     // Usually you don't want to specify PTAG (just accept the default).  For
     // advanced use: PTAG can be LowlatencyTag or LowuopsTag
     template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
@@ -288,6 +294,7 @@ public:
     // This overload is an optimized equivalent of doing
     //    MontgomeryValue result = multiply(x, y);
     //    bool resultIsZero = (getCanonicalValue(result) == getZeroValue());
+    // Performance note: same as given for multiply() above.
     // Note on the optimization: for some Monty Types (e.g. MontyQuarterRange),
     // setting resultIsZero via delegation to a lower level (as we do here) lets
     // us avoid an extra conditional move for getCanonicalValue().
@@ -303,7 +310,8 @@ public:
 
     // "Fused multiply-subtract" operation:  Returns the modular evaluation of
     // (x * y) - z.  Note that z must be a canonical value.
-    // Performance note: This function usually has the benefits of both lower
+    // Performance note 1: see the note for multiply(), which applies here too.
+    // Performance note 2: This function usually has the benefits of both lower
     // latency and fewer uops than subtract(multiply(x, y), z).  You can expect
     // that this function will never be less efficient, and thus you should
     // almost always prefer to use it over the combination of subtract/multiply.
@@ -326,10 +334,12 @@ public:
     // parameter z, which can be more efficient for some MontyTypes.  It is
     // never less efficient.
     // Note: when using a MontyType that receives a performance benefit from
-    // using a FusingValue, calling getFusingValue() to initialize the
-    // FusingValue (presumably initialized outside a loop where this really
-    // wouldn't matter) is less efficient than calling getCanonicalValue() to
-    // initialize a CanonicalValue.
+    // using a FusingValue, we can note that getFusingValue() is slower than
+    // getCanonicalValue() would have been.  This is rarely a reason to prefer
+    // the overload of fmsub that uses a CanonicalValue though.  Normally
+    // getFusingValue and getCanonicalValue would be called outside a loop, and
+    // fmsub would be called inside the loop- which is the place performance
+    // matters.
     template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
     MontgomeryValue fmsub(MontgomeryValue x, MontgomeryValue y,
                                                             FusingValue z) const
