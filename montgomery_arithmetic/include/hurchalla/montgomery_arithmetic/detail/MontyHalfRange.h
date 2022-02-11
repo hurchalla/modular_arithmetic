@@ -126,6 +126,15 @@ class MontyHalfRange final :
                                        (ut_numeric_limits<T>::digits - 1)) - 1);
     }
 
+    HURCHALLA_FORCE_INLINE V negate(V x) const
+    {
+        HPBC_PRECONDITION2(isValid(x));
+        S sx = x.get();
+        S result = static_cast<S>(-sx);
+        HPBC_POSTCONDITION2(isValid(V(result)));
+        return V(result);
+    }
+
     HURCHALLA_FORCE_INLINE C getCanonicalValue(V x) const
     {
         HPBC_PRECONDITION2(isValid(x));

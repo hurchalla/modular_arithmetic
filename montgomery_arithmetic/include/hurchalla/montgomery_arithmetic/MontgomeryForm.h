@@ -263,12 +263,14 @@ public:
     HURCHALLA_FORCE_INLINE
     MontgomeryValue negate(MontgomeryValue x) const
     {
-        return subtract(getZeroValue(), x);
+        return impl.negate(x);
     }
     // Returns the modular negation of the canonical value x.
     HURCHALLA_FORCE_INLINE
     CanonicalValue negate(CanonicalValue x) const
     {
+        // we dont expect an impl would be able to do better than this. The
+        // obvious optimization (modulus-x) generally is no good for x==0.
         return subtract(getZeroValue(), x);
     }
 

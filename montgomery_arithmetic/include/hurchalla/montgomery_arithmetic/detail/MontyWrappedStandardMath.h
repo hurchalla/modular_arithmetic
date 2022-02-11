@@ -131,6 +131,11 @@ class MontyWrappedStandardMath final {
         return C(negOne);
     }
 
+    HURCHALLA_FORCE_INLINE V negate(V x) const
+    {
+        return subtract(getZeroValue(), x);
+    }
+
     template <class PTAG>   // Performance TAG (ignored by this class)
     HURCHALLA_FORCE_INLINE V multiply(V x, V y, bool& isZero, PTAG) const
     {

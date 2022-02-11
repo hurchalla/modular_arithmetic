@@ -114,6 +114,11 @@ class MontyQuarterRange final : public
                                        (ut_numeric_limits<T>::digits - 2)) - 1);
     }
 
+    HURCHALLA_FORCE_INLINE V negate(V x) const
+    {
+        return subtract(BC::getZeroValue(), x);
+    }
+
     HURCHALLA_FORCE_INLINE C getCanonicalValue(V x) const
     {
         // this static_assert guarantees 0 <= x.get()

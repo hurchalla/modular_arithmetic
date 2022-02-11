@@ -343,6 +343,11 @@ class MontySqrtRange final {
         return C(x.get());
     }
 
+    HURCHALLA_FORCE_INLINE V negate(V x) const
+    {
+        return subtract(getZeroValue(), x);
+    }
+
     HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
         T a = x.get();

@@ -94,6 +94,11 @@ class MontyFullRange final :
                 ut_numeric_limits<T>::max();
     }
 
+    HURCHALLA_FORCE_INLINE V negate(V x) const
+    {
+        return subtract(BC::getZeroValue(), x);
+    }
+
     HURCHALLA_FORCE_INLINE C getCanonicalValue(V x) const
     {
         // this static_assert guarantees 0 <= x.get()
