@@ -22,7 +22,7 @@ if (NOT TARGET gtest_main)
     FetchContent_Declare(
         googletest
         GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG        master
+        GIT_TAG        main
     )
     #git tag of release-1.8.0 instead?
     FetchContent_GetProperties(googletest)
