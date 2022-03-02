@@ -12,6 +12,9 @@
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
+#include "hurchalla/modular_arithmetic/modular_addition.h"
+#include "hurchalla/modular_arithmetic/modular_subtraction.h"
+#include "hurchalla/modular_arithmetic/absolute_value_difference.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/util/compiler_macros.h"
@@ -131,7 +134,6 @@ class MontyFullRange final :
         return fmsub(x, y, cv, PTAG());
     }
 
-    using BC::add;
     HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
         HPBC_PRECONDITION2(isValid(x));
@@ -141,8 +143,15 @@ class MontyFullRange final :
         return V(result);
     }
     // Note: add(V, C) will match to add(V x, V y) above
+    HURCHALLA_FORCE_INLINE C add(C cx, C cy) const
+    {
+        HPBC_PRECONDITION2(cx.get() < n_);
+        HPBC_PRECONDITION2(cy.get() < n_);
+        T result = modular_addition_prereduced_inputs(cx.get(), cy.get(), n_);
+        HPBC_POSTCONDITION2(result < n_);
+        return C(result);
+    }
 
-    using BC::subtract;
     HURCHALLA_FORCE_INLINE V subtract(V x, V y) const
     {
         HPBC_PRECONDITION2(isValid(x));
@@ -153,6 +162,14 @@ class MontyFullRange final :
     }
     // Note: subtract(V, C) will match to subtract(V x, V y) above
     // Note: subtract(C, V) will match to subtract(V x, V y) above
+    HURCHALLA_FORCE_INLINE C subtract(C cx, C cy) const
+    {
+        HPBC_PRECONDITION2(cx.get() < n_);
+        HPBC_PRECONDITION2(cy.get() < n_);
+        T result= modular_subtraction_prereduced_inputs(cx.get(), cy.get(), n_);
+        HPBC_POSTCONDITION2(result < n_);
+        return C(result);
+    }
 
     HURCHALLA_FORCE_INLINE V unordered_subtract(V x, V y) const
     {

@@ -16,16 +16,25 @@
 namespace hurchalla {
 
 
+// Performance note:
+//   On some systems, this function may perform better when T is signed than
+// when it is unsigned.  Specifically, when HURCHALLA_AVOID_CSELECT is defined
+// (see hurchalla/util/compiler_macros.h) a signed type can perform better; if
+// it is not defined you should expect no performance difference between signed
+// and unsigned.
+
+
 template <typename T>
 T absolute_value_difference(T a, T b)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
-    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+    HPBC_PRECONDITION(a >= 0);
+    HPBC_PRECONDITION(b >= 0);
 
     T result = detail::impl_absolute_value_difference<T>::call(a, b);
 
+    HPBC_POSTCONDITION(result >= 0);
     HPBC_POSTCONDITION(result == ((a>b) ? a-b : b-a));
-    HPBC_POSTCONDITION(result<=a || result<=b);
     return result;
 }
 

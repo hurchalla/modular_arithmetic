@@ -59,13 +59,9 @@ struct impl_modular_multiplicative_inverse {
     S y = y1;
     U gcd = a1;
     if (gcd == 1) {
-#if 0
-        U inv = (y < 0) ? static_cast<U>(static_cast<U>(y) + modulus) :
-                                                              static_cast<U>(y);
-#else
-        U inv = static_cast<U>(y);
-        HURCHALLA_CMOV(y < 0, inv, static_cast<U>(static_cast<U>(y) + modulus));
-#endif
+        U inv;  // inv = (y<0) ? y+modulus : y
+        HURCHALLA_CSELECT(inv, y<0, static_cast<U>(static_cast<U>(y) + modulus),
+                                                             static_cast<U>(y));
         HPBC_POSTCONDITION2(inv < modulus);
         return static_cast<T>(inv);
     } else

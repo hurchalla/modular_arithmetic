@@ -186,9 +186,13 @@ struct DefaultRedcStandard
     T result = RedcIncomplete::call(ovf, u_hi, u_lo, n, inv_n);
     // By RedcIncomplete::call()'s Postcondition #1, we get
     // T final_result = (ovf) ? static_cast<T>(result + n) : result;
-    T final_result = result;
-    HURCHALLA_CMOV(ovf, final_result, static_cast<T>(result + n));
-
+#if defined(HURCHALLA_AVOID_CSELECT)
+    T mask = static_cast<T>(-static_cast<T>(ovf));
+    T final_result = static_cast<T>(result + (mask & n));
+#else
+    T final_result;
+    HURCHALLA_CSELECT(final_result, ovf, static_cast<T>(result+n), result);
+#endif
     HPBC_POSTCONDITION2(final_result < n);
     return final_result;
   }

@@ -163,7 +163,7 @@
 
 
 
-while getopts ":m:c:h-:rau" opt; do
+while getopts ":m:c:h-:raus" opt; do
   case $opt in
     h)
       ;&
@@ -185,6 +185,9 @@ while getopts ":m:c:h-:rau" opt; do
       ;;
     u)
       use_all_inline_asm="-DHURCHALLA_ALLOW_INLINE_ASM_ALL=1"
+      ;;
+    s)
+      test_avoid_cselect="-DHURCHALLA_AVOID_CSELECT=1"
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -444,6 +447,7 @@ if [ "${mode,,}" = "release" ]; then
     cmake -S. -B./$build_dir -DTEST_HURCHALLA_LIBS=ON \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_FLAGS="$cpp_standard  \
+            $test_avoid_cselect \
             $use_inline_asm  $use_all_inline_asm \
             $gcc_static_analysis"  "${clang_static_analysis[@]}" \
             $cmake_cpp_compiler $cmake_c_compiler
@@ -459,6 +463,7 @@ elif [ "${mode,,}" = "debug" ]; then
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_EXE_LINKER_FLAGS="$clang_ubsan_link_flags" \
             -DCMAKE_CXX_FLAGS="$cpp_standard  $clang_ubsan  $gcc_ubsan  \
+            $test_avoid_cselect \
             $use_inline_asm  $use_all_inline_asm \
             $gcc_static_analysis"  "${clang_static_analysis[@]}" \
             $cmake_cpp_compiler $cmake_c_compiler

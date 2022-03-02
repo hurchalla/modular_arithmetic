@@ -33,6 +33,8 @@ namespace hc = ::hurchalla;
 template <typename T>
 void test_modulus(T modulus)
 {
+    EXPECT_TRUE(modulus > 2); // if this fails, this test file has a bug
+
     T a = 0;
     T b = 0;
     EXPECT_TRUE(static_cast<T>(0) ==
@@ -141,6 +143,14 @@ TEST(ModularArithmetic, modular_addition) {
     test_modular_addition<std::uint64_t>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
     test_modular_addition<__uint128_t>();
+#endif
+
+    test_modular_addition<std::int8_t>();
+    test_modular_addition<std::int16_t>();
+    test_modular_addition<std::int32_t>();
+    test_modular_addition<std::int64_t>();
+#if HURCHALLA_COMPILER_HAS_UINT128_T()
+    test_modular_addition<__int128_t>();
 #endif
 }
 

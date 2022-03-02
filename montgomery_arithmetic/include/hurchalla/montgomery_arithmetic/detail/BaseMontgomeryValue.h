@@ -35,7 +35,8 @@ public:
                              HURCHALLA_TARGET_BIT_WIDTH)>::type 
     cmov(bool cond, BaseMontgomeryValue v)
     {
-        HURCHALLA_CMOV(cond, value, v.value);
+          // value = cond ? v.value : value
+        HURCHALLA_CSELECT(value, cond, v.value, value);
     }
 
     template <typename T1 = T> HURCHALLA_FORCE_INLINE

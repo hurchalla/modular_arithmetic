@@ -65,17 +65,17 @@ struct default_montadd_sqrt_range {
     T tmp = static_cast<T>(n - b);
     T sum = static_cast<T>(a + b);
     T tmp2 = static_cast<T>(a - tmp);
-# if 0
-    T result = (a <= tmp) ? sum : tmp2;
-# else
-    T result = tmp2;
-    HURCHALLA_CMOV(a <= tmp, result, sum);
-# endif
+    T result;  // set result = (a <= tmp) ? sum : tmp2
+    HURCHALLA_CSELECT(result, a <= tmp, sum, tmp2);
 
     HPBC_POSTCONDITION2(0 < result && result <= n);
     return result;
   }
 };
+
+
+
+
 
 
 // primary template

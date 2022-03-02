@@ -101,6 +101,14 @@ TEST(ModularArithmetic, absolute_value_difference) {
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
     test_absolute_value_difference<__uint128_t>();
 #endif
+
+    test_absolute_value_difference<std::int8_t>();
+    test_absolute_value_difference<std::int16_t>();
+    test_absolute_value_difference<std::int32_t>();
+    test_absolute_value_difference<std::int64_t>();
+#if HURCHALLA_COMPILER_HAS_UINT128_T()
+    test_absolute_value_difference<__int128_t>();
+#endif
 }
 
 

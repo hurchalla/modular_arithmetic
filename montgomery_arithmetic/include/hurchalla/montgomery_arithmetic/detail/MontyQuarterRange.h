@@ -9,9 +9,15 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_QUARTER_RANGE_H_INCLUDED
 
 
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/quarterrange_get_canonical.h"
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/quarterrange_subtract_canonical.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
+#include "hurchalla/modular_arithmetic/modular_addition.h"
+#include "hurchalla/modular_arithmetic/modular_subtraction.h"
+#include "hurchalla/modular_arithmetic/absolute_value_difference.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/traits/extensible_make_signed.h"
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
@@ -91,6 +97,17 @@ class MontyQuarterRange final : public
     using typename BC::V;
     using typename BC::C;
     using FV = typename MontyQRValueTypes<T>::FV;
+
+    using S = typename extensible_make_signed<T>::type;
+#if defined(HURCHALLA_AVOID_CSELECT)
+    static_assert((static_cast<S>(-1) >> 1) == static_cast<S>(-1),
+                          "Arithmetic right shift is required but unavailable");
+#endif
+    static_assert(static_cast<S>(-1) == ~(static_cast<S>(0)),
+                                  "S must use two's complement representation");
+    static_assert(static_cast<S>(static_cast<T>(static_cast<S>(-1))) ==
+                  static_cast<S>(-1), "Casting a signed S value to unsigned and"
+                               " back again must result in the original value");
  public:
     using MontyTag = TagMontyQuarterrange;
     using uint_type = T;
@@ -101,7 +118,7 @@ class MontyQuarterRange final : public
     explicit MontyQuarterRange(T modulus) : BC(modulus)
     {
         // MontyQuarterRange requires  modulus < R/4
-        T Rdiv4 = static_cast<T>(static_cast<T>(1) <<
+        constexpr T Rdiv4 = static_cast<T>(static_cast<T>(1) <<
                                        (ut_numeric_limits<T>::digits - 2));
         HPBC_PRECONDITION2(modulus < Rdiv4);
     }
@@ -121,13 +138,10 @@ class MontyQuarterRange final : public
 
     HURCHALLA_FORCE_INLINE C getCanonicalValue(V x) const
     {
-        // this static_assert guarantees 0 <= x.get()
-        static_assert(!(ut_numeric_limits<decltype(x.get())>::is_signed), "");
-        HPBC_PRECONDITION2(x.get() < static_cast<T>(2*n_));
-        T c = static_cast<T>(x.get() - n_);
-        HURCHALLA_CMOV(x.get() < n_, c, x.get()); //if x.get()<n_, set c=x.get()
-        HPBC_POSTCONDITION2(c < n_);
-        return C(c);
+        HPBC_PRECONDITION2(0 <= x.get() && x.get() < static_cast<T>(2*n_));
+        T result = quarterrange_get_canonical<T>::call(x.get(), n_);
+        HPBC_POSTCONDITION2(0 <= result && result < n_);
+        return C(result);
     }
 
     // Note: internal to MontyQuarterRange, the contents of FusingValue (FV) and
@@ -154,42 +168,105 @@ class MontyQuarterRange final : public
         return fmsub(x, y, cv, PTAG());
     }
 
-    using BC::add;
     HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isValid(y));
+        // a type V value can be up to 2*n_, which requires digits-1 bits.
+        constexpr int max_bits_needed = ut_numeric_limits<T>::digits - 1;
+        constexpr T limit = static_cast<T>(static_cast<T>(1)<<max_bits_needed);
         T n2 = static_cast<T>(2*n_);
-        T result = modular_addition_prereduced_inputs(x.get(), y.get(), n2);
+        HPBC_ASSERT2(x.get() < limit);
+        HPBC_ASSERT2(y.get() < limit);
+        HPBC_ASSERT2(n2 < limit);
+        S sx = static_cast<S>(x.get());
+        S sy = static_cast<S>(y.get());
+        S sn2 = static_cast<S>(n2);
+        S modsum = modular_addition_prereduced_inputs(sx, sy, sn2);
+        HPBC_ASSERT2(modsum >= 0);
+        T result = static_cast<T>(modsum);
+        HPBC_POSTCONDITION2(result < n2);
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
-    HURCHALLA_FORCE_INLINE V add(V x, C y) const
+    HURCHALLA_FORCE_INLINE V add(V x, C cy) const
     {
         HPBC_PRECONDITION2(isValid(x));
-        HPBC_PRECONDITION2(y.get() < n_);
-        T result = mont_add_canonical_value<T>::call(x.get(), y.get(), n_);
+        HPBC_PRECONDITION2(cy.get() < n_);
+        C cx = getCanonicalValue(x);
+        T result = static_cast<T>(cx.get() + cy.get());
+        HPBC_ASSERT2(result < 2*n_);
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
+    HURCHALLA_FORCE_INLINE C add(C cx, C cy) const
+    {
+        HPBC_PRECONDITION2(cx.get() < n_);
+        HPBC_PRECONDITION2(cy.get() < n_);
+        // a type C value has range [0,n), which requires digits-2 bits.
+        constexpr int max_bits_needed = ut_numeric_limits<T>::digits - 2;
+        constexpr T limit = static_cast<T>(static_cast<T>(1)<<max_bits_needed);
+        HPBC_ASSERT2(cx.get() < limit);
+        HPBC_ASSERT2(cy.get() < limit);
+        HPBC_ASSERT2(n_ < limit);
+        S sx = static_cast<S>(cx.get());
+        S sy = static_cast<S>(cy.get());
+        S sn = static_cast<S>(n_);
+        S modsum = modular_addition_prereduced_inputs(sx, sy, sn);
+        HPBC_ASSERT2(modsum >= 0);
+        T result = static_cast<T>(modsum);
+        HPBC_POSTCONDITION2(result < n_);
+        return C(result);
+    }
 
-    using BC::subtract;
     HURCHALLA_FORCE_INLINE V subtract(V x, V y) const
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isValid(y));
+        // a type V value can be up to 2*n, which requires digits-1 bits.
+        constexpr int max_bits_needed = ut_numeric_limits<T>::digits - 1;
+        constexpr T limit = static_cast<T>(static_cast<T>(1)<<max_bits_needed);
         T n2 = static_cast<T>(2*n_);
-        T result = modular_subtraction_prereduced_inputs(x.get(), y.get(), n2);
+        HPBC_ASSERT2(x.get() < limit);
+        HPBC_ASSERT2(y.get() < limit);
+        HPBC_ASSERT2(n2 < limit);
+        S sx = static_cast<S>(x.get());
+        S sy = static_cast<S>(y.get());
+        S sn2 = static_cast<S>(n2);
+        S moddiff = modular_subtraction_prereduced_inputs(sx, sy, sn2);
+        HPBC_ASSERT2(moddiff >= 0);
+        T result = static_cast<T>(moddiff);
+        HPBC_POSTCONDITION2(result < n2);
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
-    HURCHALLA_FORCE_INLINE V subtract(V x, C y) const
+    HURCHALLA_FORCE_INLINE V subtract(V x, C cy) const
     {
         HPBC_PRECONDITION2(isValid(x));
-        HPBC_PRECONDITION2(y.get() < n_);
-        T result = mont_subtract_canonical_value<T>::call(x.get(), y.get(), n_);
+        HPBC_PRECONDITION2(cy.get() < n_);
+        T result = quarterrange_subtract_canonical<T>::call(
+                                                         x.get(), cy.get(), n_);
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
+    }
+    HURCHALLA_FORCE_INLINE C subtract(C cx, C cy) const
+    {
+        HPBC_PRECONDITION2(cx.get() < n_);
+        HPBC_PRECONDITION2(cy.get() < n_);
+        // a type C value has range [0,n), which requires digits-2 bits.
+        constexpr int max_bits_needed = ut_numeric_limits<T>::digits - 2;
+        constexpr T limit = static_cast<T>(static_cast<T>(1)<<max_bits_needed);
+        HPBC_ASSERT2(cx.get() < limit);
+        HPBC_ASSERT2(cy.get() < limit);
+        HPBC_ASSERT2(n_ < limit);
+        S sx = static_cast<S>(cx.get());
+        S sy = static_cast<S>(cy.get());
+        S sn = static_cast<S>(n_);
+        S moddiff = modular_subtraction_prereduced_inputs(sx, sy, sn);
+        HPBC_ASSERT2(moddiff >= 0);
+        T result = static_cast<T>(moddiff);
+        HPBC_POSTCONDITION2(result < n_);
+        return C(result);
     }
     // Note: subtract(C, V) will match to subtract(V x, V y) above
 
@@ -197,12 +274,21 @@ class MontyQuarterRange final : public
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isValid(y));
-        T result = absolute_value_difference(x.get(), y.get());
+        // a type V value can be up to 2*n_, which requires digits-1 bits.
+        constexpr int max_bits_needed = ut_numeric_limits<T>::digits - 1;
+        constexpr T limit = static_cast<T>(static_cast<T>(1)<<max_bits_needed);
+        HPBC_ASSERT2(x.get() < limit);
+        HPBC_ASSERT2(y.get() < limit);
+        S sx = static_cast<S>(x.get());
+        S sy = static_cast<S>(y.get());
+        S absdiff = absolute_value_difference(sx, sy);
+        HPBC_ASSERT2(absdiff >= 0);
+        T result = static_cast<T>(absdiff);
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
-    // Note: unordered_subtract(C, V) and unordered_subtract(V, C) will match to
-    // unordered_subtract(V x, V y) above
+    // Note: unordered_subtract(C, V) and unordered_subtract(V, C) and
+    // unordered_subtract(C, C) all match to unordered_subtract(V x, V y) above.
 
 private:
     // functions called by the 'curiously recurring template pattern' base (BC).

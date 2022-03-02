@@ -12,6 +12,8 @@
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
+#include "hurchalla/modular_arithmetic/modular_addition.h"
+#include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
@@ -55,8 +57,10 @@ struct MfrmValueTypes {
                                  HURCHALLA_TARGET_BIT_WIDTH)>::type 
         cmov(bool cond, V v)
         {
-            HURCHALLA_CMOV(cond, lowbits, v.lowbits);
-            HURCHALLA_CMOV(cond, signmask, v.signmask);
+            // lowbits = (cond) ? v.lowbits : lowbits
+            HURCHALLA_CSELECT(lowbits, cond, v.lowbits, lowbits);
+            // signmask = (cond) ? v.signmask : signmask
+            HURCHALLA_CSELECT(signmask, cond, v.signmask, signmask);
         }
 
         template <typename T1 = T> HURCHALLA_FORCE_INLINE
@@ -186,7 +190,6 @@ class MontyFullRangeMasked final :
         return fmsub(x, y, cv, PTAG());
     }
 
-    using BC::add;
     HURCHALLA_FORCE_INLINE V add(V x, C cy) const
     {
         HPBC_PRECONDITION2(isValid(x));
@@ -206,8 +209,8 @@ class MontyFullRangeMasked final :
         T tmpx = static_cast<T>(x.getbits() - n_);       // has range [-2n, 0)
         tmpx = static_cast<T>(tmpx + tmpn);              // has range [-n, 0)
         T resultval = static_cast<T>(tmpx + cy.get());   // has range [-n, n)
-        T result_smask = (resultval < tmpx)
-                        ? static_cast<T>(0) : static_cast<T>(-1);
+        bool b = (resultval < tmpx);
+        T result_smask = static_cast<T>(static_cast<T>(b) - static_cast<T>(1));
 #endif
         V result = V(resultval, result_smask);
         HPBC_POSTCONDITION2(isValid(result));
@@ -218,8 +221,15 @@ class MontyFullRangeMasked final :
         C cy = getCanonicalValue(y);
         return add(x, cy);
     }
+    HURCHALLA_FORCE_INLINE C add(C cx, C cy) const
+    {
+        HPBC_PRECONDITION2(cx.get() < n_);
+        HPBC_PRECONDITION2(cy.get() < n_);
+        T result = modular_addition_prereduced_inputs(cx.get(), cy.get(), n_);
+        HPBC_POSTCONDITION2(result < n_);
+        return C(result);
+    }
 
-    using BC::subtract;
     HURCHALLA_FORCE_INLINE V subtract(V x, C cy) const
     {
         HPBC_PRECONDITION2(isValid(x));
@@ -227,8 +237,8 @@ class MontyFullRangeMasked final :
         C cx = getCanonicalValue(x);
         HPBC_ASSERT2(0 <= cx.get() && cx.get() < n_);
         T resultval = static_cast<T>(cx.get() - cy.get());
-        T result_smask = (cx.get() < cy.get())
-                        ? static_cast<T>(-1) : static_cast<T>(0);
+        bool b = (cx.get() < cy.get());
+        T result_smask = static_cast<T>(-static_cast<T>(b));
         V result = V(resultval, result_smask);
         HPBC_POSTCONDITION2(isValid(result));
         return result;
@@ -240,8 +250,8 @@ class MontyFullRangeMasked final :
         C cy = getCanonicalValue(y);
         HPBC_ASSERT2(0 <= cy.get() && cy.get() < n_);
         T resultval = static_cast<T>(cx.get() - cy.get());
-        T result_smask = (cx.get() < cy.get())
-                        ? static_cast<T>(-1) : static_cast<T>(0);
+        bool b = (cx.get() < cy.get());
+        T result_smask = static_cast<T>(-static_cast<T>(b));
         V result = V(resultval, result_smask);
         HPBC_POSTCONDITION2(isValid(result));
         return result;
@@ -250,6 +260,14 @@ class MontyFullRangeMasked final :
     {
         C cy = getCanonicalValue(y);
         return subtract(x, cy);
+    }
+    HURCHALLA_FORCE_INLINE C subtract(C cx, C cy) const
+    {
+        HPBC_PRECONDITION2(cx.get() < n_);
+        HPBC_PRECONDITION2(cy.get() < n_);
+        T result= modular_subtraction_prereduced_inputs(cx.get(), cy.get(), n_);
+        HPBC_POSTCONDITION2(result < n_);
+        return C(result);
     }
 
     template <typename J, typename K>
@@ -268,9 +286,9 @@ private:
         HPBC_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
         bool isNegative;
         T resultval = REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
-        T resultsmask = (isNegative) ? static_cast<T>(-1) : static_cast<T>(0);
+        T result_smask = static_cast<T>(-static_cast<T>(isNegative));
         resultIsZero = (resultval == 0);
-        V result = V(resultval, resultsmask);
+        V result = V(resultval, result_smask);
         HPBC_POSTCONDITION2(isValid(result));
         return result;
     }
@@ -413,7 +431,7 @@ private:
         // of all zeros when x >= 0.
         // Therefore  x.getmask() & neg2a == static_cast<T>(s) * neg2a.
         // And therefore we can simplify result_hi further, using
-        // T result_hi = umhi + x.getmask() & neg2a;
+        // T result_hi = umhi + (x.getmask() & neg2a);
         //
         // As shown above, result_hi == umhi + s*(R-2*a),  and
         // x*x == (umhi + s*(R-2*a))*R + umlo,  and so
@@ -427,7 +445,7 @@ private:
         // T umlo;
         // T umhi = unsigned_multiply_to_hilo_product(umlo, a, a);
         // T neg2a = static_cast<T>(-2) * a;
-        // T result_hi = umhi + x.getmask() & neg2a;
+        // T result_hi = umhi + (x.getmask() & neg2a);
         // u_lo = umlo;
         // return result_hi;
         //
@@ -456,18 +474,18 @@ private:
 #if 1
 // This section follows the algorithm described in the proof.  It will likely
 // perform well on all architectures due to its predictable conditional branch.
-// And it's well suited to RISC-V, since RISC-V has no conditional move.
-        if (b) {    // usually predictable
+// And it's well suited to RISC-V, since RISC-V has no conditional move/select.
+        if (b != 0) {    // usually predictable
            T tmp = static_cast<T>(n_ - b);
            T maskedtmp = static_cast<T>(x.getmask() & tmp);
            u_hi = static_cast<T>(u_hi + maskedtmp);
         }
 #else
-// This section is an optimization of the code above, relying on conditional
-// move; perf measurements would be needed to determine if it has any benefit.
+// This section is an optimization(?) of the code above, relying on conditional
+// move/select; perf measurements would be needed to know if it has any benefit.
         T sumn = static_cast<T>(u_hi + n_);
         T tmp = static_cast<T>(x.getmask() & b);
-        HURCHALLA_CMOV((tmp), u_hi, sumn);
+        HURCHALLA_CSELECT(u_hi, (tmp != 0), sumn, u_hi);
         u_hi = static_cast<T>(u_hi - tmp);
 #endif
         HPBC_POSTCONDITION2(u_hi < n_);
@@ -527,7 +545,7 @@ private:
         //   the value v (specifically, its high word and low word) will satisfy
         //   this function's postconditions when b == 0.
         //   We can use unsigned_multiply_to_hilo_product() to compute the two-
-        //   word product v = a*b.  Note: we can simply set u = 0 without
+        //   word product v = a*b.  Note: we could simply set u = 0 without
         //   using the multiply, but case b==0 is a rare/unusual case, and we
         //   get smaller code by always performing the multiply a*b, and using
         //   it for both case 1 and case 2.

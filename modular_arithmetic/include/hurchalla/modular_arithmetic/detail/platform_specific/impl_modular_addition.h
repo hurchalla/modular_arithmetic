@@ -46,7 +46,7 @@ namespace hurchalla { namespace detail {
 // the two versions to be the same, but as always this depends on whether the
 // compiler generates good (or not good) machine code.
 
-struct default_impl_modadd {
+struct default_impl_modadd_unsigned {
   template <typename T>
   HURCHALLA_FORCE_INLINE static T call(T a, T b, T modulus)
   {
@@ -64,8 +64,8 @@ struct default_impl_modadd {
     T tmp = static_cast<T>(modulus - b);
     T sum = static_cast<T>(a + b);
     T result = static_cast<T>(a - tmp);
-    // result = (a < tmp) ? sum : result;
-    HURCHALLA_CMOV(a < tmp, result, sum);
+      // result = (a < tmp) ? sum : result
+    HURCHALLA_CSELECT(result, a < tmp, sum, result);
 
     HPBC_POSTCONDITION2(static_cast<T>(0) <= result && result < modulus);
     return result;
@@ -79,7 +79,7 @@ struct default_impl_modadd {
 // understand the implementation details.
 
 // note: uses a static member function to disallow ADL.
-struct default_impl_modadd {
+struct default_impl_modadd_unsigned {
   template <typename T>
   HURCHALLA_FORCE_INLINE static T call(T a, T b, T modulus)
   {
@@ -89,16 +89,14 @@ struct default_impl_modadd {
     HPBC_PRECONDITION2(a<modulus);  // the input must be prereduced
     HPBC_PRECONDITION2(b<modulus);  // the input must be prereduced
 
-    using U = typename extensible_make_unsigned<T>::type;
-    U sum = static_cast<U>(static_cast<U>(a) + static_cast<U>(b));
-    U tmp = static_cast<U>(static_cast<U>(b) - static_cast<U>(modulus));
-    U result = static_cast<U>(static_cast<U>(a) + tmp);
-    // result = (result >= static_cast<U>(a)) ? sum : result;
-    HURCHALLA_CMOV(result >= static_cast<U>(a), result, sum);
+    T sum = static_cast<T>(a + b);
+    T tmp = static_cast<T>(b - modulus);
+    T result = static_cast<T>(a + tmp);
+      // result = (result >= a) ? sum : result
+    HURCHALLA_CSELECT(result, (result >= a), sum, result);
 
-    HPBC_POSTCONDITION2(static_cast<U>(0) <= result &&
-                                              result < static_cast<U>(modulus));
-    return static_cast<T>(result);
+    HPBC_POSTCONDITION2(static_cast<T>(0) <= result && result < modulus);
+    return result;
   }
 };
 #endif
@@ -106,10 +104,10 @@ struct default_impl_modadd {
 
 // primary template
 template <typename T>
-struct impl_modular_addition {
+struct impl_modular_addition_unsigned {
   HURCHALLA_FORCE_INLINE static T call(T a, T b, T modulus)
   {
-    return default_impl_modadd::call(a, b, modulus);
+    return default_impl_modadd_unsigned::call(a, b, modulus);
   }
 };
 
@@ -122,7 +120,7 @@ struct impl_modular_addition {
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 
 template <>
-struct impl_modular_addition<std::uint32_t> {
+struct impl_modular_addition_unsigned<std::uint32_t> {
   HURCHALLA_FORCE_INLINE static
   std::uint32_t call(std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
   {
@@ -134,8 +132,8 @@ struct impl_modular_addition<std::uint32_t> {
     // By calculating tmp outside of the __asm__, we allow the compiler to
     // potentially loop hoist tmp, if this function is inlined into a loop.
     // https://en.wikipedia.org/wiki/Loop-invariant_code_motion
-    uint32_t sum = a + b;
-    uint32_t tmp = b - modulus;
+    uint32_t sum = static_cast<uint32_t>(a + b);
+    uint32_t tmp = static_cast<uint32_t>(b - modulus);
     uint32_t tmp2 = a;  // we prefer not to overwrite an input (a)
     __asm__ ("addl %[tmp], %[tmp2] \n\t"       /* tmp2 = a + tmp */
              "cmovbl %[tmp2], %[sum] \n\t"     /* sum = (tmp2<a) ? tmp2 : sum */
@@ -149,13 +147,14 @@ struct impl_modular_addition<std::uint32_t> {
     uint32_t result = sum;
 
     HPBC_POSTCONDITION2(result < modulus);  // uint32_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result == default_impl_modadd::call(a, b, modulus));
+    HPBC_POSTCONDITION2(result ==
+                             default_impl_modadd_unsigned::call(a, b, modulus));
     return result;
   }
 };
 
 template <>
-struct impl_modular_addition<std::uint64_t> {
+struct impl_modular_addition_unsigned<std::uint64_t> {
   HURCHALLA_FORCE_INLINE static
   std::uint64_t call(std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
   {
@@ -167,8 +166,8 @@ struct impl_modular_addition<std::uint64_t> {
     // By calculating tmp outside of the __asm__, we allow the compiler to
     // potentially loop hoist tmp, if this function is inlined into a loop.
     // https://en.wikipedia.org/wiki/Loop-invariant_code_motion
-    uint64_t sum = a + b;
-    uint64_t tmp = b - modulus;
+    uint64_t sum = static_cast<uint64_t>(a + b);
+    uint64_t tmp = static_cast<uint64_t>(b - modulus);
     uint64_t tmp2 = a;  // we prefer not to overwrite an input (a)
     __asm__ ("addq %[tmp], %[tmp2] \n\t"       /* tmp2 = a + tmp */
              "cmovbq %[tmp2], %[sum] \n\t"     /* sum = (tmp2<a) ? tmp2 : sum */
@@ -182,13 +181,63 @@ struct impl_modular_addition<std::uint64_t> {
     uint64_t result = sum;
 
     HPBC_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result == default_impl_modadd::call(a, b, modulus));
+    HPBC_POSTCONDITION2(result ==
+                             default_impl_modadd_unsigned::call(a, b, modulus));
     return result;
   }
 };
 
 #endif
 
+
+
+// version for unsigned T
+template <typename T, bool = ut_numeric_limits<T>::is_signed>
+struct impl_modular_addition {
+  HURCHALLA_FORCE_INLINE static T call(T a, T b, T modulus)
+  {
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+    return impl_modular_addition_unsigned<T>::call(a, b, modulus);
+  }
+};
+
+// version for signed T
+template <typename T>
+struct impl_modular_addition<T, true> {
+  HURCHALLA_FORCE_INLINE static T call(T a, T b, T modulus)
+  {
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(ut_numeric_limits<T>::is_signed, "");
+    static_assert(static_cast<T>(-1) == ~(static_cast<T>(0)),
+                                  "T must use two's complement representation");
+    using U = typename extensible_make_unsigned<T>::type;
+    static_assert(static_cast<T>(static_cast<U>(static_cast<T>(-1))) ==
+                  static_cast<T>(-1), "Casting a signed T value to unsigned and"
+                               " back again must result in the original value");
+    HPBC_PRECONDITION2(modulus > 0);
+    HPBC_PRECONDITION2(0 <= a && a < modulus);
+    HPBC_PRECONDITION2(0 <= b && b < modulus);
+
+#if defined(HURCHALLA_AVOID_CSELECT)
+    static_assert((static_cast<T>(-1) >> 1) == static_cast<T>(-1),
+                          "Arithmetic right shift is required but unavailable");
+    T tmp = static_cast<T>(a - modulus);
+    HPBC_ASSERT2(tmp < 0);
+    tmp = static_cast<T>(tmp + b);
+    // if tmp is negative, use a bit mask of all 1s.  Otherwise use all 0s.
+    U mask = static_cast<U>(tmp >> ut_numeric_limits<T>::digits);
+    U masked_modulus = static_cast<U>(mask & static_cast<U>(modulus));
+    U result = static_cast<U>(static_cast<U>(tmp) + masked_modulus);
+    HPBC_ASSERT2(result == impl_modular_addition_unsigned<U>::call(
+                static_cast<U>(a), static_cast<U>(b), static_cast<U>(modulus)));
+#else
+    U result = impl_modular_addition_unsigned<U>::call(static_cast<U>(a),
+                                    static_cast<U>(b), static_cast<U>(modulus));
+#endif
+    return static_cast<T>(result);
+  }
+};
 
 
 

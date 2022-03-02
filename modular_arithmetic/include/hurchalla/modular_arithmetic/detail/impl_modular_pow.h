@@ -43,12 +43,8 @@ struct impl_modular_pow {
     }
 */
     // slightly optimized version
-#if 0
-    T result = (exponent & 1) ? base : 1;
-#else
-    T result = 1;
-    HURCHALLA_CMOV(exponent & 1, result, base);
-#endif
+    T result;  // result = (exponent & 1) ? base : 1;
+    HURCHALLA_CSELECT(result, (exponent & 1), base, static_cast<T>(1));
     while (exponent > 1)
     {
        exponent = static_cast<T>(exponent >> 1);

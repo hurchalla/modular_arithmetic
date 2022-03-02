@@ -70,12 +70,8 @@ struct default_montsub_sqrt_range {
     // count and higher register use, but it's not preferred (see older git
     // commits of this file for this alternative).
     T diff = static_cast<T>(a - b);
-# if 0
-    T result = (a <= b) ? static_cast<T>(diff + n) : diff;
-# else
-    T result = diff;
-    HURCHALLA_CMOV(a <= b, result, static_cast<T>(diff + n));
-# endif
+    T result;  // result = (a <= b) ? static_cast<T>(diff + n) : diff
+    HURCHALLA_CSELECT(result, a <= b, static_cast<T>(diff + n), diff);
 
     HPBC_POSTCONDITION2(0 < result && result <= n);
     return result;

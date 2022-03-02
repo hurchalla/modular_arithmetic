@@ -9,17 +9,12 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_COMMON_BASE_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/detail/platform_specific/mont_add_canonical_value.h"
-#include "hurchalla/montgomery_arithmetic/detail/platform_specific/mont_subtract_canonical_value.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/get_Rsquared_mod_n.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/get_R_mod_n.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/inverse_mod_R.h"
 #include "hurchalla/montgomery_arithmetic/detail/BaseMontgomeryValue.h"
-#include "hurchalla/modular_arithmetic/modular_addition.h"
-#include "hurchalla/modular_arithmetic/modular_subtraction.h"
-#include "hurchalla/modular_arithmetic/absolute_value_difference.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/util/compiler_macros.h"
@@ -154,13 +149,20 @@ class MontyCommonBase {
         HPBC_INVARIANT2(cv.get() < n_);
         T u_lo;
         T u_hi = child->squareToHiLo(u_lo, x);
-        HPBC_ASSERT2(u_hi < n_);
+        HPBC_ASSERT2(0 <= u_hi && u_hi < n_);
         // Performing the modular sub prior to the REDC will always give
         // equivalent results to performing the REDC and then the modular
         // subtraction.  See fmadd() below for a proof which could be easily
         // adapted for the modular subtraction in here; it also describes
         // why this order of operations is more efficient.
+#if 0
         u_hi = modular_subtraction_prereduced_inputs(u_hi, cv.get(), n_);
+#else
+        // this provides the same results as the #if code, but can be more
+        // efficient for some monty types
+        HPBC_ASSERT2(child->isCanonical(C(u_hi)));
+        u_hi = child->subtract(C(u_hi), cv).get();
+#endif
         HPBC_ASSERT2(u_hi < n_);  // verifies  u < n*R, as required for REDC
         V result = child->montyREDC(u_hi, u_lo, PTAG());
         HPBC_POSTCONDITION2(child->isValid(result));
@@ -174,13 +176,20 @@ class MontyCommonBase {
         HPBC_INVARIANT2(cv.get() < n_);
         T u_lo;
         T u_hi = child->squareToHiLo(u_lo, x);
-        HPBC_ASSERT2(u_hi < n_);
+        HPBC_ASSERT2(0 <= u_hi && u_hi < n_);
         // Performing the modular add prior to the REDC will always give
         // equivalent results to performing the REDC and then the modular
         // addition.  See fmadd() below for a proof which applies directly
         // to this function; it also describes why this order of operations
         // is more efficient.
+#if 0
         u_hi = modular_addition_prereduced_inputs(u_hi, cv.get(), n_);
+#else
+        // this provides the same results as the #if code, but can be more
+        // efficient for some monty types
+        HPBC_ASSERT2(child->isCanonical(C(u_hi)));
+        u_hi = child->add(C(u_hi), cv).get();
+#endif
         HPBC_ASSERT2(u_hi < n_);  // verifies  u < n*R, as required for REDC
         V result = child->montyREDC(u_hi, u_lo, PTAG());
         HPBC_POSTCONDITION2(child->isValid(result));
@@ -228,7 +237,7 @@ class MontyCommonBase {
         // will receive values for  u_hi, u_lo  that satisfy this requirement.
         // u_hi < n implies that  x*y == u < n*R.  See RedcIncomplete() in
         // ImplRedc.h for proof.
-        HPBC_ASSERT2(u_hi < n_);
+        HPBC_ASSERT2(0 <= u_hi && u_hi < n_);
 
         // Performing the modular sub prior to the REDC will always give
         // equivalent results to performing the REDC and then the modular
@@ -237,7 +246,14 @@ class MontyCommonBase {
         // Note that the modular subtraction will usually execute in parallel
         // with the first two multiplies in REDC(), since those mutiplies do not
         // depend on the subtraction result.  (Instruction level parallelism)
+#if 0
         u_hi = modular_subtraction_prereduced_inputs(u_hi, z.get(), n_);
+#else
+        // this provides the same results as the #if code, but can be more
+        // efficient for some monty types
+        HPBC_ASSERT2(child->isCanonical(C(u_hi)));
+        u_hi = child->subtract(C(u_hi), z).get();
+#endif
         HPBC_ASSERT2(u_hi < n_);
         V result = child->montyREDC(u_hi, u_lo, PTAG());
 
@@ -260,7 +276,7 @@ class MontyCommonBase {
         // guarantees that  u_hi and u_lo  will satisfy this requirement.
         // u_hi < n implies that  x*y == u < n*R.  See RedcIncomplete() in
         // ImplRedc.h for proof.
-        HPBC_ASSERT2(u_hi < n_);
+        HPBC_ASSERT2(0 <= u_hi && u_hi < n_);
 
         // The most obvious way to carry out this function would be as follows:
         // result = this->montyREDC(u_hi, u_lo, PTAG())
@@ -301,7 +317,14 @@ class MontyCommonBase {
         // Earlier in this function, we showed by precondition and assertion
         // that  u_hi < n_, and z < n_.  Therefore we can perform (u_hi + z)%n_
         // via the function modular_addition_prereduced_inputs(), as follows:
+#if 0
         T v_hi = modular_addition_prereduced_inputs(u_hi, z.get(), n_);
+#else
+        // this provides the same results as the #if code, but can be more
+        // efficient for some monty types
+        HPBC_ASSERT2(child->isCanonical(C(u_hi)));
+        T v_hi = child->add(C(u_hi), z).get();
+#endif
         // By substitution we have 
         // sum        ≡ (v_hi*R + u_lo)*Rinverse  (mod n_)
         //
@@ -384,24 +407,6 @@ class MontyCommonBase {
         HPBC_POSTCONDITION2(n_ % p == 0);
         HPBC_POSTCONDITION2(g % p == 0);
         return p;
-    }
-
-
-    HURCHALLA_FORCE_INLINE C subtract(C x, C y) const
-    {
-        HPBC_INVARIANT2(x.get() < n_);
-        HPBC_INVARIANT2(y.get() < n_);
-        T z = modular_subtraction_prereduced_inputs(x.get(), y.get(), n_);
-        HPBC_POSTCONDITION2(z < n_);
-        return C(z);
-    }
-    HURCHALLA_FORCE_INLINE C add(C x, C y) const
-    {
-        HPBC_INVARIANT2(x.get() < n_);
-        HPBC_INVARIANT2(y.get() < n_);
-        T z = modular_addition_prereduced_inputs(x.get(), y.get(), n_);
-        HPBC_POSTCONDITION2(z < n_);
-        return C(z);
     }
 };
 

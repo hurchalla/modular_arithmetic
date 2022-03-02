@@ -12,6 +12,8 @@
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
+#include "hurchalla/modular_arithmetic/modular_addition.h"
+#include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/traits/extensible_make_signed.h"
 #include "hurchalla/util/signed_multiply_to_hilo_product.h"
@@ -37,13 +39,11 @@ struct MontyHRValueTypes {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     using SignedT = typename extensible_make_signed<T>::type;
-    // Assert that casting a SignedT value to an (unsigned) T results in
-    // (SignedT_value + R) % R.
-    static_assert(static_cast<T>(1 + static_cast<T>(static_cast<SignedT>(-1)))
-                  == 0, "");
-    // Assert SignedT uses two's complement representation, maybe redundant
-    static_assert(static_cast<SignedT>(-1) == ~(static_cast<SignedT>(0)), "");
-
+    static_assert(static_cast<SignedT>(static_cast<T>(static_cast<SignedT>(-1)))
+                  == static_cast<SignedT>(-1), "Casting a signed value to "
+                   "unsigned and back again must result in the original value");
+    static_assert(static_cast<SignedT>(-1) == ~(static_cast<SignedT>(0)),
+                            "SignedT must use two's complement representation");
     struct C; // forward declare C so that V can friend it
     // regular montgomery value type
     struct V : public BaseMontgomeryValue<SignedT> {
@@ -60,7 +60,7 @@ struct MontyHRValueTypes {
         // implicitly convert from canonical value C to montgomery value V
         HURCHALLA_FORCE_INLINE operator V() const
         {
-            T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
+            constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
                                        (ut_numeric_limits<T>::digits - 1));
             HPBC_PRECONDITION2(0 <= this->get() && this->get() < Rdiv2);
             return V(static_cast<SignedT>(this->get()));
@@ -96,6 +96,15 @@ class MontyHalfRange final :
 
     using S = typename MontyHRValueTypes<T>::SignedT;
     static_assert(ut_numeric_limits<S>::is_signed, "");
+#if defined(HURCHALLA_AVOID_CSELECT)
+    static_assert((static_cast<S>(-1) >> 1) == static_cast<S>(-1),
+                          "Arithmetic right shift is required but unavailable");
+#endif
+    static_assert(static_cast<S>(-1) == ~(static_cast<S>(0)),
+                                  "S must use two's complement representation");
+    static_assert(static_cast<S>(static_cast<T>(static_cast<S>(-1))) ==
+                  static_cast<S>(-1), "Casting a signed S value to unsigned and"
+                               " back again must result in the original value");
 
     using BC = MontyCommonBase<::hurchalla::detail::MontyHalfRange,
                                ::hurchalla::detail::MontyHRValueTypes, T>;
@@ -113,7 +122,7 @@ class MontyHalfRange final :
     explicit MontyHalfRange(T modulus) : BC(modulus)
     {
         // MontyHalfRange requires  modulus < R/2
-        T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
+        constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
                                        (ut_numeric_limits<T>::digits - 1));
         HPBC_PRECONDITION2(modulus < Rdiv2);
     }
@@ -132,19 +141,27 @@ class MontyHalfRange final :
         S sx = x.get();
         S result = static_cast<S>(-sx);
         HPBC_POSTCONDITION2(isValid(V(result)));
+        HPBC_POSTCONDITION2(getCanonicalValue(V(result)) ==
+                                          getCanonicalValue(subtract(C(0), x)));
         return V(result);
     }
 
     HURCHALLA_FORCE_INLINE C getCanonicalValue(V x) const
     {
         HPBC_PRECONDITION2(isValid(x));
-        T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
+        constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
                                        (ut_numeric_limits<T>::digits - 1));
         HPBC_INVARIANT2(n_ < Rdiv2);
         S sx = x.get();
         T tx = static_cast<T>(sx);
+#if defined(HURCHALLA_AVOID_CSELECT)
+        // Use arithmetic right shift of sign bit to create mask of all 1s or 0s
+        T mask = static_cast<T>(sx >> ut_numeric_limits<S>::digits);
+        T n_masked = static_cast<T>(n_ & mask);
+        T tc = static_cast<T>(tx + n_masked);
+#else
         T tc = static_cast<T>(tx + n_);
-#if defined(__clang__)
+#  if defined(__clang__)
         // Since isValid() required sx >= -((S)n) and sx < n, the sum for tc
         // above will have carried (wrapped-around) if sx<0.  Thus testing
         // (tc < n) is equivalent to a test for (sx < 0).  And consequently,
@@ -153,11 +170,10 @@ class MontyHalfRange final :
         // the flags already set by (tx+n), if the compiler is smart.  Only
         // clang appears to be smart enough to do this though; for x64 and
         // arm32/64: gcc, msvc, icc produce better asm with the #else.
-// TODO: possibly offer predefined macro for using _asm for this cmov
-        HURCHALLA_CMOV(tc >= n_, tc, tx);  // if tc>=n_, set tc = tx.
-#else
-// TODO: possibly offer predefined macro for using _asm for this cmov
-        HURCHALLA_CMOV(sx >= 0, tc, tx);   // if sx>=0, set tc = tx.
+        HURCHALLA_CSELECT(tc, tc >= n_, tx, tc);  // tc = (tc>=n_) ? tx : tc
+#  else
+        HURCHALLA_CSELECT(tc, sx >= 0, tx, tc);   // tc = (sx>=0) ? tx : tc
+#  endif
 #endif
         HPBC_POSTCONDITION2(tc < n_);
         return C(tc);
@@ -166,7 +182,7 @@ class MontyHalfRange final :
     HURCHALLA_FORCE_INLINE FV getFusingValue(V x) const
     {
         HPBC_PRECONDITION2(isValid(x));
-        T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
+        constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
                                        (ut_numeric_limits<T>::digits - 1));
         HPBC_INVARIANT2(n_ < Rdiv2);
         C cx = getCanonicalValue(x);
@@ -176,13 +192,20 @@ class MontyHalfRange final :
         HPBC_INVARIANT2(n_ % 2 == 1);
         T half_n_floor = static_cast<T>(n_ >> 1);     // == (n_ - 1) / 2
 
+#if !defined(HURCHALLA_AVOID_CSELECT)
         T tmp = static_cast<T>(a - n_);
         // static_cast<S>(tmp) has range [-n, 0)
         HPBC_ASSERT2(-static_cast<S>(n_) <= static_cast<S>(tmp)
                      && static_cast<S>(tmp) < 0);
-        T result = a;
-        // if ((n_-1)/2) < a, set result = tmp
-        HURCHALLA_CMOV(half_n_floor < a, result, tmp);
+        T result;
+        // result = (((n_-1)/2) < a) ? tmp : a
+        HURCHALLA_CSELECT(result, half_n_floor < a, tmp, a);
+#else
+        bool cond = (half_n_floor < a);
+        T mask = static_cast<T>(-static_cast<T>(cond));
+        T masked_n = static_cast<T>(mask & n_);
+        T result = static_cast<T>(a - masked_n);
+#endif
         // Assume a <= half_n_floor; then trivially we would have
         //    0 <= a <= (n_ - 1) / 2
         //    Given our assumption, we would have  0 <= result <= (n_ - 1) / 2
@@ -241,6 +264,7 @@ class MontyHalfRange final :
         // means (u_hi - fv.get()) should never overflow type S.
         u_hi = static_cast<S>(u_hi - fv.get());
         HPBC_ASSERT2(-static_cast<S>(n_) <= u_hi && u_hi < static_cast<S>(n_));
+
         V vu_hi(u_hi);
         HPBC_ASSERT2(isValid(vu_hi));
         C cu_hi = getCanonicalValue(vu_hi);
@@ -295,13 +319,12 @@ class MontyHalfRange final :
         return result;
     }
 
-    using BC::add;
-    HURCHALLA_FORCE_INLINE V add(V x, V y) const
+    HURCHALLA_FORCE_INLINE V add(V x, C cy) const
     {
-        HPBC_PRECONDITION2(isValid(x));        // we know  -n <= x.get() < n
-        HPBC_PRECONDITION2(isValid(y));
-        C cy = getCanonicalValue(y);
+        HPBC_ASSERT2(isValid(x));        // we know  -n <= x.get() < n
         T tx = static_cast<T>(x.get());
+
+#if !defined(HURCHALLA_AVOID_CSELECT)
         T tmpx = static_cast<T>(tx - n_);
         // Note if x.get() is negative, then tx >= n, since we know n < R/2.
         // This is assuming wrap-around conversion to T.  (ie two's complement?)
@@ -311,14 +334,25 @@ class MontyHalfRange final :
         // impossible if tx >= n.  This means
         // that if tx >= n, then x.get() < 0.
         // And by contrapositive of the first item, tx < n implies x.get() >= 0
-
-        HURCHALLA_CMOV(tx >= n_, tmpx, tx);    // if tx>=n_, set tmpx=tx
-        // Assume tx >= n.  Then x.get() < 0, and the cmov will have set
+        HURCHALLA_CSELECT(tmpx, tx >= n_, tx, tmpx);  // tmpx = (tx>=n)?tx:tmpx
+#else
+        // this code is functionally equivalent to the code in the #if above
+        S sx = x.get();
+        // Use arithmetic right shift of sign bit to create mask of all 1s or 0s
+        T mask = static_cast<T>(sx >> ut_numeric_limits<S>::digits);
+        // mask is all 1s if x < 0, and all 0s if x >= 0.
+        T maskflip = static_cast<T>(~mask);
+        // maskflip is all 1s if x >= 0, and all 0s if x < 0.
+        T masked_n = static_cast<T>(maskflip & n_);
+        // masked_n is n if x >= 0, and 0 if x < 0.
+        T tmpx = static_cast<T>(tx - masked_n);
+#endif
+        // Assume tx >= n.  Then x.get() < 0, and the cselect will have set
         //    tmpx = tx = static_cast<T>(x.get()).
         //    And hence,  static_cast<S>(tmpx) == x.get() < 0.  We also know
         //    from isValid(x) that  -static_cast<S>(n) <= x.get().  Thus,
         //    -static_cast<S>(n) <= static_cast<S>(tmpx) < 0.
-        // Assume tx < n.  Then x.get() >= 0, and the cmov will have left
+        // Assume tx < n.  Then x.get() >= 0, and the cselect will have left
         //    tmpx unchanged, so we know
         //    tmpx == tx - n == static_cast<T>(x.get()) - n,  and so
         //    static_cast<S>(tmpx) == x.get() - static_cast<S>(n).
@@ -338,23 +372,31 @@ class MontyHalfRange final :
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
-    HURCHALLA_FORCE_INLINE V add(V x, C cy) const
+    HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
         HPBC_PRECONDITION2(isValid(x));
-        HPBC_PRECONDITION2(0 <= cy.get() && cy.get() < n_); // cy is canonical
-        T tx = static_cast<T>(x.get());
-        T tmpx = static_cast<T>(tx - n_);
-        HURCHALLA_CMOV(tx >= n_, tmpx, tx);    // if tx>=n_, set tmpx=tx
-        // For proof that the following assert is true, see  add(V, V) above.
-        HPBC_ASSERT2(-static_cast<S>(n_) <= static_cast<S>(tmpx)
-                     && static_cast<S>(tmpx) < 0);
-        S result = static_cast<S>(
-                               static_cast<S>(tmpx) + static_cast<S>(cy.get()));
-        HPBC_POSTCONDITION2(isValid(V(result)));
-        return V(result);
+        HPBC_PRECONDITION2(isValid(y));
+        return add(x, getCanonicalValue(y));
+    }
+    HURCHALLA_FORCE_INLINE C add(C cx, C cy) const
+    {
+        HPBC_PRECONDITION2(cx.get() < n_);
+        HPBC_PRECONDITION2(cy.get() < n_);
+        constexpr int max_bits_needed = ut_numeric_limits<T>::digits - 1;
+        constexpr T limit = static_cast<T>(static_cast<T>(1)<<max_bits_needed);
+        HPBC_ASSERT2(cx.get() < limit);
+        HPBC_ASSERT2(cy.get() < limit);
+        HPBC_ASSERT2(n_ < limit);
+        S sx = static_cast<S>(cx.get());
+        S sy = static_cast<S>(cy.get());
+        S sn = static_cast<S>(n_);
+        S modsum = modular_addition_prereduced_inputs(sx, sy, sn);
+        HPBC_ASSERT2(modsum >= 0);
+        T result = static_cast<T>(modsum);
+        HPBC_POSTCONDITION2(result < n_);
+        return C(result);
     }
 
-    using BC::subtract;
     HURCHALLA_FORCE_INLINE V subtract(V x, V y) const
     {
         HPBC_PRECONDITION2(isValid(x));
@@ -385,6 +427,24 @@ class MontyHalfRange final :
                            static_cast<S>(cx.get()) - static_cast<S>(cy.get()));
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
+    }
+    HURCHALLA_FORCE_INLINE C subtract(C cx, C cy) const
+    {
+        HPBC_PRECONDITION2(cx.get() < n_);
+        HPBC_PRECONDITION2(cy.get() < n_);
+        constexpr int max_bits_needed = ut_numeric_limits<T>::digits - 1;
+        constexpr T limit = static_cast<T>(static_cast<T>(1)<<max_bits_needed);
+        HPBC_ASSERT2(cx.get() < limit);
+        HPBC_ASSERT2(cy.get() < limit);
+        HPBC_ASSERT2(n_ < limit);
+        S sx = static_cast<S>(cx.get());
+        S sy = static_cast<S>(cy.get());
+        S sn = static_cast<S>(n_);
+        S moddiff = modular_subtraction_prereduced_inputs(sx, sy, sn);
+        HPBC_ASSERT2(moddiff >= 0);
+        T result = static_cast<T>(moddiff);
+        HPBC_POSTCONDITION2(result < n_);
+        return C(result);
     }
 
     template <typename J, typename K>
@@ -438,18 +498,25 @@ private:
         // product_hi >= -(n+1)/2.  Putting it all together,
         // -(n+1)/2 <= product_hi <= (n-1)/2.  Also, due to invariant  n < R/2,
         // -R/2 < -(n+1)/2 <= product_hi <= (n-1)/2 < R/2.
+#if 0
         T tmp = static_cast<T>(product_hi);
         T u_hi = static_cast<T>(tmp + n_);
         // We can easily deduce from the results in the above comments that
         // (n-1)/2 <= u_hi <= n + (n-1)/2 < R.
 
-// TODO: possibly offer predefined macro for using _asm for this cmov.  Note
-// that this function is always or nearly always used for a montgomery multiply,
-// and so we don't need to lower latency for our result because the first two
-// mults of REDC will run in parallel.  But _asm might reduce uops by 1.
         // If (u_hi < n) is true, it indicates product_hi < 0.  Likewise,
         // (u_hi >= n) true would indicate product_hi >= 0.
-        HURCHALLA_CMOV(u_hi >= n_, u_hi, tmp); // if u_hi>=n_, set u_hi = tmp
+        HURCHALLA_CSELECT(u_hi, u_hi >= n_, tmp, u_hi); //uhi = (uhi>=n)?tmp:uhi
+#else
+        // this should be equivalent to the code above.  It's a slight hack
+        // since product_hi doesn't actually represent a montgomery value (V),
+        // but the spirit (and reality) of what getCanonicalValue() does is the
+        // same as what we need, and using it lets us centralize optimal
+        // handling of HURCHALLA_CSELECT into getCanonicalValue().
+        V v(product_hi);
+        HPBC_ASSERT2(isValid(v));
+        T u_hi = getCanonicalValue(v).get();
+#endif
         HPBC_POSTCONDITION2(0 <= u_hi && u_hi < n_);
         return u_hi;
     }
@@ -469,7 +536,7 @@ private:
     HURCHALLA_FORCE_INLINE bool isValid(V x) const
     {
         static_assert(!(ut_numeric_limits<T>::is_signed), "");
-        T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
+        constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
                                        (ut_numeric_limits<T>::digits - 1));
         HPBC_INVARIANT2(n_ < Rdiv2);
         return (-static_cast<S>(n_) <= x.get() && x.get() < static_cast<S>(n_));
@@ -496,14 +563,3 @@ private:
 }} // end namespace
 
 #endif
-
-
-/*
-    //   For types T larger than the CPU integer register size, square() is
-    // likely to perform worse or the same as multiply(x, x).  The reason is
-    // that this version of square() uses a signed multiply instead of an
-    // unsigned multiply, and signed multiply is less efficient than unsigned
-    // when it's a function call rather than a single native CPU instruction.
-    // Types T that are larger than the register size can't be multiplied with a
-    // single native CPU instruction.
-*/

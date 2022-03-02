@@ -12,7 +12,6 @@
 #include "hurchalla/montgomery_arithmetic/detail/MontgomeryDefault.h"
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/montgomery_pow.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
-#include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include "hurchalla/util/traits/is_equality_comparable.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
