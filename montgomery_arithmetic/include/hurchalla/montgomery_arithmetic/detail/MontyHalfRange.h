@@ -9,6 +9,7 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTY_HALF_RANGE_H_INCLUDED
 
 
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/halfrange_get_canonical.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
@@ -152,31 +153,9 @@ class MontyHalfRange final :
         constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
                                        (ut_numeric_limits<T>::digits - 1));
         HPBC_INVARIANT2(n_ < Rdiv2);
-        S sx = x.get();
-        T tx = static_cast<T>(sx);
-#if defined(HURCHALLA_AVOID_CSELECT)
-        // Use arithmetic right shift of sign bit to create mask of all 1s or 0s
-        T mask = static_cast<T>(sx >> ut_numeric_limits<S>::digits);
-        T n_masked = static_cast<T>(n_ & mask);
-        T tc = static_cast<T>(tx + n_masked);
-#else
-        T tc = static_cast<T>(tx + n_);
-#  if defined(__clang__)
-        // Since isValid() required sx >= -((S)n) and sx < n, the sum for tc
-        // above will have carried (wrapped-around) if sx<0.  Thus testing
-        // (tc < n) is equivalent to a test for (sx < 0).  And consequently,
-        // testing (tc >= n) is equivalent to a test for (sx >= 0).
-        // It is in theory the better test, because it lets the compiler use
-        // the flags already set by (tx+n), if the compiler is smart.  Only
-        // clang appears to be smart enough to do this though; for x64 and
-        // arm32/64: gcc, msvc, icc produce better asm with the #else.
-        HURCHALLA_CSELECT(tc, tc >= n_, tx, tc);  // tc = (tc>=n_) ? tx : tc
-#  else
-        HURCHALLA_CSELECT(tc, sx >= 0, tx, tc);   // tc = (sx>=0) ? tx : tc
-#  endif
-#endif
-        HPBC_POSTCONDITION2(tc < n_);
-        return C(tc);
+        S result = halfrange_get_canonical<S>::call(x.get(),static_cast<S>(n_));
+        HPBC_POSTCONDITION2(0 <= result && result < static_cast<S>(n_));
+        return C(static_cast<T>(result));
     }
 
     HURCHALLA_FORCE_INLINE FV getFusingValue(V x) const

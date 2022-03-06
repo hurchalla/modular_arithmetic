@@ -23,7 +23,6 @@
 #include "hurchalla/modular_arithmetic/modular_pow.h"
 #include "hurchalla/montgomery_arithmetic/MontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/montgomery_form_aliases.h"
-#include "hurchalla/montgomery_arithmetic/detail/experimental/MontySqrtRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/montgomery_pow.h"
 #include "gtest/gtest.h"
 #include <cstdint>
@@ -88,7 +87,6 @@ void run_pow_tests()
     using T = typename M::IntegerType;
 
     // Try a basic test case first that is valid for all possible Monty types
-    // (including even type M == MontySqrtRange<std::uint8_t>).
     {
         T modulus = 13;
         M mf(modulus);
@@ -171,9 +169,6 @@ void run_pow_tests()
 
 TEST(MontgomeryArithmetic, montgomery_pow) {
     run_pow_tests<hc::MontgomeryForm<std::uint8_t>>();
-
-    run_pow_tests<hc::MontgomeryForm<std::uint32_t,
-                              hc::detail::MontySqrtRange<std::uint64_t>>>();
 
     run_pow_tests<hc::MontgomeryForm<std::uint8_t,
                         hc::detail::MontyQuarterRange<std::uint8_t>>>();

@@ -10,7 +10,7 @@
 # This is a working convenience script for invoking the testing builds and then
 # running the tests.
 # The syntax is 
-# ./build_tests [-c<compiler_name>] [-r] [-a] [-u] [-m<Release|Debug>]
+# ./build_tests [-c<compiler_name>] [-r] [-a] [-u] [-s] [-m<Release|Debug>]
 #
 # -c allows you to select the compiler, rather than using the default.
 # -r specifies to run all tests after the build.  Without -r, no tests will run.
@@ -21,6 +21,12 @@
 # -u specifies that you want to compile the code using all available inline asm
 #    routines, so that the tests will cover all of them (this is not expected to
 #    result in the fastest binaries).
+# -s specifies that you wish to compile the code with optimizations using a
+#    series of bitwise operations, instead of operations that typically would
+#    compile to conditional select or conditional move instructions.  This
+#    usually improves performance on architectures that lack those instructions;
+#    in certain cases it can also improve performance for architectures that
+#    possess those instructions.
 # -m allows you to choose between Release and Debug build configuration, rather
 #    than using the default.
 #
@@ -168,7 +174,7 @@ while getopts ":m:c:h-:raus" opt; do
     h)
       ;&
     -)
-      echo "Usage: build_tests [-c<compiler_name>] [-r] [-a] [-u] [-m<Release|Debug>]" >&2
+      echo "Usage: build_tests [-c<compiler_name>] [-r] [-a] [-u] [-s] [-m<Release|Debug>]" >&2
       exit 1
       ;;
     c)

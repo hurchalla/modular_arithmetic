@@ -10,7 +10,6 @@
 
 
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/quarterrange_get_canonical.h"
-#include "hurchalla/montgomery_arithmetic/detail/platform_specific/quarterrange_subtract_canonical.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
@@ -240,15 +239,6 @@ class MontyQuarterRange final : public
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
-    HURCHALLA_FORCE_INLINE V subtract(V x, C cy) const
-    {
-        HPBC_PRECONDITION2(isValid(x));
-        HPBC_PRECONDITION2(cy.get() < n_);
-        T result = quarterrange_subtract_canonical<T>::call(
-                                                         x.get(), cy.get(), n_);
-        HPBC_POSTCONDITION2(isValid(V(result)));
-        return V(result);
-    }
     HURCHALLA_FORCE_INLINE C subtract(C cx, C cy) const
     {
         HPBC_PRECONDITION2(cx.get() < n_);
@@ -268,7 +258,7 @@ class MontyQuarterRange final : public
         HPBC_POSTCONDITION2(result < n_);
         return C(result);
     }
-    // Note: subtract(C, V) will match to subtract(V x, V y) above
+    // Note: subtract(C,V) and subtract(V,C) will match to subtract(V,V) above
 
     HURCHALLA_FORCE_INLINE V unordered_subtract(V x, V y) const
     {

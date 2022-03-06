@@ -29,7 +29,6 @@
 #include "hurchalla/montgomery_arithmetic/detail/MontyFullRangeMasked.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyQuarterRange.h"
-#include "hurchalla/montgomery_arithmetic/detail/experimental/MontySqrtRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyWrappedStandardMath.h"
 #include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
@@ -337,7 +336,6 @@ void test_MontgomeryForm()
     using FV = typename M::FusingValue;
 
     // Try a basic test case first that is valid for all possible Monty types
-    // (including even type M == MontySqrtRange<std::uint8_t>).
     {
         T modulus = 13;
         M mf(modulus);
@@ -641,19 +639,6 @@ TEST(MontgomeryArithmetic, MontyFullRangeMasked) {
 
 TEST(MontgomeryArithmetic, MontyQuarterRange) {
     test_custom_monty<hc::detail::MontyQuarterRange>();
-}
-
-TEST(MontgomeryArithmetic, MontySqrtRange) {
-    test_MontgomeryForm<hc::MontgomeryForm<std::uint8_t,
-                              hc::detail::MontySqrtRange<std::uint16_t>>>();
-    test_MontgomeryForm<hc::MontgomeryForm<std::uint16_t,
-                              hc::detail::MontySqrtRange<std::uint32_t>>>();
-    test_MontgomeryForm<hc::MontgomeryForm<std::uint32_t,
-                              hc::detail::MontySqrtRange<std::uint64_t>>>();
-#if HURCHALLA_COMPILER_HAS_UINT128_T()
-    test_MontgomeryForm<hc::MontgomeryForm<std::uint64_t,
-                                hc::detail::MontySqrtRange<__uint128_t>>>();
-#endif
 }
 
 

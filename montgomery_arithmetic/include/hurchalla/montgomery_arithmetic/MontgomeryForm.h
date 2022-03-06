@@ -340,7 +340,7 @@ public:
     // the overload of fmsub that uses a CanonicalValue though.  Normally
     // getFusingValue and getCanonicalValue would be called outside a loop, and
     // fmsub would be called inside the loop- which is the place performance
-    // matters.
+    // usually matters.
     template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
     MontgomeryValue fmsub(MontgomeryValue x, MontgomeryValue y,
                                                             FusingValue z) const
@@ -378,7 +378,7 @@ public:
     // The same comments as above apply, but this function uses a FusingValue
     // parameter z, which can be more efficient for some MontyTypes.  It is
     // never less efficient.
-    // Note: the comments under fmsub() regarding initializing a FusingValue
+    // Note: the comments above fmsub() regarding initializing a FusingValue
     // apply here as well.
     template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
     MontgomeryValue fmadd(MontgomeryValue x, MontgomeryValue y,
@@ -408,7 +408,7 @@ public:
     }
     // "Fused square with subtract" operation.  Returns the modular evaluation
     // of (x * x) - cv.  Note that this function is usually but not always a
-    // good performance replacement for fmsub(x, x, cv); see the comments under
+    // good performance replacement for fmsub(x, x, cv); see the comments above
     // square() for details.
     template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
     MontgomeryValue fusedSquareSub(MontgomeryValue x, CanonicalValue cv) const
@@ -420,7 +420,7 @@ public:
     }
     // "Fused square with add" operation.  Returns the modular evaluation
     // of (x * x) + cv.  Note that this function is usually but not always a
-    // good performance replacement for fmsub(x, x, cv); see the comments under
+    // good performance replacement for fmsub(x, x, cv); see the comments above
     // square() for details.
     template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
     MontgomeryValue fusedSquareAdd(MontgomeryValue x, CanonicalValue cv) const
