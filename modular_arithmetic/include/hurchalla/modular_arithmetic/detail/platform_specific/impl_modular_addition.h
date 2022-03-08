@@ -11,6 +11,7 @@
 
 #include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 #include <cstdint>
@@ -65,7 +66,7 @@ struct default_impl_modadd_unsigned {
     T sum = static_cast<T>(a + b);
     T result = static_cast<T>(a - tmp);
       // result = (a < tmp) ? sum : result
-    HURCHALLA_CSELECT(result, a < tmp, sum, result);
+    result = conditional_select(a < tmp, sum, result);
 
     HPBC_POSTCONDITION2(static_cast<T>(0) <= result && result < modulus);
     return result;
@@ -93,7 +94,7 @@ struct default_impl_modadd_unsigned {
     T tmp = static_cast<T>(b - modulus);
     T result = static_cast<T>(a + tmp);
       // result = (result >= a) ? sum : result
-    HURCHALLA_CSELECT(result, (result >= a), sum, result);
+    result = conditional_select(result >= a, sum, result);
 
     HPBC_POSTCONDITION2(static_cast<T>(0) <= result && result < modulus);
     return result;

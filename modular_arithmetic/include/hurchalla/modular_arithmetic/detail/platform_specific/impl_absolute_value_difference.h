@@ -11,6 +11,7 @@
 
 #include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 #include <cstdint>
@@ -26,9 +27,7 @@ struct default_impl_absdiff_unsigned {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
       // result = (a < b) ? static_cast<T>(b - a) : static_cast<T>(a - b)
-    T result;
-    HURCHALLA_CSELECT(result, a < b, static_cast<T>(b-a), static_cast<T>(a-b));
-
+    T result= conditional_select(a<b, static_cast<T>(b-a), static_cast<T>(a-b));
     // POSTCONDITION:
     // This function returns absolute_value(a-b).
     HPBC_POSTCONDITION(result<=a || result<=b);

@@ -11,6 +11,7 @@
 
 #include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 #include <cstdint>
@@ -49,7 +50,7 @@ struct default_modsub_unsigned {
     T diff = static_cast<T>(a - b);
     T result = static_cast<T>(diff + modulus);
       // result = (a >= b) ? diff : result
-    HURCHALLA_CSELECT(result, a >= b, diff, result);
+    result = conditional_select(a >= b, diff, result);
 
     HPBC_POSTCONDITION2(0<=result && result<modulus);
     return result;

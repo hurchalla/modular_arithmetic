@@ -12,6 +12,7 @@
 #include "hurchalla/util/traits/extensible_make_signed.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 #include <type_traits>
@@ -59,9 +60,10 @@ struct impl_modular_multiplicative_inverse {
     S y = y1;
     U gcd = a1;
     if (gcd == 1) {
-        U inv;  // inv = (y<0) ? y+modulus : y
-        HURCHALLA_CSELECT(inv, y<0, static_cast<U>(static_cast<U>(y) + modulus),
-                                                             static_cast<U>(y));
+          // inv = (y<0) ? y+modulus : y
+        U inv = conditional_select(y<0,
+                                   static_cast<U>(static_cast<U>(y)+modulus),
+                                   static_cast<U>(y));
         HPBC_POSTCONDITION2(inv < modulus);
         return static_cast<T>(inv);
     } else
