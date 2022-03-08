@@ -18,6 +18,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/traits/extensible_make_signed.h"
 #include "hurchalla/util/signed_multiply_to_hilo_product.h"
+#include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 #include <type_traits>
@@ -176,9 +177,8 @@ class MontyHalfRange final :
         // static_cast<S>(tmp) has range [-n, 0)
         HPBC_ASSERT2(-static_cast<S>(n_) <= static_cast<S>(tmp)
                      && static_cast<S>(tmp) < 0);
-        T result;
-        // result = (((n_-1)/2) < a) ? tmp : a
-        HURCHALLA_CSELECT(result, half_n_floor < a, tmp, a);
+          // result = (half_n_floor < a) ? tmp : a
+        T result = conditional_select((half_n_floor < a), tmp, a);
 #else
         bool cond = (half_n_floor < a);
         T mask = static_cast<T>(-static_cast<T>(cond));
@@ -313,7 +313,7 @@ class MontyHalfRange final :
         // impossible if tx >= n.  This means
         // that if tx >= n, then x.get() < 0.
         // And by contrapositive of the first item, tx < n implies x.get() >= 0
-        HURCHALLA_CSELECT(tmpx, tx >= n_, tx, tmpx);  // tmpx = (tx>=n)?tx:tmpx
+        tmpx = conditional_select(tx >= n_, tx, tmpx);  //tmpx = (tx>=n)?tx:tmpx
 #else
         // this code is functionally equivalent to the code in the #if above
         S sx = x.get();
@@ -485,13 +485,14 @@ private:
 
         // If (u_hi < n) is true, it indicates product_hi < 0.  Likewise,
         // (u_hi >= n) true would indicate product_hi >= 0.
-        HURCHALLA_CSELECT(u_hi, u_hi >= n_, tmp, u_hi); //uhi = (uhi>=n)?tmp:uhi
+           // Next line sets  uhi = (uhi>=n) ? tmp : uhi
+        u_hi = conditional_select(u_hi >= n_, tmp, u_hi);
 #else
         // this should be equivalent to the code above.  It's a slight hack
         // since product_hi doesn't actually represent a montgomery value (V),
         // but the spirit (and reality) of what getCanonicalValue() does is the
         // same as what we need, and using it lets us centralize optimal
-        // handling of HURCHALLA_CSELECT into getCanonicalValue().
+        // handling of conditional-selects into getCanonicalValue().
         V v(product_hi);
         HPBC_ASSERT2(isValid(v));
         T u_hi = getCanonicalValue(v).get();

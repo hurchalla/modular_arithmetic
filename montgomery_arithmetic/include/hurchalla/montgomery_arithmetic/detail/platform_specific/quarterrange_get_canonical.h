@@ -11,6 +11,7 @@
 
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/traits/extensible_make_signed.h"
+#include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 #include <cstdint>
@@ -42,7 +43,7 @@ struct default_quarterrange_get_canonical {
    // this should be correct, but the #else is preferred for performance
     T result = static_cast<T>(x - n);
        // set  result = (x<n) ? x : result
-    HURCHALLA_CSELECT(result, x < n, x, result);
+    result = conditional_select(x<n, x, result);
 #else
     using S = typename extensible_make_signed<T>::type;
     static_assert(static_cast<S>(-1) == ~(static_cast<S>(0)),
@@ -61,7 +62,7 @@ struct default_quarterrange_get_canonical {
     T result = static_cast<T>(static_cast<T>(tmp) + n_masked);
 # else
        // tmp = (tmp<0) ? x : tmp
-    HURCHALLA_CSELECT(tmp, tmp < 0, static_cast<S>(x), tmp);
+    tmp = conditional_select(tmp<0, static_cast<S>(x), tmp);
     HPBC_ASSERT2(0 <= tmp && tmp < static_cast<S>(n));
     T result = static_cast<T>(tmp);
 # endif

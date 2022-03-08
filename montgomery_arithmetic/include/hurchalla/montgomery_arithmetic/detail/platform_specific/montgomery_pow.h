@@ -187,7 +187,8 @@ struct montgomery_pow {
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
             bases[i] = mf.template square<LowuopsTag>(bases[i]);
             V tmp = mf.template multiply<LowuopsTag>(result[i], bases[i]);
-            result[i].cmov_masked(exponent & static_cast<T>(1), tmp);
+            result[i].template
+                      cmov<CSelectMaskedTag>(exponent & static_cast<T>(1), tmp);
         });
     }
     return result;

@@ -13,6 +13,7 @@
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
+#include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 #include <cstdint>
@@ -190,8 +191,8 @@ struct DefaultRedcStandard
     T mask = static_cast<T>(-static_cast<T>(ovf));
     T final_result = static_cast<T>(result + (mask & n));
 #else
-    T final_result;
-    HURCHALLA_CSELECT(final_result, ovf, static_cast<T>(result+n), result);
+      // final_result = (ovf) ? static_cast<T>(result+n) : result
+    T final_result = conditional_select(ovf, static_cast<T>(result+n), result);
 #endif
     HPBC_POSTCONDITION2(final_result < n);
     return final_result;

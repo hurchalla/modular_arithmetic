@@ -98,10 +98,6 @@ class MontyQuarterRange final : public
     using FV = typename MontyQRValueTypes<T>::FV;
 
     using S = typename extensible_make_signed<T>::type;
-#if defined(HURCHALLA_AVOID_CSELECT)
-    static_assert((static_cast<S>(-1) >> 1) == static_cast<S>(-1),
-                          "Arithmetic right shift is required but unavailable");
-#endif
     static_assert(static_cast<S>(-1) == ~(static_cast<S>(0)),
                                   "S must use two's complement representation");
     static_assert(static_cast<S>(static_cast<T>(static_cast<S>(-1))) ==

@@ -12,6 +12,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
+#include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/compiler_macros.h"
 #include <type_traits>
 
@@ -30,31 +31,11 @@ public:
     // contents are undefined until the object is assigned to.
     HURCHALLA_FORCE_INLINE BaseMontgomeryValue() = default;
 
-    template <typename T1 = T> HURCHALLA_FORCE_INLINE
-    typename std::enable_if<(ut_numeric_limits<T1>::digits <=
-                             HURCHALLA_TARGET_BIT_WIDTH)>::type 
-    cmov(bool cond, BaseMontgomeryValue v)
+    template <class PerfTag = CSelectDefaultTag>
+    HURCHALLA_FORCE_INLINE void cmov(bool cond, BaseMontgomeryValue v)
     {
           // value = cond ? v.value : value
-        HURCHALLA_CSELECT(value, cond, v.value, value);
-    }
-
-    template <typename T1 = T> HURCHALLA_FORCE_INLINE
-    typename std::enable_if<(ut_numeric_limits<T1>::digits >
-                             HURCHALLA_TARGET_BIT_WIDTH)>::type 
-    cmov(bool cond, BaseMontgomeryValue v)
-    {
-        value = cond ? v.value : value;
-    }
-
-    HURCHALLA_FORCE_INLINE void cmov_masked(bool cond, BaseMontgomeryValue v)
-    {
-        using U = typename extensible_make_unsigned<T>::type;
-        using P = typename safely_promote_unsigned<U>::type;
-        P mask = static_cast<P>(static_cast<P>(0) - static_cast<P>(cond));
-        P maskflip = static_cast<P>(static_cast<P>(cond) - static_cast<P>(1));
-        value = static_cast<T>((mask & static_cast<P>(v.value)) |
-                               (maskflip & static_cast<P>(value)));
+        value = conditional_select<T, PerfTag>(cond, v.value, value);
     }
 };
 

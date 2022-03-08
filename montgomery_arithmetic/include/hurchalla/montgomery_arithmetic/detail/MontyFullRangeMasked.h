@@ -16,6 +16,7 @@
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
+#include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
@@ -51,36 +52,13 @@ struct MfrmValueTypes {
         // getbits() giving the low 64 bits and getmask() implicitly providing
         // the high 65th bit.
         HURCHALLA_FORCE_INLINE V() = default;
-
-        template <typename T1 = T> HURCHALLA_FORCE_INLINE
-        typename std::enable_if<(ut_numeric_limits<T1>::digits <=
-                                 HURCHALLA_TARGET_BIT_WIDTH)>::type 
-        cmov(bool cond, V v)
+        template <class PerfTag = CSelectDefaultTag>
+        HURCHALLA_FORCE_INLINE void cmov(bool cond, V v)
         {
             // lowbits = (cond) ? v.lowbits : lowbits
-            HURCHALLA_CSELECT(lowbits, cond, v.lowbits, lowbits);
+            lowbits = conditional_select<T, PerfTag>(cond, v.lowbits, lowbits);
             // signmask = (cond) ? v.signmask : signmask
-            HURCHALLA_CSELECT(signmask, cond, v.signmask, signmask);
-        }
-
-        template <typename T1 = T> HURCHALLA_FORCE_INLINE
-        typename std::enable_if<(ut_numeric_limits<T1>::digits >
-                                 HURCHALLA_TARGET_BIT_WIDTH)>::type 
-        cmov(bool cond, V v)
-        {
-            lowbits = cond ? v.lowbits : lowbits;
-            signmask = cond ? v.signmask : signmask;
-        }
-
-        HURCHALLA_FORCE_INLINE void cmov_masked(bool cond, V v)
-        {
-            using P = typename safely_promote_unsigned<T>::type;
-            P mask = static_cast<P>(static_cast<P>(0) - static_cast<P>(cond));
-            P maskflip = static_cast<P>(static_cast<P>(cond)-static_cast<P>(1));
-            lowbits = static_cast<T>((mask & static_cast<P>(v.lowbits)) |
-                                     (maskflip & static_cast<P>(lowbits)));
-            signmask = static_cast<T>((mask & static_cast<P>(v.signmask)) |
-                                   (maskflip & static_cast<P>(signmask)));
+            signmask = conditional_select<T, PerfTag>(cond,v.signmask,signmask);
         }
      protected:
         friend struct C;
@@ -485,7 +463,7 @@ private:
 // move/select; perf measurements would be needed to know if it has any benefit.
         T sumn = static_cast<T>(u_hi + n_);
         T tmp = static_cast<T>(x.getmask() & b);
-        HURCHALLA_CSELECT(u_hi, (tmp != 0), sumn, u_hi);
+        u_hi = conditional_select(tmp != 0, sumn, u_hi); //uhi=(tmp!=0)?sumn:uhi
         u_hi = static_cast<T>(u_hi - tmp);
 #endif
         HPBC_POSTCONDITION2(u_hi < n_);
