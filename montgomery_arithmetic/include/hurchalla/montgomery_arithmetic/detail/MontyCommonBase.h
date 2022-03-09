@@ -48,10 +48,11 @@ class MontyCommonBase {
     const T inv_n_;
     const T r_squared_mod_n_;
 
-    explicit MontyCommonBase(T modulus) : n_(modulus),
-                      r_mod_n_(get_R_mod_n(n_)),
-                      inv_n_(inverse_mod_R(n_)),
-                      r_squared_mod_n_(get_Rsquared_mod_n(n_, inv_n_, r_mod_n_))
+    explicit MontyCommonBase(T modulus) :
+         n_(modulus),
+         r_mod_n_(::hurchalla::get_R_mod_n(n_)),
+         inv_n_(::hurchalla::inverse_mod_R(n_)),
+         r_squared_mod_n_(::hurchalla::get_Rsquared_mod_n(n_,inv_n_,r_mod_n_))
     {
         HPBC_PRECONDITION2(modulus % 2 == 1);
         HPBC_PRECONDITION2(modulus > 1);
@@ -76,7 +77,8 @@ class MontyCommonBase {
         // r_squared_mod_n < n.  Since a is a type T variable, we know a < R.
         // Therefore,  a * r_squared_mod_n < n * a < n * R.
         T u_lo;
-        T u_hi = unsigned_multiply_to_hilo_product(u_lo, a, r_squared_mod_n_);
+        T u_hi = ::hurchalla::unsigned_multiply_to_hilo_product(
+                                                     u_lo, a, r_squared_mod_n_);
         // Let u = a * r_squared_mod_n.  When u_hi < n, we always have u < n*R.
         // See RedcIncomplete() in ImplRedc.h for proof.
         HPBC_ASSERT2(u_hi < n_);
@@ -91,7 +93,8 @@ class MontyCommonBase {
         T u_hi = 0;
         // get a Natural number (i.e. number >= 0) congruent to x (mod n)
         T u_lo = static_cast<const D*>(this)->getNaturalEquivalence(x);
-        T result = REDC_standard(u_hi, u_lo, n_, inv_n_, LowlatencyTag());
+        namespace hc = ::hurchalla;
+        T result = hc::REDC_standard(u_hi, u_lo, n_, inv_n_, LowlatencyTag());
 
         HPBC_POSTCONDITION2(result < n_);
         return result;
@@ -156,7 +159,8 @@ class MontyCommonBase {
         // adapted for the modular subtraction in here; it also describes
         // why this order of operations is more efficient.
 #if 0
-        u_hi = modular_subtraction_prereduced_inputs(u_hi, cv.get(), n_);
+        namespace hc = ::hurchalla;
+        u_hi = hc::modular_subtraction_prereduced_inputs(u_hi, cv.get(), n_);
 #else
         // this provides the same results as the #if code, but can be more
         // efficient for some monty types
@@ -183,7 +187,8 @@ class MontyCommonBase {
         // to this function; it also describes why this order of operations
         // is more efficient.
 #if 0
-        u_hi = modular_addition_prereduced_inputs(u_hi, cv.get(), n_);
+        namespace hc = ::hurchalla;
+        u_hi = hc::modular_addition_prereduced_inputs(u_hi, cv.get(), n_);
 #else
         // this provides the same results as the #if code, but can be more
         // efficient for some monty types
@@ -247,7 +252,8 @@ class MontyCommonBase {
         // with the first two multiplies in REDC(), since those mutiplies do not
         // depend on the subtraction result.  (Instruction level parallelism)
 #if 0
-        u_hi = modular_subtraction_prereduced_inputs(u_hi, z.get(), n_);
+        namespace hc = ::hurchalla;
+        u_hi = hc::modular_subtraction_prereduced_inputs(u_hi, z.get(), n_);
 #else
         // this provides the same results as the #if code, but can be more
         // efficient for some monty types
@@ -318,7 +324,8 @@ class MontyCommonBase {
         // that  u_hi < n_, and z < n_.  Therefore we can perform (u_hi + z)%n_
         // via the function modular_addition_prereduced_inputs(), as follows:
 #if 0
-        T v_hi = modular_addition_prereduced_inputs(u_hi, z.get(), n_);
+        namespace hc = ::hurchalla;
+        T v_hi = hc::modular_addition_prereduced_inputs(u_hi, z.get(), n_);
 #else
         // this provides the same results as the #if code, but can be more
         // efficient for some monty types

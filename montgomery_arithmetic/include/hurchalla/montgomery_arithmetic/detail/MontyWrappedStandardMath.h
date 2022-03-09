@@ -141,8 +141,8 @@ class MontyWrappedStandardMath final {
     {
         HPBC_PRECONDITION2(isCanonical(x));
         HPBC_PRECONDITION2(isCanonical(y));
-        T result = modular_multiplication_prereduced_inputs(x.get(),
-                                                             y.get(), modulus_);
+        T result = ::hurchalla::modular_multiplication_prereduced_inputs(
+                                                    x.get(), y.get(), modulus_);
         isZero = (getCanonicalValue(V(result)).get() == getZeroValue().get());
         HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
@@ -198,7 +198,8 @@ class MontyWrappedStandardMath final {
     {
         HPBC_PRECONDITION2(isCanonical(x));
         HPBC_PRECONDITION2(isCanonical(y));
-        T result=modular_addition_prereduced_inputs(x.get(), y.get(), modulus_);
+        T result = ::hurchalla::modular_addition_prereduced_inputs(
+                                                    x.get(), y.get(), modulus_);
         HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
@@ -213,8 +214,8 @@ class MontyWrappedStandardMath final {
     {
         HPBC_PRECONDITION2(isCanonical(x));
         HPBC_PRECONDITION2(isCanonical(y));
-        T result =
-              modular_subtraction_prereduced_inputs(x.get(), y.get(), modulus_);
+        T result = ::hurchalla::modular_subtraction_prereduced_inputs(
+                                                    x.get(), y.get(), modulus_);
         HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
@@ -230,7 +231,7 @@ class MontyWrappedStandardMath final {
     {
         HPBC_PRECONDITION2(isCanonical(x));
         HPBC_PRECONDITION2(isCanonical(y));
-        T result = absolute_value_difference(x.get(), y.get());
+        T result = ::hurchalla::absolute_value_difference(x.get(), y.get());
         HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }

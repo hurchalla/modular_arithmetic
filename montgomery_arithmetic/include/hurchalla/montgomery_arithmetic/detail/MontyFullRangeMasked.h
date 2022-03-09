@@ -56,9 +56,11 @@ struct MfrmValueTypes {
         HURCHALLA_FORCE_INLINE void cmov(bool cond, V v)
         {
             // lowbits = (cond) ? v.lowbits : lowbits
-            lowbits = conditional_select<T, PerfTag>(cond, v.lowbits, lowbits);
+            lowbits = ::hurchalla::conditional_select<T, PerfTag>(
+                                                      cond, v.lowbits, lowbits);
             // signmask = (cond) ? v.signmask : signmask
-            signmask = conditional_select<T, PerfTag>(cond,v.signmask,signmask);
+            signmask = ::hurchalla::conditional_select<T, PerfTag>(
+                                                    cond, v.signmask, signmask);
         }
      protected:
         friend struct C;
@@ -178,7 +180,8 @@ class MontyFullRangeMasked final :
 // section would be correct, but msvc generates better machine code here
         C cx = getCanonicalValue(x);
         HPBC_ASSERT2(0 <= cx.get() && cx.get() < n_);
-        T resultval= modular_addition_prereduced_inputs(cx.get(), cy.get(), n_);
+        T resultval = ::hurchalla::modular_addition_prereduced_inputs(
+                                                        cx.get(), cy.get(), n_);
         T result_smask = 0;
 #else
         // if x is negative, set tmpn = n, otherwise set tmpn = 0.
@@ -203,7 +206,8 @@ class MontyFullRangeMasked final :
     {
         HPBC_PRECONDITION2(cx.get() < n_);
         HPBC_PRECONDITION2(cy.get() < n_);
-        T result = modular_addition_prereduced_inputs(cx.get(), cy.get(), n_);
+        T result = ::hurchalla::modular_addition_prereduced_inputs(
+                                                        cx.get(), cy.get(), n_);
         HPBC_POSTCONDITION2(result < n_);
         return C(result);
     }
@@ -243,7 +247,8 @@ class MontyFullRangeMasked final :
     {
         HPBC_PRECONDITION2(cx.get() < n_);
         HPBC_PRECONDITION2(cy.get() < n_);
-        T result= modular_subtraction_prereduced_inputs(cx.get(), cy.get(), n_);
+        T result = ::hurchalla::modular_subtraction_prereduced_inputs(
+                                                        cx.get(), cy.get(), n_);
         HPBC_POSTCONDITION2(result < n_);
         return C(result);
     }
@@ -263,7 +268,8 @@ private:
     {
         HPBC_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
         bool isNegative;
-        T resultval = REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
+        T resultval = ::hurchalla::REDC_incomplete(
+                                        isNegative, u_hi, u_lo, n_, BC::inv_n_);
         T result_smask = static_cast<T>(-static_cast<T>(isNegative));
         resultIsZero = (resultval == 0);
         V result = V(resultval, result_smask);
@@ -284,7 +290,7 @@ private:
         HPBC_PRECONDITION2(isValid(x));
         T a = x.getbits();
         T umlo;
-        T umhi = unsigned_multiply_to_hilo_product(umlo, a, a);
+        T umhi = ::hurchalla::unsigned_multiply_to_hilo_product(umlo, a, a);
         T masked_a = static_cast<T>(x.getmask() & a);
         T result_hi = static_cast<T>(umhi - static_cast<T>(2) * masked_a);
         u_lo = umlo;
@@ -421,7 +427,7 @@ private:
         // We can express all of this in code via
         // T a = x.getbits();
         // T umlo;
-        // T umhi = unsigned_multiply_to_hilo_product(umlo, a, a);
+        // T umhi = ::hurchalla::unsigned_multiply_to_hilo_product(umlo, a, a);
         // T neg2a = static_cast<T>(-2) * a;
         // T result_hi = umhi + (x.getmask() & neg2a);
         // u_lo = umlo;
@@ -448,7 +454,7 @@ private:
         T b = cy.get();                  // b has range [0, n)
         HPBC_ASSERT2(0 <= b && b < n_);
 
-        T u_hi = unsigned_multiply_to_hilo_product(u_lo, a, b);
+        T u_hi = ::hurchalla::unsigned_multiply_to_hilo_product(u_lo, a, b);
 #if 1
 // This section follows the algorithm described in the proof.  It will likely
 // perform well on all architectures due to its predictable conditional branch.

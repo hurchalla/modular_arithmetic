@@ -50,7 +50,7 @@ struct default_modsub_unsigned {
     T diff = static_cast<T>(a - b);
     T result = static_cast<T>(diff + modulus);
       // result = (a >= b) ? diff : result
-    result = conditional_select(a >= b, diff, result);
+    result = ::hurchalla::conditional_select(a >= b, diff, result);
 
     HPBC_POSTCONDITION2(0<=result && result<modulus);
     return result;

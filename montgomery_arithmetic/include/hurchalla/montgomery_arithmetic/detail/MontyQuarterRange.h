@@ -177,7 +177,7 @@ class MontyQuarterRange final : public
         S sx = static_cast<S>(x.get());
         S sy = static_cast<S>(y.get());
         S sn2 = static_cast<S>(n2);
-        S modsum = modular_addition_prereduced_inputs(sx, sy, sn2);
+        S modsum = ::hurchalla::modular_addition_prereduced_inputs(sx, sy, sn2);
         HPBC_ASSERT2(modsum >= 0);
         T result = static_cast<T>(modsum);
         HPBC_POSTCONDITION2(result < n2);
@@ -207,7 +207,7 @@ class MontyQuarterRange final : public
         S sx = static_cast<S>(cx.get());
         S sy = static_cast<S>(cy.get());
         S sn = static_cast<S>(n_);
-        S modsum = modular_addition_prereduced_inputs(sx, sy, sn);
+        S modsum = ::hurchalla::modular_addition_prereduced_inputs(sx, sy, sn);
         HPBC_ASSERT2(modsum >= 0);
         T result = static_cast<T>(modsum);
         HPBC_POSTCONDITION2(result < n_);
@@ -228,7 +228,8 @@ class MontyQuarterRange final : public
         S sx = static_cast<S>(x.get());
         S sy = static_cast<S>(y.get());
         S sn2 = static_cast<S>(n2);
-        S moddiff = modular_subtraction_prereduced_inputs(sx, sy, sn2);
+        namespace hc = ::hurchalla;
+        S moddiff = hc::modular_subtraction_prereduced_inputs(sx, sy, sn2);
         HPBC_ASSERT2(moddiff >= 0);
         T result = static_cast<T>(moddiff);
         HPBC_POSTCONDITION2(result < n2);
@@ -248,7 +249,8 @@ class MontyQuarterRange final : public
         S sx = static_cast<S>(cx.get());
         S sy = static_cast<S>(cy.get());
         S sn = static_cast<S>(n_);
-        S moddiff = modular_subtraction_prereduced_inputs(sx, sy, sn);
+        namespace hc = ::hurchalla;
+        S moddiff = hc::modular_subtraction_prereduced_inputs(sx, sy, sn);
         HPBC_ASSERT2(moddiff >= 0);
         T result = static_cast<T>(moddiff);
         HPBC_POSTCONDITION2(result < n_);
@@ -267,7 +269,7 @@ class MontyQuarterRange final : public
         HPBC_ASSERT2(y.get() < limit);
         S sx = static_cast<S>(x.get());
         S sy = static_cast<S>(y.get());
-        S absdiff = absolute_value_difference(sx, sy);
+        S absdiff = ::hurchalla::absolute_value_difference(sx, sy);
         HPBC_ASSERT2(absdiff >= 0);
         T result = static_cast<T>(absdiff);
         HPBC_POSTCONDITION2(isValid(V(result)));
@@ -285,8 +287,9 @@ private:
     V montyREDC(bool& resultIsZero, T u_hi, T u_lo, PTAG) const
     {
         HPBC_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
+        namespace hc = ::hurchalla;
         bool isNegative;  // ignored
-        T result = REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
+        T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
         resultIsZero = (result == 0);
         T sum = static_cast<T>(result + n_);
         HPBC_POSTCONDITION2(0 < sum && sum < static_cast<T>(2*n_));
@@ -302,11 +305,13 @@ private:
     // product to u_lo.
     HURCHALLA_FORCE_INLINE T multiplyToHiLo(T& u_lo, V x, V y) const
     {
-        return unsigned_multiply_to_hilo_product(u_lo, x.get(), y.get());
+        namespace hc = ::hurchalla;
+        return hc::unsigned_multiply_to_hilo_product(u_lo, x.get(), y.get());
     }
     HURCHALLA_FORCE_INLINE T squareToHiLo(T& u_lo, V x) const
     {
-        return unsigned_multiply_to_hilo_product(u_lo, x.get(), x.get());
+        namespace hc = ::hurchalla;
+        return hc::unsigned_multiply_to_hilo_product(u_lo, x.get(), x.get());
     }
     HURCHALLA_FORCE_INLINE bool isValid(V x) const
     {

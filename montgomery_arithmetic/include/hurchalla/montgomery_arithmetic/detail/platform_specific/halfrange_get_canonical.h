@@ -61,9 +61,11 @@ struct default_halfrange_get_canonical {
     // compiler use the flags already set by (tx+tn), if the compiler is smart.
     // Only clang appears to be smart enough to do this though; for x64 and
     // arm32/64: gcc, msvc, icc produce better asm with the #else.
-    tc = conditional_select(tc >= tn, tx, tc);  // tc = (tc>=n) ? tx : tc
+        // set tc = (tc>=n) ? tx : tc
+    tc = ::hurchalla::conditional_select(tc >= tn, tx, tc);
 #  else
-    tc = conditional_select(x >= 0, tx, tc);  // tc = (x>=0) ? tx : tc
+        // set tc = (x>=0) ? tx : tc
+    tc = ::hurchalla::conditional_select(x >= 0, tx, tc);
 #  endif
 #endif
 

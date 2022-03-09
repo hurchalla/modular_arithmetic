@@ -27,7 +27,8 @@ struct default_impl_absdiff_unsigned {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
       // result = (a < b) ? static_cast<T>(b - a) : static_cast<T>(a - b)
-    T result= conditional_select(a<b, static_cast<T>(b-a), static_cast<T>(a-b));
+    T result = ::hurchalla::conditional_select(
+                               (a<b), static_cast<T>(b-a), static_cast<T>(a-b));
     // POSTCONDITION:
     // This function returns absolute_value(a-b).
     HPBC_POSTCONDITION(result<=a || result<=b);

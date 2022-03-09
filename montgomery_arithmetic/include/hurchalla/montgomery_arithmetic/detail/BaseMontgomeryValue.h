@@ -35,7 +35,7 @@ public:
     HURCHALLA_FORCE_INLINE void cmov(bool cond, BaseMontgomeryValue v)
     {
           // value = cond ? v.value : value
-        value = conditional_select<T, PerfTag>(cond, v.value, value);
+        value = ::hurchalla::conditional_select<T, PerfTag>(cond,v.value,value);
     }
 };
 

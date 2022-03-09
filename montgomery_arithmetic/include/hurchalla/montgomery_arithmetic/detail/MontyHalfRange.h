@@ -178,7 +178,7 @@ class MontyHalfRange final :
         HPBC_ASSERT2(-static_cast<S>(n_) <= static_cast<S>(tmp)
                      && static_cast<S>(tmp) < 0);
           // result = (half_n_floor < a) ? tmp : a
-        T result = conditional_select((half_n_floor < a), tmp, a);
+        T result = ::hurchalla::conditional_select((half_n_floor < a), tmp, a);
 #else
         bool cond = (half_n_floor < a);
         T mask = static_cast<T>(-static_cast<T>(cond));
@@ -219,8 +219,9 @@ class MontyHalfRange final :
         // note that the constructor also established the invariant n < R/2.
         HPBC_PRECONDITION2(-(static_cast<S>((n_ - 1)/2)) <= fv.get()
                            && fv.get() <= static_cast<S>((n_ - 1)/2));
+        namespace hc = ::hurchalla;
         T u_lo;
-        S u_hi = signed_multiply_to_hilo_product(u_lo, x.get(), y.get());
+        S u_hi = hc::signed_multiply_to_hilo_product(u_lo, x.get(), y.get());
 
         // Performing the modular sub prior to the REDC will always give
         // equivalent results to performing the REDC and then the modular
@@ -266,8 +267,9 @@ class MontyHalfRange final :
         // note that the constructor also established the invariant n < R/2.
         HPBC_PRECONDITION2(-(static_cast<S>((n_ - 1)/2)) <= fv.get()
                            && fv.get() <= static_cast<S>((n_ - 1)/2));
+        namespace hc = ::hurchalla;
         T u_lo;
-        S u_hi = signed_multiply_to_hilo_product(u_lo, x.get(), y.get());
+        S u_hi = hc::signed_multiply_to_hilo_product(u_lo, x.get(), y.get());
 
         // Performing the modular add prior to the REDC will always give
         // equivalent results to performing the REDC and then the modular
@@ -313,7 +315,8 @@ class MontyHalfRange final :
         // impossible if tx >= n.  This means
         // that if tx >= n, then x.get() < 0.
         // And by contrapositive of the first item, tx < n implies x.get() >= 0
-        tmpx = conditional_select(tx >= n_, tx, tmpx);  //tmpx = (tx>=n)?tx:tmpx
+            // set tmpx = (tx>=n) ? tx : tmpx
+        tmpx = ::hurchalla::conditional_select(tx >= n_, tx, tmpx);
 #else
         // this code is functionally equivalent to the code in the #if above
         S sx = x.get();
@@ -369,7 +372,7 @@ class MontyHalfRange final :
         S sx = static_cast<S>(cx.get());
         S sy = static_cast<S>(cy.get());
         S sn = static_cast<S>(n_);
-        S modsum = modular_addition_prereduced_inputs(sx, sy, sn);
+        S modsum = ::hurchalla::modular_addition_prereduced_inputs(sx, sy, sn);
         HPBC_ASSERT2(modsum >= 0);
         T result = static_cast<T>(modsum);
         HPBC_POSTCONDITION2(result < n_);
@@ -419,7 +422,8 @@ class MontyHalfRange final :
         S sx = static_cast<S>(cx.get());
         S sy = static_cast<S>(cy.get());
         S sn = static_cast<S>(n_);
-        S moddiff = modular_subtraction_prereduced_inputs(sx, sy, sn);
+        namespace hc = ::hurchalla;
+        S moddiff = hc::modular_subtraction_prereduced_inputs(sx, sy, sn);
         HPBC_ASSERT2(moddiff >= 0);
         T result = static_cast<T>(moddiff);
         HPBC_POSTCONDITION2(result < n_);
@@ -441,8 +445,9 @@ private:
     V montyREDC(bool& resultIsZero, T u_hi, T u_lo, PTAG) const
     {
         HPBC_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
+        namespace hc = ::hurchalla;
         bool isNegative;  // ignored
-        T result = REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
+        T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
         resultIsZero = (result == 0);
         V v = V(static_cast<S>(result));
         HPBC_POSTCONDITION2(isValid(v));
@@ -462,7 +467,8 @@ private:
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isValid(y));
-        S product_hi = signed_multiply_to_hilo_product(u_lo, x.get(), y.get());
+        S product_hi = ::hurchalla::signed_multiply_to_hilo_product(
+                                                        u_lo, x.get(), y.get());
         // By isValid(), x and y both have range [-n, n).  Thus x*y has range
         // (-n*n, n*n], and due to class invariant n<R/2, x*y has range
         // (-n*R/2, n*R/2).  Since  product_hi*R + u_lo == x*y,
@@ -486,7 +492,7 @@ private:
         // If (u_hi < n) is true, it indicates product_hi < 0.  Likewise,
         // (u_hi >= n) true would indicate product_hi >= 0.
            // Next line sets  uhi = (uhi>=n) ? tmp : uhi
-        u_hi = conditional_select(u_hi >= n_, tmp, u_hi);
+        u_hi = ::hurchalla::conditional_select(u_hi >= n_, tmp, u_hi);
 #else
         // this should be equivalent to the code above.  It's a slight hack
         // since product_hi doesn't actually represent a montgomery value (V),
@@ -503,7 +509,8 @@ private:
     HURCHALLA_FORCE_INLINE T squareToHiLo(T& u_lo, V x) const
     {
         HPBC_PRECONDITION2(isValid(x));
-        S tmp_hi = signed_multiply_to_hilo_product(u_lo, x.get(), x.get());
+        namespace hc = ::hurchalla;
+        S tmp_hi = hc::signed_multiply_to_hilo_product(u_lo, x.get(), x.get());
         // The same logic as given in multiplyToHiLo shows that
         // -(n+1)/2 <= tmp_hi <= (n-1)/2.  But additionally, since the square
         // of an integer is always >= 0, we therefore know

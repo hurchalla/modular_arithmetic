@@ -120,7 +120,7 @@ T negative_inverse_mod_R(T a)
     static_assert(ut_numeric_limits<T>::is_modulo, "");
     HPBC_PRECONDITION2(a % 2 == 1);
 
-    T inv= nimr_helper::impl_neg_inverse<T, ut_numeric_limits<T>::digits>(a);
+    T inv = nimr_helper::impl_neg_inverse<T, ut_numeric_limits<T>::digits>(a);
 
     // guarantee inv*a ≡ -1 (mod R)
     using P = typename safely_promote_unsigned<T>::type;

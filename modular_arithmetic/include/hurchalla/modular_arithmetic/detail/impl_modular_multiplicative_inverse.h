@@ -61,7 +61,7 @@ struct impl_modular_multiplicative_inverse {
     U gcd = a1;
     if (gcd == 1) {
           // inv = (y<0) ? y+modulus : y
-        U inv = conditional_select(y<0,
+        U inv = ::hurchalla::conditional_select(y<0,
                                    static_cast<U>(static_cast<U>(y)+modulus),
                                    static_cast<U>(y));
         HPBC_POSTCONDITION2(inv < modulus);

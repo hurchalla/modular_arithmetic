@@ -124,7 +124,7 @@ T REDC_incomplete(bool& isNegative, T u_hi, T u_lo, T n, T inv_n)
     if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
         T finalized_result = (isNegative) ? static_cast<T>(result + n) : result;
         HPBC_POSTCONDITION2(finalized_result ==
-                                           REDC_standard(u_hi, u_lo, n, inv_n));
+                              ::hurchalla::REDC_standard(u_hi, u_lo, n, inv_n));
         HPBC_POSTCONDITION2(0 <= finalized_result && finalized_result < n);
     }
     // If  n < R/2,  then  0 < result + n < 2*n

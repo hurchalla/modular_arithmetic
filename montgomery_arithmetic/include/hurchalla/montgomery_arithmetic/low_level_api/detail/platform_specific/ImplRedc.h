@@ -98,7 +98,7 @@ struct RedcIncomplete {
     T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
 
     T mn_lo;
-    T mn_hi = unsigned_multiply_to_hilo_product(mn_lo, m, n);
+    T mn_hi = ::hurchalla::unsigned_multiply_to_hilo_product(mn_lo, m, n);
 
     // mn = m*n.  Since m = (u_lo*inv_n)%R, we know m < R, and thus  mn < R*n.
     // Therefore mn == mn_hi*R + mn_lo < R*n, and mn_hi*R < R*n - mn_lo <= R*n,
@@ -192,7 +192,8 @@ struct DefaultRedcStandard
     T final_result = static_cast<T>(result + (mask & n));
 #else
       // final_result = (ovf) ? static_cast<T>(result+n) : result
-    T final_result = conditional_select(ovf, static_cast<T>(result+n), result);
+    T final_result = ::hurchalla::conditional_select(
+                                         ovf, static_cast<T>(result+n), result);
 #endif
     HPBC_POSTCONDITION2(final_result < n);
     return final_result;
@@ -247,7 +248,7 @@ struct RedcStandard<std::uint64_t>
 
     T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
     T mn_lo;
-    T mn_hi = unsigned_multiply_to_hilo_product(mn_lo, m, n);
+    T mn_hi = ::hurchalla::unsigned_multiply_to_hilo_product(mn_lo, m, n);
     HPBC_ASSERT2(mn_hi < n);
     T reg = u_hi + n;
     T uhi = u_hi;

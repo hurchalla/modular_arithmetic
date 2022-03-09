@@ -66,7 +66,7 @@ struct default_impl_modadd_unsigned {
     T sum = static_cast<T>(a + b);
     T result = static_cast<T>(a - tmp);
       // result = (a < tmp) ? sum : result
-    result = conditional_select(a < tmp, sum, result);
+    result = ::hurchalla::conditional_select(a < tmp, sum, result);
 
     HPBC_POSTCONDITION2(static_cast<T>(0) <= result && result < modulus);
     return result;
@@ -94,7 +94,7 @@ struct default_impl_modadd_unsigned {
     T tmp = static_cast<T>(b - modulus);
     T result = static_cast<T>(a + tmp);
       // result = (result >= a) ? sum : result
-    result = conditional_select(result >= a, sum, result);
+    result = ::hurchalla::conditional_select(result >= a, sum, result);
 
     HPBC_POSTCONDITION2(static_cast<T>(0) <= result && result < modulus);
     return result;

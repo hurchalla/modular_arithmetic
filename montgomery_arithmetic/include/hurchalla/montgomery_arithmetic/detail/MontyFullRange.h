@@ -138,7 +138,8 @@ class MontyFullRange final :
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isValid(y));
-        T result = modular_addition_prereduced_inputs(x.get(), y.get(), n_);
+        namespace hc = ::hurchalla;
+        T result = hc::modular_addition_prereduced_inputs(x.get(), y.get(), n_);
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
@@ -147,7 +148,8 @@ class MontyFullRange final :
     {
         HPBC_PRECONDITION2(cx.get() < n_);
         HPBC_PRECONDITION2(cy.get() < n_);
-        T result = modular_addition_prereduced_inputs(cx.get(), cy.get(), n_);
+        namespace hc = ::hurchalla;
+        T result = hc::modular_addition_prereduced_inputs(cx.get(),cy.get(),n_);
         HPBC_POSTCONDITION2(result < n_);
         return C(result);
     }
@@ -156,7 +158,8 @@ class MontyFullRange final :
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isValid(y));
-        T result = modular_subtraction_prereduced_inputs(x.get(), y.get(), n_);
+        T result = ::hurchalla::
+                    modular_subtraction_prereduced_inputs(x.get(), y.get(), n_);
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
@@ -166,7 +169,8 @@ class MontyFullRange final :
     {
         HPBC_PRECONDITION2(cx.get() < n_);
         HPBC_PRECONDITION2(cy.get() < n_);
-        T result= modular_subtraction_prereduced_inputs(cx.get(), cy.get(), n_);
+        T result = ::hurchalla::
+                  modular_subtraction_prereduced_inputs(cx.get(), cy.get(), n_);
         HPBC_POSTCONDITION2(result < n_);
         return C(result);
     }
@@ -175,7 +179,7 @@ class MontyFullRange final :
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isValid(y));
-        T result = absolute_value_difference(x.get(), y.get());
+        T result = ::hurchalla::absolute_value_difference(x.get(), y.get());
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
@@ -190,7 +194,8 @@ private:
     V montyREDC(bool& resultIsZero, T u_hi, T u_lo, PTAG) const
     {
         HPBC_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
-        T result = REDC_standard(u_hi, u_lo, n_, BC::inv_n_, PTAG());
+        namespace hc = ::hurchalla;
+        T result = hc::REDC_standard(u_hi, u_lo, n_, BC::inv_n_, PTAG());
         resultIsZero = (result == 0);
         HPBC_ASSERT2(result < n_);
         return V(result);
@@ -206,11 +211,13 @@ private:
     // product to u_lo.
     HURCHALLA_FORCE_INLINE T multiplyToHiLo(T& u_lo, V x, V y) const
     {
-        return unsigned_multiply_to_hilo_product(u_lo, x.get(), y.get());
+        namespace hc = ::hurchalla;
+        return hc::unsigned_multiply_to_hilo_product(u_lo, x.get(), y.get());
     }
     HURCHALLA_FORCE_INLINE T squareToHiLo(T& u_lo, V x) const
     {
-        return unsigned_multiply_to_hilo_product(u_lo, x.get(), x.get());
+        namespace hc = ::hurchalla;
+        return hc::unsigned_multiply_to_hilo_product(u_lo, x.get(), x.get());
     }
     HURCHALLA_FORCE_INLINE bool isValid(V x) const
     {

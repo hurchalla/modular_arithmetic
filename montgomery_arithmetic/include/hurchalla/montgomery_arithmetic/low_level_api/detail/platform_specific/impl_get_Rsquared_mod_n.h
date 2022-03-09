@@ -38,24 +38,26 @@ struct impl_get_Rsquared_mod_n {
     HPBC_PRECONDITION2(n % 2 == 1);
     HPBC_PRECONDITION2(n > 1);
 
+    namespace hc = ::hurchalla;
     T rSquaredModN;
 #ifdef HURCHALLA_TESTING_RSQUARED_MOD_N
     if (true) {
 #else
-    if (modular_multiplication_has_slow_perf<T>()) {
+    if (hc::modular_multiplication_has_slow_perf<T>()) {
 #endif
         HPBC_ASSERT2(Rmod_n < n);
         T tmp = Rmod_n;   // Rmod_n ≡ 1*R (mod n)
         int i=0;
         for (; i<4; ++i)
-            tmp = modular_addition_prereduced_inputs(tmp, tmp, n);
+            tmp = hc::modular_addition_prereduced_inputs(tmp, tmp, n);
         // at this point,  tmp ≡ 16*R (mod n)
         constexpr int bitsT = ut_numeric_limits<T>::digits;
         for (; i<bitsT; i*=2) {
             // use montgomery multiplication to square tmp on each iteration
             T u_hi, u_lo;
-            u_hi = unsigned_multiply_to_hilo_product(u_lo, tmp, tmp);
-            tmp = REDC_standard(u_hi, u_lo, n, inverse_n_modR, LowlatencyTag());
+            u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, tmp, tmp);
+            tmp = hc::REDC_standard(
+                                u_hi, u_lo, n, inverse_n_modR, LowlatencyTag());
         }
         HPBC_ASSERT2(i == bitsT);
         // We should now have  tmp ≡ R*R (mod n).
@@ -64,9 +66,9 @@ struct impl_get_Rsquared_mod_n {
 
         rSquaredModN = tmp;
         HPBC_POSTCONDITION2(rSquaredModN ==
-                   modular_multiplication_prereduced_inputs(Rmod_n, Rmod_n, n));
+               hc::modular_multiplication_prereduced_inputs(Rmod_n, Rmod_n, n));
     } else {
-        rSquaredModN = modular_multiplication_prereduced_inputs(
+        rSquaredModN = hc::modular_multiplication_prereduced_inputs(
                                                              Rmod_n, Rmod_n, n);
     }
 

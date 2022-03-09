@@ -29,6 +29,7 @@ struct impl_modular_pow {
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     HPBC_PRECONDITION2(modulus > 1);
 
+    namespace hc = ::hurchalla;
     if (base >= modulus)
        base = static_cast<T>(base % modulus);
 /*
@@ -37,21 +38,25 @@ struct impl_modular_pow {
     T result = 1;
     while (exponent > 0)
     {
-       if (exponent & 1)
-          result= modular_multiplication_prereduced_inputs(result,base,modulus);
+       if (exponent & 1) {
+          result = hc::modular_multiplication_prereduced_inputs(
+                                                         result, base, modulus);
+       }
        exponent = exponent >> 1;
-       base = modular_multiplication_prereduced_inputs(base, base, modulus);
+       base = hc::modular_multiplication_prereduced_inputs(base, base, modulus);
     }
 */
     // slightly optimized version
        // result = (exponent & 1) ? base : 1;
-    T result = conditional_select((exponent & 1), base, static_cast<T>(1));
+    T result = hc::conditional_select((exponent & 1), base, static_cast<T>(1));
     while (exponent > 1)
     {
        exponent = static_cast<T>(exponent >> 1);
-       base = modular_multiplication_prereduced_inputs(base, base, modulus);
-       if (exponent & 1)
-          result= modular_multiplication_prereduced_inputs(result,base,modulus);
+       base = hc::modular_multiplication_prereduced_inputs(base, base, modulus);
+       if (exponent & 1) {
+          result = hc::modular_multiplication_prereduced_inputs(
+                                                         result, base, modulus);
+       }
     }
     return static_cast<T>(result);
   }
