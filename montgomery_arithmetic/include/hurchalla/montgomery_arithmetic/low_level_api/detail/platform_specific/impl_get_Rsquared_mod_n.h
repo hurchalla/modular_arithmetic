@@ -35,6 +35,9 @@ struct impl_get_Rsquared_mod_n {
   template <typename T>
   HURCHALLA_FORCE_INLINE static T call(T n, T inverse_n_modR, T Rmod_n)
   {
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+
     HPBC_PRECONDITION2(n % 2 == 1);
     HPBC_PRECONDITION2(n > 1);
 

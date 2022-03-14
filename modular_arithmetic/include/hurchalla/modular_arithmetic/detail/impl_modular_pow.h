@@ -38,7 +38,7 @@ struct impl_modular_pow {
     T result = 1;
     while (exponent > 0)
     {
-       if (exponent & 1) {
+       if (exponent & 1u) {
           result = hc::modular_multiplication_prereduced_inputs(
                                                          result, base, modulus);
        }
@@ -47,13 +47,13 @@ struct impl_modular_pow {
     }
 */
     // slightly optimized version
-       // result = (exponent & 1) ? base : 1;
-    T result = hc::conditional_select((exponent & 1), base, static_cast<T>(1));
+       // result = (exponent & 1u) ? base : 1;
+    T result = hc::conditional_select((exponent & 1u), base, static_cast<T>(1));
     while (exponent > 1)
     {
        exponent = static_cast<T>(exponent >> 1);
        base = hc::modular_multiplication_prereduced_inputs(base, base, modulus);
-       if (exponent & 1) {
+       if (exponent & 1u) {
           result = hc::modular_multiplication_prereduced_inputs(
                                                          result, base, modulus);
        }

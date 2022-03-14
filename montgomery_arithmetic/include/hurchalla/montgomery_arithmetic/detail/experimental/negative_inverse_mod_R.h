@@ -58,7 +58,7 @@ struct nimr_helper {
     impl_neg_inverse(T a)
     {
         static_assert(bits == ut_numeric_limits<T>::digits, "");
-        static_assert(std::is_unsigned<T>::value, ""); //T native unsign integer
+        static_assert(std::is_unsigned<T>::value, ""); //native unsigned integer
         HPBC_PRECONDITION2(a % 2 == 1);
 
         // avoid undefined behavior that could result if T is an unsigned type
@@ -66,7 +66,7 @@ struct nimr_helper {
         using P = typename safely_promote_unsigned<T>::type;
         P b = static_cast<P>(a);
   
-        P x = (3*b)^12;  // good to 5 bits, but we'll treat it as good to only 4
+        P x = (3u*b)^12u;  // good to 5 bits, but we'll treat it as good to 4
         static const constexpr int goodbits = 4;  // must be a power of 2
         P s = b*x;
         P y = s+1;

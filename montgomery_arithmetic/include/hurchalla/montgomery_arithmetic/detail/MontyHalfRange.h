@@ -217,8 +217,8 @@ class MontyHalfRange final :
         HPBC_PRECONDITION2(isValid(y));
         HPBC_INVARIANT2(n_ % 2 == 1);
         // note that the constructor also established the invariant n < R/2.
-        HPBC_PRECONDITION2(-(static_cast<S>((n_ - 1)/2)) <= fv.get()
-                           && fv.get() <= static_cast<S>((n_ - 1)/2));
+        HPBC_PRECONDITION2(-(static_cast<S>((n_-1)/2)) <= fv.get()
+                           && fv.get() <= static_cast<S>((n_-1)/2));
         namespace hc = ::hurchalla;
         T u_lo;
         S u_hi = hc::signed_multiply_to_hilo_product(u_lo, x.get(), y.get());
@@ -265,8 +265,8 @@ class MontyHalfRange final :
         HPBC_PRECONDITION2(isValid(y));
         HPBC_INVARIANT2(n_ % 2 == 1);
         // note that the constructor also established the invariant n < R/2.
-        HPBC_PRECONDITION2(-(static_cast<S>((n_ - 1)/2)) <= fv.get()
-                           && fv.get() <= static_cast<S>((n_ - 1)/2));
+        HPBC_PRECONDITION2(-(static_cast<S>((n_-1)/2)) <= fv.get()
+                           && fv.get() <= static_cast<S>((n_-1)/2));
         namespace hc = ::hurchalla;
         T u_lo;
         S u_hi = hc::signed_multiply_to_hilo_product(u_lo, x.get(), y.get());
