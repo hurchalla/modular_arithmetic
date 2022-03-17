@@ -66,6 +66,8 @@ public:
 
         static_assert((bits/goodbits)*goodbits == bits, "");
         constexpr int iterations = log2<bits/goodbits>();
+        // cause compile error if iterations isn't initialized at compile time
+        static_assert(iterations != 0, "");
         HURCHALLA_REQUEST_UNROLL_LOOP
         for (int i=0; i<iterations; ++i) {
             P t = y+1;

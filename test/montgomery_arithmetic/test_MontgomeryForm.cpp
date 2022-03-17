@@ -620,6 +620,19 @@ TEST(MontgomeryArithmetic, MontyDefault) {
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
     test_MontgomeryForm<hc::MontgomeryForm<__int128_t>>();
 #endif
+
+// check that MontgomeryDefault uses MontyHalfRange when appropriate
+#if HURCHALLA_TARGET_BIT_WIDTH == 32
+    static_assert(std::is_same<
+                        hc::detail::MontgomeryDefault<std::int32_t>::type,
+                        hc::detail::MontyHalfRange<std::uint32_t>
+                  >::value, "");
+#elif HURCHALLA_TARGET_BIT_WIDTH == 64
+    static_assert(std::is_same<
+                        hc::detail::MontgomeryDefault<std::int64_t>::type,
+                        hc::detail::MontyHalfRange<std::uint64_t>
+                  >::value, "");
+#endif
 }
 
 TEST(MontgomeryArithmetic, MontyWrappedStandardMath) {
@@ -633,6 +646,7 @@ TEST(MontgomeryArithmetic, MontyFullRange) {
 TEST(MontgomeryArithmetic, MontyHalfRange) {
     test_custom_monty<hc::detail::MontyHalfRange>();
 }
+
 TEST(MontgomeryArithmetic, MontyFullRangeMasked) {
     test_custom_monty<hc::detail::MontyFullRangeMasked>();
 }

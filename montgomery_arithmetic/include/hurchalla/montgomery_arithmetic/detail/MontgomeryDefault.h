@@ -10,6 +10,7 @@
 
 
 #include "hurchalla/montgomery_arithmetic/detail/MontyFullRange.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyQuarterRange.h"
 #include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
@@ -30,7 +31,11 @@ public:
     using type = typename std::conditional<
                      (bitsT <= target_bits - 2),
                      MontyQuarterRange<typename sized_uint<target_bits>::type>,
-                     MontyFullRange<U>
+                     typename std::conditional<
+                         (bitsT <= target_bits - 1),
+                         MontyHalfRange<typename sized_uint<target_bits>::type>,
+                         MontyFullRange<U>
+                     >::type
                  >::type;
 };
 

@@ -67,12 +67,14 @@ struct nimr_helper {
         P b = static_cast<P>(a);
   
         P x = (3u*b)^12u;  // good to 5 bits, but we'll treat it as good to 4
-        static const constexpr int goodbits = 4;  // must be a power of 2
+        static constexpr int goodbits = 4;  // must be a power of 2
         P s = b*x;
         P y = s+1;
   
         static_assert((bits/goodbits)*goodbits == bits, "");
-        static const constexpr int iterations = log2<bits/goodbits>();
+        static constexpr int iterations = log2<bits/goodbits>();
+        // cause compile error if iterations isn't initialized at compile time
+        static_assert(iterations != 0, "");
         HURCHALLA_REQUEST_UNROLL_LOOP
         for (int i=0; i<iterations; ++i) {
             P t = y+1;
