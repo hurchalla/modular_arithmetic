@@ -463,7 +463,8 @@ private:
     // Let u be an arbitrary double-word value that is congruent (mod n_) to the
     // product of x and y, and that satisfies 0 <= u < n_*R.  Return the high
     // word of u, and write the low word of u to u_lo.
-    HURCHALLA_FORCE_INLINE T multiplyToHiLo(T& u_lo, V x, V y) const
+    HURCHALLA_FORCE_INLINE T multiplyToHiLo(
+                                     T& HURCHALLA_RESTRICT u_lo, V x, V y) const
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isValid(y));

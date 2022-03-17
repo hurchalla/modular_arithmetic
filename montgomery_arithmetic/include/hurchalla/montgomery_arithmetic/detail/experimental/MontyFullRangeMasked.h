@@ -445,7 +445,8 @@ private:
     // so when you need to multiply one variable that is part of a dependency
     // chain with another variable that is not, you should pass the dependency
     // variable as parameter 'x' and the non-dependency variable as 'y'.
-    HURCHALLA_FORCE_INLINE T multiplyToHiLo(T& u_lo, V x, V y) const
+    HURCHALLA_FORCE_INLINE T multiplyToHiLo(
+                                     T& HURCHALLA_RESTRICT u_lo, V x, V y) const
     {
         HPBC_PRECONDITION2(isValid(x));  // x has range [-n, n)
         HPBC_PRECONDITION2(isValid(y));

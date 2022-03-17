@@ -24,8 +24,9 @@ namespace hurchalla { namespace detail {
 
 // minor note: we use static member functions to disallow ADL.
 
-struct invmR_helper {
-    template <int n>
+struct impl_inverse_mod_R {
+private:
+    template <int n>   // internal helper constexpr function
     constexpr static int log2()
     {
         // PRECONDITION: n!=0 (this isn't possible to express via static_assert)
@@ -33,9 +34,7 @@ struct invmR_helper {
         static_assert(n==1 || (n/2)*2 == n, "");
         return (n<=1) ? 0 : 1 + log2<n/2>();
     }
-};
-
-struct impl_inverse_mod_R {
+public:
     // This algorithm for the inverse (mod R) is described in
     // "integer_inverse.pdf" in this current directory.  Note: it is a
     // generalized and slightly more efficient version of Dumas' algorithm (from
@@ -66,7 +65,7 @@ struct impl_inverse_mod_R {
         P y = 1-s;
 
         static_assert((bits/goodbits)*goodbits == bits, "");
-        constexpr int iterations = invmR_helper::log2<bits/goodbits>();
+        constexpr int iterations = log2<bits/goodbits>();
         HURCHALLA_REQUEST_UNROLL_LOOP
         for (int i=0; i<iterations; ++i) {
             P t = y+1;

@@ -11,7 +11,6 @@
 
 #include "hurchalla/montgomery_arithmetic/MontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyFullRange.h"
-#include "hurchalla/montgomery_arithmetic/detail/MontyFullRangeMasked.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyQuarterRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyWrappedStandardMath.h"
@@ -24,12 +23,12 @@ namespace hurchalla {
 
 
 // This file has aliases for higher performance MontgomeryForm types called
-// MontgomeryQuarter, MontgomeryHalf, MontgomeryFullBasic and MontgomeryFullOpt,
-// each of which are usable within a specific range of modulus sizes.
-// But unless you wish to squeeze out every possible performance advantage, you
-// will likely find it is more convenient to simply use MontgomeryForm<T>.
-// This file also has a special purpose alias MontgomeryStandardMathWrapper
-// which is described further below.
+// MontgomeryQuarter, MontgomeryHalf, and MontgomeryFull, each of which are
+// usable within a specific range of modulus sizes.  But unless you wish to
+// squeeze out every possible performance advantage, you will likely find it is
+// more convenient to simply use MontgomeryForm<T>.  This file also has a
+// special purpose alias MontgomeryStandardMathWrapper which is described
+// further below.
 //
 // USAGE:
 // The suffix "Quarter" in the alias name MontgomeryQuarter indicates the size
@@ -70,35 +69,15 @@ namespace hurchalla {
 // use of MontgomeryQuarter<T>, you can usually expect MontgomeryQuarter<T> to
 // perform better than MontgomeryHalf<T>.
 //
-// The suffix "Full" in the alias names MontgomeryFullBasic and
-// MontgomeryFullOpt indicates that any odd-valued modulus is permissable to use
-// to construct one of those objects: you may use the full range of all possible
-// odd values of type T for the modulus.
-// MontgomeryFullBasic utilizes the standard, normal Montgomery algorithms
+// The suffix "Full" in the alias names MontgomeryFull indicates that any odd-
+// valued modulus is permissable to use to construct a MontgomeryFull object:
+// you may use the full range of all possible odd values of type T for the
+// modulus.  MontgomeryFull utilizes the standard, normal Montgomery algorithms
 // without any interesting or unusal optimizations to the algorithms.  Usually
-// MontgomeryForm<T> maps to the same underlying class as MontgomeryFullBasic,
-// and so they often perform the same.  However MontgomeryForm<T> can map to
-// more efficient classes in some cases.
-// MontgomeryFullOpt utilizes interesting and unusual optimizations to the
-// Montgomery arithmetic algorithms, in order to perform faster multiply and
-// square and fused-multiply/square-add/sub operations; this speedup comes at
-// the cost of slightly slower simple add and subtract operations, and the
-// speedup only applies to certain sizes of T.
-// For a type T that is the same size as the CPU integer registers (e.g.
-// uin64_t on a 64 bit computer) or a type T that is smaller than the register
-// size, you can usually expect MontgomeryFullOpt<T> to perform better overall
-// than MontgomeryFullBasic<T>, when both are given the same modulus.  This is
-// due to the improved multiply, square, and fused-multiply/square-add/sub
-// functions.  However, the plain add() and subtract() functions in
-// MontgomeryFullOpt<T> will usually be slower than those in
-// MontgomeryFullBasic<T>.
-// For a type T that is larger than the CPU integer register size, you can
-// usually expect MontgomeryFullOpt<T> to perform worse overall than
-// MontgomeryFullBasic<T>, and to provide little or no benefit.
-// Instead of using MontgomeryFullBasic<T> or MontgomeryFullOpt<T>, if your
-// modulus is small enough to allow use of MontgomeryQuarter<T> or
-// MontgomeryHalf<T>, you can usually expect those classes to perform better
-// than both MontgomeryFullBasic<T> and MontgomeryFullOpt<T>.
+// MontgomeryForm<T> maps to the same underlying class as MontgomeryFull<T>, and
+// so they often perform the same.  However MontgomeryForm<T> can map to more
+// efficient classes in some cases.  For this reason, you should usually prefer
+// to use MontgomeryForm<T>.
 //
 // Note that this file also has an alias called MontgomeryStandardMathWrapper.
 // This alias maps to a class that uses the MontgomeryForm interface but that
@@ -109,19 +88,18 @@ namespace hurchalla {
 // modulus is allowed to be either even or odd.
 //
 // PERFORMANCE DETAILS:
-// The MontgomeryQuarter<T>, MontgomeryHalf<T>, and MontgomeryFullOpt<T> aliases
-// can offer a notable performance improvement over MontgomeryForm<T>.  If
-// you know either at compile-time or via run-time checks that your modulus will
-// be small enough to allow you to use one of these aliases, and you also know
-// you have a small enough type T to allow the alias to perform well, then you
-// might expect perhaps a 5-20% performance gain over MontgomeryForm<T>.
+// The MontgomeryQuarter<T> and MontgomeryHalf<T> can offer a notable
+// performance improvement over MontgomeryForm<T>.  If you know either at
+// compile-time or via run-time checks that your modulus will be small enough to
+// allow you to use one of these aliases, then you might roughly expect
+// performance gains perhaps in the range of 5-20% over MontgomeryForm<T>.
 // MontgomeryStandardMathWrapper<T> usually will perform worse than all the
 // other classes and aliases mentioned here, and often it performs much worse.
 // However, on some modern systems with extremely fast dividers it is possible
 // that it could outperform both MontgomeryForm<T> and the normal aliases.
 //
 // With all performance details, you need to measure on your system to know what
-// you can truly expect.
+// to truly expect.
 
 
 template <typename, template <typename> class> class MontyAliasHelper;
@@ -136,12 +114,9 @@ using MontgomeryHalf = MontgomeryForm<T,
               typename MontyAliasHelper<T, detail::MontyHalfRange>::type>;
 
 template <typename T>
-using MontgomeryFullBasic = MontgomeryForm<T,
+using MontgomeryFull = MontgomeryForm<T,
               typename MontyAliasHelper<T, detail::MontyFullRange>::type>;
 
-template <typename T>
-using MontgomeryFullOpt = MontgomeryForm<T,
-              typename MontyAliasHelper<T, detail::MontyFullRangeMasked>::type>;
 
 // The MontgomeryStandardMathWrapper alias provides the MontgomeryForm interface
 // but uses no montgomery arithmetic.  All arithmetic is done with standard

@@ -177,8 +177,6 @@ TEST(MontgomeryArithmetic, montgomery_pow) {
     run_pow_tests<hc::MontgomeryForm<std::uint8_t,
                         hc::detail::MontyFullRange<std::uint8_t>>>();
     run_pow_tests<hc::MontgomeryForm<std::uint8_t,
-                        hc::detail::MontyFullRangeMasked<std::uint8_t>>>();
-    run_pow_tests<hc::MontgomeryForm<std::uint8_t,
                         hc::detail::MontyWrappedStandardMath<std::uint8_t>>>();
 
     run_pow_tests<hc::MontgomeryForm<std::uint16_t,
@@ -187,8 +185,6 @@ TEST(MontgomeryArithmetic, montgomery_pow) {
                         hc::detail::MontyHalfRange<std::uint16_t>>>();
     run_pow_tests<hc::MontgomeryForm<std::uint16_t,
                         hc::detail::MontyFullRange<std::uint16_t>>>();
-    run_pow_tests<hc::MontgomeryForm<std::uint16_t,
-                        hc::detail::MontyFullRangeMasked<std::uint16_t>>>();
     run_pow_tests<hc::MontgomeryForm<std::uint16_t,
                         hc::detail::MontyWrappedStandardMath<std::uint16_t>>>();
 
@@ -199,8 +195,6 @@ TEST(MontgomeryArithmetic, montgomery_pow) {
     run_pow_tests<hc::MontgomeryForm<std::uint32_t,
                         hc::detail::MontyFullRange<std::uint32_t>>>();
     run_pow_tests<hc::MontgomeryForm<std::uint32_t,
-                        hc::detail::MontyFullRangeMasked<std::uint32_t>>>();
-    run_pow_tests<hc::MontgomeryForm<std::uint32_t,
                         hc::detail::MontyWrappedStandardMath<std::uint32_t>>>();
 
     run_pow_tests<hc::MontgomeryForm<std::uint64_t,
@@ -209,8 +203,6 @@ TEST(MontgomeryArithmetic, montgomery_pow) {
                         hc::detail::MontyHalfRange<std::uint64_t>>>();
     run_pow_tests<hc::MontgomeryForm<std::uint64_t,
                         hc::detail::MontyFullRange<std::uint64_t>>>();
-    run_pow_tests<hc::MontgomeryForm<std::uint64_t,
-                        hc::detail::MontyFullRangeMasked<std::uint64_t>>>();
     run_pow_tests<hc::MontgomeryForm<std::uint64_t,
                         hc::detail::MontyWrappedStandardMath<std::uint64_t>>>();
 
@@ -221,8 +213,6 @@ TEST(MontgomeryArithmetic, montgomery_pow) {
                         hc::detail::MontyHalfRange<__uint128_t>>>();
     run_pow_tests<hc::MontgomeryForm<__uint128_t,
                         hc::detail::MontyFullRange<__uint128_t>>>();
-    run_pow_tests<hc::MontgomeryForm<__uint128_t,
-                        hc::detail::MontyFullRangeMasked<__uint128_t>>>();
     run_pow_tests<hc::MontgomeryForm<__uint128_t,
                         hc::detail::MontyWrappedStandardMath<__uint128_t>>>();
 #endif
