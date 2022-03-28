@@ -76,12 +76,12 @@ target_link_libraries(hurchalla_modular_arithmetic
 
 
 
-# TODO:  The following is a guess at how installing target include directories
-# should be done.  It may be wrong.  It assumes that the build step from the
-# subdirectories montgomery_arithmetic and modular_arithmetic (which have
-# build phase target_include_directories commands) provides the information to
-# cmake which cmake then uses in the install phase target_include_directories
-# below.  I haven't tested this or anything related to cmake install yet...
+# TODO:  The following is a guess at a good way to install target include
+# directories.  It assumes that the build step from the subdirectories
+# montgomery_arithmetic and modular_arithmetic (which have build phase
+# target_include_directories commands) provides the information to cmake which
+# cmake then uses in the install phase target_include_directories below.  I've
+# done very little testing of cmake install so far though...
 # ---------------------
 target_include_directories(hurchalla_modular_arithmetic
                            INTERFACE $<INSTALL_INTERFACE:include>)
