@@ -63,8 +63,6 @@ class MontyCommonBase {
         HPBC_INVARIANT2(0 < r_mod_n_ && r_mod_n_ < n_);
         HPBC_INVARIANT2(r_squared_mod_n_ < n_);
     }
-    MontyCommonBase(const MontyCommonBase&) = delete;
-    MontyCommonBase& operator=(const MontyCommonBase&) = delete;
 
  public:
     HURCHALLA_FORCE_INLINE T getModulus() const { return n_; }

@@ -14,6 +14,7 @@
 #include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyQuarterRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyWrappedStandardMath.h"
+#include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/sized_uint.h"
 #include "hurchalla/util/compiler_macros.h"
@@ -107,7 +108,7 @@ template <typename, template <typename> class> class MontyAliasHelper;
 
 template <typename T>
 using MontgomeryQuarter = MontgomeryForm<T,
-              typename MontyAliasHelper<T, detail::MontyQuarterRange>::type>;
+         detail::MontyQuarterRange<typename extensible_make_unsigned<T>::type>>;
 
 template <typename T>
 using MontgomeryHalf = MontgomeryForm<T,
@@ -130,11 +131,11 @@ using MontgomeryFull = MontgomeryForm<T,
 // standard modular arithmetic whenever a large amount of modular multiplication
 // is needed, and so this is probably unlikely to be an alias you would expect
 // to use.  However, CPU architectures vary and evolve, and what is true today
-// may not be true tomorrow - the only way to truly know what is fastest on a
-// given system is to measure and compare performance.
+// may not be true tomorrow - the only way to know what is fastest on a given
+// system is to measure and compare performance.
 template <typename T>
-using MontgomeryStandardMathWrapper =
-                MontgomeryForm<T, detail::MontyWrappedStandardMath<T>>;
+using MontgomeryStandardMathWrapper = MontgomeryForm<T,
+  detail::MontyWrappedStandardMath<typename extensible_make_unsigned<T>::type>>;
 
 
 
@@ -143,8 +144,7 @@ using MontgomeryStandardMathWrapper =
 template <typename T, template <typename> class M>
 class MontyAliasHelper final {
     static_assert(ut_numeric_limits<T>::is_integer, "");
-    static_assert(!ut_numeric_limits<T>::is_signed, "");
-    static_assert(ut_numeric_limits<T>::is_modulo, "");
+    using U = typename extensible_make_unsigned<T>::type;
     static constexpr int bitsT = ut_numeric_limits<T>::digits;
     static constexpr int target_bits = HURCHALLA_TARGET_BIT_WIDTH;
 public:
@@ -152,9 +152,14 @@ public:
         typename std::conditional<
             (bitsT <= target_bits - 2),
             detail::MontyQuarterRange<typename sized_uint<target_bits>::type>,
-            M<T>
+            M<U>
         >::type;
 };
+// In perf testing on a 64 bit system, I found that MontyQuarterRange<uint64_t>
+// performed the same or slightly better than MontyHalfRange<uint32_t> or
+// MontyFullRange<uint32_t>, when given the same (uint32_t) modulus.  This is
+// reflected above by MontyAliasHelper mapping to MontyQuarterRange if it gets a
+// small enough type T.
 
 
 } // end namespace

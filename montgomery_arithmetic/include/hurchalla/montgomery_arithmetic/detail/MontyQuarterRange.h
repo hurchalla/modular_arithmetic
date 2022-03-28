@@ -117,8 +117,6 @@ class MontyQuarterRange final : public
                                        (ut_numeric_limits<T>::digits - 2));
         HPBC_PRECONDITION2(modulus < Rdiv4);
     }
-    MontyQuarterRange(const MontyQuarterRange&) = delete;
-    MontyQuarterRange& operator=(const MontyQuarterRange&) = delete;
 
     static HURCHALLA_FORCE_INLINE constexpr T max_modulus()
     {

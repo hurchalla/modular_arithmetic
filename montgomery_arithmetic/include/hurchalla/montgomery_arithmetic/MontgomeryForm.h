@@ -75,8 +75,6 @@ public:
         //HPBC_PRECONDITION(modulus % 2 == 1);
         HPBC_PRECONDITION(modulus > 1);
     }
-    MontgomeryForm(const MontgomeryForm&) = delete;
-    MontgomeryForm& operator=(const MontgomeryForm&) = delete;
 
     // Returns the largest valid modulus allowed for the constructor.
     static constexpr T max_modulus()
@@ -437,8 +435,11 @@ public:
     MontgomeryValue pow(MontgomeryValue base, T exponent) const
     {
         HPBC_PRECONDITION(exponent >= 0);
-        using MF = MontgomeryForm;
-        return detail::montgomery_pow<MF>::scalarpow(*this, base, exponent);
+        std::array<MontgomeryValue, 1> bases = {{ base }};
+        std::array<MontgomeryValue, 1> result =
+                detail::montgomery_array_pow<typename MontyType::MontyTag,
+                                   MontgomeryForm>::pow(*this, bases, exponent);
+        return result[0];
     }
 
     // This is a specially optimized version of the pow() function above.

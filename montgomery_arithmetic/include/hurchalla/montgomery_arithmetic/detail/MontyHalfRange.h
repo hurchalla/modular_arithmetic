@@ -128,8 +128,6 @@ class MontyHalfRange final :
                                        (ut_numeric_limits<T>::digits - 1));
         HPBC_PRECONDITION2(modulus < Rdiv2);
     }
-    MontyHalfRange(const MontyHalfRange&) = delete;
-    MontyHalfRange& operator=(const MontyHalfRange&) = delete;
 
     static HURCHALLA_FORCE_INLINE constexpr T max_modulus()
     {

@@ -122,8 +122,6 @@ class MontyFullRangeMasked final :
     using fusingvalue_type = FV;
 
     explicit MontyFullRangeMasked(T modulus) : BC(modulus) {}
-    MontyFullRangeMasked(const MontyFullRangeMasked&) = delete;
-    MontyFullRangeMasked& operator=(const MontyFullRangeMasked&) = delete;
 
     static HURCHALLA_FORCE_INLINE constexpr T max_modulus()
     {

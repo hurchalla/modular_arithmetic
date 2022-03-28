@@ -78,8 +78,6 @@ class MontyWrappedStandardMath final {
     {
         HPBC_PRECONDITION2(modulus > 0);
     }
-    MontyWrappedStandardMath(const MontyWrappedStandardMath&) = delete;
-    MontyWrappedStandardMath& operator=(const MontyWrappedStandardMath&)=delete;
 
     static HURCHALLA_FORCE_INLINE constexpr T max_modulus()
     {
