@@ -16,10 +16,10 @@ target_sources(modular_arithmetic_example PRIVATE
 
 # in add_subdirectory below, the first argument must be the path on your system
 # to the root of the cloned modular arithmetic repository.  In this example,
-# ".." is used because (unless you move it) this CMakeLists.txt file has a path
-# that is within the repository, and that path is one directory level below the
-# repo's root.
-add_subdirectory(..  ${CMAKE_CURRENT_BINARY_DIR}/modular_arithmetic)
+# "../.." is used because (unless you move it) this CMakeLists.txt file has a
+# path that is within the repository, and that path is two directory levels
+# below the repo's root.
+add_subdirectory(../..  ${CMAKE_CURRENT_BINARY_DIR}/modular_arithmetic)
 
 target_link_libraries(modular_arithmetic_example
                       hurchalla_modular_arithmetic)

@@ -29,7 +29,7 @@ target_link_libraries(*your_project_target_name* &nbsp; hurchalla_modular_arithm
 
 For best performance you *must* ensure that the standard macro NDEBUG (see &lt;cassert&gt;) is defined when compiling.  You can do this by calling CMake with -DCMAKE_BUILD_TYPE=Release.  
 
-It may help to see a simple [example project with CMake](example_with_cmake).
+It may help to see a simple [example project with CMake](examples/example_with_cmake).
 
 ### Without CMake
 
@@ -47,7 +47,7 @@ When compiling your project, you'll of course need to ensure that you have that 
 
 For good performance you *must* ensure that the standard macro NDEBUG (see &lt;cassert&gt;) is defined when compiling.  You can generally do this by adding the option flag -DNDEBUG to your compile command.  
 
-It may help to see a simple [example](example_without_cmake).
+It may help to see a simple [example](examples/example_without_cmake).
 
 ## TODO
 
