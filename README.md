@@ -17,29 +17,29 @@ Released.  All planned functionality and unit tests are finished and working cor
 
 ### With CMake
 
-If you're using CMake for your project and you wish to add this modular arithmetic library to it, then clone this git repository onto your system.  In your project's CMakeLists.txt file, add the following two lines with appropriate changes to their italic portions to match your project and paths ( an easy replacement for *your_binary_dir* is ${CMAKE_CURRENT_BINARY_DIR} ):
-add_subdirectory(*path_of_the_cloned_modular_arithmetic_repository* &nbsp; *your_binary_dir*/modular_arithmetic)
-target_link_libraries(*your_project_target_name* &nbsp; hurchalla_modular_arithmetic)
+If you're using CMake for your project and you wish to add this modular arithmetic library to it, then clone this git repository onto your system.  In your project's CMakeLists.txt file, add the following two lines with appropriate changes to their italic portions to match your project and paths ( an easy replacement for *your_binary_dir* is ${CMAKE_CURRENT_BINARY_DIR} ):  
+add_subdirectory(*path_of_the_cloned_modular_arithmetic_repository* &nbsp; *your_binary_dir*/modular_arithmetic)  
+target_link_libraries(*your_project_target_name* &nbsp; hurchalla_modular_arithmetic)  
 
-For best performance you *must* ensure that the standard macro NDEBUG (see &lt;cassert&gt;) is defined when compiling.  You can do this by calling CMake with -DCMAKE_BUILD_TYPE=Release.
+For best performance you *must* ensure that the standard macro NDEBUG (see &lt;cassert&gt;) is defined when compiling.  You can do this by calling CMake with -DCMAKE_BUILD_TYPE=Release.  
 
 It may help to see a simple [example project with CMake](example_with_cmake).
 
 ### Without CMake
 
-If you're not using CMake for your project, you'll need to install/copy these modular arithmetic headers and dependencies to some directory in order to use them.  To do this, first clone this git repository onto your system.  You'll need CMake on your system (at least temporarily), so install CMake if you don't have it.  Then from your shell run the following commands:
+If you're not using CMake for your project, you'll need to install/copy these modular arithmetic headers and dependencies to some directory in order to use them.  To do this, first clone this git repository onto your system.  You'll need CMake on your system (at least temporarily), so install CMake if you don't have it.  Then from your shell run the following commands:  
 
->cd *path_of_the_cloned_modular_arithmetic_repository*
->mkdir tmp
->cd tmp
->cmake -S.. -B.
->cmake --install . --prefix *the_folder_you_want_to_install_to*
-If you prefer, for the last command you could instead use CMake's default install location (on linux this is /usr/local) by omitting the --prefix and subsequent folder.
+>cd *path_of_the_cloned_modular_arithmetic_repository*  
+>mkdir tmp  
+>cd tmp  
+>cmake -S.. -B.  
+>cmake --install . --prefix *the_folder_you_want_to_install_to*  
+If you prefer, for the last command you could instead use CMake's default install location (on linux this is /usr/local) by omitting the --prefix and subsequent folder.  
 
 This will copy all the header files needed for the modular arithmetic library to an "include" subfolder in the installation folder of your choosing.
-When compiling your project, you'll of course need to ensure that you have that include subfolder as part of your include path.
+When compiling your project, you'll of course need to ensure that you have that include subfolder as part of your include path.  
 
-For good performance you *must* ensure that the standard macro NDEBUG (see &lt;cassert&gt;) is defined when compiling.  You can generally do this by adding the option flag -DNDEBUG to your compile command.
+For good performance you *must* ensure that the standard macro NDEBUG (see &lt;cassert&gt;) is defined when compiling.  You can generally do this by adding the option flag -DNDEBUG to your compile command.  
 
 It may help to see a simple [example](example_without_cmake).
 
