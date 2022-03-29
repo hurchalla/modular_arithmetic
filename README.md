@@ -13,6 +13,12 @@ Released.  All planned functionality and unit tests are finished and working cor
 
 * **Jeffrey Hurchalla**
 
+## License
+
+This project is licensed under the MPL 2.0 License - see the [LICENSE.TXT](LICENSE.TXT) file for details
+
+<br/>
+
 ## How to use the library
 
 ### With CMake
@@ -42,10 +48,6 @@ When compiling your project, you'll of course need to ensure that you have that 
 For good performance you *must* ensure that the standard macro NDEBUG (see &lt;cassert&gt;) is defined when compiling.  You can generally do this by adding the option flag -DNDEBUG to your compile command.  
 
 It may help to see a simple [example](example_without_cmake).
-
-## License
-
-This project is licensed under the MPL 2.0 License - see the [LICENSE.TXT](LICENSE.TXT) file for details
 
 ## TODO
 
