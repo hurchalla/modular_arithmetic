@@ -35,28 +35,37 @@ namespace hurchalla {
 // The suffix "Quarter" in the alias name MontgomeryQuarter indicates the size
 // limit for the modulus that you are allowed to use to construct a
 // MontgomeryQuarter object: you may use the smallest quarter of the range of
-// all possible values of type T for the modulus.  More specifically, if we
-// let R = (1 << ut_numeric_limits<T>::digits), MontgomeryQuarter<T> allows any
-// modulus < R/4.  For example, MontgomeryQuarter<uint64_t> allows any modulus
-// less than (1 << 64)/4.  It is undefined behavior to use a modulus that is not
-// within the allowed range.  The modulus you use must also be odd, which is
+// all possible (odd) values of the unsigned version of type T, for the modulus.
+// More specifically, if we let U = extensible_make_unsigned<T>::type, and we
+// let R = (1 << ut_numeric_limits<U>::digits), then MontgomeryQuarter<T> allows
+// any odd positive modulus < R/4.  For example, MontgomeryQuarter<uint64_t>
+// allows any odd modulus satisfying 0 < modulus < (1 << 64)/4.  And likewise,
+// MontgomeryQuarter<int64_t> also allows any odd modulus satisfying
+// 0 < modulus < (1 << 64)/4.  It is undefined behavior to use a modulus that is
+// not within the allowed range.  The modulus you use must be odd, which is
 // always required for montgomery arithmetic.
 // In contrast, the default class MontgomeryForm<T> has no restriction on the
-// its modulus size, though it too requires the modulus must be odd.
+// its modulus size, aside from requiring that its modulus must be a positive
+// odd number.
 // You can expect that MontgomeryQuarter<T> will perform better (very often) or
 // at worst the same as MontgomeryForm<T>, if both are given the same modulus.
 //
 // The suffix "Half" in the alias name MontgomeryHalf indicates the size limit
 // for the modulus that you are allowed to use to construct a MontgomeryHalf
-// object: you may use the smallest half of the range of all possible values of
-// type T for the modulus.  More specifically, if we let
-// R = (1 << ut_numeric_limits<T>::digits), MontgomeryHalf<T> allows any
-// modulus < R/2.  For example, MontgomeryHalf<uint64_t> allows any modulus
-// less than (1 << 64)/2.  It is undefined behavior to use a modulus that is not
-// within the allowed range.  The modulus you use must be odd, which is always
-// required for montgomery arithmetic.
-// In contrast, the default class MontgomeryForm<T> has no restriction on the
-// its modulus size, though it too requires the modulus must be odd.
+// object: you may use the smallest half of the range of all possible (odd)
+// values of the unsigned version of type T, for the modulus.  More
+// specifically, if we let U = extensible_make_unsigned<T>::type, and we let
+// R = (1 << ut_numeric_limits<U>::digits), then MontgomeryHalf<T> allows any
+// odd positive modulus < R/2.  For example, MontgomeryHalf<uint64_t> allows any
+// odd modulus satisfying 0 < modulus < (1 << 64)/2.  MontgomeryHalf<int64_t>
+// also allows any odd modulus satisfying 0 < modulus < (1 << 64)/2.  We can
+// note that for any signed integer type T, this therefore permits all positive
+// (and odd) values of T to be used for the modulus.  It is undefined behavior
+// to use a modulus that is not within the allowed range.  The modulus you use
+// must be odd, which is always required for montgomery arithmetic.
+// In contrast, the default class MontgomeryForm<T> has no restriction on its
+// modulus size, aside from requiring that its modulus must be a positive odd
+// number.
 // For a type T that is the same size as the CPU integer registers (e.g.
 // uin64_t on a 64 bit computer) or a type T that is smaller than the register
 // size, you can expect that MontgomeryHalf<T> will perform better (very often)
@@ -70,15 +79,15 @@ namespace hurchalla {
 // use of MontgomeryQuarter<T>, you can usually expect MontgomeryQuarter<T> to
 // perform better than MontgomeryHalf<T>.
 //
-// The suffix "Full" in the alias names MontgomeryFull indicates that any odd-
-// valued modulus is permissable to use to construct a MontgomeryFull object:
-// you may use the full range of all possible odd values of type T for the
-// modulus.  MontgomeryFull utilizes the standard, normal Montgomery algorithms
-// without any interesting or unusal optimizations to the algorithms.  Usually
-// MontgomeryForm<T> maps to the same underlying class as MontgomeryFull<T>, and
-// so they often perform the same.  However MontgomeryForm<T> can map to more
-// efficient classes in some cases.  For this reason, you should usually prefer
-// to use MontgomeryForm<T>.
+// The suffix "Full" in the alias name MontgomeryFull indicates that any
+// positive odd-valued modulus is permissable to use to construct a
+// MontgomeryFull object: you may use the full range of all positive odd values
+// of type T for the modulus.  MontgomeryFull utilizes the standard, normal
+// Montgomery algorithms without any interesting or unusal optimizations to the
+// algorithms.  Usually MontgomeryForm<T> maps to the same underlying class as
+// MontgomeryFull<T>, and so they often perform the same.  However
+// MontgomeryForm<T> can map to more efficient classes in some cases.  For this
+// reason, you should usually prefer to use MontgomeryForm<T>.
 //
 // Note that this file also has an alias called MontgomeryStandardMathWrapper.
 // This alias maps to a class that uses the MontgomeryForm interface but that
@@ -86,7 +95,7 @@ namespace hurchalla {
 // than any montgomery arithmetic.  This can be useful as an aid for comparing
 // performance between montgomery and non-montgomery modular arithmetic.
 // Since MontgomeryStandardMathWrapper does not use montgomery arithmetic, its
-// modulus is allowed to be either even or odd.
+// modulus is allowed to be either even or odd.  Its modulus must be positive.
 //
 // PERFORMANCE DETAILS:
 // The MontgomeryQuarter<T> and MontgomeryHalf<T> can offer a notable
@@ -100,7 +109,7 @@ namespace hurchalla {
 // that it could outperform both MontgomeryForm<T> and the normal aliases.
 //
 // With all performance details, you need to measure on your system to know what
-// to truly expect.
+// to expect in reality.
 
 
 template <typename, template <typename> class> class MontyAliasHelper;

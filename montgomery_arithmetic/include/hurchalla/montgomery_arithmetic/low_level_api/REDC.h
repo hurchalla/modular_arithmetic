@@ -82,8 +82,8 @@ T REDC_standard(T u_hi, T u_lo, T n, T inv_n, PTAG = PTAG())
 // 65 bit signed (two's complement) value, in which the (implied) 65th bit is
 // represented by isNegative.  This signed result is guaranteed to be congruent
 // (mod n) to the result from REDC_standard(); more specifically, if isNegative
-// is true, this function's return value equals  n + REDC_standard(), and if
-// isNegative is false, the return value equals REDC_standard().
+// is false, this function's return value equals REDC_standard(), and if
+// isNegative is true, the return value plus n equals REDC_standard().
 // ---
 // As an example of an optimization that REDC_incomplete() allows, we can use it
 // to optimize Montgomery multiplication when the modulus 'n' is less than R/4.

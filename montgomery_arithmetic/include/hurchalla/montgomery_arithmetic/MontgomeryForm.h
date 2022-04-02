@@ -23,9 +23,8 @@
 namespace hurchalla {
 
 
-// When using the default MontyType, T must be signed or unsigned integral type.
-// A custom MontyType may have different requirements for type T (e.g. that T is
-// an unsigned integral type).
+// T must be a signed or unsigned integral type.
+// Usually you would not specify MontyType and instead accept the default.
 template<class T, class MontyType = typename detail::MontgomeryDefault<T>::type>
 class MontgomeryForm final {
     const MontyType impl;
