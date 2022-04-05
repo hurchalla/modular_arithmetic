@@ -25,7 +25,7 @@ jobs:
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       
       #-DCMAKE_CXX_COMPILER=clang++-10
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DTEST_HURCHALLA_MODULAR_ARITHMETIC=ON  -DCMAKE_CXX_FLAGS=${{env.CXX_FLAGS}}
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_CXX_FLAGS=${{env.CXX_FLAGS}}
 
     - name: Build
       # Build your program with the given configuration
