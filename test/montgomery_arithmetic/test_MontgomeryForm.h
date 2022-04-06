@@ -597,12 +597,15 @@ template <template<class> class M>
 void test_custom_monty()
 {
     namespace hc = ::hurchalla;
+    test_MontgomeryForm<hc::MontgomeryForm<std::uint64_t, M<std::uint64_t>>>();
+
+#ifdef HURCHALLA_TEST_MODULAR_ARITHMETIC_HEAVYWEIGHT
     test_MontgomeryForm<hc::MontgomeryForm<std::uint8_t, M<std::uint8_t>>>();
     test_MontgomeryForm<hc::MontgomeryForm<std::uint16_t, M<std::uint16_t>>>();
     test_MontgomeryForm<hc::MontgomeryForm<std::uint32_t, M<std::uint32_t>>>();
-    test_MontgomeryForm<hc::MontgomeryForm<std::uint64_t, M<std::uint64_t>>>();
-#if HURCHALLA_COMPILER_HAS_UINT128_T()
+# if HURCHALLA_COMPILER_HAS_UINT128_T()
     test_MontgomeryForm<hc::MontgomeryForm<__uint128_t, M<__uint128_t>>>();
+# endif
 #endif
 }
 

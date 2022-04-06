@@ -93,9 +93,9 @@ TEST(MontgomeryArithmetic, MontgomeryFormExamples) {
 
 // extensive tests of functionality with all possible Monty types ---
 
-TEST(MontgomeryArithmetic, MontyFullRange) {
+TEST(MontgomeryArithmetic, MontyQuarterRange) {
     namespace hc = ::hurchalla;
-    test_custom_monty<hc::detail::MontyFullRange>();
+    test_custom_monty<hc::detail::MontyQuarterRange>();
 }
 
 TEST(MontgomeryArithmetic, MontyHalfRange) {
@@ -103,9 +103,21 @@ TEST(MontgomeryArithmetic, MontyHalfRange) {
     test_custom_monty<hc::detail::MontyHalfRange>();
 }
 
-TEST(MontgomeryArithmetic, MontyQuarterRange) {
+TEST(MontgomeryArithmetic, MontyFullRange) {
     namespace hc = ::hurchalla;
-    test_custom_monty<hc::detail::MontyQuarterRange>();
+    namespace hcd = ::hurchalla::detail;
+    test_MontgomeryForm<hc::MontgomeryForm<std::uint8_t,
+                                         hcd::MontyFullRange<std::uint8_t>>>();
+    test_MontgomeryForm<hc::MontgomeryForm<std::uint16_t,
+                                         hcd::MontyFullRange<std::uint16_t>>>();
+    test_MontgomeryForm<hc::MontgomeryForm<std::uint32_t,
+                                         hcd::MontyFullRange<std::uint32_t>>>();
+    test_MontgomeryForm<hc::MontgomeryForm<std::uint64_t,
+                                         hcd::MontyFullRange<std::uint64_t>>>();
+#if HURCHALLA_COMPILER_HAS_UINT128_T()
+    test_MontgomeryForm<hc::MontgomeryForm<__uint128_t,
+                                         hcd::MontyFullRange<__uint128_t>>>();
+#endif
 }
 
 
@@ -124,12 +136,12 @@ TEST(MontgomeryArithmetic, MontyDefault) {
                   >::value, "");
 #endif
 
+#ifdef HURCHALLA_TEST_MODULAR_ARITHMETIC_HEAVYWEIGHT
 // It would be absolutely normal and expected to use an unsigned integer type
-// template argument for MontgomeryForm, but we skip testing them here to save
-// on compilation time, because the resulting clases with unsigned int types
-// resolve to exactly the same types as will be tested in the MontyFullRange and
-// MontyHalfRange and MontyQuarterRange TESTs above.
-#if 0
+// template argument for MontgomeryForm, but we can skip testing them here to
+// save compilation time, because the resulting Montygomery claseses using
+// unsigned int types resolve to exactly the same types as will be tested in
+// the MontyFullRange and MontyHalfRange and MontyQuarterRange TESTs above.
     test_MontgomeryForm<hc::MontgomeryForm<std::uint8_t>>();
     test_MontgomeryForm<hc::MontgomeryForm<std::uint16_t>>();
     test_MontgomeryForm<hc::MontgomeryForm<std::uint32_t>>();
@@ -139,14 +151,12 @@ TEST(MontgomeryArithmetic, MontyDefault) {
 # endif
 #endif
 
-// To save compilation time we also skip most of the signed integer type tests
-// for plain MontgomeryForm.  They should differ from the unsigned versions
-// (which in turn map to types we test above) only in the casts they perform for
-// convertIn(), convertOut(), max_modulus(), getModulus() and gcd_with_modulus()
-// Testing with a single signed integer type should cover much of the potential
-// differences regarding casts.
     test_MontgomeryForm<hc::MontgomeryForm<std::int32_t>>();
-#if 0
+#ifdef HURCHALLA_TEST_MODULAR_ARITHMETIC_HEAVYWEIGHT
+// To save compilation time we can also skip most signed integer type tests for
+// plain MontgomeryForm.  These should differ from the unsigned versions (which
+// in turn map to types we test above) only in the casts they perform for
+// convertIn(), convertOut(), max_modulus(), getModulus() and gcd_with_modulus()
     test_MontgomeryForm<hc::MontgomeryForm<std::int8_t>>();
     test_MontgomeryForm<hc::MontgomeryForm<std::int16_t>>();
     test_MontgomeryForm<hc::MontgomeryForm<std::int64_t>>();

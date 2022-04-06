@@ -21,9 +21,13 @@ TEST(MontgomeryArithmetic, MontyWrappedStandardMath) {
     test_custom_monty<hurchalla::detail::MontyWrappedStandardMath>();
 }
 
+#ifdef HURCHALLA_TEST_MODULAR_ARITHMETIC_HEAVYWEIGHT
+// MontyFullRangeMasked is experimental, so we skip it when we're not doing
+// extensive (heavyweight) testing.
 TEST(MontgomeryArithmetic, MontyFullRangeMasked) {
     test_custom_monty<hurchalla::detail::MontyFullRangeMasked>();
 }
+#endif
 
 
 } // end anonymous namespace

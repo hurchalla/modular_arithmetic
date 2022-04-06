@@ -69,8 +69,9 @@ void test_pow(M& mf, typename M::IntegerType base,
     EXPECT_TRUE(result == hc::modular_pow<T>(base, exponent, modulus));
 
     // then try the array template overload of pow using different array sizes
-    test_pow_array<1>(mf, base, exponent);
     test_pow_array<2>(mf, base, exponent);
+#ifdef HURCHALLA_TEST_MODULAR_ARITHMETIC_HEAVYWEIGHT
+    test_pow_array<1>(mf, base, exponent);
     test_pow_array<3>(mf, base, exponent);
     test_pow_array<4>(mf, base, exponent);
     test_pow_array<9>(mf, base, exponent);
@@ -78,6 +79,7 @@ void test_pow(M& mf, typename M::IntegerType base,
     test_pow_array<29>(mf, base, exponent);
     test_pow_array<61>(mf, base, exponent);
     test_pow_array<120>(mf, base, exponent);
+#endif
 }
 
 

@@ -214,6 +214,12 @@ if [ -z "$mode" ]; then
 fi
 
 
+# We do heavy testing via this script.  Other methods for invoking the build and
+# testing (e.g. github actions) usually aren't meant to be heavyweight and won't
+# define this macro.
+test_heavyweight="-DHURCHALLA_TEST_MODULAR_ARITHMETIC_HEAVYWEIGHT=1"
+
+
 # Compiler commands
 if [ "${compiler,,}" = "gcc" ] || [ "${compiler,,}" = "g++" ]; then
   cmake_cpp_compiler=-DCMAKE_CXX_COMPILER=g++
@@ -453,7 +459,7 @@ if [ "${mode,,}" = "release" ]; then
     cmake -S. -B./$build_dir -DTEST_HURCHALLA_LIBS=ON \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_FLAGS="$cpp_standard  \
-            $test_avoid_cselect \
+            $test_avoid_cselect  $test_heavyweight \
             $use_inline_asm  $use_all_inline_asm \
             $gcc_static_analysis"  "${clang_static_analysis[@]}" \
             $cmake_cpp_compiler $cmake_c_compiler
@@ -469,7 +475,7 @@ elif [ "${mode,,}" = "debug" ]; then
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_EXE_LINKER_FLAGS="$clang_ubsan_link_flags" \
             -DCMAKE_CXX_FLAGS="$cpp_standard  $clang_ubsan  $gcc_ubsan  \
-            $test_avoid_cselect \
+            $test_avoid_cselect  $test_heavyweight \
             $use_inline_asm  $use_all_inline_asm \
             $gcc_static_analysis"  "${clang_static_analysis[@]}" \
             $cmake_cpp_compiler $cmake_c_compiler
