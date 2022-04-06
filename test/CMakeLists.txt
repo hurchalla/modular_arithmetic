@@ -36,6 +36,7 @@ add_executable(test_hurchalla_modular_arithmetic
                montgomery_arithmetic/low_level_api/test_REDC.cpp
                montgomery_arithmetic/test_montgomery_pow.cpp
                montgomery_arithmetic/test_MontgomeryForm.cpp
+               montgomery_arithmetic/test_MontgomeryForm_extra.cpp
                )
 
 EnableMaxWarnings(test_hurchalla_modular_arithmetic)

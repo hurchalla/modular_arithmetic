@@ -218,7 +218,7 @@ class MontyFullRangeMasked final :
         HPBC_ASSERT2(0 <= cx.get() && cx.get() < n_);
         T resultval = static_cast<T>(cx.get() - cy.get());
         bool b = (cx.get() < cy.get());
-        T result_smask = static_cast<T>(-static_cast<T>(b));
+        T result_smask = static_cast<T>(0 - static_cast<T>(b));
         V result = V(resultval, result_smask);
         HPBC_POSTCONDITION2(isValid(result));
         return result;
@@ -231,7 +231,7 @@ class MontyFullRangeMasked final :
         HPBC_ASSERT2(0 <= cy.get() && cy.get() < n_);
         T resultval = static_cast<T>(cx.get() - cy.get());
         bool b = (cx.get() < cy.get());
-        T result_smask = static_cast<T>(-static_cast<T>(b));
+        T result_smask = static_cast<T>(0 - static_cast<T>(b));
         V result = V(resultval, result_smask);
         HPBC_POSTCONDITION2(isValid(result));
         return result;
@@ -268,7 +268,7 @@ private:
         bool isNegative;
         T resultval = ::hurchalla::REDC_incomplete(
                                         isNegative, u_hi, u_lo, n_, BC::inv_n_);
-        T result_smask = static_cast<T>(-static_cast<T>(isNegative));
+        T result_smask = static_cast<T>(0 - static_cast<T>(isNegative));
         resultIsZero = (resultval == 0);
         V result = V(resultval, result_smask);
         HPBC_POSTCONDITION2(isValid(result));
@@ -537,7 +537,7 @@ private:
     // the valid range for x:  -n <= x < n.
     HURCHALLA_FORCE_INLINE bool isValid(V x) const
     {
-        return ((x.getmask() != 0) ? static_cast<T>(-(x.getbits())) <= n_
+        return ((x.getmask() != 0) ? static_cast<T>(0 - x.getbits()) <= n_
                                    : x.getbits() < n_);
     }
     HURCHALLA_FORCE_INLINE bool isCanonical(V x) const
