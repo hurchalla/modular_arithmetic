@@ -26,7 +26,7 @@ else()
                 -Weffc++ -Wpedantic -Wredundant-decls -Wstrict-overflow=4
                 -Wstack-protector -Wpacked -Wnull-dereference -Wregister
                 -Wold-style-cast -Wdouble-promotion -Wformat-nonliteral
-                -Wmissing-noreturn -Wctor-dtor-privacy -Winline)
+                -Wmissing-noreturn -Wctor-dtor-privacy)
     endif()
 
     # gcc or clang6.0 (or higher)
