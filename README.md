@@ -1,4 +1,4 @@
-# The "12 o'clock" Modular Arithmetic library
+# Modular Arithmetic
 
 A very high performance and easy to use Modular Arithmetic (header-only) library for C++ for native integer types, with extensive support for Montgomery arithmetic.
 
@@ -52,18 +52,19 @@ It may help to see a simple [example](examples/example_without_cmake).
 
 ## The API
 
-This is a header-only library, and the API is exposed by the very short and simple header files that are not under any *detail* folder.  There are two main folder groupings: montgomery_arithmetic, and modular_arithmetic (i.e. standard non-montgomery).  A quick summary of the header files and functions is provided below; in all cases T is a template parameter of integral type.  Please view the header files for their documentation.  Probably the single most useful file will be MontgomeryForm.h, discussed below.
+This is a header-only library, and the API is exposed by the very short and simple header files (all those not under any *detail* folder).  There are two main folder groupings: montgomery_arithmetic, and modular_arithmetic (i.e. standard non-montgomery).  A quick summary of the header files and functions is provided below; in all cases T is a template parameter of integral type.  Please view the header files for their documentation.  Probably the single most useful file will be MontgomeryForm.h, discussed below.
 
 From the modular_arithmetic group, the files *absolute_value_difference.h*, *modular_addition.h*, *modular_subtraction.h*, *modular_multiplication.h*, *modular_multiplicative_inverse.h*, and *modular_pow.h* provide the following functions, using standard (non-Montgomery) modular arithmetic:
 
-*hurchalla::absolute_value_difference(T a, T b)*.  Returns the absolute value of (a-b).
-*hurchalla::modular_addition_prereduced_inputs(T a, T b, T modulus)*.  Returns (a+b)%modulus, performed as if a and b have infinite precision and thus as if (a+b) is never subject to integer overflow.
-*hurchalla::modular_subtraction_prereduced_inputs(T a, T b, T modulus)*.  Let a conceptual "%%" operator represent a modulo operator that always returns a non-negative remainder. This function returns (a-b) %% modulus, performed as if a and b are infinite precision signed ints.
-*hurchalla::modular_multiplication_prereduced_inputs(T a, T b, T modulus)*.   Returns (a\*b)%modulus, theoretically calculated at infinite precision to avoid overflow.
-*hurchalla::modular_multiplicative_inverse(T a, T modulus)*.  Returns the multiplicative inverse of a if it exists, and otherwise returns 0.
-*hurchalla::modular_pow(T base, T exponent, T modulus)*.  Returns the modular exponentiation of base^exponent (mod modulus).
+*hurchalla::absolute_value_difference(T a, T b)*.  Returns the absolute value of (a-b).  
+*hurchalla::modular_addition_prereduced_inputs(T a, T b, T modulus)*.  Returns (a+b)%modulus, performed as if a and b have infinite precision and thus as if (a+b) is never subject to integer overflow.  
+*hurchalla::modular_subtraction_prereduced_inputs(T a, T b, T modulus)*.  Let a conceptual "%%" operator represent a modulo operator that always returns a non-negative remainder. This function returns (a-b) %% modulus, performed as if a and b are infinite precision signed ints.  
+*hurchalla::modular_multiplication_prereduced_inputs(T a, T b, T modulus)*.   Returns (a\*b)%modulus, theoretically calculated at infinite precision to avoid overflow.  
+*hurchalla::modular_multiplicative_inverse(T a, T modulus)*.  Returns the multiplicative inverse of a if it exists, and otherwise returns 0.  
+*hurchalla::modular_pow(T base, T exponent, T modulus)*.  Returns the modular exponentiation of base^exponent (mod modulus).  
 
 From the montgomery_arithmetic group, the file *MontgomeryForm.h* provides the easy to use (and zero cost abstraction) class MontgomeryForm, which has static member functions for effortlessly performing operations in the Montgomery domain.  These operations include convertIn, convertOut, add, sub, multiply, square, fused-multiply-add/sub, pow, gcd, and more.  For improved performance in some situations, the file montgomery_form_aliases.h provides simple aliases for faster (with limitations on allowed modulus) instantiations of the class MontgomeryForm.
+
 If you prefer not to use the high level interface of MontgomeryForm, and instead wish to directly call low level Montgomery arithmetic functions (such as REDC), the API header files within montgomery_arithmetic/low_level_api support all essential low level functions.
 
 ## Performance Notes

@@ -40,12 +40,12 @@ outside a programmer's control.  Generally speaking, it is [difficult to
 recommend inline asm](https://gcc.gnu.org/wiki/DontUseInlineAsm) unless there is
 a large performance benefit or performance is critical.
 
-HURCHALLA_ALLOW_INLINE_ASM_REDC
-HURCHALLA_ALLOW_INLINE_ASM_ABSDIFF
-HURCHALLA_ALLOW_INLINE_ASM_MODADD
-HURCHALLA_ALLOW_INLINE_ASM_MODSUB
-HURCHALLA_ALLOW_INLINE_ASM_QUARTERRANGE_GET_CANONICAL
-HURCHALLA_ALLOW_INLINE_ASM_HALFRANGE_GET_CANONICAL
+HURCHALLA_ALLOW_INLINE_ASM_REDC  
+HURCHALLA_ALLOW_INLINE_ASM_ABSDIFF  
+HURCHALLA_ALLOW_INLINE_ASM_MODADD  
+HURCHALLA_ALLOW_INLINE_ASM_MODSUB  
+HURCHALLA_ALLOW_INLINE_ASM_QUARTERRANGE_GET_CANONICAL  
+HURCHALLA_ALLOW_INLINE_ASM_HALFRANGE_GET_CANONICAL  
 - these macros selectively enable inline asm for functions.  They may or may not
 improve performance, and the warnings above for HURCHALLA_ALLOW_INLINE_ASM_ALL
 apply here too.  To determine if they are even useful, you would need to
