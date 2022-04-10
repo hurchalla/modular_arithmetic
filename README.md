@@ -63,7 +63,7 @@ From the modular_arithmetic group, the files *absolute_value_difference.h*, *mod
 *hurchalla::modular_multiplicative_inverse(T a, T modulus)*.  Returns the multiplicative inverse of a if it exists, and otherwise returns 0.  
 *hurchalla::modular_pow(T base, T exponent, T modulus)*.  Returns the modular exponentiation of base^exponent (mod modulus).  
 
-From the montgomery_arithmetic group, the file *MontgomeryForm.h* provides the easy to use (and zero cost abstraction) class MontgomeryForm, which has static member functions for effortlessly performing operations in the Montgomery domain.  These operations include convertIn, convertOut, add, sub, multiply, square, fused-multiply-add/sub, pow, gcd, and more.  For improved performance in some situations, the file montgomery_form_aliases.h provides simple aliases for faster (with limitations on allowed modulus) instantiations of the class MontgomeryForm.
+From the montgomery_arithmetic group, the file *MontgomeryForm.h* provides the easy to use (and zero cost abstraction) class *hurchalla::MontgomeryForm*, which has static member functions for effortlessly performing operations in the Montgomery domain.  These operations include convertIn, convertOut, add, sub, multiply, square, fused-multiply-add/sub, pow, gcd, and more.  For improved performance in some situations, the file montgomery_form_aliases.h provides simple aliases for faster (with limitations on allowed modulus) instantiations of the class MontgomeryForm.
 
 If you prefer not to use the high level interface of MontgomeryForm, and instead wish to directly call low level Montgomery arithmetic functions (such as REDC), the API header files within montgomery_arithmetic/low_level_api support all essential low level functions.
 
