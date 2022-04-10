@@ -52,7 +52,7 @@ It may help to see a simple [example](examples/example_without_cmake).
 
 ## The API
 
-This is a header-only library, and the API is exposed by the very short and simple header files (all those not under any *detail* folder).  There are two main folder groupings: montgomery_arithmetic, and modular_arithmetic (i.e. standard non-montgomery).  A quick summary of the header files and functions is provided below; in all cases T is a template parameter of integral type.  Please view the header files for their documentation.  Probably the single most useful file will be MontgomeryForm.h, discussed below.
+This is a header-only library, and the API is exposed by very short and simple header files (all those not under any *detail* folder).  There are two main folder groupings: montgomery_arithmetic, and modular_arithmetic (i.e. standard non-montgomery).  A quick summary of the header files and functions is provided below; in all cases T is a template parameter of integral type.  Please view the header files for their documentation.  Probably the single most useful file will be MontgomeryForm.h, discussed below.
 
 From the modular_arithmetic group, the files *absolute_value_difference.h*, *modular_addition.h*, *modular_subtraction.h*, *modular_multiplication.h*, *modular_multiplicative_inverse.h*, and *modular_pow.h* provide the following functions, using standard (non-Montgomery) modular arithmetic:
 
