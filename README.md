@@ -1,4 +1,4 @@
-# "Clockwork" Modular Arithmetic Library
+# The "Clockwork" Modular Arithmetic Library
 
 ![Alt text](images/clocksmall.jpg?raw=true "MyTitle")
 
