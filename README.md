@@ -1,8 +1,8 @@
 
 <p align="center">
   <img src="images/clockxtrasmall2.jpg?raw=true" alt="Clock gears"/>
-  # "Clockwork" Modular Arithmetic Library
 </p>
+# <p align="center"> "Clockwork" Modular Arithmetic Library </p>
 
 Clockwork is a high performance, easy to use Modular Arithmetic (header-only) library for C++ for up to 128 bit integer types, with extensive support for Montgomery arithmetic.  If you want or need Montgomery arithmetic, or general modular arithmetic functions, Clockwork is almost certainly the fastest and easiest library you can use.
 
