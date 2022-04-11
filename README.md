@@ -58,7 +58,7 @@ Clockwork modular arithmetic is a header-only library, and the API is exposed by
 
 From the modular_arithmetic group, the files *absolute_value_difference.h*, *modular_addition.h*, *modular_subtraction.h*, *modular_multiplication.h*, *modular_multiplicative_inverse.h*, and *modular_pow.h* provide the following functions, using standard (non-Montgomery) modular arithmetic:
 
-*hurchalla::absolute_value_difference(T a, T b)*.  Returns the absolute value of (a-b).  
+*hurchalla::absolute_value_difference(T a, T b)*.  Returns the absolute value of (a-b), performed as if a and b are infinite precision signed ints.  
 *hurchalla::modular_addition_prereduced_inputs(T a, T b, T modulus)*.  Returns (a+b)%modulus, performed as if a and b have infinite precision and thus as if (a+b) is never subject to integer overflow.  
 *hurchalla::modular_subtraction_prereduced_inputs(T a, T b, T modulus)*.  Let a conceptual "%%" operator represent a modulo operator that always returns a non-negative remainder. This function returns (a-b) %% modulus, performed as if a and b are infinite precision signed ints.  
 *hurchalla::modular_multiplication_prereduced_inputs(T a, T b, T modulus)*.   Returns (a\*b)%modulus, theoretically calculated at infinite precision to avoid overflow.  
