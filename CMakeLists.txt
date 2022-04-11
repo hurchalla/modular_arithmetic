@@ -46,9 +46,6 @@ elseif(TEST_HURCHALLA_LIBS)
 endif()
 
 
-
-# TODO: I'm not sure whether these lines provide any benefit:
-# --------------------
 if(NOT DEFINED CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 endif()
@@ -58,7 +55,6 @@ endif()
 if(NOT DEFINED CMAKE_RUNTIME_OUTPUT_DIRECTORY)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 endif()
-
 
 
 add_library(hurchalla_modular_arithmetic INTERFACE)
@@ -76,12 +72,12 @@ target_link_libraries(hurchalla_modular_arithmetic
 
 
 
-# TODO:  The following is a guess at a good way to install target include
-# directories.  It assumes that the build step from the subdirectories
+# TODO:  The following may be overly simple, but works so far to install target
+# include directories.  It assumes that the build step from the subdirectories
 # montgomery_arithmetic and modular_arithmetic (which have build phase
 # target_include_directories commands) provides the information to cmake which
-# cmake then uses in the install phase target_include_directories below.  I've
-# done very little testing of cmake install so far though...
+# cmake then uses in the install phase target_include_directories below.  This
+# has worked for the basic cmake install tests I've done so far...
 # ---------------------
 target_include_directories(hurchalla_modular_arithmetic
                            INTERFACE $<INSTALL_INTERFACE:include>)
