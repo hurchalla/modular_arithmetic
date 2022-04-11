@@ -65,7 +65,7 @@ From the modular_arithmetic group, the files *absolute_value_difference.h*, *mod
 *hurchalla::modular_multiplicative_inverse(T a, T modulus)*.  Returns the multiplicative inverse of a if it exists, and otherwise returns 0.  
 *hurchalla::modular_pow(T base, T exponent, T modulus)*.  Returns the modular exponentiation of base^exponent (mod modulus).  
 
-From the montgomery_arithmetic group, the file *MontgomeryForm.h* provides the easy to use (and zero cost abstraction) class *hurchalla::MontgomeryForm*, which has member functions for effortlessly performing operations in the Montgomery domain.  These operations include converting to/from Montgomery domain, add, sub, multiply, square, fused-multiply-add/sub, pow, gcd, and more.  For improved performance in some situations, the file montgomery_form_aliases.h provides simple aliases for faster (with limitations on allowed modulus) instantiations of the class MontgomeryForm.
+From the montgomery_arithmetic group, the file *MontgomeryForm.h* provides the easy to use (and zero cost abstraction) class *hurchalla::MontgomeryForm*, which has member functions for effortlessly performing operations in the Montgomery domain.  These operations include converting to/from Montgomery domain, add, sub, multiply, square, fused-multiply-add/sub, pow, gcd, and more.  For improved performance in some situations, the file *montgomery_form_aliases.h* provides simple aliases for faster (with limitations on allowed modulus) instantiations of the class MontgomeryForm.
 
 For a simple demonstration of using MontgomeryForm, you can see one of the [examples](examples/example_without_cmake).
 
