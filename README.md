@@ -61,7 +61,7 @@ From the modular_arithmetic group, the files *absolute_value_difference.h*, *mod
 *hurchalla::absolute_value_difference(T a, T b)*.  Returns the absolute value of (a-b), performed as if a and b are infinite precision signed ints.  
 *hurchalla::modular_subtraction_prereduced_inputs(T a, T b, T modulus)*.  Let a conceptual "%%" operator represent a modulo operator that always returns a non-negative remainder. This function returns (a-b) %% modulus, performed as if a and b are infinite precision signed ints.  
 *hurchalla::modular_addition_prereduced_inputs(T a, T b, T modulus)*.  Returns (a+b)%modulus, performed as if a and b have infinite precision and thus as if (a+b) is never subject to integer overflow.  
-*hurchalla::modular_multiplication_prereduced_inputs(T a, T b, T modulus)*.   Returns (a\*b)%modulus, performed as if a and b have infinite precision.
+*hurchalla::modular_multiplication_prereduced_inputs(T a, T b, T modulus)*.   Returns (a\*b)%modulus, performed as if a and b have infinite precision.  
 *hurchalla::modular_multiplicative_inverse(T a, T modulus)*.  Returns the multiplicative inverse of a if it exists, and otherwise returns 0.  
 *hurchalla::modular_pow(T base, T exponent, T modulus)*.  Returns the modular exponentiation of base^exponent (mod modulus).  
 
