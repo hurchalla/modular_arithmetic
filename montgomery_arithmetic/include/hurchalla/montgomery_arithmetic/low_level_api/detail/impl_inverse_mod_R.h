@@ -36,7 +36,7 @@ private:
     }
 public:
     // This algorithm for the inverse (mod R) is described in
-    // "integer_inverse.pdf" in this current directory.  Note: it is a
+    // https://arxiv.org/abs/2204.04342.  Note: it is a
     // generalized and slightly more efficient version of Dumas' algorithm (from
     // https://arxiv.org/abs/1209.6626), so we still call it Dumas' algorithm.
     //
