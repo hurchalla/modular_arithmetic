@@ -1,4 +1,4 @@
-# "Clockwork" Modular Arithmetic Library
+# The "Clockwork" Modular Arithmetic Library
 
 ![Alt text](images/clockxtrasmall_border2.jpg?raw=true "Clock Gears, photo by Krzysztof Golik, licensed CC BY-SA 4.0")
 
