@@ -11,22 +11,23 @@
 # for "How to use the library" | "Without CMake"
 
 
-# ------------------------------------------------------------------------
-# You'll need to change the include_path below, and you may need to change
+# --------------------------------------------------------------------------
+# You'll need to change the installed_path below, and you may need to change
 # the cpp_compiler.
-# ------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 
-# set include_path to the directory where you installed the modular arithmetic
-# library, with "/include" appended to the end of that directory name.
-include_path=/home/jeff/Desktop/include
+# set installed_path to the directory where you installed the modular arithmetic
+# library
+installed_path=/home/jeff/Desktop
+include_path=${installed_path}/include
 
-# set the compiler to whatever you want.  Below is gcc or clang.
-#cpp_compiler=g++
-cpp_compiler=clang++
+# set the compiler to whatever you wish.  Below is gcc or clang.
+cpp_compiler=g++
+#cpp_compiler=clang++
 
 
 $cpp_compiler -std="c++17" \
-        -Wall -Wextra -ferror-limit=3  \
+        -Wall -Wextra  \
         -O2  -DNDEBUG  \
         -I$include_path \
         -o example  example.cpp
