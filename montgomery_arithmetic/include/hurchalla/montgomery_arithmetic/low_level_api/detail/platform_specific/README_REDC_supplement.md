@@ -5,7 +5,7 @@ The simple solution to getting a good traditional REDC is to write a delegating 
 
 <pre>
 // On Intel Skylake: ~10 cycles latency, ~8 fused uops
-inline uint64_t REDC_traditional_wrapper(uint64_t T_hi, uint64_t T_lo,
+inline uint64_t REDC_traditional_delegating(uint64_t T_hi, uint64_t T_lo,
                                                    uint64_t N, uint64_t negInvN)
 {
     uint64_t invN = -negInvN;
@@ -15,7 +15,7 @@ inline uint64_t REDC_traditional_wrapper(uint64_t T_hi, uint64_t T_lo,
 <i>Delegating Function for the Traditional REDC</i>
 <br><br>
 
-There is usually no reason to read further unless you are curious.
+There is usually no need to read further unless you are curious.
 
 We can improve upon the inline assembly we saw in the main document for the traditional REDC, though the code becomes harder to understand.  The improvements also can't be implemented well in standard C; none of the major compilers (gcc, clang, MSVC, icc) are able to compile standard C versions of the functions below without adding significant extra latency and uops, even with idiomatic use of the ternary operator for conditional move.
 
