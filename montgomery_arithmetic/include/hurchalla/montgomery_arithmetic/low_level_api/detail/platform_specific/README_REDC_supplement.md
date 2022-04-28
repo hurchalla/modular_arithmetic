@@ -1,7 +1,7 @@
 This file supplements the document [README_REDC.md](README_REDC.md).
 <br><br>
 
-(The best way to implement the traditional REDC may be via a delegating function that calls the alternate REDC.  With inlining, its total uops will likely be lower than the low-uops asm version further below, and there is a decent chance the compiler will loop hoist the subtraction to calculate invN if you are calling this function from a loop; thus this version may also achieve latency equal to the low-latency asm version further below.  Another reason you might prefer this implementation is that the delegate "REDC_alternate" function can be implemented effectively with just standard C, which would eliminate the chance of inline-asm related bugs, and will sometimes improve performance since inline-asm may hinder compiler optimizations.)<br>
+(Note that the best way to implement the traditional REDC may be via a delegating function that calls the alternate REDC.  With inlining, its total uops will likely be lower than the low-uops asm version further below, and there is a decent chance the compiler will loop hoist the subtraction to calculate invN if you are calling this function from a loop; thus this version may also achieve latency equal to the low-latency asm version further below.  Another reason you might prefer this implementation is that the delegate "REDC_alternate" function can be implemented effectively with just standard C, which would eliminate the chance of inline-asm related bugs, and will sometimes improve performance since inline-asm may hinder compiler optimizations.)<br>
 
 <pre>
 // On Intel Skylake: ~10 cycles latency, ~8 fused uops
