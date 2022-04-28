@@ -1,16 +1,14 @@
 This file supplements the document [README_REDC.md](README_REDC.md).
 <br><br>
 
-The simple solution to getting a good traditional REDC is to write a delegating function that calls the alternate REDC.  With inlining, its total uops will likely be lower than the low-uops asm version further below, and there is a decent chance that the compiler will loop hoist the calculation of invN if you are calling this function from a loop; thus this version may also achieve latency equal to the low-latency asm version further below.  Another reason you might prefer this implementation is that the delegate "REDC_alternate" function can be implemented effectively with just standard C, which would eliminate the chance of inline-asm related bugs, and will sometimes improve performance since inline-asm may hinder compiler optimizations.<br>
+The simple solution to getting a good traditional REDC is to write a delegating function that calls the alternate REDC.  With inlining, its total uops will likely be lower than the low-uops asm version further below, and there is a decent chance that the compiler will loop hoist the calculation of invN if we are calling this function from a loop.  Thus this version could also achieve latency equal to the low-latency asm version further below.  Yet another reason why we might prefer this implementation is that the delegate "REDC_alternate" function can be implemented effectively with just standard C, which would eliminate the chance of inline-asm related bugs, and will sometimes improve performance since inline-asm may hinder compiler optimizations.<br>
 
 <pre>
 // On Intel Skylake: ~10 cycles latency, ~8 fused uops
 inline uint64_t REDC_traditional_wrapper(uint64_t T_hi, uint64_t T_lo,
                                                    uint64_t N, uint64_t negInvN)
 {
-    assert(T_hi < N);   // REDC requires T < NR, and this enforces it.
-    assert(negInvN < N);
-    uint64_t invN = N - negInvN;
+    uint64_t invN = -negInvN;
     return REDC_alternate(T_hi, T_lo, N, invN);
 }
 </pre>
