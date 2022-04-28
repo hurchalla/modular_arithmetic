@@ -1,4 +1,21 @@
 This file supplements the document [README_REDC.md](README_REDC.md).
+<br><br>
+
+(Note: Before  reading further, you may find the best way to implement the traditional REDC is via a delegating function that calls the alternate REDC.  With inlining, its total uops will likely be lower than the low-uops asm version further below, and there is a decent chance the compiler will loop hoist the subtraction to calculate invN if you are calling this function from a loop; thus this version may also achieve latency equal to the low-latency asm version further below.  Another reason you might prefer this implementation is that the delegate "REDC_alternate" function can be implemented effectively with just standard C, which would eliminate the chance of inline-asm related bugs, and will sometimes improve performance since inline-asm may hinder some compiler optimizations.)<br>
+
+<pre>
+// On Intel Skylake: ~10 cycles latency, ~8 fused uops
+inline uint64_t REDC_traditional_wrapper(uint64_t T_hi, uint64_t T_lo,
+                                                   uint64_t N, uint64_t negInvN)
+{
+    assert(T_hi < N);   // REDC requires T < NR, and this enforces it.
+    assert(negInvN < N);
+    uint64_t invN = N - negInvN;
+    return REDC_alternate(T_hi, T_lo, N, invN);
+}
+</pre>
+<i>Delegating Function for the Traditional REDC</i>
+<br><br>
 
 We can improve upon the inline assembly we saw for traditional REDC, though the code becomes harder to understand.  The improvements also can't be implemented well in standard C; none of the major compilers (gcc, clang, MSVC, icc) are able to compile standard C versions of these functions without adding significant extra latency and uops, even with idiomatic use of the ternary operator for conditional move.
 
