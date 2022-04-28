@@ -15,7 +15,7 @@ inline uint64_t REDC_traditional_wrapper(uint64_t T_hi, uint64_t T_lo,
 <i>Delegating Function for the Traditional REDC</i>
 <br><br>
 
-We can improve upon the inline assembly we saw for traditional REDC, though the code becomes harder to understand.  The improvements also can't be implemented well in standard C; none of the major compilers (gcc, clang, MSVC, icc) are able to compile standard C versions of the functions below without adding significant extra latency and uops, even with idiomatic use of the ternary operator for conditional move.
+We can improve upon the inline assembly we saw in the main document for the traditional REDC, though the code becomes harder to understand.  The improvements also can't be implemented well in standard C; none of the major compilers (gcc, clang, MSVC, icc) are able to compile standard C versions of the functions below without adding significant extra latency and uops, even with idiomatic use of the ternary operator for conditional move.
 
 Since the alternate REDC function from [README_REDC.md](README_REDC.md) does better on uops and equals or betters the latency, all while being easier to understand, and friendlier for compilers if written in standard C, we should certainly prefer the alternate REDC to the functions that follow.  Nevertheless the functions below do improve the traditional REDC inline asm, so they could be useful as an easy drop-in replacement of an existing REDC function (which will almost certainly be traditional REDC with the negative inverse), or they might be interesting for anyone curious.
 
