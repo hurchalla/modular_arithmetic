@@ -1,10 +1,10 @@
 This file supplements the document [README_REDC.md](README_REDC.md).
 <br><br>
 
-The simple solution to getting a good traditional REDC is to write a delegating function that calls the alternate REDC.  With inlining, its total uops will likely be lower than the low-uops asm version further below, and there is a decent chance that the compiler will loop hoist the calculation of invN if we are calling this function from a loop.  Thus this version could also achieve latency equal to the low-latency asm version further below.  Yet another reason why we might prefer this implementation is that the delegate "REDC_alternate" function can be implemented effectively with just standard C, which would eliminate the chance of inline-asm related bugs, and will sometimes improve performance since inline-asm may hinder compiler optimizations.<br>
+The simplest and usually most effective way to implement the traditional REDC is to write a delegating function that calls the alternate REDC.  With inlining, its total uops will likely be lower than the low-uops asm version further below, and there is a decent chance that the compiler will loop hoist the calculation of invN if we are calling this function from a loop.  Thus this version could also achieve latency equal to the low-latency asm version further below.  In practice, even if the negation is not loop hoisted, REDC will most often be called during Montgomery multiplication, and the negation will not contribute to latency since its calculation will overlap with the preceding multiply in the Montgomery multiplication.  Yet another reason why we might prefer this implementation is that the delegate "REDC_alternate" function can be implemented effectively with just standard C, which would eliminate the chance of inline-asm related bugs, and will sometimes improve performance since inline-asm may hinder compiler optimizations.<br>
 
 <pre>
-// On Intel Skylake: ~10 cycles latency, ~8 fused uops
+// On Intel Skylake: ~9-10 cycles latency, ~8 fused uops
 inline uint64_t REDC_traditional_delegating(uint64_t T_hi, uint64_t T_lo,
                                                    uint64_t N, uint64_t negInvN)
 {
