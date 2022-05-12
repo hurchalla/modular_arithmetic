@@ -356,7 +356,17 @@ class MontyHalfRange final :
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isValid(y));
+#ifdef HURCHALLA_MONTYHALFRANGE_USE_ALT_ADDSUBS
+        T tx = static_cast<T>(static_cast<T>(x.get()) + n_);
+        T ty = static_cast<T>(static_cast<T>(y.get()) + n_);
+        T n2 = static_cast<T>(n_ + n_);
+        HPBC_ASSERT2(tx < n2);
+        HPBC_ASSERT2(ty < n2);
+        T modsum = ::hurchalla::modular_addition_prereduced_inputs(tx, ty, n2);
+        return V(static_cast<S>(modsum - n_));
+#else
         return add(x, getCanonicalValue(y));
+#endif
     }
     HURCHALLA_FORCE_INLINE C add(C cx, C cy) const
     {
@@ -381,10 +391,20 @@ class MontyHalfRange final :
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isValid(y));
+#ifdef HURCHALLA_MONTYHALFRANGE_USE_ALT_ADDSUBS
+        T tx = static_cast<T>(static_cast<T>(x.get()) + n_);
+        T ty = static_cast<T>(static_cast<T>(y.get()) + n_);
+        T n2 = static_cast<T>(n_ + n_);
+        HPBC_ASSERT2(tx < n2);
+        HPBC_ASSERT2(ty < n2);
+        T diff = ::hurchalla::modular_subtraction_prereduced_inputs(tx, ty, n2);
+        S result = static_cast<S>(diff - n_);
+#else
         C cx = getCanonicalValue(x);
         C cy = getCanonicalValue(y);
         S result = static_cast<S>(
                            static_cast<S>(cx.get()) - static_cast<S>(cy.get()));
+#endif
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
