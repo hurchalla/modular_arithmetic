@@ -59,13 +59,21 @@ void exhaustive_test_uint8_t()
 {
     for (std::uint8_t modulus=255; modulus>1; --modulus) {
         for (std::uint8_t a=0; a<modulus; ++a) {
-            std::uint8_t inv = hc::modular_multiplicative_inverse(a, modulus);
+            std::uint8_t g;
+            std::uint8_t inv = hc::modular_multiplicative_inverse(a, modulus,g);
+            EXPECT_TRUE(g == testmmi::gcd(a, modulus));
             if (inv == 0)
-                EXPECT_TRUE(1 < testmmi::gcd(a, modulus));
-            else
+                EXPECT_TRUE(g > 1);
+            else {
+                EXPECT_TRUE(g == 1);
                 EXPECT_TRUE(static_cast<std::uint8_t>(1) ==
                     hc::modular_multiplication_prereduced_inputs(a, inv,
                                                                       modulus));
+            }
+            if (g > 1)
+                EXPECT_TRUE(inv == 0);
+            else
+                EXPECT_TRUE(inv > 0);
         }
     }
 }
@@ -74,25 +82,34 @@ void exhaustive_test_uint8_t()
 template <typename T>
 void test_modulus(T modulus)
 {
+    T g;
+
     T a = 0;
     EXPECT_TRUE(static_cast<T>(0) ==
-                                hc::modular_multiplicative_inverse(a, modulus));
+                             hc::modular_multiplicative_inverse(a, modulus, g));
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
+
     a = 1;
     EXPECT_TRUE(static_cast<T>(1) ==
-                                hc::modular_multiplicative_inverse(a, modulus));
+                             hc::modular_multiplicative_inverse(a, modulus, g));
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
+
     a = modulus;
     EXPECT_TRUE(static_cast<T>(0) ==
-                                hc::modular_multiplicative_inverse(a, modulus));
+                             hc::modular_multiplicative_inverse(a, modulus, g));
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
 
     T tmax = hc::ut_numeric_limits<T>::max();
     if (modulus < tmax) {
         a = static_cast<T>(modulus + 1);
         EXPECT_TRUE(static_cast<T>(1) ==
-                                hc::modular_multiplicative_inverse(a, modulus));
+                             hc::modular_multiplicative_inverse(a, modulus, g));
+        EXPECT_TRUE(g == testmmi::gcd(a, modulus));
     }
 
     a = 2;
-    T inverse = hc::modular_multiplicative_inverse(a, modulus);
+    T inverse = hc::modular_multiplicative_inverse(a, modulus, g);
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
     if (inverse == 0)
         EXPECT_TRUE(1 < testmmi::gcd(a, modulus));
     else
@@ -101,7 +118,8 @@ void test_modulus(T modulus)
                                 static_cast<T>(a % modulus), inverse, modulus));
 
     a = 3;
-    inverse = hc::modular_multiplicative_inverse(a, modulus);
+    inverse = hc::modular_multiplicative_inverse(a, modulus, g);
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
     if (inverse == 0)
         EXPECT_TRUE(1 < testmmi::gcd(a, modulus));
     else
@@ -110,12 +128,14 @@ void test_modulus(T modulus)
                                 static_cast<T>(a % modulus), inverse, modulus));
 
     a = static_cast<T>(modulus - 1);
-    inverse = hc::modular_multiplicative_inverse(a, modulus);
+    inverse = hc::modular_multiplicative_inverse(a, modulus, g);
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
     EXPECT_TRUE(static_cast<T>(1) ==
              hc::modular_multiplication_prereduced_inputs(a, inverse, modulus));
 
     a = static_cast<T>(modulus - 2);
-    inverse = hc::modular_multiplicative_inverse(a, modulus);
+    inverse = hc::modular_multiplicative_inverse(a, modulus, g);
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
     if (inverse == 0)
         EXPECT_TRUE(1 < testmmi::gcd(a, modulus));
     else
@@ -123,7 +143,8 @@ void test_modulus(T modulus)
              hc::modular_multiplication_prereduced_inputs(a, inverse, modulus));
 
     a = static_cast<T>(modulus/2);
-    inverse = hc::modular_multiplicative_inverse(a, modulus);
+    inverse = hc::modular_multiplicative_inverse(a, modulus, g);
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
     if (inverse == 0)
         EXPECT_TRUE(1 < testmmi::gcd(a, modulus));
     else
@@ -131,7 +152,8 @@ void test_modulus(T modulus)
              hc::modular_multiplication_prereduced_inputs(a, inverse, modulus));
 
     a++;
-    inverse = hc::modular_multiplicative_inverse(a, modulus);
+    inverse = hc::modular_multiplicative_inverse(a, modulus, g);
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
     if (inverse == 0)
         EXPECT_TRUE(1 < testmmi::gcd(a, modulus));
     else
@@ -144,26 +166,52 @@ void test_modulus(T modulus)
 template <typename T>
 void test_modular_multiplicative_inverse()
 {
+    T g;
+
     // test with a few basic examples first
     T modulus = 13;
     T a = 5;
     EXPECT_TRUE(static_cast<T>(8) ==
                                 hc::modular_multiplicative_inverse(a, modulus));
+    EXPECT_TRUE(static_cast<T>(8) ==
+                             hc::modular_multiplicative_inverse(a, modulus, g));
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
+
     a = 7;
     EXPECT_TRUE(static_cast<T>(2) ==
                                 hc::modular_multiplicative_inverse(a, modulus));
+    EXPECT_TRUE(static_cast<T>(2) ==
+                             hc::modular_multiplicative_inverse(a, modulus, g));
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
+
     a = 4;
     EXPECT_TRUE(static_cast<T>(10) ==
                                 hc::modular_multiplicative_inverse(a, modulus));
+    EXPECT_TRUE(static_cast<T>(10) ==
+                             hc::modular_multiplicative_inverse(a, modulus, g));
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
+
     a = 17;
     EXPECT_TRUE(static_cast<T>(10) ==
                                 hc::modular_multiplicative_inverse(a, modulus));
+    EXPECT_TRUE(static_cast<T>(10) ==
+                             hc::modular_multiplicative_inverse(a, modulus, g));
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
+
     a = 1;
     EXPECT_TRUE(static_cast<T>(1) ==
                                 hc::modular_multiplicative_inverse(a, modulus));
+    EXPECT_TRUE(static_cast<T>(1) ==
+                             hc::modular_multiplicative_inverse(a, modulus, g));
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
+
     a = 14;
     EXPECT_TRUE(static_cast<T>(1) ==
                                 hc::modular_multiplicative_inverse(a, modulus));
+    EXPECT_TRUE(static_cast<T>(1) ==
+                             hc::modular_multiplicative_inverse(a, modulus, g));
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
+
 
 
     // modular_multiplicative_inverse() indicates the inverse doesn't exist by
@@ -172,12 +220,24 @@ void test_modular_multiplicative_inverse()
     modulus = 21;   // a modulus of 21 shares the factor 3 with a.
     EXPECT_TRUE(static_cast<T>(0) ==
                                 hc::modular_multiplicative_inverse(a, modulus));
+    EXPECT_TRUE(static_cast<T>(0) ==
+                             hc::modular_multiplicative_inverse(a, modulus, g));
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
+
     a = 0;
     EXPECT_TRUE(static_cast<T>(0) ==
                                 hc::modular_multiplicative_inverse(a, modulus));
+    EXPECT_TRUE(static_cast<T>(0) ==
+                             hc::modular_multiplicative_inverse(a, modulus, g));
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
+
     a = 1;
     EXPECT_TRUE(static_cast<T>(1) ==
                                 hc::modular_multiplicative_inverse(a, modulus));
+    EXPECT_TRUE(static_cast<T>(1) ==
+                             hc::modular_multiplicative_inverse(a, modulus, g));
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
+
 
     a = 7;
     modulus = 16;
@@ -204,12 +264,24 @@ void test_modular_multiplicative_inverse()
     a = 0;
     EXPECT_TRUE(static_cast<T>(0) ==
                                 hc::modular_multiplicative_inverse(a, modulus));
+    EXPECT_TRUE(static_cast<T>(0) ==
+                             hc::modular_multiplicative_inverse(a, modulus, g));
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
+
     a = 1;
     EXPECT_TRUE(static_cast<T>(1) ==
                                 hc::modular_multiplicative_inverse(a, modulus));
+    EXPECT_TRUE(static_cast<T>(1) ==
+                             hc::modular_multiplicative_inverse(a, modulus, g));
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
+
     a = 5;
     EXPECT_TRUE(static_cast<T>(1) ==
                                 hc::modular_multiplicative_inverse(a, modulus));
+    EXPECT_TRUE(static_cast<T>(1) ==
+                             hc::modular_multiplicative_inverse(a, modulus, g));
+    EXPECT_TRUE(g == testmmi::gcd(a, modulus));
+
 
     modulus = hc::ut_numeric_limits<T>::max();
     test_modulus(modulus);
