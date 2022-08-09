@@ -44,8 +44,8 @@ namespace hurchalla {
 // 0 < modulus < (1 << 64)/4.  It is undefined behavior to use a modulus that is
 // not within the allowed range.  The modulus you use must be odd, which is
 // always required for montgomery arithmetic.
-// In contrast, the default class MontgomeryForm<T> has no restriction on the
-// its modulus size, aside from requiring that its modulus must be a positive
+// In contrast, the default class MontgomeryForm<T> has no restriction on its
+// modulus size, though it still requires that its modulus must be a positive
 // odd number.
 // You can expect that MontgomeryQuarter<T> will perform better (very often) or
 // at worst the same as MontgomeryForm<T>, if both are given the same modulus.
@@ -64,8 +64,8 @@ namespace hurchalla {
 // to use a modulus that is not within the allowed range.  The modulus you use
 // must be odd, which is always required for montgomery arithmetic.
 // In contrast, the default class MontgomeryForm<T> has no restriction on its
-// modulus size, aside from requiring that its modulus must be a positive odd
-// number.
+// modulus size, though it still requires that its modulus must be a positive
+// odd number.
 // For a type T that is the same size as the CPU integer registers (e.g.
 // uin64_t on a 64 bit computer) or a type T that is smaller than the register
 // size, you can expect that MontgomeryHalf<T> will perform better (very often)
@@ -92,8 +92,10 @@ namespace hurchalla {
 // Note that this file also has an alias called MontgomeryStandardMathWrapper.
 // This alias maps to a class that uses the MontgomeryForm interface but that
 // internally performs all calculations with standard modular arithmetic rather
-// than any montgomery arithmetic.  This can be useful as an aid for comparing
-// performance between montgomery and non-montgomery modular arithmetic.
+// than any montgomery arithmetic.  This can be useful as a convenient aid to
+// compare performance between montgomery and non-montgomery modular arithmetic,
+// since the fact that these aliases both provide the exact same API allows you
+// to use them interchangably via a function/struct/class template parameter.
 // Since MontgomeryStandardMathWrapper does not use montgomery arithmetic, its
 // modulus is allowed to be either even or odd.  Its modulus must be positive.
 //
@@ -140,8 +142,8 @@ using MontgomeryFull = MontgomeryForm<T,
 // standard modular arithmetic whenever a large amount of modular multiplication
 // is needed, and so this is probably unlikely to be an alias you would expect
 // to use.  However, CPU architectures vary and evolve, and what is true today
-// may not be true tomorrow - the only way to know what is fastest on a given
-// system is to measure and compare performance.
+// may not be true tomorrow - you will need to measure and compare performance
+// on your system to know for certain.
 template <typename T>
 using MontgomeryStandardMathWrapper = MontgomeryForm<T,
   detail::MontyWrappedStandardMath<typename extensible_make_unsigned<T>::type>>;
