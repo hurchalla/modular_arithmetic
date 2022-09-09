@@ -4,14 +4,15 @@ Optional macros to predefine to tune performance
 There are a number of macros you can optionally predefine to tune the
 performance on your system for the modular arithmetic functions.  It is
 generally recommended not to do so, but in some cases you may find it useful.
-You would predefine one or more of these macros when compiling the sources.  For
-example, with CMake you would add the command "target_compile_definitions" to
-the CMakeLists.txt, like this:
-target_compile_features(hurchalla_modular_arithmetic INTERFACE HURCHALLA_ALLOW_INLINE_ASM_ALL)
+You would predefine one or more of these macros when compiling *your* sources,
+given that Clockwork is a header-only library.
 
-If you are not using CMake, then with clang or gcc you would compile with the -D
-compilation flag like this:  
-clang++ -DHURCHALLA_ALLOW_INLINE_ASM_ALL 
+For example, if you are compiling using clang or gcc from the command line, you would
+specify the -D compilation flag, similarly to the following: 
+clang++ -DHURCHALLA_ALLOW_INLINE_ASM_ALL  ...more arguments...
+As another example, if you are using CMake you would add the command "target_compile_definitions"
+to your CMakeLists.txt, similarly to the following: 
+target_compile_definitions(&lt;your_target_name&gt;  PRIVATE  HURCHALLA_ALLOW_INLINE_ASM_ALL) 
 \
 \
 HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE - predefine this macro if your target system's
