@@ -224,9 +224,29 @@ void test_square_variants(const M& mf, typename M::MontgomeryValue x,
                             fusedSquareAdd<hc::LowuopsTag>(x,zc)) == answer);
 }
 
+template <typename M>
+void test_remainder(const M& mf)
+{
+    using T = typename M::IntegerType;
+    namespace hc = ::hurchalla;
+
+    T max = hc::ut_numeric_limits<T>::max();
+    T mid = static_cast<T>(max/2);
+    T modulus = mf.getModulus();
+
+    EXPECT_TRUE(mf.remainder(0) == (0 % modulus));
+    EXPECT_TRUE(mf.remainder(1) == (1 % modulus));
+    EXPECT_TRUE(mf.remainder(2) == (2 % modulus));
+    EXPECT_TRUE(mf.remainder(static_cast<T>(max-0)) == ((max-0) % modulus));
+    EXPECT_TRUE(mf.remainder(static_cast<T>(max-1)) == ((max-1) % modulus));
+    EXPECT_TRUE(mf.remainder(static_cast<T>(max-2)) == ((max-2) % modulus));
+    EXPECT_TRUE(mf.remainder(static_cast<T>(mid-1)) == ((mid-1) % modulus));
+    EXPECT_TRUE(mf.remainder(static_cast<T>(mid-0)) == ((mid-0) % modulus));
+    EXPECT_TRUE(mf.remainder(static_cast<T>(mid+1)) == ((mid+1) % modulus));
+}
 
 template <typename M>
-void test_mf_general_checks(M& mf, typename M::IntegerType a,
+void test_mf_general_checks(const M& mf, typename M::IntegerType a,
                            typename M::IntegerType b, typename M::IntegerType c)
 {
     namespace hc = ::hurchalla;
@@ -589,6 +609,18 @@ void test_MontgomeryForm()
             --modulus;
         M mf(modulus);
         EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(12), GcdFunctor()) == 3);
+    }
+
+    // test remainder()
+    {
+        T max = M::max_modulus();
+        T mid = static_cast<T>(max/2);
+        mid = (mid % 2 == 0) ? static_cast<T>(mid + 1) : mid;
+        test_remainder(M(3));    // smallest possible modulus
+        test_remainder(M(max));  // largest possible modulus
+        if (121 <= max)
+            test_remainder(M(121));
+        test_remainder(M(mid));
     }
 }
 

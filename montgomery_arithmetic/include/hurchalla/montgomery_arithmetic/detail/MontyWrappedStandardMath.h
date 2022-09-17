@@ -105,6 +105,11 @@ class MontyWrappedStandardMath final {
         return ret;
     }
 
+    HURCHALLA_FORCE_INLINE T remainder(T a) const
+    {
+        return static_cast<T>(a % modulus_);
+    }
+
     HURCHALLA_FORCE_INLINE C getCanonicalValue(V x) const
     {
         HPBC_PRECONDITION2(isCanonical(x));

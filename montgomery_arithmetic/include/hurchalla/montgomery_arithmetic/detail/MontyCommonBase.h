@@ -98,6 +98,21 @@ class MontyCommonBase {
         return result;
     }
 
+    HURCHALLA_FORCE_INLINE T remainder(T a) const
+    {
+        HPBC_INVARIANT2(r_mod_n_ < n_);
+        namespace hc = ::hurchalla;
+        T u_lo;
+        T u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, a, r_mod_n_);
+        // Since a is type T, 0 <= a < R.  And since r_mod_n is type T and
+        // r_mod_n < n, we know  0 <= r_mod_n < n.  Therefore,
+        // 0 <= u == a * r_mod_n < R*n,  which will satisfy REDC's precondition.
+        T result = hc::REDC_standard(u_hi, u_lo, n_, inv_n_, LowlatencyTag());
+
+        HPBC_POSTCONDITION2(result < n_);
+        return result;
+    }
+
     HURCHALLA_FORCE_INLINE C getUnityValue() const
     {
         // as noted in constructor, unityValue == (1*R)%n_ == r_mod_n_
