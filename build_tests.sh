@@ -10,7 +10,7 @@
 # This is a working convenience script for invoking the testing builds and then
 # running the tests.
 # The syntax is 
-# ./build_tests [-c<compiler_name>] [-r] [-a] [-u] [-s] [-m<Release|Debug>]
+# ./build_tests [-c<compiler_name>] [-r] [-a] [-u] [-s] [-m<Release|Debug>] [-l<standard_library_name>]
 #
 # -c allows you to select the compiler, rather than using the default.
 # -r specifies to run all tests after the build.  Without -r, no tests will run.
@@ -29,6 +29,7 @@
 #    possess those instructions.
 # -m allows you to choose between Release and Debug build configuration, rather
 #    than using the default.
+# -l allows you to choose between either libstdc++ or libc++ when using clang.
 #
 # Currently it supports clang, gcc, and icc but you'll need to customize the
 # section under "#Compiler commands" to match the compilers on your system.  The
@@ -169,12 +170,12 @@
 
 
 
-while getopts ":m:c:h-:raus" opt; do
+while getopts ":m:l:c:h-:raus" opt; do
   case $opt in
     h)
       ;&
     -)
-      echo "Usage: build_tests [-c<compiler_name>] [-r] [-a] [-u] [-s] [-m<Release|Debug>]" >&2
+      echo "Usage: build_tests [-c<compiler_name>] [-r] [-a] [-u] [-s] [-m<Release|Debug>] [-l<standard_library_name>]" >&2
       exit 1
       ;;
     c)
@@ -182,6 +183,9 @@ while getopts ":m:c:h-:raus" opt; do
       ;;
     m)
       mode=$OPTARG
+      ;;
+    l)
+      library=$OPTARG
       ;;
     r)
       run_tests=true
@@ -213,6 +217,10 @@ if [ -z "$mode" ]; then
   mode=Debug
 fi
 
+if [ -n "$library" ]; then
+  cpp_stdlib="-stdlib=$library"
+fi
+
 
 # We do heavy testing via this script.  Other methods for invoking the build and
 # testing (e.g. github actions) usually aren't meant to be heavyweight and won't
@@ -235,6 +243,11 @@ elif [ "${compiler,,}" = "gcc-10" ] || [ "${compiler,,}" = "g++-10" ] ||
   cmake_cpp_compiler=-DCMAKE_CXX_COMPILER=g++-10
   cmake_c_compiler=-DCMAKE_C_COMPILER=gcc-10
   compiler_name=gcc10
+elif [ "${compiler,,}" = "gcc-13" ] || [ "${compiler,,}" = "g++-13" ] ||
+     [ "${compiler,,}" = "gcc13" ] || [ "${compiler,,}" = "g++13" ]; then
+  cmake_cpp_compiler=-DCMAKE_CXX_COMPILER=g++-13
+  cmake_c_compiler=-DCMAKE_C_COMPILER=gcc-13
+  compiler_name=gcc13
 elif [ "${compiler,,}" = "clang" ] || [ "${compiler,,}" = "clang++" ]; then
   cmake_cpp_compiler=-DCMAKE_CXX_COMPILER=clang++
   cmake_c_compiler=-DCMAKE_C_COMPILER=clang
@@ -254,6 +267,11 @@ elif [ "${compiler,,}" = "clang-10" ] || [ "${compiler,,}" = "clang++-10" ] ||
   cmake_cpp_compiler=-DCMAKE_CXX_COMPILER=clang++-10
   cmake_c_compiler=-DCMAKE_C_COMPILER=clang-10
   compiler_name=clang10
+elif [ "${compiler,,}" = "clang-18" ] || [ "${compiler,,}" = "clang++-18" ] ||
+     [ "${compiler,,}" = "clang18" ] || [ "${compiler,,}" = "clang++18" ]; then
+  cmake_cpp_compiler=-DCMAKE_CXX_COMPILER=clang++-18
+  cmake_c_compiler=-DCMAKE_C_COMPILER=clang-18
+  compiler_name=clang18
 elif [ "${compiler,,}" = "icc" ] || [ "${compiler,,}" = "icpc" ]; then
   cmake_cpp_compiler=-DCMAKE_CXX_COMPILER=icpc
   cmake_c_compiler=-DCMAKE_C_COMPILER=icc
@@ -458,7 +476,7 @@ if [ "${mode,,}" = "release" ]; then
     mkdir -p $build_dir
     cmake -S. -B./$build_dir -DTEST_HURCHALLA_LIBS=ON \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_FLAGS="$cpp_standard  \
+            -DCMAKE_CXX_FLAGS="$cpp_standard  $cpp_stdlib \
             $test_avoid_cselect  $test_heavyweight \
             $use_inline_asm  $use_all_inline_asm \
             $gcc_static_analysis"  "${clang_static_analysis[@]}" \
@@ -474,7 +492,8 @@ elif [ "${mode,,}" = "debug" ]; then
     cmake -S. -B./$build_dir -DTEST_HURCHALLA_LIBS=ON \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_EXE_LINKER_FLAGS="$clang_ubsan_link_flags" \
-            -DCMAKE_CXX_FLAGS="$cpp_standard  $clang_ubsan  $gcc_ubsan  \
+            -DCMAKE_CXX_FLAGS="$cpp_standard  $cpp_stdlib \
+            $clang_ubsan  $gcc_ubsan  \
             $test_avoid_cselect  $test_heavyweight \
             $use_inline_asm  $use_all_inline_asm \
             $gcc_static_analysis"  "${clang_static_analysis[@]}" \
