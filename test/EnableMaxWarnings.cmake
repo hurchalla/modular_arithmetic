@@ -45,6 +45,14 @@ else()
                 -Wextra-semi)
     endif()
 
+    # Due to a probable bug in clang 6 - it pointlessly warns
+    # about [[maybe_unused]] in GTEST - we disable that warning here.
+    if((CMAKE_CXX_COMPILER_ID MATCHES "Clang") AND
+               (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10.0))
+        target_compile_options(${target} PRIVATE
+                -Wno-ignored-attributes)
+    endif()
+
 
     # additional compiler specific warnings
 
@@ -54,7 +62,7 @@ else()
                 -Wcast-align -Wmismatched-tags -Wabstract-vbase-init
                 -Warray-bounds-pointer-arithmetic -Wassign-enum
                 -Watomic-properties -Wauto-import -Wc++14-compat-pedantic
-                -Wc++14-extensions -Wclass-varargs -Wcomma
+                -Wno-c++14-extensions -Wclass-varargs -Wcomma
                 -Wconditional-uninitialized -Wconsumed -Wcuda-compat
                 -Wdeprecated -Wduplicate-enum -Wformat-non-iso -Wformat-pedantic
                 -Wgcc-compat -Wgnu -Wheader-hygiene -Widiomatic-parentheses
@@ -76,7 +84,7 @@ else()
                 -Wvector-conversion -Wwritable-strings)
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0)
             target_compile_options(${target} PRIVATE
-                -Wbinary-literal -Wc++17-compat-pedantic -Wc++17-extensions
+                -Wbinary-literal -Wc++17-compat-pedantic -Wno-c++17-extensions
                 -Winconsistent-missing-destructor-override -Wpragma-pack
                 -Wprofile-instr-missing -Wredundant-parens
                 -Wsigned-enum-bitfield -Wspir-compat
@@ -88,7 +96,7 @@ else()
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)
             target_compile_options(${target} PRIVATE
                     -Walloca -Watomic-implicit-seq-cst -Wc++20-compat-pedantic
-                    -Wc++20-extensions -Wctad-maybe-unsupported
+                    -Wno-c++20-extensions -Wctad-maybe-unsupported
                     -Wextra-semi-stmt -Wformat-type-confusion
                     -Wimplicit-int-float-conversion -Wmisexpect
                     -Wpoison-system-directories -Wnon-modular-include-in-module
