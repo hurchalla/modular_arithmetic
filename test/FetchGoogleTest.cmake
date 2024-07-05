@@ -25,10 +25,18 @@ if (NOT TARGET gtest_main)
         GIT_TAG        main
     )
     #git tag of release-1.8.0 instead?
-    FetchContent_GetProperties(googletest)
-    if(NOT googletest_POPULATED)
-        FetchContent_Populate(googletest)
-    endif()
+
+
+    # For Windows: Prevent overriding the parent project's compiler/linker settings
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+
+#    OLD METHOD (deprecated):
+#
+#    FetchContent_GetProperties(googletest)
+#    if(NOT googletest_POPULATED)
+#        FetchContent_Populate(googletest)
+#    endif()
 
 
 #    set_directory_properties(PROPERTIES EXCLUDE_FROM_ALL ON)
@@ -44,7 +52,12 @@ if (NOT TARGET gtest_main)
 #    set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME googletest)
 
 #    add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
-    add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_ALL)
+
+
+
+#    add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_ALL)
+
+
 
 # alternative
 #    set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE BOOL "")
