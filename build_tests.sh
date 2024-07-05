@@ -170,16 +170,19 @@
 
 
 
-while getopts ":m:l:c:h-:raus" opt; do
+while getopts ":m:l:c:j:h-:raus" opt; do
   case $opt in
     h)
       ;&
     -)
-      echo "Usage: build_tests [-c<compiler_name>] [-r] [-a] [-u] [-s] [-m<Release|Debug>] [-l<standard_library_name>]" >&2
+      echo "Usage: build_tests [-c<compiler_name>] [-j<num_jobs>] [-r] [-a] [-u] [-s] [-m<Release|Debug>] [-l<standard_library_name>]" >&2
       exit 1
       ;;
     c)
       compiler=$OPTARG
+      ;;
+    j)
+      num_jobs="-j$OPTARG"
       ;;
     m)
       mode=$OPTARG
@@ -482,7 +485,7 @@ if [ "${mode,,}" = "release" ]; then
             $gcc_static_analysis"  "${clang_static_analysis[@]}" \
             $cmake_cpp_compiler $cmake_c_compiler
     exit_on_failure
-    cmake --build ./$build_dir --config Release
+    cmake --build ./$build_dir $num_jobs --config Release
     exit_on_failure
     popd > /dev/null 2>&1
 elif [ "${mode,,}" = "debug" ]; then
@@ -499,7 +502,7 @@ elif [ "${mode,,}" = "debug" ]; then
             $gcc_static_analysis"  "${clang_static_analysis[@]}" \
             $cmake_cpp_compiler $cmake_c_compiler
     exit_on_failure
-    cmake --build ./$build_dir --config Debug
+    cmake --build ./$build_dir $num_jobs --config Debug
     exit_on_failure
     popd > /dev/null 2>&1
 else
