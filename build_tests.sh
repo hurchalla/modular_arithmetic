@@ -10,9 +10,12 @@
 # This is a working convenience script for invoking the testing builds and then
 # running the tests.
 # The syntax is 
-# ./build_tests [-c<compiler_name>] [-r] [-a] [-u] [-s] [-m<Release|Debug>] [-l<standard_library_name>]
+# ./build_tests [-c<compiler_name>] [-j<num_jobs>] [-r] [-a] [-u] [-s] [-m<Release|Debug>] [-l<standard_library_name>]
 #
 # -c allows you to select the compiler, rather than using the default.
+# -j specifies the number of jobs (typically threads) that you want the compiler
+#    to use when building.  If you omit this option, the compiler's default
+#    number of jobs will be used.
 # -r specifies to run all tests after the build.  Without -r, no tests will run.
 # -a specifies you want to compile the code using typically helpful (how much it
 #    helps depends on your compiler) inline asm optimizations, which makes for
