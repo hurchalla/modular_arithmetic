@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022 Jeffrey Hurchalla.
+// Copyright (c) 2020-2024 Jeffrey Hurchalla.
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -6,6 +6,7 @@
  */
 
 #include "test_MontgomeryForm.h"
+#include "NoForceInlineMontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/MontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyFullRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
@@ -20,8 +21,9 @@
 namespace {
 
 
+namespace hc = ::hurchalla;
+
 TEST(MontgomeryArithmetic, MontgomeryFormExamples) {
-    namespace hc = ::hurchalla;
 
     // ---- Demonstrate simple modular addition ----
     {
@@ -93,36 +95,40 @@ TEST(MontgomeryArithmetic, MontgomeryFormExamples) {
 
 // extensive tests of functionality with all possible Monty types ---
 
+
+#if 0
+ template <class T, class Monty> using MF = hc::MontgomeryForm<T, Monty>;
+ template <class T> using DefaultMF = hc::MontgomeryForm<T>;
+#else
+ template<class T, class Monty>
+    using MF = hc::NoForceInlineMontgomeryForm<hc::MontgomeryForm<T, Monty>>;
+ template<class T>
+    using DefaultMF = hc::NoForceInlineMontgomeryForm<hc::MontgomeryForm<T>>;
+#endif
+
+
 TEST(MontgomeryArithmetic, MontyQuarterRange) {
-    namespace hc = ::hurchalla;
-    test_custom_monty<hc::detail::MontyQuarterRange>();
+    test_custom_monty<MF, hc::detail::MontyQuarterRange>();
 }
 
 TEST(MontgomeryArithmetic, MontyHalfRange) {
-    namespace hc = ::hurchalla;
-    test_custom_monty<hc::detail::MontyHalfRange>();
+    test_custom_monty<MF, hc::detail::MontyHalfRange>();
 }
 
+
 TEST(MontgomeryArithmetic, MontyFullRange) {
-    namespace hc = ::hurchalla;
     namespace hcd = ::hurchalla::detail;
-    test_MontgomeryForm<hc::MontgomeryForm<std::uint8_t,
-                                         hcd::MontyFullRange<std::uint8_t>>>();
-    test_MontgomeryForm<hc::MontgomeryForm<std::uint16_t,
-                                         hcd::MontyFullRange<std::uint16_t>>>();
-    test_MontgomeryForm<hc::MontgomeryForm<std::uint32_t,
-                                         hcd::MontyFullRange<std::uint32_t>>>();
-    test_MontgomeryForm<hc::MontgomeryForm<std::uint64_t,
-                                         hcd::MontyFullRange<std::uint64_t>>>();
+    test_MontgomeryForm<MF<uint8_t, hcd::MontyFullRange<std::uint8_t>>>();
+    test_MontgomeryForm<MF<uint16_t, hcd::MontyFullRange<std::uint16_t>>>();
+    test_MontgomeryForm<MF<uint32_t, hcd::MontyFullRange<std::uint32_t>>>();
+    test_MontgomeryForm<MF<uint64_t, hcd::MontyFullRange<std::uint64_t>>>();
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
-    test_MontgomeryForm<hc::MontgomeryForm<__uint128_t,
-                                         hcd::MontyFullRange<__uint128_t>>>();
+    test_MontgomeryForm<MF<__uint128_t, hcd::MontyFullRange<__uint128_t>>>();
 #endif
 }
 
 
 TEST(MontgomeryArithmetic, MontyDefault) {
-    namespace hc = ::hurchalla;
 // check that MontgomeryDefault uses MontyHalfRange when appropriate
 #if HURCHALLA_TARGET_BIT_WIDTH == 32
     static_assert(std::is_same<
@@ -139,33 +145,33 @@ TEST(MontgomeryArithmetic, MontyDefault) {
 #ifdef HURCHALLA_TEST_MODULAR_ARITHMETIC_HEAVYWEIGHT
 // It would be absolutely normal and expected to use an unsigned integer type
 // template argument for MontgomeryForm, but we can skip testing them here to
-// save compilation time, because the resulting Montygomery claseses using
+// save compilation time, because the resulting Montygomery classes using
 // unsigned int types resolve to exactly the same types as will be tested in
 // the MontyFullRange and MontyHalfRange and MontyQuarterRange TESTs above.
-    test_MontgomeryForm<hc::MontgomeryForm<std::uint8_t>>();
-    test_MontgomeryForm<hc::MontgomeryForm<std::uint16_t>>();
-    test_MontgomeryForm<hc::MontgomeryForm<std::uint32_t>>();
-    test_MontgomeryForm<hc::MontgomeryForm<std::uint64_t>>();
+    test_MontgomeryForm<DefaultMF<std::uint8_t>>();
+    test_MontgomeryForm<DefaultMF<std::uint16_t>>();
+    test_MontgomeryForm<DefaultMF<std::uint32_t>>();
+    test_MontgomeryForm<DefaultMF<std::uint64_t>>();
 # if HURCHALLA_COMPILER_HAS_UINT128_T()
-    test_MontgomeryForm<hc::MontgomeryForm<__uint128_t>>();
+    test_MontgomeryForm<DefaultMF<__uint128_t>>();
 # endif
 #endif
 
-    test_MontgomeryForm<hc::MontgomeryForm<std::int32_t>>();
+    test_MontgomeryForm<DefaultMF<std::int32_t>>();
 #ifdef HURCHALLA_TEST_MODULAR_ARITHMETIC_HEAVYWEIGHT
 // To save compilation time we can also skip most signed integer type tests for
 // plain MontgomeryForm.  These should differ from the unsigned versions (which
 // in turn map to types we test above) only in the casts they perform for
 // convertIn(), convertOut(), max_modulus(), getModulus() and gcd_with_modulus()
-    test_MontgomeryForm<hc::MontgomeryForm<std::int8_t>>();
-    test_MontgomeryForm<hc::MontgomeryForm<std::int16_t>>();
-    test_MontgomeryForm<hc::MontgomeryForm<std::int64_t>>();
+    test_MontgomeryForm<DefaultMF<std::int8_t>>();
+    test_MontgomeryForm<DefaultMF<std::int16_t>>();
+    test_MontgomeryForm<DefaultMF<std::int64_t>>();
 // It's a slight hack here to use a macro that tells us whether or not the
 // compiler supports  __uint128_t, when what we really want is to know is
 // whether we can use __int128_t.  Nevertheless in practice, if we have
 // __uint128_t then we almost certainly have __int128_t too.
 # if HURCHALLA_COMPILER_HAS_UINT128_T()
-    test_MontgomeryForm<hc::MontgomeryForm<__int128_t>>();
+    test_MontgomeryForm<DefaultMF<__int128_t>>();
 # endif
 #endif
 }

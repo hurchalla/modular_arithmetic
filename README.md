@@ -2,11 +2,11 @@
 
 ![Alt text](images/clockxtrasmall_border2.jpg?raw=true "Clock Gears, photo by Krzysztof Golik, licensed CC BY-SA 4.0")
 
-Clockwork is a high performance, easy to use Modular Arithmetic (header-only) library for C++ for up to 128 bit integer types, with extensive support for Montgomery arithmetic.  If you want or need Montgomery arithmetic in this range, or general modular arithmetic functions, Clockwork is almost certainly the fastest and easiest library you could use (*for best performance just make sure you define the standard C++ macro NDEBUG*).
+Clockwork is a high performance, easy to use Modular Arithmetic (header-only) library for C++ for up to 128 bit integer types, with extensive support for Montgomery arithmetic.  If you want or need Montgomery arithmetic in this range, or general modular arithmetic functions, Clockwork is almost certainly the fastest and easiest library you could use.  For best performance make sure you define the standard C++ macro NDEBUG.
 
 ## Design goals
 
-The goal for Clockwork was to create a flexible and bulletproof library with the best performance yet achieved for modular arithmetic of native (on the CPU) integer types.  For integer types that are double the native bit width (e.g. 128 bit), performance should still be close to ideal, though not as completely optimized as for native types.  Larger than 128 bit types are permissible; however a library like GMP is likely to be a better choice for such sizes.
+Clockwork is designed to be a flexible and bulletproof library with the best performance achievable for modular arithmetic of native (on the CPU) integer types.  For integer types that are double the native bit width (e.g. 128 bit), performance should still be close to ideal, though not as completely optimized as for native types.  Larger than 128 bit types are permissible; however a library like GMP is likely to be a better choice for such sizes.
 
 ## Status
 
@@ -48,7 +48,7 @@ If you prefer, for the last command you could instead use CMake's default instal
 This will copy all the header files needed for this modular arithmetic library to an "include" subfolder in the installation folder of your choosing.
 When compiling your project, you'll of course need to ensure that you have that include subfolder as part of your include path.  
 
-For good performance you *must* ensure that the standard macro NDEBUG (see &lt;cassert&gt;) is defined when compiling.  You can generally do this by adding the option flag -DNDEBUG to your compile command.  
+For best performance you *must* ensure that the standard macro NDEBUG (see &lt;cassert&gt;) is defined when compiling.  You can generally do this by adding the option flag -DNDEBUG to your compile command.  
 
 It may help to see a simple [example](examples/example_without_cmake).
 
@@ -65,7 +65,7 @@ From the modular_arithmetic group, the files *absolute_value_difference.h*, *mod
 *hurchalla::modular_multiplicative_inverse(T a, T modulus)*.  Returns the multiplicative inverse of a if it exists, and otherwise returns 0.  
 *hurchalla::modular_pow(T base, T exponent, T modulus)*.  Returns the modular exponentiation of base^exponent (mod modulus).  
 
-From the montgomery_arithmetic group, the file *MontgomeryForm.h* provides the easy to use (and zero cost abstraction) class *hurchalla::MontgomeryForm*, which has member functions for effortlessly performing operations in the Montgomery domain.  These operations include converting to/from Montgomery domain, add, subtract, multiply, square, fused-multiply-add/sub, pow, gcd, and more.  For improved performance in some situations, the file *montgomery_form_aliases.h* provides simple aliases for faster (with limitations on allowed modulus) instantiations of the class MontgomeryForm.
+From the montgomery_arithmetic group, the file *MontgomeryForm.h* provides the easy to use (and zero cost abstraction) class *hurchalla::MontgomeryForm*, which has member functions for effortlessly performing operations in the Montgomery domain.  These operations include converting to/from Montgomery domain, add, subtract, multiply, square, [fused-multiply-add/sub](https://jeffhurchalla.com/2022/05/01/the-montgomery-multiply-accumulate), pow, gcd, and more.  For improved performance in some situations, the file *montgomery_form_aliases.h* provides simple aliases for faster (with limitations on allowed modulus) instantiations of the class MontgomeryForm.
 
 For an easy demonstration of MontgomeryForm, you can see one of the [examples](examples/example_without_cmake).
 
@@ -74,7 +74,3 @@ If you prefer not to use the high level interface of MontgomeryForm, and instead
 ## Performance Notes
 
 If you're interested in experimenting, predefining certain macros when compiling might improve performance - see [macros_for_performance.md](macros_for_performance.md).
-
-## TODO
-
-For the unit tests, solve the long compile time and high memory use (during compile) of the files test_MontgomeryForm.cpp and test_montgomery_pow.cpp.

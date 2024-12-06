@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022 Jeffrey Hurchalla.
+// Copyright (c) 2020-2024 Jeffrey Hurchalla.
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -33,7 +33,16 @@
 #include <cstdint>
 #include <type_traits>
 #include <array>
+#include <memory>
 
+
+// We define the following macro in order to be able to specify a variadic
+// template argument for ConcreteMontgomeryForm (if it's used) that matches the
+// array pow() sizes that will (or that could) be tested by this file.
+//
+//#define TESTABLE_ARRAY_POW_SIZES() 1, 2, 3, 4, 5
+// for now we'll only test the array version of pow with array size 3
+#define TESTABLE_ARRAY_POW_SIZES() 3
 
 
 // These adapter functions exist because the functions in the modular_arithmetic
@@ -330,29 +339,66 @@ void test_mf_general_checks(const M& mf, typename M::IntegerType a,
     EXPECT_TRUE(mf.convertOut(mf.pow(y,13)) == tma::modpow<T>(b,13,modulus));
     EXPECT_TRUE(mf.convertOut(mf.pow(y,17)) == tma::modpow<T>(b,17,modulus));
     EXPECT_TRUE(mf.convertOut(mf.pow(y,127)) == tma::modpow<T>(b,127,modulus));
+
+    // Do just a simple test of pow()'s array form template function -
+    // it's tested more thoroughly in test_montgomery_pow.cpp.
 #ifdef __GNUC__
 #  pragma GCC diagnostic push
 // old versions of gcc and clang give unnecessary warnings about single braced
 // initialization lists with std::array (newer versions fixed this).
 #  pragma GCC diagnostic ignored "-Wmissing-braces"
 #endif
-    std::array<V,3> mv_base = { x, y, z };
+    std::array<V,3> mv_bases = { x, y, z };
+    std::array<T,3> t_bases = { a, b, c };
 #ifdef __GNUC__
 #  pragma GCC diagnostic pop
 #endif
-    // Do just a simple test of pow()'s array form template function -
-    // it's tested more thoroughly in test_montgomery_pow.cpp.
-    std::array<V,3> mv_res = mf.pow(mv_base, 19);
-    EXPECT_TRUE(mf.convertOut(mv_res[0]) == tma::modpow<T>(a,19,modulus));
-    EXPECT_TRUE(mf.convertOut(mv_res[1]) == tma::modpow<T>(b,19,modulus));
-    EXPECT_TRUE(mf.convertOut(mv_res[2]) == tma::modpow<T>(c,19,modulus));
+    // In case we're indirectly (or directly) using ConcreteMontgomeryForm,
+    // ensure we use pow with an array size we've declared as possible.
+    constexpr std::size_t possible_sizes[] = { TESTABLE_ARRAY_POW_SIZES() };
+    constexpr std::size_t bases_size = std::tuple_size<decltype(mv_bases)>::value;
+    // static_assert comparing to only possible_sizes[0] is a hack - to assert
+    // properly, we'd write a constexpr function that searches possible_sizes.
+    static_assert(possible_sizes[0] == bases_size, "");
+    T exponent = 19;
+    auto mv_res = mf.pow(mv_bases, exponent);
+    for (std::size_t i = 0; i < bases_size; ++i) {
+        auto correct_val = tma::modpow<T>(t_bases[i], exponent, modulus);
+        EXPECT_TRUE(mf.convertOut(mv_res[i]) == correct_val);
+    }
 }
 
 
 
 
+// The following is definitely not the typical way to create an instance of
+// MontgomeryForm!  These template classes below exist to allow unit testing to
+// optionally use a run-time polymorphic version of MontgomeryForm, to speed up
+// compile times.  But the normal way to create an instance of MontgomeryForm
+// is simply to call its constructor like you would any other class.
+// An example of the normal way:
+//    uint64_t modulus = 777777;
+//    MontgomeryForm<uint64_t> mf(modulus);
+//
+template <class M, class ConcreteMF>
+struct MontgomeryFactory {
+    static M construct(typename M::IntegerType modulus)
+    {
+        auto* pc = new ConcreteMF(modulus);
+        auto up = std::unique_ptr<typename ConcreteMF::Parent>(pc);
+        return M(std::move(up));
+    }
+};
+template <class M>
+struct MontgomeryFactory<M, void> {
+    static M construct(typename M::IntegerType modulus)
+    {
+        return M(modulus);
+    }
+};
 
-template <typename M>
+
+template <typename M, class ConcreteMF = void>
 void test_MontgomeryForm()
 {
     namespace hc = ::hurchalla;
@@ -361,10 +407,17 @@ void test_MontgomeryForm()
     using C = typename M::CanonicalValue;
     using FV = typename M::FusingValue;
 
+    // see comments above MontgomeryFactory definition
+    using MFactory = typename ::MontgomeryFactory<M, ConcreteMF>;
+
     // Try a basic test case first that is valid for all possible Monty types
     {
         T modulus = 13;
-        M mf(modulus);
+        // using MFactory is very unusual, but can help unit testing compile
+        // times.  Normally we would have instead written
+        //   M mf(modulus);
+        M mf = MFactory::construct(modulus);
+
         V x = mf.convertIn(6);
         V y = mf.convertIn(11);
 
@@ -433,7 +486,7 @@ void test_MontgomeryForm()
     // try tests with the smallest possible modulus
     {
         T modulus = 3;
-        M mf(modulus);
+        M mf = MFactory::construct(modulus);
         V x = mf.convertIn(1);
         V y = mf.convertIn(2);
 
@@ -481,10 +534,19 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.pow(y, 17)) == 2);
     }
 
+    T max_modulus;
+    {
+        // normally we would just set max_modulus = M::max_modulus(),
+        // but in the unusual case where M is an AbstractMontgomeryWrapper,
+        // max_modulus() isn't static, and can't be static.
+        M mf = MFactory::construct(static_cast<T>(3));  //we arbitrarily use 3 since it fits in any T
+        max_modulus = mf.max_modulus();
+    }
+
     // try the largest possible modulus
     {
-        T modulus = M::max_modulus();
-        M mf(modulus);
+        T modulus = max_modulus;
+        M mf = MFactory::construct(modulus);
         EXPECT_TRUE(modulus > 4);
 
         V x = mf.convertIn(static_cast<T>(modulus - 1));
@@ -530,7 +592,7 @@ void test_MontgomeryForm()
     // perform a bunch of general checks
 
     {
-        M mf(11);
+        M mf = MFactory::construct(11);
         T c = 1;
         T a=5; T b=6;
         test_mf_general_checks(mf, a, b, c);
@@ -548,9 +610,9 @@ void test_MontgomeryForm()
         test_mf_general_checks(mf, a, b, c);
     }
     {
-        EXPECT_TRUE(M::max_modulus() >= 5);
-        M mf(M::max_modulus()-2);
-        T c = M::max_modulus()-3;
+        EXPECT_TRUE(max_modulus >= 5);
+        M mf = MFactory::construct(max_modulus-2);
+        T c = max_modulus-3;
         T a=5; T b=6;
         test_mf_general_checks(mf, a, b, c);
         a=static_cast<T>(mf.getModulus()-1); b=7;
@@ -565,8 +627,8 @@ void test_MontgomeryForm()
         test_mf_general_checks(mf, a, b, c);
     }
     {
-        EXPECT_TRUE(M::max_modulus() >= 5);
-        M mf((M::max_modulus()/4)*2 + 1);
+        EXPECT_TRUE(max_modulus >= 5);
+        M mf = MFactory::construct((max_modulus/4)*2 + 1);
         T c = 0;
         T a=5; T b=6;
         test_mf_general_checks(mf, a, b, c);
@@ -584,59 +646,58 @@ void test_MontgomeryForm()
 
     // test gcd
     {
-        M mf(static_cast<T>(35));
+        M mf = MFactory::construct(static_cast<T>(35));
         EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(28), GcdFunctor()) == 7);
         EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(29), GcdFunctor()) == 1);
         EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(70), GcdFunctor()) == 35);
     }
-    if (117 <= M::max_modulus())
+    if (117 <= max_modulus)
     {
-        M mf(static_cast<T>(117));
+        M mf = MFactory::construct(static_cast<T>(117));
         EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(78), GcdFunctor()) == 39);
         EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(26), GcdFunctor()) == 13);
         EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(27), GcdFunctor()) == 9);
         EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(28), GcdFunctor()) == 1);
     }
     {
-        M mf(static_cast<T>(3));  // smallest possible modulus
+        M mf = MFactory::construct(static_cast<T>(3));  // smallest possible modulus
         EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(2), GcdFunctor()) == 1);
         EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(0), GcdFunctor()) == 3);
     }
     {
-        T modulus = M::max_modulus();
+        T modulus = max_modulus;
         ASSERT_TRUE(modulus > 9);
         while (modulus % 3 != 0 || modulus % 2 == 0)
             --modulus;
-        M mf(modulus);
+        M mf = MFactory::construct(modulus);
         EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(12), GcdFunctor()) == 3);
     }
 
     // test remainder()
     {
-        T max = M::max_modulus();
+        T max = max_modulus;
         T mid = static_cast<T>(max/2);
         mid = (mid % 2 == 0) ? static_cast<T>(mid + 1) : mid;
-        test_remainder(M(3));    // smallest possible modulus
-        test_remainder(M(max));  // largest possible modulus
+        test_remainder(MFactory::construct(3));    // smallest possible modulus
+        test_remainder(MFactory::construct(max));  // largest possible modulus
         if (121 <= max)
-            test_remainder(M(121));
-        test_remainder(M(mid));
+            test_remainder(MFactory::construct(121));
+        test_remainder(MFactory::construct(mid));
     }
 }
 
-
-template <template<class> class M>
+ 
+template <template<class,class> class MF, template<class> class MontyType>
 void test_custom_monty()
 {
-    namespace hc = ::hurchalla;
-    test_MontgomeryForm<hc::MontgomeryForm<std::uint64_t, M<std::uint64_t>>>();
+    test_MontgomeryForm<MF<std::uint64_t, MontyType<std::uint64_t>>>();
 
 #ifdef HURCHALLA_TEST_MODULAR_ARITHMETIC_HEAVYWEIGHT
-    test_MontgomeryForm<hc::MontgomeryForm<std::uint8_t, M<std::uint8_t>>>();
-    test_MontgomeryForm<hc::MontgomeryForm<std::uint16_t, M<std::uint16_t>>>();
-    test_MontgomeryForm<hc::MontgomeryForm<std::uint32_t, M<std::uint32_t>>>();
+    test_MontgomeryForm<MF<std::uint8_t, MontyType<std::uint8_t>>>();
+    test_MontgomeryForm<MF<std::uint16_t, MontyType<std::uint16_t>>>();
+    test_MontgomeryForm<MF<std::uint32_t, MontyType<std::uint32_t>>>();
 # if HURCHALLA_COMPILER_HAS_UINT128_T()
-    test_MontgomeryForm<hc::MontgomeryForm<__uint128_t, M<__uint128_t>>>();
+    test_MontgomeryForm<MF<__uint128_t, MontyType<__uint128_t>>>();
 # endif
 #endif
 }

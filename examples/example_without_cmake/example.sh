@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Copyright (c) 2020-2022 Jeffrey Hurchalla.
 # This Source Code Form is subject to the terms of the Mozilla Public

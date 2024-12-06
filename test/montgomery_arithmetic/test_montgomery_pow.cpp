@@ -20,6 +20,7 @@
 #undef NDEBUG
 
 
+#include "NoForceInlineMontgomeryForm.h"
 #include "hurchalla/modular_arithmetic/modular_pow.h"
 #include "hurchalla/montgomery_arithmetic/MontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/montgomery_form_aliases.h"
@@ -169,53 +170,65 @@ void run_pow_tests()
 
 
 
-TEST(MontgomeryArithmetic, montgomery_pow) {
-    run_pow_tests<hc::MontgomeryForm<std::uint8_t>>();
+#if 0
+ template <class T, class Monty> using MF = hc::MontgomeryForm<T, Monty>;
+ template <class T> using DefaultMF = hc::MontgomeryForm<T>;
+#else
+ template<class T, class Monty>
+    using MF = hc::NoForceInlineMontgomeryForm<hc::MontgomeryForm<T, Monty>>;
+ template<class T>
+    using DefaultMF = hc::NoForceInlineMontgomeryForm<hc::MontgomeryForm<T>>;
+#endif
 
-    run_pow_tests<hc::MontgomeryForm<std::uint8_t,
+
+TEST(MontgomeryArithmetic, montgomery_pow) {
+
+    run_pow_tests<DefaultMF<std::uint8_t>>();
+
+    run_pow_tests<MF<std::uint8_t,
                         hc::detail::MontyQuarterRange<std::uint8_t>>>();
-    run_pow_tests<hc::MontgomeryForm<std::uint8_t,
+    run_pow_tests<MF<std::uint8_t,
                         hc::detail::MontyHalfRange<std::uint8_t>>>();
-    run_pow_tests<hc::MontgomeryForm<std::uint8_t,
+    run_pow_tests<MF<std::uint8_t,
                         hc::detail::MontyFullRange<std::uint8_t>>>();
-    run_pow_tests<hc::MontgomeryForm<std::uint8_t,
+    run_pow_tests<MF<std::uint8_t,
                         hc::detail::MontyWrappedStandardMath<std::uint8_t>>>();
 
-    run_pow_tests<hc::MontgomeryForm<std::uint16_t,
+    run_pow_tests<MF<std::uint16_t,
                         hc::detail::MontyQuarterRange<std::uint16_t>>>();
-    run_pow_tests<hc::MontgomeryForm<std::uint16_t,
+    run_pow_tests<MF<std::uint16_t,
                         hc::detail::MontyHalfRange<std::uint16_t>>>();
-    run_pow_tests<hc::MontgomeryForm<std::uint16_t,
+    run_pow_tests<MF<std::uint16_t,
                         hc::detail::MontyFullRange<std::uint16_t>>>();
-    run_pow_tests<hc::MontgomeryForm<std::uint16_t,
+    run_pow_tests<MF<std::uint16_t,
                         hc::detail::MontyWrappedStandardMath<std::uint16_t>>>();
 
-    run_pow_tests<hc::MontgomeryForm<std::uint32_t,
+    run_pow_tests<MF<std::uint32_t,
                         hc::detail::MontyQuarterRange<std::uint32_t>>>();
-    run_pow_tests<hc::MontgomeryForm<std::uint32_t,
+    run_pow_tests<MF<std::uint32_t,
                         hc::detail::MontyHalfRange<std::uint32_t>>>();
-    run_pow_tests<hc::MontgomeryForm<std::uint32_t,
+    run_pow_tests<MF<std::uint32_t,
                         hc::detail::MontyFullRange<std::uint32_t>>>();
-    run_pow_tests<hc::MontgomeryForm<std::uint32_t,
+    run_pow_tests<MF<std::uint32_t,
                         hc::detail::MontyWrappedStandardMath<std::uint32_t>>>();
 
-    run_pow_tests<hc::MontgomeryForm<std::uint64_t,
+    run_pow_tests<MF<std::uint64_t,
                         hc::detail::MontyQuarterRange<std::uint64_t>>>();
-    run_pow_tests<hc::MontgomeryForm<std::uint64_t,
+    run_pow_tests<MF<std::uint64_t,
                         hc::detail::MontyHalfRange<std::uint64_t>>>();
-    run_pow_tests<hc::MontgomeryForm<std::uint64_t,
+    run_pow_tests<MF<std::uint64_t,
                         hc::detail::MontyFullRange<std::uint64_t>>>();
-    run_pow_tests<hc::MontgomeryForm<std::uint64_t,
+    run_pow_tests<MF<std::uint64_t,
                         hc::detail::MontyWrappedStandardMath<std::uint64_t>>>();
 
 #if HURCHALLA_COMPILER_HAS_UINT128_T()
-    run_pow_tests<hc::MontgomeryForm<__uint128_t,
+    run_pow_tests<MF<__uint128_t,
                         hc::detail::MontyQuarterRange<__uint128_t>>>();
-    run_pow_tests<hc::MontgomeryForm<__uint128_t,
+    run_pow_tests<MF<__uint128_t,
                         hc::detail::MontyHalfRange<__uint128_t>>>();
-    run_pow_tests<hc::MontgomeryForm<__uint128_t,
+    run_pow_tests<MF<__uint128_t,
                         hc::detail::MontyFullRange<__uint128_t>>>();
-    run_pow_tests<hc::MontgomeryForm<__uint128_t,
+    run_pow_tests<MF<__uint128_t,
                         hc::detail::MontyWrappedStandardMath<__uint128_t>>>();
 #endif
 }

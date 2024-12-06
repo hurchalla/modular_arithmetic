@@ -492,7 +492,7 @@ public:
     // If you have already instantiated this MontgomeryForm, then calling
     // remainder() should be faster than directly computing  a % modulus,
     // even if your CPU has extremely fast division (like many new CPUs).
-    T remainder(T a) const
+    HURCHALLA_FORCE_INLINE T remainder(T a) const
     {
         HPBC_PRECONDITION(a >= 0);
         return static_cast<T>(impl.remainder(static_cast<U>(a)));
