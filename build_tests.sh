@@ -405,9 +405,18 @@ fi
 # "[The] UndefinedBehaviorSanitizer ... test suite is integrated into the CMake
 # build and can be run with check-ubsan command."
 if [ "$compiler_name" = "gcc" ]; then
-  gcc_ubsan="-fsanitize=undefined -fno-sanitize-recover \
-           -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow"
+  if [[ $(uname -m) == 'arm64' ]]; then
+    # At the time of this writing, gcc does not seem to have implemented sanitizers
+    # (at least not ubsan) for Silicon MacOS.  I get link errors if compiling
+    # with them on mac.  See  https://github.com/orgs/Homebrew/discussions/3384
+    # https://github.com/orgs/Homebrew/discussions/3260
+    # https://stackoverflow.com/questions/65259300/detect-apple-silicon-from-command-line
 
+    : # do nothing, at least for now
+  else
+    gcc_ubsan="-fsanitize=undefined -fno-sanitize-recover \
+             -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow"
+  fi
 elif [ "$compiler_name" = "clang" ] && [[ $compiler_version -ge 6 ]]; then
   # clang6 doesn't support -fsanitize=implicit-conversion.  Clang10 does support
   # it.  I don't know if clang7,8,9 support it.

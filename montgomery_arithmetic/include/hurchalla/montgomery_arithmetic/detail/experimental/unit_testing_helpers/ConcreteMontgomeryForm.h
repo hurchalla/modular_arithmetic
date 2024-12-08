@@ -32,20 +32,20 @@
 namespace hurchalla {
 
 
-template <class MF, int... POW_ARRAY_SIZES>
+template <class MF, std::size_t... POW_ARRAY_SIZES>
 class ConcreteMontgomeryForm : public AbstractMontgomeryForm<ut_numeric_limits<typename MF::IntegerType>::is_signed> {
     const MF mf;
 
 public:
     using Parent = AbstractMontgomeryForm<ut_numeric_limits<typename MF::IntegerType>::is_signed>;
-    using T = Parent::IntegerType;
-    using V = Parent::MontgomeryValue;
-    using C = Parent::CanonicalValue;
-    using FV = Parent::FusingValue;
+    using T = typename Parent::IntegerType;
+    using V = typename Parent::MontgomeryValue;
+    using C = typename Parent::CanonicalValue;
+    using FV = typename Parent::FusingValue;
     static_assert(ut_numeric_limits<T>::is_integer, "");
 
 private:
-    using U = extensible_make_unsigned<T>::type;
+    using U = typename extensible_make_unsigned<T>::type;
 
     struct OpenV : public V {
         auto get() const -> decltype(V::get()) { return V::get(); }
@@ -91,8 +91,8 @@ private:
         explicit OpenMFV(OpenV x) : MFV(static_cast<OT>(x.get()))
         {
             static_assert(!ut_numeric_limits<typename OpenV::OT>::is_signed, "");
-            if constexpr (ut_numeric_limits<OT>::is_signed) {
-                using S = extensible_make_signed<typename OpenV::OT>::type;
+            if (ut_numeric_limits<OT>::is_signed) {
+                using S = typename extensible_make_signed<typename OpenV::OT>::type;
                 S s = static_cast<S>(x.get());
                 HPBC_ASSERT2(ut_numeric_limits<OT>::min() <= s &&
                               s <= ut_numeric_limits<OT>::max());
@@ -100,7 +100,7 @@ private:
                 HPBC_ASSERT2(0 <= x.get() && x.get() <= ut_numeric_limits<OT>::max());
             }
             static_assert(static_cast<OT>(-1) ==
-                static_cast<OT>(static_cast<OpenV::OT>(static_cast<OT>(-1))), "");
+                static_cast<OT>(static_cast<typename OpenV::OT>(static_cast<OT>(-1))), "");
         }
     };
     struct OpenMFC : public MFC {
@@ -112,8 +112,8 @@ private:
         explicit OpenMFC(OpenC x) : MFC(static_cast<OT>(x.get()))
         {
             static_assert(!ut_numeric_limits<typename OpenC::OT>::is_signed, "");
-            if constexpr (ut_numeric_limits<OT>::is_signed) {
-                using S = extensible_make_signed<typename OpenC::OT>::type;
+            if (ut_numeric_limits<OT>::is_signed) {
+                using S = typename extensible_make_signed<typename OpenC::OT>::type;
                 S s = static_cast<S>(x.get());
                 HPBC_ASSERT2(ut_numeric_limits<OT>::min() <= s &&
                               s <= ut_numeric_limits<OT>::max());
@@ -133,8 +133,8 @@ private:
         explicit OpenMFFV(OpenFV x) : MFFV(static_cast<OT>(x.get()))
         {
             static_assert(!ut_numeric_limits<typename OpenFV::OT>::is_signed, "");
-            if constexpr (ut_numeric_limits<OT>::is_signed) {
-                using S = extensible_make_signed<typename OpenFV::OT>::type;
+            if (ut_numeric_limits<OT>::is_signed) {
+                using S = typename extensible_make_signed<typename OpenFV::OT>::type;
                 S s = static_cast<S>(x.get());
                 HPBC_ASSERT2(ut_numeric_limits<OT>::min() <= s &&
                               s <= ut_numeric_limits<OT>::max());
@@ -175,7 +175,7 @@ public:
     virtual V convertIn(T a) const override
     {
         HPBC_PRECONDITION2(0 <= a);
-        if constexpr (ut_numeric_limits<T>::max() > ut_numeric_limits<MFT>::max()) {
+        if (ut_numeric_limits<T>::max() > ut_numeric_limits<MFT>::max()) {
             // kind of an unavoidable hack, so that AbstractMontgomeryForm has
             // the same contract for convertIn() as MongomeryForm, which allows
             // 'a' to have any value of T >= 0.
@@ -184,7 +184,7 @@ public:
         }
         OpenMFV x(mf.convertIn(static_cast<MFT>(a)));
         // note that x.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(x.get()));
+        return OpenV(static_cast<typename OpenV::OT>(x.get()));
     }
 
     virtual T convertOut(V x) const override
@@ -196,132 +196,132 @@ public:
     {
         OpenMFC mfc(mf.getCanonicalValue(OpenMFV(OpenV(x))));
         // note: mfc.get() might be signed or unsigned; OpenC::OT is unsigned
-        return OpenC(static_cast<OpenC::OT>(mfc.get()));
+        return OpenC(static_cast<typename OpenC::OT>(mfc.get()));
     }
 
     virtual FV getFusingValue(V x) const override
     {
         OpenMFFV mffv(mf.getFusingValue(OpenMFV(OpenV(x))));
         // note: mffv.get() might be signed or unsigned; OpenFV::OT is unsigned
-        return OpenFV(static_cast<OpenFV::OT>(mffv.get()));
+        return OpenFV(static_cast<typename OpenFV::OT>(mffv.get()));
     }
 
     virtual C getUnityValue() const override
     {
         OpenMFC mfc(mf.getUnityValue());
         // note: mfc.get() might be signed or unsigned; OpenC::OT is unsigned
-        return OpenC(static_cast<OpenC::OT>(mfc.get()));
+        return OpenC(static_cast<typename OpenC::OT>(mfc.get()));
     }
 
     virtual C getZeroValue() const override
     {
         OpenMFC mfc(mf.getZeroValue());
         // note: mfc.get() might be signed or unsigned; OpenC::OT is unsigned
-        return OpenC(static_cast<OpenC::OT>(mfc.get()));
+        return OpenC(static_cast<typename OpenC::OT>(mfc.get()));
     }
 
     virtual C getNegativeOneValue() const override
     {
         OpenMFC mfc(mf.getNegativeOneValue());
         // note: mfc.get() might be signed or unsigned; OpenC::OT is unsigned
-        return OpenC(static_cast<OpenC::OT>(mfc.get()));
+        return OpenC(static_cast<typename OpenC::OT>(mfc.get()));
     }
 
     virtual V add(V x, V y) const override
     {
         OpenMFV mfv(mf.add(OpenMFV(OpenV(x)), OpenMFV(OpenV(y))));
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     virtual V add(V x, C y) const override
     {
         OpenMFV mfv(mf.add(OpenMFV(OpenV(x)), OpenMFC(OpenC(y))));
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     virtual V add(C x, V y) const override
     {
         OpenMFV mfv(mf.add(OpenMFC(OpenC(x)), OpenMFV(OpenV(y))));
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     virtual C add(C x, C y) const override
     {
         OpenMFC mfc(mf.add(OpenMFC(OpenC(x)), OpenMFC(OpenC(y))));
         // note: mfc.get() might be signed or unsigned; OpenC::OT is unsigned
-        return OpenC(static_cast<OpenC::OT>(mfc.get()));
+        return OpenC(static_cast<typename OpenC::OT>(mfc.get()));
     }
 
     virtual V subtract(V x, V y) const override
     {
         OpenMFV mfv(mf.subtract(OpenMFV(OpenV(x)), OpenMFV(OpenV(y))));
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     virtual V subtract(V x, C y) const override
     {
         OpenMFV mfv(mf.subtract(OpenMFV(OpenV(x)), OpenMFC(OpenC(y))));
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     virtual V subtract(C x, V y) const override
     {
         OpenMFV mfv(mf.subtract(OpenMFC(OpenC(x)), OpenMFV(OpenV(y))));
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     virtual C subtract(C x, C y) const override
     {
         OpenMFC mfc(mf.subtract(OpenMFC(OpenC(x)), OpenMFC(OpenC(y))));
         // note: mfc.get() might be signed or unsigned; OpenC::OT is unsigned
-        return OpenC(static_cast<OpenC::OT>(mfc.get()));
+        return OpenC(static_cast<typename OpenC::OT>(mfc.get()));
     }
 
     virtual V unorderedSubtract(V x, V y) const override
     {
         OpenMFV mfv(mf.unorderedSubtract(OpenMFV(OpenV(x)), OpenMFV(OpenV(y))));
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     virtual V unorderedSubtract(V x, C y) const override
     {
         OpenMFV mfv(mf.unorderedSubtract(OpenMFV(OpenV(x)), OpenMFC(OpenC(y))));
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     virtual V unorderedSubtract(C x, V y) const override
     {
         OpenMFV mfv(mf.unorderedSubtract(OpenMFC(OpenC(x)), OpenMFV(OpenV(y))));
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     virtual V negate(V x) const override
     {
         OpenMFV mfv(mf.negate(OpenMFV(OpenV(x))));
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     virtual C negate(C x) const override
     {
         OpenMFC mfc(mf.negate(OpenMFC(OpenC(x))));
         // note: mfc.get() might be signed or unsigned; OpenC::OT is unsigned
-        return OpenC(static_cast<OpenC::OT>(mfc.get()));
+        return OpenC(static_cast<typename OpenC::OT>(mfc.get()));
     }
 
     virtual V pow(V base, T exponent) const override
     {
         HPBC_PRECONDITION2(0 <= exponent);
-        if constexpr (ut_numeric_limits<T>::max() > ut_numeric_limits<MFT>::max()) {
+        if (ut_numeric_limits<T>::max() > ut_numeric_limits<MFT>::max()) {
             // kind of an unavoidable hack, so that AbstractMontgomeryForm has
             // the same contract for pow() as MongomeryForm, which allows
             // exponent to have any value of T >= 0.
@@ -338,18 +338,18 @@ public:
                 accum = mf.multiply(accum, mf.pow(mfv_base, static_cast<MFT>(exponent)));
                 OpenMFV result(accum);
                 // note: result.get() might be signed or unsigned; OpenV::OT is unsigned
-                return OpenV(static_cast<OpenV::OT>(result.get()));
+                return OpenV(static_cast<typename OpenV::OT>(result.get()));
             }
         }
         OpenMFV mfv(mf.pow(OpenMFV(OpenV(base)), static_cast<MFT>(exponent)));
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     virtual T remainder(T a) const override
     {
         HPBC_PRECONDITION2(0 <= a);
-        if constexpr (ut_numeric_limits<T>::max() > ut_numeric_limits<MFT>::max()) {
+        if (ut_numeric_limits<T>::max() > ut_numeric_limits<MFT>::max()) {
             // kind of an unavoidable hack, so that AbstractMontgomeryForm has
             // the same contract for remainder() as MongomeryForm, which allows
             // 'a' to have any value of T >= 0.
@@ -372,7 +372,7 @@ private:
             mfv = mfv2;            
         }
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     virtual V multiply2(V x, V y, bool& resultIsZero, bool useLowlatencyTag)
@@ -389,7 +389,7 @@ private:
             mfv = mfv2;            
         }
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     virtual V fmsub(V x, V y, C z, bool useLowlatencyTag) const override
@@ -405,7 +405,7 @@ private:
             mfv = mfv2;            
         }
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     virtual V fmsub(V x, V y, FV z, bool useLowlatencyTag) const override
@@ -421,7 +421,7 @@ private:
             mfv = mfv2;            
         }
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     virtual V fmadd(V x, V y, C z, bool useLowlatencyTag) const override
@@ -437,7 +437,7 @@ private:
             mfv = mfv2;            
         }
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     virtual V fmadd(V x, V y, FV z, bool useLowlatencyTag) const override
@@ -453,7 +453,7 @@ private:
             mfv = mfv2;            
         }
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     virtual V square(V x, bool useLowlatencyTag) const override
@@ -467,7 +467,7 @@ private:
             mfv = mfv2;            
         }
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     virtual V fusedSquareSub(V x, C cv, bool useLowlatencyTag) const override
@@ -483,7 +483,7 @@ private:
             mfv = mfv2;            
         }
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     virtual V fusedSquareAdd(V x, C cv, bool useLowlatencyTag) const override
@@ -499,7 +499,7 @@ private:
             mfv = mfv2;            
         }
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<OpenV::OT>(mfv.get()));
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
 
@@ -525,16 +525,16 @@ private:
     // function. Ultimately we're trying to unit test MongomeryForm, so it's
     // not an option to emulate the templated pow function - it has to be
     // called to be tested.
-    template <int...> struct VectorPowHelper;
+    template <std::size_t...> struct VectorPowHelper;
 
     // an adapter we use to call array pow, when we know at compile time
     // the exact size that the vector 'bases' will have.
-    template <int A>
+    template <std::size_t A>
     static void fixed_size_vector_pow(const MF& mf,
         std::vector<V>& bases, T exponent, std::vector<V>& answers)
     {
         HPBC_ASSERT(bases.size() == A);   // if this fails, it is because
-        // ConcreteMontgomeryForm was constructed with template variadic int
+        // ConcreteMontgomeryForm was constructed with template variadic size_t
         // argument POW_ARRAY_SIZES that did not include the size of bases (as
         // used in this run-time assertion).
         // Most likely some code called AbstractMontgomeryWrapper or
@@ -552,7 +552,7 @@ private:
             arr[i] = OpenMFV(OpenV(bases[i]));
 
         std::array<MFV, A> result;
-        if constexpr (ut_numeric_limits<T>::max() > ut_numeric_limits<MFT>::max()) {
+        if (ut_numeric_limits<T>::max() > ut_numeric_limits<MFT>::max()) {
             // kind of an unavoidable hack, so that AbstractMontgomeryForm has
             // the same contract for pow() as MongomeryForm, which allows
             // exponent to have any value of T >= 0.
@@ -578,11 +578,11 @@ private:
         for (std::size_t i=0; i<A; ++i) {
             OpenMFV omfv(result[i]);
             // note: omfv.get() might be signed or unsigned; OpenV::OT is unsigned
-            answers[i] = OpenV(static_cast<OpenV::OT>(omfv.get()));
+            answers[i] = OpenV(static_cast<typename OpenV::OT>(omfv.get()));
         }
     }
 
-    template <int A, int... B> struct VectorPowHelper<A, B...> {
+    template <std::size_t A, std::size_t... B> struct VectorPowHelper<A, B...> {
         static void call(const MF& mf, std::vector<V>& bases, T exponent, std::vector<V>& answers)
         {
             if (bases.size() == A)
@@ -591,7 +591,7 @@ private:
                 VectorPowHelper<B...>::call(mf, bases, exponent, answers);
         }
     };
-    template <int A> struct VectorPowHelper<A> {
+    template <std::size_t A> struct VectorPowHelper<A> {
         static void call(const MF& mf, std::vector<V>& bases, T exponent, std::vector<V>& answers)
         {
             fixed_size_vector_pow<A>(mf, bases, exponent, answers);

@@ -340,7 +340,7 @@ void test_mf_general_checks(const M& mf, typename M::IntegerType a,
     EXPECT_TRUE(mf.convertOut(mf.pow(y,17)) == tma::modpow<T>(b,17,modulus));
     EXPECT_TRUE(mf.convertOut(mf.pow(y,127)) == tma::modpow<T>(b,127,modulus));
 
-    // Do just a simple test of pow()'s array form template function -
+    // Do just a single test of pow()'s array form template function -
     // it's tested more thoroughly in test_montgomery_pow.cpp.
 #ifdef __GNUC__
 #  pragma GCC diagnostic push
@@ -372,8 +372,8 @@ void test_mf_general_checks(const M& mf, typename M::IntegerType a,
 
 
 // The following is definitely not the typical way to create an instance of
-// MontgomeryForm!  These template classes below exist to allow unit testing to
-// optionally use a run-time polymorphic version of MontgomeryForm, to speed up
+// MontgomeryForm!  MontgomeryFactory exists solely to give our tests the
+// option to use a run-time-polymorphic version of MontgomeryForm, to speed up
 // compile times.  But the normal way to create an instance of MontgomeryForm
 // is simply to call its constructor like you would any other class.
 // An example of the normal way:
@@ -611,7 +611,7 @@ void test_MontgomeryForm()
     }
     {
         EXPECT_TRUE(max_modulus >= 5);
-        M mf = MFactory::construct(max_modulus-2);
+        M mf = MFactory::construct(static_cast<T>(max_modulus-2));
         T c = max_modulus-3;
         T a=5; T b=6;
         test_mf_general_checks(mf, a, b, c);
@@ -628,7 +628,7 @@ void test_MontgomeryForm()
     }
     {
         EXPECT_TRUE(max_modulus >= 5);
-        M mf = MFactory::construct((max_modulus/4)*2 + 1);
+        M mf = MFactory::construct(static_cast<T>((max_modulus/4)*2 + 1));
         T c = 0;
         T a=5; T b=6;
         test_mf_general_checks(mf, a, b, c);

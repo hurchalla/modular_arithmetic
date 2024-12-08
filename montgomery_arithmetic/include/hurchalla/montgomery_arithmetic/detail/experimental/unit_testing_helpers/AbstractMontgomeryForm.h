@@ -85,13 +85,13 @@ class AbstractMontgomeryForm {
 
 protected:
 #if (HURCHALLA_COMPILER_HAS_UINT128_T())
-    using T = std::conditional<useSignedT, __int128_t, __uint128_t>::type;
+    using T = typename std::conditional<useSignedT, __int128_t, __uint128_t>::type;
 #else
-    using T = std::conditional<useSignedT, std::int64_t, srd::uint64_t>::type;
+    using T = typename std::conditional<useSignedT, std::int64_t, srd::uint64_t>::type;
 #endif
     static_assert(ut_numeric_limits<T>::is_integer, "");
 
-    using U = extensible_make_unsigned<T>::type;
+    using U = typename extensible_make_unsigned<T>::type;
 
 public:
     using IntegerType = T;
