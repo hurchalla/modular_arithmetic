@@ -6,7 +6,6 @@
  */
 
 #include "test_MontgomeryForm.h"
-#include "NoForceInlineMontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/MontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyFullRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
@@ -96,15 +95,31 @@ TEST(MontgomeryArithmetic, MontgomeryFormExamples) {
 // extensive tests of functionality with all possible Monty types ---
 
 
-#if 0
- template <class T, class Monty> using MF = hc::MontgomeryForm<T, Monty>;
- template <class T> using DefaultMF = hc::MontgomeryForm<T>;
+
+#if 1
+
+// For unit testing, we want fast compile times, so it helps to use the version
+// of MontgomeryForm that generally doesn't do force inlining.
+#  if 1
+constexpr bool forceInlineAllFunctions = false;
+#  else
+// note: even the default template arg for MontgomeryForm wouldn't have force
+// inlined everything for uint128_t or int128_t (we would expect the functions
+// to have too many instructions for it to be a good idea).  So for some T we
+// get more inlining than the default, when this #else is enabled.
+constexpr bool forceInlineAllFunctions = true;
+#  endif
+template <class T, class Monty> using MF = hc::MontgomeryForm<T, forceInlineAllFunctions, Monty>;
+template <class T> using DefaultMF = hc::MontgomeryForm<T, forceInlineAllFunctions>;
+
 #else
- template<class T, class Monty>
-    using MF = hc::NoForceInlineMontgomeryForm<hc::MontgomeryForm<T, Monty>>;
- template<class T>
-    using DefaultMF = hc::NoForceInlineMontgomeryForm<hc::MontgomeryForm<T>>;
+// this uses MontgomeryForm with the default amount of inlining.
+template <class T, class Monty> using MF =
+    hc::MontgomeryForm<T, (hurchalla::ut_numeric_limits<T>::digits <= HURCHALLA_TARGET_BIT_WIDTH), Monty>;
+template <class T> using DefaultMF =
+    hc::MontgomeryForm<T>;
 #endif
+
 
 
 TEST(MontgomeryArithmetic, MontyQuarterRange) {

@@ -6,7 +6,6 @@
  */
 
 #include "test_MontgomeryForm.h"
-#include "NoForceInlineMontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyWrappedStandardMath.h"
 #include "hurchalla/montgomery_arithmetic/detail/experimental/MontyFullRangeMasked.h"
 #include "hurchalla/montgomery_arithmetic/detail/experimental/unit_testing_helpers/AbstractMontgomeryForm.h"
@@ -18,13 +17,22 @@
 namespace {
 
 
-#if 0
- template <class T, class Monty> using MF =
-    hurchalla::MontgomeryForm<T, Monty>;
+// For unit testing, we want fast compile times, so it helps to use the version
+// of MontgomeryForm that generally doesn't do force inlining.
+#if 1
+constexpr bool forceInlineAllFunctions = false;
 #else
- template<class T, class Monty> using MF =
-    hurchalla::NoForceInlineMontgomeryForm<hurchalla::MontgomeryForm<T, Monty>>;
+// note: even the default template arg for MontgomeryForm wouldn't have force
+// inlined everything for uint128_t or int128_t (we would expect the functions
+// to have too many instructions for it to be a good idea).  So for some T we
+// get more inlining than the default, when this #else is enabled.
+constexpr bool forceInlineAllFunctions = true;
 #endif
+
+template <class T, class Monty> using MF =
+    hurchalla::MontgomeryForm<T, forceInlineAllFunctions, Monty>;
+
+
 
 // test the 'unusual' Montgomery types, which are MontyWrappedStandardMath and
 // the experimental class MontyFullRangeMasked.

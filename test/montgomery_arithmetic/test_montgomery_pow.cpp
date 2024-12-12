@@ -20,7 +20,6 @@
 #undef NDEBUG
 
 
-#include "NoForceInlineMontgomeryForm.h"
 #include "hurchalla/modular_arithmetic/modular_pow.h"
 #include "hurchalla/montgomery_arithmetic/MontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/montgomery_form_aliases.h"
@@ -170,15 +169,21 @@ void run_pow_tests()
 
 
 
-#if 0
- template <class T, class Monty> using MF = hc::MontgomeryForm<T, Monty>;
- template <class T> using DefaultMF = hc::MontgomeryForm<T>;
+// For unit testing, we want fast compile times, so it helps to use the version
+// of MontgomeryForm that generally doesn't do force inlining.
+#if 1
+constexpr bool forceInlineAllFunctions = false;
 #else
- template<class T, class Monty>
-    using MF = hc::NoForceInlineMontgomeryForm<hc::MontgomeryForm<T, Monty>>;
- template<class T>
-    using DefaultMF = hc::NoForceInlineMontgomeryForm<hc::MontgomeryForm<T>>;
+// note: even the default template arg for MontgomeryForm wouldn't have force
+// inlined everything for uint128_t or int128_t (we would expect the functions
+// to have too many instructions for it to be a good idea).  So for some T we
+// get more inlining than the default, when this #else is enabled.
+constexpr bool forceInlineAllFunctions = true;
 #endif
+
+template <class T, class Monty> using MF = hc::MontgomeryForm<T, forceInlineAllFunctions, Monty>;
+template <class T> using DefaultMF = hc::MontgomeryForm<T, forceInlineAllFunctions>;
+
 
 
 TEST(MontgomeryArithmetic, montgomery_pow) {

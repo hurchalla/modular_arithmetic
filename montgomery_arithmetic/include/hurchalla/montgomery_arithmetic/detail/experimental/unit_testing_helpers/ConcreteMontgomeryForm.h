@@ -33,7 +33,7 @@ namespace hurchalla {
 
 
 template <class MF, std::size_t... POW_ARRAY_SIZES>
-class ConcreteMontgomeryForm : public AbstractMontgomeryForm<ut_numeric_limits<typename MF::IntegerType>::is_signed> {
+class ConcreteMontgomeryForm final : public AbstractMontgomeryForm<ut_numeric_limits<typename MF::IntegerType>::is_signed> {
     const MF mf;
 
 public:
@@ -329,12 +329,11 @@ public:
             if (exponent > mft_max) {
                 MFV mfv_base = OpenMFV(OpenV(base));
                 MFV maxpow = mf.pow(mfv_base, mft_max);
-                MFV accum = maxpow;
-                exponent -= mft_max;
-                while (exponent > mft_max) {
+                MFV accum = mf.getUnityValue();
+                do {
                     accum = mf.multiply(accum, maxpow);
                     exponent -= mft_max;
-                }
+                } while (exponent > static_cast<T>(mft_max));
                 accum = mf.multiply(accum, mf.pow(mfv_base, static_cast<MFT>(exponent)));
                 OpenMFV result(accum);
                 // note: result.get() might be signed or unsigned; OpenV::OT is unsigned
@@ -531,7 +530,7 @@ private:
     // the exact size that the vector 'bases' will have.
     template <std::size_t A>
     static void fixed_size_vector_pow(const MF& mf,
-        std::vector<V>& bases, T exponent, std::vector<V>& answers)
+        const std::vector<V>& bases, T exponent, std::vector<V>& answers)
     {
         HPBC_ASSERT(bases.size() == A);   // if this fails, it is because
         // ConcreteMontgomeryForm was constructed with template variadic size_t
@@ -559,13 +558,12 @@ private:
             static constexpr MFT mft_max = ut_numeric_limits<MFT>::max();
             if (exponent > mft_max) {
                 std::array<MFV, A> maxpow = mf.pow(arr, mft_max);
-                result = maxpow;
-                exponent -= mft_max;
-                while (exponent > mft_max) {
+                result.fill(mf.getUnityValue());
+                do {
                     for (std::size_t i=0; i<A; ++i)
                         result[i] = mf.multiply(result[i], maxpow[i]);
                     exponent -= mft_max;
-                }
+                } while (exponent > static_cast<T>(mft_max));
                 std::array<MFV, A> tmp = mf.pow(arr, static_cast<MFT>(exponent));
                 for (std::size_t i=0; i<A; ++i)
                     result[i] = mf.multiply(tmp[i], result[i]);
@@ -583,7 +581,7 @@ private:
     }
 
     template <std::size_t A, std::size_t... B> struct VectorPowHelper<A, B...> {
-        static void call(const MF& mf, std::vector<V>& bases, T exponent, std::vector<V>& answers)
+        static void call(const MF& mf, const std::vector<V>& bases, T exponent, std::vector<V>& answers)
         {
             if (bases.size() == A)
                 fixed_size_vector_pow<A>(mf, bases, exponent, answers);
@@ -592,13 +590,13 @@ private:
         }
     };
     template <std::size_t A> struct VectorPowHelper<A> {
-        static void call(const MF& mf, std::vector<V>& bases, T exponent, std::vector<V>& answers)
+        static void call(const MF& mf, const std::vector<V>& bases, T exponent, std::vector<V>& answers)
         {
             fixed_size_vector_pow<A>(mf, bases, exponent, answers);
         }
     };
 
-    virtual std::vector<V> vectorPow(std::vector<V>& bases, T exponent)
+    virtual std::vector<V> vectorPow(const std::vector<V>& bases, T exponent)
         const override
     {
         std::vector<V> answers;

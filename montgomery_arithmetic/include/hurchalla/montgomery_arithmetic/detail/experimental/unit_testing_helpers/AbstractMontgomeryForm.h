@@ -210,7 +210,7 @@ private:
         bool useLowlatencyTag) const = 0;
 
     virtual std::vector<MontgomeryValue> vectorPow(
-        std::vector<MontgomeryValue>& bases, IntegerType exponent) const = 0;
+        const std::vector<MontgomeryValue>& bases, IntegerType exponent) const = 0;
 
     virtual IntegerType euclidean_gcd_with_modulus(MontgomeryValue x) const = 0;
 
@@ -275,7 +275,7 @@ public:
 
     template <std::size_t NUM_BASES>
     std::array<MontgomeryValue, NUM_BASES>
-    pow(std::array<MontgomeryValue, NUM_BASES>& bases, IntegerType exponent) const
+    pow(const std::array<MontgomeryValue, NUM_BASES>& bases, IntegerType exponent) const
     {
         std::vector<MontgomeryValue> bases_vec(bases.begin(), bases.end());
         auto answer_vec = vectorPow(bases_vec, exponent);

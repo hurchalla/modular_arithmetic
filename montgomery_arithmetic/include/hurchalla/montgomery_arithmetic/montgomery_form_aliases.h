@@ -117,16 +117,23 @@ namespace hurchalla {
 template <typename, template <typename> class> class MontyAliasHelper;
 
 
-template <typename T>
-using MontgomeryQuarter = MontgomeryForm<T,
+// For the template parameter InlineAllFunctions, you should usually accept the
+// default rather than specify an argument.  However if you wish to reduce
+// compilation times you can set it to false, which may help.
+
+template <typename T, bool InlineAllFunctions =
+                   (ut_numeric_limits<T>::digits <= HURCHALLA_TARGET_BIT_WIDTH)>
+using MontgomeryQuarter = MontgomeryForm<T, InlineAllFunctions,
          detail::MontyQuarterRange<typename extensible_make_unsigned<T>::type>>;
 
-template <typename T>
-using MontgomeryHalf = MontgomeryForm<T,
+template <typename T, bool InlineAllFunctions =
+                   (ut_numeric_limits<T>::digits <= HURCHALLA_TARGET_BIT_WIDTH)>
+using MontgomeryHalf = MontgomeryForm<T, InlineAllFunctions,
               typename MontyAliasHelper<T, detail::MontyHalfRange>::type>;
 
-template <typename T>
-using MontgomeryFull = MontgomeryForm<T,
+template <typename T, bool InlineAllFunctions =
+                   (ut_numeric_limits<T>::digits <= HURCHALLA_TARGET_BIT_WIDTH)>
+using MontgomeryFull = MontgomeryForm<T, InlineAllFunctions,
               typename MontyAliasHelper<T, detail::MontyFullRange>::type>;
 
 
@@ -144,8 +151,9 @@ using MontgomeryFull = MontgomeryForm<T,
 // to use.  However, CPU architectures vary and evolve, and what is true today
 // may not be true tomorrow - you will need to measure and compare performance
 // on your system to know for certain.
-template <typename T>
-using MontgomeryStandardMathWrapper = MontgomeryForm<T,
+template <typename T, bool InlineAllFunctions =
+                   (ut_numeric_limits<T>::digits <= HURCHALLA_TARGET_BIT_WIDTH)>
+using MontgomeryStandardMathWrapper = MontgomeryForm<T, InlineAllFunctions,
   detail::MontyWrappedStandardMath<typename extensible_make_unsigned<T>::type>>;
 
 

@@ -287,7 +287,7 @@ struct montgomery_array_pow {
     static_assert(ut_numeric_limits<T>::is_integer, "");
 
     template <std::size_t NUM_BASES>
-    static HURCHALLA_FORCE_INLINE
+    static
     typename std::enable_if<(NUM_BASES <= 3), std::array<V, NUM_BASES>>::type
     pow(const MF& mf, const std::array<V, NUM_BASES>& bases, T exponent)
     {
@@ -312,7 +312,7 @@ struct montgomery_array_pow {
     // 1 <= NUM_BASES <= 3, or less commonly 4 <= NUM_BASES < 8.  Otherwise
     // (much less common), we might have a "huge" NUM_BASES (perhaps >50).
     template <std::size_t NUM_BASES>
-    static HURCHALLA_FORCE_INLINE
+    static
     typename std::enable_if<(3 < NUM_BASES) && (NUM_BASES <= 5),
                              std::array<V, NUM_BASES>>::type
     pow(const MF& mf, const std::array<V, NUM_BASES>& bases, T exponent)
@@ -322,7 +322,7 @@ struct montgomery_array_pow {
     }
 
     template <std::size_t NUM_BASES>
-    static HURCHALLA_FORCE_INLINE
+    static
     typename std::enable_if<(NUM_BASES > 5), std::array<V, NUM_BASES>>::type
     pow(const MF& mf, const std::array<V, NUM_BASES>& bases, T exponent)
     {
@@ -340,8 +340,7 @@ struct montgomery_array_pow<MontyTag, MF, typename std::enable_if<
     static_assert(ut_numeric_limits<T>::is_integer, "");
 
     template <std::size_t NUM_BASES>
-    static HURCHALLA_FORCE_INLINE
-    std::array<V, NUM_BASES>
+    static std::array<V, NUM_BASES>
     pow(const MF& mf, const std::array<V, NUM_BASES>& bases, T exponent)
     {
         // Note: on x86-64, 128 bit types T consistently performed best when

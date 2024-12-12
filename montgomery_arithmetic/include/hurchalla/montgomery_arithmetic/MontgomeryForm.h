@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022 Jeffrey Hurchalla.
+// Copyright (c) 2020-2024 Jeffrey Hurchalla.
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,6 +9,7 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_MONTGOMERY_FORM_H_INCLUDED
 
 
+#include "hurchalla/montgomery_arithmetic/detail/ImplMontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontgomeryDefault.h"
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/montgomery_pow.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
@@ -23,17 +24,25 @@
 namespace hurchalla {
 
 
+#ifndef HURCHALLA_TARGET_BIT_WIDTH
+#  error "HURCHALLA_TARGET_BIT_WIDTH must be defined"
+#endif
+
+
 // T must be a signed or unsigned integral type.
-// Usually you would not specify MontyType and instead accept the default.
-template<class T, class MontyType = typename detail::MontgomeryDefault<T>::type>
+//
+// For InlineAllFunctions, you should usually accept the default rather than
+// specify an argument.  However if you wish to reduce compilation times you can
+// set it to false, which may help.
+//
+// For MontyType, you should just accept the default (this parameter exists to
+// provide you the alias classes in montgomery_form_aliases.h.)
+template <class T,
+          bool InlineAll = (ut_numeric_limits<T>::digits <= HURCHALLA_TARGET_BIT_WIDTH),
+          class MontyType = typename detail::MontgomeryDefault<T>::type>
 class MontgomeryForm final {
-    const MontyType impl;
-    using U = typename MontyType::uint_type;
-    static_assert(ut_numeric_limits<U>::is_integer, "");
-    static_assert(!(ut_numeric_limits<U>::is_signed), "");
     static_assert(ut_numeric_limits<T>::is_integer, "");
-    static_assert(ut_numeric_limits<U>::digits >=
-                  ut_numeric_limits<T>::digits, "");
+    const detail::ImplMontgomeryForm<T, InlineAll, MontyType> impl;
 public:
     using IntegerType = T;
 
@@ -65,7 +74,7 @@ public:
     static_assert(std::is_convertible<FusingValue, MontgomeryValue>::value, "");
 
 
-    explicit MontgomeryForm(T modulus) : impl(static_cast<U>(modulus))
+    explicit MontgomeryForm(T modulus) : impl(modulus)
     {
         // Usually odd modulus is required, but since MontyWrappedStandardMath
         // is an exception to the rule, we do not require odd modulus here.
@@ -78,6 +87,11 @@ public:
     // Returns the largest valid modulus allowed for the constructor.
     static constexpr T max_modulus()
     {
+        using U = decltype(MontyType::max_modulus());
+        static_assert(ut_numeric_limits<U>::is_integer, "");
+        static_assert(!(ut_numeric_limits<U>::is_signed), "");
+        static_assert(ut_numeric_limits<U>::digits >=
+                      ut_numeric_limits<T>::digits, "");
         return (MontyType::max_modulus() >
                                     static_cast<U>(ut_numeric_limits<T>::max()))
                 ? ((ut_numeric_limits<T>::max() % 2 == 0)
@@ -88,7 +102,7 @@ public:
 
     // Returns the modulus given to the constructor
     HURCHALLA_FORCE_INLINE
-    T getModulus() const { return static_cast<T>(impl.getModulus()); }
+    T getModulus() const { return impl.getModulus(); }
 
     // Returns the converted value of the standard number 'a' into monty form.
     // Requires a >= 0.  (Note there is no restriction on how large 'a' can be.)
@@ -96,7 +110,7 @@ public:
     MontgomeryValue convertIn(T a) const
     {
         HPBC_PRECONDITION(a >= 0);
-        return impl.convertIn(static_cast<U>(a));
+        return impl.convertIn(a);
     }
 
     // Converts (montgomery value) x into a "normal" number; returns the result.
@@ -104,7 +118,7 @@ public:
     HURCHALLA_FORCE_INLINE
     T convertOut(MontgomeryValue x) const
     {
-        T a = static_cast<T>(impl.convertOut(x));
+        T a = impl.convertOut(x);
         HPBC_POSTCONDITION(0 <= a && a < getModulus());
         return a;
     }
@@ -179,7 +193,10 @@ public:
     HURCHALLA_FORCE_INLINE
     MontgomeryValue add(CanonicalValue x, MontgomeryValue y) const
     {
-        return add(y, x);
+        MontgomeryValue ret = impl.add(x, y);
+        HPBC_ASSERT(getCanonicalValue(ret) ==
+                    getCanonicalValue(add(static_cast<MontgomeryValue>(x), y)));
+        return ret;
     }
     // Adding CanonicalValues can be more efficient than the above functions
     HURCHALLA_FORCE_INLINE
@@ -240,19 +257,19 @@ public:
     MontgomeryValue unorderedSubtract(MontgomeryValue x,
                                        MontgomeryValue y) const
     {
-        return impl.unordered_subtract(x, y);
+        return impl.unorderedSubtract(x, y);
     }
     HURCHALLA_FORCE_INLINE
     MontgomeryValue unorderedSubtract(MontgomeryValue x,
                                        CanonicalValue y) const
     {
-        return impl.unordered_subtract(x, y);
+        return impl.unorderedSubtract(x, y);
     }
     HURCHALLA_FORCE_INLINE
     MontgomeryValue unorderedSubtract(CanonicalValue x,
                                        MontgomeryValue y) const
     {
-        return impl.unordered_subtract(x, y);
+        return impl.unorderedSubtract(x, y);
     }
 
     // Returns the modular negation of the montgomery value x.
@@ -265,9 +282,7 @@ public:
     HURCHALLA_FORCE_INLINE
     CanonicalValue negate(CanonicalValue x) const
     {
-        // we dont expect an impl would be able to do better than this. The
-        // obvious optimization (modulus-x) generally is no good for x==0.
-        return subtract(getZeroValue(), x);
+        return impl.negate(x);
     }
 
 
@@ -283,10 +298,7 @@ public:
     template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
     MontgomeryValue multiply(MontgomeryValue x, MontgomeryValue y) const
     {
-        // note: the compiler should remove isZero calculations during dead code
-        // elimination; isZero is unused here and impl.multiply is forced inline
-        bool isZero;
-        return impl.multiply(x, y, isZero, PTAG());
+        return impl.template multiply<PTAG>(x, y);
     }
 
     // This overload is an optimized equivalent of doing
@@ -300,7 +312,7 @@ public:
     MontgomeryValue multiply(MontgomeryValue x, MontgomeryValue y,
                                                        bool& resultIsZero) const
     {
-        MontgomeryValue ret = impl.multiply(x, y, resultIsZero, PTAG());
+        MontgomeryValue ret = impl.template multiply<PTAG>(x, y, resultIsZero);
         HPBC_POSTCONDITION(resultIsZero ==
                                       (getCanonicalValue(ret)==getZeroValue()));
         return ret;
@@ -323,7 +335,7 @@ public:
     MontgomeryValue fmsub(MontgomeryValue x, MontgomeryValue y,
                                                          CanonicalValue z) const
     {
-        MontgomeryValue ret = impl.fmsub(x, y, z, PTAG());
+        MontgomeryValue ret = impl.template fmsub<PTAG>(x, y, z);
         HPBC_POSTCONDITION(getCanonicalValue(ret) ==
                                 getCanonicalValue(subtract(multiply(x, y), z)));
         return ret;
@@ -342,7 +354,7 @@ public:
     MontgomeryValue fmsub(MontgomeryValue x, MontgomeryValue y,
                                                             FusingValue z) const
     {
-        MontgomeryValue ret = impl.fmsub(x, y, z, PTAG());
+        MontgomeryValue ret = impl.template fmsub<PTAG>(x, y, z);
         HPBC_POSTCONDITION(getCanonicalValue(ret) ==
                                 getCanonicalValue(subtract(multiply(x, y), z)));
         return ret;
@@ -367,7 +379,7 @@ public:
     MontgomeryValue fmadd(MontgomeryValue x, MontgomeryValue y,
                                                          CanonicalValue z) const
     {
-        MontgomeryValue ret = impl.fmadd(x, y, z, PTAG());
+        MontgomeryValue ret = impl.template fmadd<PTAG>(x, y, z);
         HPBC_POSTCONDITION(getCanonicalValue(ret) ==
                                      getCanonicalValue(add(multiply(x, y), z)));
         return ret;
@@ -381,7 +393,7 @@ public:
     MontgomeryValue fmadd(MontgomeryValue x, MontgomeryValue y,
                                                             FusingValue z) const
     {
-        MontgomeryValue ret = impl.fmadd(x, y, z, PTAG());
+        MontgomeryValue ret = impl.template fmadd<PTAG>(x, y, z);
         HPBC_POSTCONDITION(getCanonicalValue(ret) ==
                                      getCanonicalValue(add(multiply(x, y), z)));
         return ret;
@@ -395,10 +407,10 @@ public:
     // CPU's native integer register size.  If type T is larger than the CPU's
     // integer register size, this function is likely to perform worse or no
     // better than multiply(x, x).
-    template <class PTAG = LowlatencyTag>
-    HURCHALLA_FORCE_INLINE MontgomeryValue square(MontgomeryValue x) const
+    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
+    MontgomeryValue square(MontgomeryValue x) const
     {
-        MontgomeryValue ret = impl.square(x, PTAG());
+        MontgomeryValue ret = impl.template square<PTAG>(x);
         HPBC_POSTCONDITION(getCanonicalValue(ret) == getCanonicalValue(
                                                                multiply(x, x)));
         return ret;
@@ -410,7 +422,7 @@ public:
     template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
     MontgomeryValue fusedSquareSub(MontgomeryValue x, CanonicalValue cv) const
     {
-        MontgomeryValue ret = impl.fusedSquareSub(x, cv, PTAG());
+        MontgomeryValue ret = impl.template fusedSquareSub<PTAG>(x, cv);
         HPBC_POSTCONDITION(getCanonicalValue(ret) ==
                                getCanonicalValue(subtract(multiply(x, x), cv)));
         return ret;
@@ -422,7 +434,7 @@ public:
     template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
     MontgomeryValue fusedSquareAdd(MontgomeryValue x, CanonicalValue cv) const
     {
-        MontgomeryValue ret = impl.fusedSquareAdd(x, cv, PTAG());
+        MontgomeryValue ret = impl.template fusedSquareAdd<PTAG>(x, cv);
         HPBC_POSTCONDITION(getCanonicalValue(ret) ==
                                     getCanonicalValue(add(multiply(x, x), cv)));
         return ret;
@@ -431,6 +443,7 @@ public:
 
     // Calculates and returns the modular exponentiation of the montgomery value
     // 'base' to the power of (the type T variable) 'exponent'.
+    HURCHALLA_FORCE_INLINE
     MontgomeryValue pow(MontgomeryValue base, T exponent) const
     {
         HPBC_PRECONDITION(exponent >= 0);
@@ -462,9 +475,9 @@ public:
     // performance for the rest of your program.  Therefore, when measured
     // performance with two different values of NUM_BASES is similar, you should
     // almost always prefer the smaller NUM_BASES value.
-    template <std::size_t NUM_BASES>
+    template <std::size_t NUM_BASES> HURCHALLA_FORCE_INLINE
     std::array<MontgomeryValue, NUM_BASES>
-    pow(std::array<MontgomeryValue, NUM_BASES>& bases, T exponent) const
+    pow(const std::array<MontgomeryValue, NUM_BASES>& bases, T exponent) const
     {
         HPBC_PRECONDITION(exponent >= 0);
         return detail::montgomery_array_pow<typename MontyType::MontyTag,
@@ -484,7 +497,7 @@ public:
     template <class F> HURCHALLA_FORCE_INLINE
     T gcd_with_modulus(MontgomeryValue x, const F& gcd_functor) const
     {
-        return static_cast<T>(impl.gcd_with_modulus(x, gcd_functor));
+        return impl.gcd_with_modulus(x, gcd_functor);
     }
 
 
@@ -495,7 +508,7 @@ public:
     HURCHALLA_FORCE_INLINE T remainder(T a) const
     {
         HPBC_PRECONDITION(a >= 0);
-        return static_cast<T>(impl.remainder(static_cast<U>(a)));
+        return impl.remainder(a);
     }
 };
 

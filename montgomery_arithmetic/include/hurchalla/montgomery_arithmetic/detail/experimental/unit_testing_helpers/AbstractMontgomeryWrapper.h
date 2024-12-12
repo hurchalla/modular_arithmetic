@@ -112,7 +112,7 @@ public:
 
     template <std::size_t NUM_BASES>
     std::array<MontgomeryValue, NUM_BASES>
-    pow(std::array<MontgomeryValue, NUM_BASES>& bases, IntegerType exponent) const
+    pow(const std::array<MontgomeryValue, NUM_BASES>& bases, IntegerType exponent) const
         { return pimpl->pow(bases, exponent); }
 
     MontgomeryValue pow(MontgomeryValue base, IntegerType exponent) const

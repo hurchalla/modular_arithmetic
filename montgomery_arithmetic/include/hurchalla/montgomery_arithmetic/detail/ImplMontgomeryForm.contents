@@ -1,0 +1,231 @@
+// Copyright (c) 2024 Jeffrey Hurchalla.
+
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+
+
+// The following is the contents of the ImplMontgomeryForm class.
+// It is intended to be included either when HURCHALLA_IMF_MAYBE_FORCE_INLINE
+// is defined to HURCHALLA_FORCE_INLINE, or when it is defined to nothing.
+//
+// This allows us to create two versions of the class:  a version that force
+// inlines all functions, and a version that does not.  We can expect force
+// inlining to be always desired when type T has the same or lesser bit width
+// as the CPU native bit width, since most functions will compile to very few
+// instructions in that case.  But for T that is larger than the native bit
+// bit width, the functions would compile into a relatively large number of
+// instructions, and in that case we would expect force inlining to be a bad
+// idea.
+//
+// We also may wish to avoid force inlining to shorten compile times.  Force
+// inlining can sometimes increase a file's compile time by an order of
+// magnitude.  Presumably the harm to compile time would be lessened when
+// force-inline functions are extremely small, but I have not tried to measure
+// this.
+
+
+    const MontyType impl;
+    using U = typename MontyType::uint_type;
+    static_assert(ut_numeric_limits<U>::is_integer, "");
+    static_assert(!(ut_numeric_limits<U>::is_signed), "");
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(ut_numeric_limits<U>::digits >=
+                  ut_numeric_limits<T>::digits, "");
+public:
+    using IntegerType = T;
+    using MontgomeryValue = typename MontyType::montvalue_type;
+    using CanonicalValue = typename MontyType::canonvalue_type;
+    using FusingValue = typename MontyType::fusingvalue_type;
+
+    explicit ImplMontgomeryForm(T modulus) : impl(static_cast<U>(modulus)) {}
+
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    T getModulus() const { return static_cast<T>(impl.getModulus()); }
+
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue convertIn(T a) const
+    {
+        return impl.convertIn(static_cast<U>(a));
+    }
+
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    T convertOut(MontgomeryValue x) const
+    {
+        return static_cast<T>(impl.convertOut(x));
+    }
+
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    CanonicalValue getCanonicalValue(MontgomeryValue x) const
+    {
+        return impl.getCanonicalValue(x);
+    }
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    FusingValue getFusingValue(MontgomeryValue x) const
+    {
+        return impl.getFusingValue(x);
+    }
+
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    CanonicalValue getUnityValue() const
+    {
+        return impl.getUnityValue();
+    }
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    CanonicalValue getZeroValue() const
+    {
+        return impl.getZeroValue();
+    }
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    CanonicalValue getNegativeOneValue() const
+    {
+        return impl.getNegativeOneValue();
+    }
+
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue add(MontgomeryValue x, MontgomeryValue y) const
+    {
+        return impl.add(x, y);
+    }
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue add(MontgomeryValue x, CanonicalValue y) const
+    {
+        return impl.add(x, y);
+    }
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE  HURCHALLA_FLATTEN
+    MontgomeryValue add(CanonicalValue x, MontgomeryValue y) const
+    {
+        // does not directly call the impl, so uses HURCHALLA_FLATTEN
+        return add(y, x);
+    }
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    CanonicalValue add(CanonicalValue x, CanonicalValue y) const
+    {
+        return impl.add(x, y);
+    }
+
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue subtract(MontgomeryValue x, MontgomeryValue y) const
+    {
+        return impl.subtract(x, y);
+    }
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue subtract(MontgomeryValue x, CanonicalValue y) const
+    {
+        return impl.subtract(x, y);
+    }
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue subtract(CanonicalValue x, MontgomeryValue y) const
+    {
+        return impl.subtract(x, y);
+    }
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    CanonicalValue subtract(CanonicalValue x, CanonicalValue y) const
+    {
+        return impl.subtract(x, y);
+    }
+
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue unorderedSubtract(MontgomeryValue x,
+                                       MontgomeryValue y) const
+    {
+        return impl.unordered_subtract(x, y);
+    }
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue unorderedSubtract(MontgomeryValue x,
+                                       CanonicalValue y) const
+    {
+        return impl.unordered_subtract(x, y);
+    }
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue unorderedSubtract(CanonicalValue x,
+                                       MontgomeryValue y) const
+    {
+        return impl.unordered_subtract(x, y);
+    }
+
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue negate(MontgomeryValue x) const
+    {
+        return impl.negate(x);
+    }
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE  HURCHALLA_FLATTEN
+    CanonicalValue negate(CanonicalValue x) const
+    {
+        // we dont expect an impl would be able to do better than this. The
+        // obvious optimization (modulus-x) generally is no good for x==0.
+        // (we do not directly call the impl, so we use HURCHALLA_FLATTEN)
+        return subtract(getZeroValue(), x);
+    }
+
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue multiply(MontgomeryValue x, MontgomeryValue y) const
+    {
+        // note: the compiler should remove isZero calculations during dead code
+        // elimination; isZero is unused here and impl.multiply is forced inline
+        bool isZero;
+        return impl.multiply(x, y, isZero, PTAG());
+    }
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue multiply(MontgomeryValue x, MontgomeryValue y,
+                                                       bool& resultIsZero) const
+    {
+        return impl.multiply(x, y, resultIsZero, PTAG());
+    }
+
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue fmsub(MontgomeryValue x, MontgomeryValue y,
+                                                         CanonicalValue z) const
+    {
+        return impl.fmsub(x, y, z, PTAG());
+    }
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue fmsub(MontgomeryValue x, MontgomeryValue y,
+                                                            FusingValue z) const
+    {
+        return impl.fmsub(x, y, z, PTAG());
+    }
+
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue fmadd(MontgomeryValue x, MontgomeryValue y,
+                                                         CanonicalValue z) const
+    {
+        return impl.fmadd(x, y, z, PTAG());
+    }
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue fmadd(MontgomeryValue x, MontgomeryValue y,
+                                                            FusingValue z) const
+    {
+        return impl.fmadd(x, y, z, PTAG());
+    }
+
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue square(MontgomeryValue x) const
+    {
+        return impl.square(x, PTAG());
+    }
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue fusedSquareSub(MontgomeryValue x, CanonicalValue cv) const
+    {
+        return impl.fusedSquareSub(x, cv, PTAG());
+    }
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue fusedSquareAdd(MontgomeryValue x, CanonicalValue cv) const
+    {
+        return impl.fusedSquareAdd(x, cv, PTAG());
+    }
+
+    template <class F> HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    T gcd_with_modulus(MontgomeryValue x, const F& gcd_functor) const
+    {
+        return static_cast<T>(impl.gcd_with_modulus(x, gcd_functor));
+    }
+
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    T remainder(T a) const
+    {
+        HPBC_PRECONDITION(a >= 0);
+        return static_cast<T>(impl.remainder(static_cast<U>(a)));
+    }
+
