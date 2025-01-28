@@ -11,6 +11,7 @@
 
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/quarterrange_get_canonical.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
@@ -293,12 +294,60 @@ private:
         HPBC_POSTCONDITION2(0 < sum && sum < static_cast<T>(2*n_));
         return V(sum);
     }
+#if 1
     template <class PTAG> HURCHALLA_FORCE_INLINE
     V montyREDC(T u_hi, T u_lo, PTAG) const
     {
         bool resultIsZero;  // ignored
         return montyREDC(resultIsZero, u_hi, u_lo, PTAG());
     }
+#else
+    HURCHALLA_FORCE_INLINE
+    V montyREDC(bool& resultIsZero, T u_hi, T u_lo, LowlatencyTag) const
+    {
+        HPBC_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
+        namespace hc = ::hurchalla;
+        bool isNegative;  // ignored
+#if 0
+// Enabling this section would result in the same code as the template version
+// of this function, above.  But we can reduce latency via an optimization
+// compilers don't always find, in the #else section.
+        T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
+        resultIsZero = (result == 0);
+        result = static_cast<T>(result + n_);
+#else
+        u_hi = static_cast<T>(u_hi + n_);
+        // REDC_incomplete uses u_hi only in a single subtract which sets the
+        // result, so it makes no difference for correctness in this function if
+        // we move the addition of n_ + u_hi to instead be prior to REDC.  But
+        // it will lower latency to do the add before REDC.
+        T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
+        resultIsZero = (result == n_);
+#endif
+        HPBC_POSTCONDITION2(0 < result && result < static_cast<T>(2*n_));
+        return V(result);
+    }
+    template <class PTAG> HURCHALLA_FORCE_INLINE
+    V montyREDC(T u_hi, T u_lo, PTAG) const
+    {
+        HPBC_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
+        namespace hc = ::hurchalla;
+        bool isNegative;  // ignored
+#if 0
+// This is the obvious code to use, and the #else is an optimization.
+// Compilers in theory should find the optimization (latest clang and gcc both
+// do), but we enable the optimized version to be certain we get it.
+        T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
+        result = static_cast<T>(result + n_);
+#else
+        u_hi = static_cast<T>(u_hi + n_);
+        T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
+#endif
+        HPBC_POSTCONDITION2(0 < result && result < static_cast<T>(2*n_));
+        return V(result);
+    }
+#endif
+
     // return the high word of the product, and write the low word of the
     // product to u_lo.
     HURCHALLA_FORCE_INLINE T multiplyToHiLo(T& u_lo, V x, V y) const

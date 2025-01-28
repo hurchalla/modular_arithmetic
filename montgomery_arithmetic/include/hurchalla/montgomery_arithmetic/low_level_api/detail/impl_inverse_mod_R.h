@@ -88,7 +88,8 @@ public:
         static_assert(ut_numeric_limits<T>::is_integer, "");
         static_assert(!(ut_numeric_limits<T>::is_signed), "");
         static_assert((bits/2)*2 == bits, "");
-        using T2 = typename std::conditional<sized_uint<bits/2>::is_valid,
+        constexpr bool is_valid_su = is_valid_sized_uint<bits/2>::value;
+        using T2 = typename std::conditional<is_valid_su,
                                     typename sized_uint<bits/2>::type, T>::type;
         HPBC_CONSTEXPR_PRECONDITION(a % 2 == 1);
 

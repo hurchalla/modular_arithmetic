@@ -39,6 +39,17 @@ public:
                  >::type;
 };
 
+// Implementation note: when bitsT > target_bits (e.g. T == __int128_t on a 64
+// bit system), we purposely never use MontyHalfRange above and instead default
+// to MontyFullRange, because MontyFullRange uses unsigned hi_lo mults, whereas
+// MontyHalfRange uses signed hi_lo multiplications...
+// When bitsT > target_bits we're forced to use a 'slow' hi_lo mult routine,
+// since there's no simple asm instruction that's applicable- e.g. on x86_64,
+// we need far more than a single MUL or IMUL.  And unfortunately we don't have
+// a signed routine that's as good as unsigned when bitsT > target_bits.  For
+// details see the comments for slow_signed_multiply_to_hilo_product() in
+// hurchalla/util/detail/platform_specific/impl_signed_multiply_to_hilo_product.h
+
 
 }} // end namespace
 

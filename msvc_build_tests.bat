@@ -18,7 +18,7 @@ REM -G "Visual Studio 16 2019" -A x64
 REM -G "Visual Studio 16 2019" -A ARM
 REM -G "Visual Studio 16 2019" -A ARM64
 
-cmake -S. -B.\%build_dir% -DTEST_HURCHALLA_LIBS=ON -G "Visual Studio 16 2019" -A x64
+cmake -S. -B.\%build_dir% -DTEST_HURCHALLA_LIBS=ON -G "Visual Studio 17 2022" -A x64
 if %errorlevel% neq 0 exit /b %errorlevel%
 cmake --build .\%build_dir% --config Release
 if %errorlevel% neq 0 exit /b %errorlevel%
