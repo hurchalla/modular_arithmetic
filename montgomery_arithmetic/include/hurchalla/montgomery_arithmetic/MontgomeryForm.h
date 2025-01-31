@@ -45,6 +45,7 @@ class MontgomeryForm final {
     const detail::ImplMontgomeryForm<T, InlineAll, MontyType> impl;
 public:
     using IntegerType = T;
+    using MontyTag = typename MontyType::MontyTag;
 
     // If you need to compare MontgomeryValues for equality or inequality, call
     // getCanonicalValue() and compare the resulting CanonicalValues.
@@ -449,7 +450,7 @@ public:
         HPBC_PRECONDITION(exponent >= 0);
         std::array<MontgomeryValue, 1> bases = {{ base }};
         std::array<MontgomeryValue, 1> result =
-                detail::montgomery_array_pow<typename MontyType::MontyTag,
+                detail::montgomery_array_pow<MontyTag,
                                    MontgomeryForm>::pow(*this, bases, exponent);
         return result[0];
     }
@@ -480,7 +481,7 @@ public:
     pow(const std::array<MontgomeryValue, NUM_BASES>& bases, T exponent) const
     {
         HPBC_PRECONDITION(exponent >= 0);
-        return detail::montgomery_array_pow<typename MontyType::MontyTag,
+        return detail::montgomery_array_pow<MontyTag,
                                    MontgomeryForm>::pow(*this, bases, exponent);
     }
 
