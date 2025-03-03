@@ -30,7 +30,7 @@ namespace hurchalla {
 // of the normal k-ary algorithm.
 //
 template <class MF, typename U>
-typename MF::MontgomeryValue montgomery_two_pow(MF mf, U n)
+typename MF::MontgomeryValue montgomery_two_pow(const MF& mf, U n)
 {
     static_assert(ut_numeric_limits<U>::is_integer);
     static_assert(!ut_numeric_limits<U>::is_signed);
@@ -107,7 +107,7 @@ typename MF::MontgomeryValue montgomery_two_pow(MF mf, U n)
 
 template <class MF, typename U, size_t ARRAY_SIZE>
 std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
-array_montgomery_two_pow(std::array<MF, ARRAY_SIZE> mf, std::array<U, ARRAY_SIZE> n)
+array_montgomery_two_pow(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
 {
     static_assert(ut_numeric_limits<U>::is_integer);
     static_assert(!ut_numeric_limits<U>::is_signed);
