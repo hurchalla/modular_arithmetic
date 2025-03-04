@@ -11,6 +11,7 @@
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
 #include "montgomery_two_pow.h"
+#include "../montgomery_pow_kary.h"
 #include <iostream>
 #include <stdexcept>
 #include <chrono>
@@ -131,7 +132,7 @@ void bench_range(U min, U range)
 
       for (U x = max; x > min; x = x-2) {
          MontType mf(x);
-         auto val = hurchalla::montgomery_two_pow(mf, x-1);
+         auto val = hurchalla::montgomery_two_pow(mf, static_cast<U>(x-1));
          // the sole purpose of the next line is to prevent the optimizer from
          // being able to eliminate the function call above.
          if (mf.getCanonicalValue(val) == mf.getZeroValue())
@@ -164,9 +165,9 @@ void bench_range(U min, U range)
    {
       U total_zeros = 0;
       auto t0 = steady_clock::now();
-      for (U x = max; x > min; x = x-4) {
+      for (U x = max; x > min && x >= 4; x = x-4) {
          std::array<MontType, 2> mf_arr { MontType(x), MontType(x - 2) };
-         std::array<U, 2> exponent_arr { mf_arr[0].getModulus() - 1,  mf_arr[1].getModulus() - 1 };
+         std::array<U, 2> exponent_arr { static_cast<U>(mf_arr[0].getModulus() - 1),  static_cast<U>(mf_arr[1].getModulus() - 1) };
          auto mont_result_arr = hurchalla::array_montgomery_two_pow(mf_arr, exponent_arr);
          if (mf_arr[0].getCanonicalValue(mont_result_arr[0]) == mf_arr[0].getZeroValue())
             total_zeros++;
@@ -183,7 +184,7 @@ void bench_range(U min, U range)
       U total_zeros = 0;
       auto t0 = steady_clock::now();
       constexpr std::size_t ARRAY_SIZE = 3;
-      for (U x = max; x > min; x = x - (2*ARRAY_SIZE)) {
+      for (U x = max; x > min && x >= (2*ARRAY_SIZE); x = x - (2*ARRAY_SIZE)) {
          std::array<MontType, ARRAY_SIZE> mf_arr {
             MontType(x), MontType(x - 2), MontType(x - 4) };
          std::array<U, ARRAY_SIZE> exponent_arr;
@@ -205,7 +206,7 @@ void bench_range(U min, U range)
       U total_zeros = 0;
       auto t0 = steady_clock::now();
       constexpr std::size_t ARRAY_SIZE = 4;
-      for (U x = max; x > min; x = x - (2*ARRAY_SIZE)) {
+      for (U x = max; x > min && x >= (2*ARRAY_SIZE); x = x - (2*ARRAY_SIZE)) {
          std::array<MontType, ARRAY_SIZE> mf_arr {
             MontType(x), MontType(x - 2), MontType(x - 4), MontType(x - 6) };
          std::array<U, ARRAY_SIZE> exponent_arr;
@@ -227,7 +228,7 @@ void bench_range(U min, U range)
       U total_zeros = 0;
       auto t0 = steady_clock::now();
       constexpr std::size_t ARRAY_SIZE = 5;
-      for (U x = max; x > min; x = x - (2*ARRAY_SIZE)) {
+      for (U x = max; x > min && x >= (2*ARRAY_SIZE); x = x - (2*ARRAY_SIZE)) {
          std::array<MontType, ARRAY_SIZE> mf_arr {
             MontType(x), MontType(x - 2), MontType(x - 4), MontType(x - 6), MontType(x - 8) };
          std::array<U, ARRAY_SIZE> exponent_arr;
@@ -249,7 +250,7 @@ void bench_range(U min, U range)
       U total_zeros = 0;
       auto t0 = steady_clock::now();
       constexpr std::size_t ARRAY_SIZE = 6;
-      for (U x = max; x > min; x = x - (2*ARRAY_SIZE)) {
+      for (U x = max; x > min && x >= (2*ARRAY_SIZE); x = x - (2*ARRAY_SIZE)) {
          std::array<MontType, ARRAY_SIZE> mf_arr {
             MontType(x), MontType(x - 2), MontType(x - 4), MontType(x - 6), MontType(x - 8), MontType(x - 10) };
          std::array<U, ARRAY_SIZE> exponent_arr;
@@ -271,7 +272,7 @@ void bench_range(U min, U range)
       U total_zeros = 0;
       auto t0 = steady_clock::now();
       constexpr std::size_t ARRAY_SIZE = 8;
-      for (U x = max; x > min; x = x - (2*ARRAY_SIZE)) {
+      for (U x = max; x > min && x >= (2*ARRAY_SIZE); x = x - (2*ARRAY_SIZE)) {
          std::array<MontType, ARRAY_SIZE> mf_arr {
             MontType(x), MontType(x - 2), MontType(x - 4), MontType(x - 6), MontType(x - 8), MontType(x - 10), MontType(x - 12), MontType(x - 14) };
          std::array<U, ARRAY_SIZE> exponent_arr;
@@ -285,6 +286,45 @@ void bench_range(U min, U range)
       }
       auto t1 = steady_clock::now();
       mtp_time_8 = dsec(t1-t0).count();
+      std::cout << uint_to_string(total_zeros) << " ";
+   }
+
+   dsec::rep mpkary_time = 0;
+   dsec::rep mfpow_time = 0;
+   {
+      U total_zeros = 0;
+      auto t0 = steady_clock::now();
+      constexpr std::size_t ARRAY_SIZE = 4;
+      for (U x = max; x > min && x >= (2*ARRAY_SIZE); x = x - (2*ARRAY_SIZE)) {
+         MontType mf(x);
+         U exponent = mf.getModulus() - 1;
+         std::array<typename MontType::MontgomeryValue, ARRAY_SIZE> bases;
+         HURCHALLA_REQUEST_UNROLL_LOOP for (int j=0; j<ARRAY_SIZE; ++j)
+            bases[j] = mf.convertIn(j + 5);
+         auto mont_result_arr = hurchalla::array_montgomery_pow_kary(mf, bases, exponent);
+         HURCHALLA_REQUEST_UNROLL_LOOP for (int j=0; j<ARRAY_SIZE; ++j) {
+            if (mf.getCanonicalValue(mont_result_arr[j]) == mf.getZeroValue())
+               total_zeros++;
+         }
+      }
+      auto t1 = steady_clock::now();
+      mpkary_time = dsec(t1-t0).count();
+
+      t0 = steady_clock::now();
+      for (U x = max; x > min && x >= (2*ARRAY_SIZE); x = x - (2*ARRAY_SIZE)) {
+         MontType mf(x);
+         U exponent = mf.getModulus() - 1;
+         std::array<typename MontType::MontgomeryValue, ARRAY_SIZE> bases;
+         HURCHALLA_REQUEST_UNROLL_LOOP for (int j=0; j<ARRAY_SIZE; ++j)
+            bases[j] = mf.convertIn(j + 5);
+         auto mont_result_arr = mf.pow(bases, exponent);
+         HURCHALLA_REQUEST_UNROLL_LOOP for (int j=0; j<ARRAY_SIZE; ++j) {
+            if (mf.getCanonicalValue(mont_result_arr[j]) == mf.getZeroValue())
+               total_zeros++;
+         }
+      }
+      t1 = steady_clock::now();
+      mfpow_time = dsec(t1-t0).count();
       std::cout << uint_to_string(total_zeros) << " ";
    }
 
@@ -305,6 +345,7 @@ void bench_range(U min, U range)
    std::cout << "array5 performance ratio = " << mtp_time / mtp_time_5 << "\n";
    std::cout << "array6 performance ratio = " << mtp_time / mtp_time_6 << "\n";
    std::cout << "array8 performance ratio = " << mtp_time / mtp_time_8 << "\n";
+   std::cout << "\narraykary performance ratio = " << mfpow_time / mpkary_time << "\n";
 
    std::cout << '\n';
 }
@@ -315,18 +356,32 @@ void bench_range(U min, U range)
 
 int main()
 {
+   namespace hc = hurchalla;
    std::cout << "---Running Example Program---\n\n";
 
 // These are types and values that you may wish to change:
    using U = __uint128_t;
+//   using U = uint64_t;
+
+      constexpr int UDIGITS = hc::ut_numeric_limits<U>::digits;
       // Note you're not required to use string_to_uint().  I just used it as a way to set values greater than 2^64 without getting a compile error.
    U exponent = string_to_uint<U>("8");
-   U modulus = string_to_uint<U>("1234567890123456789012345678901");
+   U modulus;
+   if constexpr (UDIGITS >= 128)
+      modulus = string_to_uint<U>("1234567890123456789012345678901");
+   else if constexpr (UDIGITS >= 64)
+      modulus = string_to_uint<U>("1234567890123456789");
+   else if constexpr (UDIGITS >= 32)
+      modulus = string_to_uint<U>("123456789");
+   else if constexpr (UDIGITS >= 16)
+      modulus = string_to_uint<U>("12345");
+   else
+      modulus = string_to_uint<U>("63");
    if (modulus % 2 == 0) {
       std::cout << "Error: modulus must be odd to use Montgomery arithmetic\n";
       return 1;
    }
-   namespace hc = hurchalla;
+
 #if 1
    // If you can guarantee your modulus will always be less than one quarter the
    // maximum value of type U, then use MontgomeryQuarter for speed.
@@ -350,7 +405,7 @@ int main()
    // as fastest per exponentiation, at roughly 1.9x the speed of the plain
    // (non-array) function montgomery_two_pow.
    std::array<MontType, 2> mf_arr { MontType(modulus), MontType(modulus + 2) };  // modulus + 2 is just an arbitrary second modulus value
-   std::array<U, 2> exponent_arr { exponent, exponent + 3 };  // exponent + 3 is just an arbitrary second exponent value
+   std::array<U, 2> exponent_arr { exponent, static_cast<U>(exponent + 3) };  // exponent + 3 is just an arbitrary second exponent value
    auto mont_result_arr = hc::array_montgomery_two_pow(mf_arr, exponent_arr);
    std::array<U, 2> result_arr { mf_arr[0].convertOut(mont_result_arr[0]),
                                  mf_arr[1].convertOut(mont_result_arr[1]) };
@@ -375,7 +430,7 @@ int main()
 // ------ Tests for correctneess ------
 
    // test for correctness with a range of exponents
-   U range = 100000;
+   U range = static_cast<U>(100000);
    constexpr U maxU = hc::ut_numeric_limits<U>::max();
    auto mont_two = mf.add(mf.getUnityValue(), mf.getUnityValue());
    for (exponent = maxU; exponent > maxU-range; exponent = exponent-2) {
@@ -385,7 +440,7 @@ int main()
       if (result != standard_result) {
          std::cout << "bug in montgomery_two_pow found: got wrong result for ";
          std::cout << "2^" << uint_to_string(exponent) << " (mod " <<
-               uint_to_string(modulus) << '\n';
+               uint_to_string(modulus) << ")\n";
          return 1;
       }
    }
@@ -406,9 +461,9 @@ int main()
          result = mf.convertOut(mont_result_arr[j]);
          U standard_result = mf.convertOut(mf.pow(mont_two, exponent_arr[j]));
          if (result != standard_result) {
-            std::cout << "bug in array_montgomery_two_pow found: got wrong result for ";
+            std::cout << "bug2 in array_montgomery_two_pow found: got wrong result for ";
             std::cout << "2^" << uint_to_string(exponent_arr[j]) << " (mod " <<
-                  uint_to_string(mf.getModulus()) << '\n';
+                  uint_to_string(mf.getModulus()) << ")\n";
             return 1;
          }
       }
@@ -417,20 +472,25 @@ int main()
    // test for correctness with a range of moduli.
    // simulates fermat primality tests
    constexpr auto maxMF = MontType::max_modulus();
-   for (auto mod = maxMF; mod > maxMF-range; mod = mod-2) {
+   auto mod_range = static_cast<decltype(maxMF)>(range);
+   if (mod_range >= maxMF)
+      mod_range = maxMF - 1;
+   for (auto mod = maxMF; mod > maxMF-mod_range; mod = mod-2) {
       MontType mt(mod);
       auto mont_two = mt.add(mt.getUnityValue(), mt.getUnityValue());
-      mont_result = hc::montgomery_two_pow(mt, mod-1);
+      mont_result = hc::montgomery_two_pow(mt, static_cast<decltype(mod)>(mod-1));
       result = mt.convertOut(mont_result);
       U standard_result = mt.convertOut(mt.pow(mont_two, mod-1));
       if (result != standard_result) {
-         std::cout << "bug2 in montgomery_two_pow found: got wrong result for ";
-         std::cout << "2^" << uint_to_string(mod-1) << " (mod " <<
-               uint_to_string(mod) << '\n';
+         std::cout << "bug3 in montgomery_two_pow found: got wrong result for ";
+         std::cout << "2^" << uint_to_string(static_cast<decltype(mod)>(mod-1)) << " (mod " <<
+               uint_to_string(mod) << ")\n";
          return 1;
       }
    }
-   for (auto mod = maxMF; mod > maxMF-range; mod = mod-2) {
+
+   mod_range -= 16;
+   for (auto mod = maxMF; mod > maxMF-mod_range; mod = mod-2) {
       constexpr size_t ARRAY_SIZE = 3;
       // We use std::vector to indirectly make a MontType array, since
       // MontType has no default constructor.
@@ -448,9 +508,9 @@ int main()
          auto mont_two = mf_arr[j].add(mf_arr[j].getUnityValue(), mf_arr[j].getUnityValue());
          U standard_result = mf_arr[j].convertOut(mf_arr[j].pow(mont_two, exponent_arr[j]));
          if (result != standard_result) {
-            std::cout << "bug2 in array_montgomery_two_pow found: got wrong result for ";
+            std::cout << "bug4 in array_montgomery_two_pow found: got wrong result for ";
             std::cout << "2^" << uint_to_string(exponent_arr[j]) << " (mod " <<
-                  uint_to_string(mf_arr[j].getModulus()) << '\n';
+                  uint_to_string(mf_arr[j].getModulus()) << ")\n";
             return 1;
          }
       }
@@ -463,7 +523,7 @@ int main()
 
 // ------- Benchmarking --------
 
-   bench_range<MontType>(maxU - range, range);
+   bench_range<MontType>(static_cast<U>(maxU - range), range);
 
    std::cout << "---Example Program Finished---\n";
    return 0;
