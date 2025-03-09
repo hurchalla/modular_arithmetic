@@ -6,7 +6,7 @@ Clockwork is a high performance, easy to use Modular Arithmetic (header-only) li
 
 ## Design goals
 
-Clockwork is designed to be a flexible and bulletproof library with the best performance achievable for modular arithmetic of native (on the CPU) integer types.  For integer types that are double the native bit width (e.g. 128 bit), performance should still be close to ideal, though not as completely optimized as for native types.  Larger than 128 bit types are permissible; however a library like GMP is likely to be a better choice for such sizes.
+Clockwork is designed to be a flexible and bulletproof library with the best performance achievable for modular arithmetic of native (on the CPU) integer types.  For integer types that are double the native bit width (e.g. 128 bit), performance should still be close to ideal, though not as completely optimized as for native types.  Larger than 128 bit types are permissible by [specialization](https://github.com/hurchalla/util/blob/master/include/hurchalla/util/traits/ut_numeric_limits.h); however a library like [GMP](https://gmplib.org/) is likely to be a better choice for such sizes.
 
 ## Status
 
