@@ -2,7 +2,7 @@
 
 ![Alt text](images/clockxtrasmall_border2.jpg?raw=true "Clock Gears, photo by Krzysztof Golik, licensed CC BY-SA 4.0")
 
-Clockwork is a high performance, easy to use Modular Arithmetic (header-only) library for C++ for up to 128 bit integer types, with extensive support for Montgomery arithmetic.  If you want or need Montgomery arithmetic in this range, or general modular arithmetic functions, Clockwork is almost certainly the fastest and easiest library you could use.  For best performance make sure you define the standard C++ macro NDEBUG.
+Clockwork is a high performance, easy to use Modular Arithmetic library for C++ provided as a "header-only" library, for up to 128 bit integer types, with extensive support for Montgomery arithmetic.  If you want or need Montgomery arithmetic in this range, or general modular arithmetic functions, Clockwork is almost certainly the fastest and easiest library you could use.  For best performance make sure you define the standard C++ macro NDEBUG.
 
 ## Design goals
 
@@ -45,7 +45,7 @@ If you're not using CMake for your project, you'll need to install/copy Clockwor
 >cmake --install . --prefix *the_folder_you_want_to_install_to*  
 If you prefer, for the last command you could instead use CMake's default install location (on linux this is /usr/local) by omitting the --prefix and subsequent folder.  
 
-This will copy all the header files needed for this modular arithmetic library to an "include" subfolder in the installation folder of your choosing.
+This will copy all the files needed for this modular arithmetic library to an "include" subfolder in the installation folder of your choosing.
 When compiling your project, you'll of course need to ensure that you have that include subfolder as part of your include path.  
 
 For best performance you *must* ensure that the standard macro NDEBUG (see &lt;cassert&gt;) is defined when compiling.  You can generally do this by adding the option flag -DNDEBUG to your compile command.  
@@ -69,7 +69,7 @@ From the montgomery_arithmetic group, the file *MontgomeryForm.h* provides the e
 
 For an easy demonstration of MontgomeryForm, you can see one of the [examples](examples/example_without_cmake).
 
-If you prefer not to use the high level interface of MontgomeryForm, and instead wish to directly call low level Montgomery arithmetic functions (such as REDC), the API header files within montgomery_arithmetic/low_level_api support all essential low level functions.
+If you prefer not to use the high level interface of MontgomeryForm, and instead wish to directly call low level Montgomery arithmetic functions (such as REDC), the API header files within montgomery_arithmetic/low_level_api provide the essential low level functions.
 
 ## Performance Notes
 
