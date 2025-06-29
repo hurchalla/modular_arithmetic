@@ -70,7 +70,8 @@ target_link_libraries(hurchalla_modular_arithmetic
 target_link_libraries(hurchalla_modular_arithmetic
                       INTERFACE hurchalla_montgomery_arithmetic)
 
-
+# Our use of if constexpr() requires C++ >= 2017
+target_compile_features(hurchalla_modular_arithmetic INTERFACE cxx_std_17)
 
 # TODO:  The following may be overly simple, but works so far to install target
 # include directories.  It assumes that the build step from the subdirectories

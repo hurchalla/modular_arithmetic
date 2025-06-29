@@ -47,7 +47,7 @@ typename MF::MontgomeryValue montgomery_pow_kary(const MF& mf, typename MF::Mont
     using V = typename MF::MontgomeryValue;
     using std::size_t;
 
-    constexpr size_t P = 4;   // (1 << P) == the k in k-ary exponentiation
+    constexpr int P = 4;   // (1 << P) == the k in k-ary exponentiation
 
     // initialize the precalculation table for k-ary pow algorithm
     static_assert(P > 0, "");
@@ -56,17 +56,17 @@ typename MF::MontgomeryValue montgomery_pow_kary(const MF& mf, typename MF::Mont
     V table[TABLESIZE];
     table[0] = mf.getUnityValue();   // montgomery one
     table[1] = x;
-    if (TABLESIZE == 4) {
+    if constexpr (TABLESIZE == 4) {
         table[2] = mf.square(x);
         table[3] = mf.multiply(x, table[2]);
-    } else if (TABLESIZE == 8) {
+    } else if constexpr (TABLESIZE == 8) {
         table[2] = mf.square(x);
         table[3] = mf.multiply(x, table[2]);
         table[4] = mf.square(table[2]);
         table[5] = mf.multiply(table[2], table[3]);
         table[6] = mf.square(table[3]);
         table[7] = mf.multiply(table[3], table[4]);
-    } else if (TABLESIZE == 16) {
+    } else if constexpr (TABLESIZE == 16) {
         table[2] = mf.square(x);
         table[3] = mf.multiply(x, table[2]);
         table[4] = mf.square(table[2]);
@@ -81,7 +81,7 @@ typename MF::MontgomeryValue montgomery_pow_kary(const MF& mf, typename MF::Mont
         table[13] = mf.multiply(table[6], table[7]);
         table[14] = mf.square(table[7]);
         table[15] = mf.multiply(table[7], table[8]);
-    } else if (TABLESIZE == 32) {
+    } else if constexpr (TABLESIZE == 32) {
         table[2] = mf.square(x);
         table[3] = mf.multiply(x, table[2]);
         table[4] = mf.square(table[2]);
@@ -140,7 +140,7 @@ typename MF::MontgomeryValue montgomery_pow_kary(const MF& mf, typename MF::Mont
     // because we returned above if (n <= MASK), we can assert the following:
     HPBC_ASSERT(numbits > P);
 
-    int shift = numbits - static_cast<int>(P);
+    int shift = numbits - P;
     U tmp = n >> shift;
     HPBC_ASSERT(tmp <= MASK);
     // normally we'd use (tmp & MASK), but it's redundant with tmp <= MASK
@@ -148,7 +148,7 @@ typename MF::MontgomeryValue montgomery_pow_kary(const MF& mf, typename MF::Mont
     V result = table[index];
 
 
-    while (shift >= static_cast<int>(P)) {
+    while (shift >= P) {
 //        HURCHALLA_REQUEST_UNROLL_LOOP
         for (size_t i=0; i<P; ++i)
             result = mf.square(result);
@@ -160,7 +160,7 @@ typename MF::MontgomeryValue montgomery_pow_kary(const MF& mf, typename MF::Mont
             --shift;
         }
 #endif
-        shift -= static_cast<int>(P);
+        shift -= P;
 // TODO: maybe optimize next line, since n may be > 64bit
         tmp = n >> shift;
         index = static_cast<size_t>(tmp) & MASK;
@@ -204,7 +204,7 @@ array_montgomery_pow_kary(const std::array<MF, ARRAY_SIZE>& mf,
     using V = typename MF::MontgomeryValue;
     using std::size_t;
 
-    constexpr size_t P = 4;   // (1 << P) == the k in k-ary exponentiation
+    constexpr int P = 4;   // (1 << P) == the k in k-ary exponentiation
 
     // initialize the precalculation table for k-ary pow algorithm
     static_assert(P > 0, "");
@@ -256,7 +256,7 @@ array_montgomery_pow_kary(const std::array<MF, ARRAY_SIZE>& mf,
     // because we returned above if (n_max <= MASK), we can assert the following:
     HPBC_ASSERT(numbits > P);
 
-    int shift = numbits - static_cast<int>(P);
+    int shift = numbits - P;
     std::array<V, ARRAY_SIZE> result;
     std::array<U, ARRAY_SIZE> tmp;
     HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
@@ -267,12 +267,12 @@ array_montgomery_pow_kary(const std::array<MF, ARRAY_SIZE>& mf,
     }
 
 
-    while (shift >= static_cast<int>(P)) {
+    while (shift >= P) {
         for (size_t i=0; i<P; ++i) {
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
                 result[j] = mf[j].square(result[j]);
         }
-        shift -= static_cast<int>(P);
+        shift -= P;
         std::array<size_t, ARRAY_SIZE> index;
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
 // TODO: maybe optimize next line, since n may be > 64bit
@@ -333,7 +333,7 @@ array_montgomery_pow_kary(const MF& mf,
     using V = typename MF::MontgomeryValue;
     using std::size_t;
 
-    constexpr size_t P = 4;   // (1 << P) == the k in k-ary exponentiation
+    constexpr int P = 4;   // (1 << P) == the k in k-ary exponentiation
 
     // initialize the precalculation table for k-ary pow algorithm
     static_assert(P > 0, "");
@@ -379,9 +379,9 @@ array_montgomery_pow_kary(const MF& mf,
     int leading_zeros = count_leading_zeros(n_max);
     int numbits = ut_numeric_limits<decltype(n_max)>::digits - leading_zeros;
     // because we returned above if (n_max <= MASK), we can assert the following:
-    HPBC_ASSERT(numbits > static_cast<int>(P));
+    HPBC_ASSERT(numbits > P);
 
-    int shift = numbits - static_cast<int>(P);
+    int shift = numbits - P;
     std::array<V, ARRAY_SIZE> result;
     size_t tmp = static_cast<size_t>(n >> shift);
     HPBC_ASSERT(tmp <= MASK);
@@ -391,7 +391,7 @@ array_montgomery_pow_kary(const MF& mf,
     }
 
 
-    while (shift >= static_cast<int>(P)) {
+    while (shift >= P) {
         for (size_t i=0; i<P; ++i) {
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
                 result[j] = mf.square(result[j]);
@@ -399,13 +399,13 @@ array_montgomery_pow_kary(const MF& mf,
 #if 1
 // sliding window optimization
 // TODO: maybe optimize the shift in the next line, since n may be > 64bit
-        while (shift > static_cast<int>(P) && (static_cast<size_t>(n >> (shift-1)) & 1) == 0) {
+        while (shift > P && (static_cast<size_t>(n >> (shift-1)) & 1) == 0) {
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
                 result[j] = mf.square(result[j]);
             --shift;
         }
 #endif
-        shift -= static_cast<int>(P);
+        shift -= P;
 // TODO: maybe optimize next line, since n may be > 64bit
         size_t index = static_cast<size_t>(n >> shift) & MASK;
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
@@ -416,7 +416,7 @@ array_montgomery_pow_kary(const MF& mf,
 
     if (shift == 0)
         return result;
-    HPBC_ASSERT(0 < shift && shift < static_cast<int>(P));
+    HPBC_ASSERT(0 < shift && shift < P);
 
     for (int i=0; i<shift; ++i) {
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
