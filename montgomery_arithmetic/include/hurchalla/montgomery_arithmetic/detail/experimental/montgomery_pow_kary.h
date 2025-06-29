@@ -116,7 +116,7 @@ typename MF::MontgomeryValue montgomery_pow_kary(const MF& mf, typename MF::Mont
     } else {
         // we should check for a ((power of 2) >= 64), but this is
         // probably adquate or our needs
-        static_assert(TABLESIZE % 64 == 0);
+        static_assert(TABLESIZE % 64 == 0, "");
         table[2] = mf.square(x);
         table[3] = mf.multiply(x, table[2]);
         HURCHALLA_REQUEST_UNROLL_LOOP for (std::size_t i=4; i<TABLESIZE; i+=2) {
