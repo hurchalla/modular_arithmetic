@@ -68,12 +68,10 @@ struct slow_modular_multiplication {
     T result = 0;
     while (b > 0) {
         namespace hc = ::hurchalla;
-        T tmp = hc::modular_addition_prereduced_inputs<T,LowlatencyTag>(
-                                                            a, result, modulus);
+        T tmp = hc::modular_addition_prereduced_inputs(a, result, modulus);
           // result = (b&1) ? tmp : result
         result = hc::conditional_select((b & 1u), tmp, result);
-        a = hc::modular_addition_prereduced_inputs<T,LowlatencyTag>(
-                                                                 a, a, modulus);
+        a = hc::modular_addition_prereduced_inputs(a, a, modulus);
         b = static_cast<T>(b >> 1);
     }
     return result;

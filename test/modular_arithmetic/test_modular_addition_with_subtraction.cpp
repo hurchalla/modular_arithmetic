@@ -26,6 +26,7 @@
 
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
+#include "hurchalla/modular_arithmetic/detail/optimization_tag_structs.h"
 #include "gtest/gtest.h"
 #include <cstdint>
 
@@ -40,8 +41,8 @@ TEST(ModularArithmetic, modular_addition_with_subtraction) {
         for (T a=0; a<modulus; ++a) {
             for (T b=0; b<modulus; ++b) {
                 T sum = hc::modular_addition_prereduced_inputs(a, b, modulus);
-                EXPECT_TRUE(a ==
-                    hc::modular_subtraction_prereduced_inputs(sum, b, modulus));
+                EXPECT_TRUE(a == (hc::modular_subtraction_prereduced_inputs<T,hc::LowlatencyTag>(sum, b, modulus)));
+                EXPECT_TRUE(a == (hc::modular_subtraction_prereduced_inputs<T,hc::LowuopsTag>(sum, b, modulus)));
             }
         }
     }

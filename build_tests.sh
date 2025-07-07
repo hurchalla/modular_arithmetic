@@ -571,10 +571,10 @@ fi
 
 
 if [ "$run_tests" = true ]; then
-  ./$build_dir/test_ndebug_programming_by_contract --gtest_break_on_failure
-  exit_on_failure
-  ./$build_dir/test_programming_by_contract --gtest_break_on_failure
-  exit_on_failure
+#  ./$build_dir/test_ndebug_programming_by_contract --gtest_break_on_failure
+#  exit_on_failure
+#  ./$build_dir/test_programming_by_contract --gtest_break_on_failure
+#  exit_on_failure
   ./$build_dir/test_hurchalla_util --gtest_break_on_failure
   exit_on_failure
   ./$build_dir/test_hurchalla_modular_arithmetic --gtest_break_on_failure

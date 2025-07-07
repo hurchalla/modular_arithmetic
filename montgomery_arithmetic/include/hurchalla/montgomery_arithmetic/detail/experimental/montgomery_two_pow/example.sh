@@ -25,7 +25,7 @@ cpp_standard="-std=c++17"
 # SET repo_directory TO THE DIRECTORY WHERE YOU CLONED THE HURCHALLA GIT
 # REPOSITORIES.  (or otherwise ensure the compiler /I flags correctly specify
 # the needed hurchalla include directories)
-repo_directory=/Users/jeffreyhurchalla/Desktop
+repo_directory=/home/jeff/repos
 
 
 $cppcompiler  \

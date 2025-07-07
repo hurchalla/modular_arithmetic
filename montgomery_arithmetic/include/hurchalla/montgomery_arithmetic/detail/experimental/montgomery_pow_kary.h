@@ -122,8 +122,8 @@ typename MF::MontgomeryValue montgomery_pow_kary(const MF& mf, typename MF::Mont
         table[31] = mf.template multiply<LowuopsTag>(table[15], table[16]);
     } else {
         // we should check for a ((power of 2) >= 64), but this is
-        // probably adquate or our needs
-        HPBC_ASSERT(TABLESIZE % 64 == 0, "");
+        // probably adequate for our needs
+        HPBC_ASSERT(TABLESIZE % 64 == 0);
         table[2] = mf.square(x);
         table[3] = mf.multiply(x, table[2]);
         HURCHALLA_REQUEST_UNROLL_LOOP for (std::size_t i=4; i<TABLESIZE; i+=2) {
@@ -229,7 +229,7 @@ array_montgomery_pow_kary(const std::array<MF, ARRAY_SIZE>& mf,
     if (TABLESIZE >= 4) {
         // we should ideally check for a ((power of 2) >= 4), but this assert
         // is probably good enough for our needs:
-        HPBC_ASSERT(TABLESIZE % 4 == 0, "");
+        HPBC_ASSERT(TABLESIZE % 4 == 0);
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
             table[2][j] = mf[j].template square<LowuopsTag>(x[j]);
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)

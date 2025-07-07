@@ -16,6 +16,7 @@
 #include <stdexcept>
 #include <chrono>
 #include <utility>
+#include <vector>
 
 
 #ifndef NDEBUG
@@ -364,7 +365,9 @@ void bench_range(U min, U range)
    std::cout << "array5 performance ratio = " << mtp_time / mtp_time_5 << "\n";
    std::cout << "array6 performance ratio = " << mtp_time / mtp_time_6 << "\n";
    std::cout << "array8 performance ratio = " << mtp_time / mtp_time_8 << "\n";
-   std::cout << "\narraykary performance ratio = " << mfpow_time / mpkary_time << "\n";
+   std::cout << "\narray[4]_montgomery_pow_kary() time: " << mpkary_time << "\n";
+   std::cout << "array[4]_mf.pow() time: " << mfpow_time << "\n";
+   std::cout << "arraykary performance ratio = " << mfpow_time / mpkary_time << "\n";
 
    std::cout << '\n';
 }
