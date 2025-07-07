@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022 Jeffrey Hurchalla.
+// Copyright (c) 2020-2025 Jeffrey Hurchalla.
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,6 +9,7 @@
 #define HURCHALLA_MODULAR_ARITHMETIC_IMPL_MODULAR_SUBTRACTION_H_INCLUDED
 
 
+#include "hurchalla/modular_arithmetic/detail/optimization_tag_structs.h"
 #include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/conditional_select.h"
@@ -19,8 +20,27 @@
 namespace hurchalla { namespace detail {
 
 
-// note: uses a static member function to disallow ADL.
+// With regard to the LowlatencyTag vs. the LowuopsTag versions here:
+// If 'modulus' was not set/modified recently before the call of this modular
+// subtraction function, AND if either 'a' or 'b' was not set/modified recently
+// before the call, then the LowlatencyTag versions should usually provide lower
+// latency than the LowuopsTag versions.
+// Note that the LowlatencyTag versions will typically use more uops and create
+// more pressure on the ALU than LowuopsTag, unless the compiler can loop hoist
+// the extra instruction(s) that the LowlatencyTag versions use that involve 'a'
+// (or 'b') and 'modulus'.
+
+// Fyi: the purpose of having structs with static member functions is to
+// disallow ADL and to make specializations simple and easy.
+
+// primary template for default implementation
+template <class PTAG>
 struct default_modsub_unsigned {
+};
+
+// LowuopsTag, for low uops and low ALU use.
+template <>
+struct default_modsub_unsigned<LowuopsTag> {
   template <typename T>
   HURCHALLA_FORCE_INLINE static T call(T a, T b, T modulus)
   {
@@ -43,10 +63,7 @@ struct default_modsub_unsigned {
     //   result without any problem of overflow.  So we can and should use:
     //   result = (a>=b) ? a-b : a-b+modulus
 
-    // This implementation is designed for low uop count and low register use.
-    // An implementation is possible with expected lower latency and higher uop
-    // count and higher register use, but it's not preferred (see the comments
-    // below for that alternative).
+    // These lines minimize uop count, register use, and ALU pressure.
     T diff = static_cast<T>(a - b);
     T result = static_cast<T>(diff + modulus);
       // result = (a >= b) ? diff : result
@@ -56,47 +73,89 @@ struct default_modsub_unsigned {
     return result;
   }
 };
-// Implementation note: if the compiler generates optimal assembly/machine code,
-// then the above function will have 3 cycles latency (on x86).  One cycle for
-// the subtraction, one for the addition, and finally one for a cmov.
-// In principle we could create an alternative modular_subtraction function
-// which has only 2 cycles latency in ideal situations (and 3 cycles in non-
-// ideal situations) but that requires as many as two extra uops.  This
-// alternative and sometimes lower latency code looks like this:
-//    T diff = n - b;
-//    T tmp = a + diff;           // ideally a LEA instruction
-//    a = a - b;
-//    tmp = (a >= b) ? a : tmp;   // ideally a CMOVAE instruction
-// If the modular_subtraction function is called from within a loop, and b
-// remains unchanged throughout the loop, then the compiler will ideally loop-
-// hoist the "diff = n - b" outside of the loop, if we assume that the modulus
-// n is also constant throughout the loop (which is extremely likely).
-// The  a+diff  and  a-b  can run in parallel in the same cycle, and if the
-// ternary operator is implemented via CMOVAE, then this means the
-// modular_subtraction function would have 2 cycles total latency.  But this
-// requires that the compiler is able to loop hoist the  diff = n-b,  so this is
-// the ideal situation mentioned above in this note.  If the compiler can't loop
-// hoist the calculation of diff (presumably because b does not remain constant
-// throughout a loop), then it would have 3 cycles latency and would need 5 uops
-// (including one uop to copy n to another register prior to the calculation of
-// diff).  In contrast the default_modsub_unsigned::call function has 3 cycles
-// latency and needs 3 uops, but can not take advantage of potential loop
-// hoisting to reduce the latency to 2.
-// I do not believe it is worth the added complexity to offer the alternative
-// version of modular_subtraction discussed in this note.  If someone is writing
-// code that needs a low latency modular_subtraction within a loop where loop
-// hoisting would be applicable, then an option usable right now is to do a
-// modular negate of b outside the loop, and then use modular_addition inside
-// the loop, because modular_addition *does* take advantage of the potential of
-// loop hoisting to lower the total latency to 2 cycles.
+
+// LowlatencyTag.  If modulus and 'a'(or 'b') were not set/modified recently
+// before the call, then the below function would typically have lowest possible
+// latency.  (Specifically, diff = b - modulus  normally could either be loop
+// hoisted by the compiler, or computed at the same time as earlier work by the
+// CPU, costing zero latency.)
+template <>
+struct default_modsub_unsigned<LowlatencyTag> {
+  template <typename T>
+  HURCHALLA_FORCE_INLINE static T call(T a, T b, T modulus)
+  {
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+    HPBC_PRECONDITION2(modulus>0);
+    HPBC_PRECONDITION2(a<modulus);  // i.e. the input must be prereduced
+    HPBC_PRECONDITION2(b<modulus);  // i.e. the input must be prereduced
+
+    // POSTCONDITION:
+    // Let a conceptual "%%" operator represent a modulo operator that always
+    // returns a non-negative remainder.
+    // This function returns (a-b) %% modulus, performed as if a and b are
+    // infinite precision signed ints (and thus as if it is impossible for the
+    // subtraction (a-b) to overflow).
+
+    // Naively, to achieve low latency, we might assume we need one version of
+    // this function for when 'a' has remained mostly constant, and a different
+    // version for when 'b' has remained constant.  It's fairly straightforward
+    // to understand that when 'b' hasn't changed in the lines of code preceding
+    // this function call, the compiler (due to function inlining) will be able
+    // to schedule the line  T diff = b - modulus  either outside of a loop, or
+    // at an earlier point where it can overlap with other CPU work at no extra
+    // latency (via CPU pipelining or superscalar execution).
+    // However, the important thing to point out is that in practice, this
+    // function will probably also always work at achieving low latency when it
+    // is 'a' that hasn't changed in the lines preceding the function call.
+    // If/when the compiler sees that this is the case, it will almost always be
+    // smart enough to transform the two lines below:
+    // diff = b - modulus
+    // tmp = a - diff
+    // effectively (in its produced assembly) into these following two lines:
+    // sum = a + modulus
+    // tmp = sum - b
+    // This transformation does not change the result of the function in any
+    // way, but when the compiler sees that neither 'a' nor 'modulus' have
+    // changed recently, the compiler now will be able to loop hoist 'sum' or
+    // schedule it where it is sure to be calculated (by the CPU) in parallel
+    // with earlier instructions, at a cost of zero additional latency.
+    // This is why we only need one version of this function for low latency.
+    //
+    // Update: For the inline asm functions in this file, the explanation above
+    // isn't 100% accurate, though it's close...  If we assume that 'a' is
+    // mostly unchanging and that the compiler makes the above transformation
+    // prior to an inline asm section, then the compiler may need to make an
+    // extra copy of 'a' before entering our inline asm (as the asm stands in
+    // this file at the time this comment was written), which it wouldn't need
+    // to do when it doesn't make the transformation.  We could write new
+    // slightly different inline asm sections inside new functions (intended for
+    // when 'a' is constant) which would avoid the need for a copy, but this
+    // seems like more work and complexity than justifiable, unless we find we
+    // *REALLY* want the potential perf of definitely avoiding one possible
+    // copy.  Keep in mind on x86 a mov is free in the backend, using no uops
+    // and no execution units, and only has a cost during the frontend decode.
+
+    T diff = b - modulus;
+    // note: the next two lines can begin on the same clock cycle
+    T tmp = a - diff;
+    T result = a - b;
+      // result = (a < b) ? tmp : result;  //on x86, ideally a CMOVB instruction
+    result = ::hurchalla::conditional_select(a < b, tmp, result);
+
+    HPBC_POSTCONDITION2(0<=result && result<modulus);
+    return result;
+  }
+};
+
 
 
 // primary template
-template <typename T>
+template <typename T, class PTAG>
 struct impl_modular_subtraction_unsigned {
   HURCHALLA_FORCE_INLINE static T call(T a, T b, T modulus)
   {
-    return default_modsub_unsigned::call(a, b, modulus);
+    return default_modsub_unsigned<PTAG>::call(a, b, modulus);
   }
 };
 
@@ -105,8 +164,9 @@ struct impl_modular_subtraction_unsigned {
 #if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
      defined(HURCHALLA_ALLOW_INLINE_ASM_MODSUB)) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
+
 template <>
-struct impl_modular_subtraction_unsigned<std::uint32_t> {
+struct impl_modular_subtraction_unsigned<std::uint32_t, LowuopsTag> {
   HURCHALLA_FORCE_INLINE static
   std::uint32_t call(std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
   {
@@ -144,17 +204,17 @@ struct impl_modular_subtraction_unsigned<std::uint32_t> {
 # else
              : [m]"r"(modulus), [b]"rm"(b)
 # endif
-
              : "cc");
 
     HPBC_POSTCONDITION2(result < modulus);  // uint32_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result == default_modsub_unsigned::call(a, b, modulus));
+    HPBC_POSTCONDITION2(result ==
+                      default_modsub_unsigned<LowuopsTag>::call(a, b, modulus));
     return result;
   }
 };
 
 template <>
-struct impl_modular_subtraction_unsigned<std::uint64_t> {
+struct impl_modular_subtraction_unsigned<std::uint64_t, LowuopsTag> {
   HURCHALLA_FORCE_INLINE static
   std::uint64_t call(std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
   {
@@ -186,32 +246,203 @@ struct impl_modular_subtraction_unsigned<std::uint64_t> {
 # else
              : [m]"r"(modulus), [b]"rm"(b)
 # endif
-
              : "cc");
 
     HPBC_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result == default_modsub_unsigned::call(a, b, modulus));
+    HPBC_POSTCONDITION2(result ==
+                      default_modsub_unsigned<LowuopsTag>::call(a, b, modulus));
+    return result;
+  }
+};
+
+#ifdef HURCHALLA_ENABLE_INLINE_ASM_128_BIT
+template <>
+struct impl_modular_subtraction_unsigned<__uint128_t, LowuopsTag> {
+  HURCHALLA_FORCE_INLINE static
+  __uint128_t call(__uint128_t a, __uint128_t b, __uint128_t modulus)
+  {
+    using std::uint64_t;
+    HPBC_PRECONDITION2(modulus>0);
+    HPBC_PRECONDITION2(a<modulus);  // __uint128_t guarantees a>=0.
+    HPBC_PRECONDITION2(b<modulus);  // __uint128_t guarantees b>=0.
+
+// We can't use LEA here, since our 128 bit operands would necessitate an add
+// with carry to calculate a high 64 bit part, and LEA can neither produce nor
+// consume a carry.  Therefore we'll implement this alternative in asm:
+//  __uint128_t zero = 0;
+//  __uint128_t diff = a - b;
+//  __uint128_t modulus_or_zero = (a >= b) ? zero : modulus;
+//  __uint128_t result = diff + modulus_or_zero;
+// Note: since we aren't using LEA, we have no concern with RBP/EBP/R13
+// like we did for the 32bit/64bit functions above.
+
+    uint64_t reg = 0;
+
+    uint64_t alo = static_cast<uint64_t>(a);
+    uint64_t ahi = static_cast<uint64_t>(a >> 64);
+    uint64_t blo = static_cast<uint64_t>(b);
+    uint64_t bhi = static_cast<uint64_t>(b >> 64);
+    uint64_t mlo = static_cast<uint64_t>(modulus);
+    uint64_t mhi = static_cast<uint64_t>(modulus >> 64);
+    __asm__ ("subq %[blo], %[alo] \n\t"         /* diff = a - b */
+             "sbbq %[bhi], %[ahi] \n\t"
+             "cmovaeq %[reg], %[mlo] \n\t"      /* mozlo = (a>=b) ? 0 : mlo */
+             "cmovbq %[mhi], %[reg] \n\t"       /* mozhi = (a<b)  ? mhi : 0 */
+             : [alo]"+&r"(alo), [ahi]"+&r"(ahi), [mlo]"+&r"(mlo), [reg]"+&r"(reg)
+# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [blo]"r"(blo), [bhi]"r"(bhi), [mhi]"r"(mhi)
+# else
+             : [blo]"rm"(blo), [bhi]"rm"(bhi), [mhi]"rm"(mhi)
+# endif
+             : "cc");
+    uint64_t difflo = alo;
+    uint64_t diffhi = ahi;
+    uint64_t mozlo = mlo;
+    uint64_t mozhi = reg;
+    __uint128_t diff = (static_cast<__uint128_t>(diffhi) << 64) | difflo;
+    __uint128_t moz = (static_cast<__uint128_t>(mozhi) << 64) | mozlo;
+
+    __uint128_t result = diff + moz;
+
+    HPBC_POSTCONDITION2(result < modulus);  // __uint128_t guarantees result>=0.
+    HPBC_POSTCONDITION2(result ==
+                      default_modsub_unsigned<LowuopsTag>::call(a, b, modulus));
     return result;
   }
 };
 #endif
 
 
+// See explanation inside  default_modsub_unsigned<LowlatencyTag>  for why we
+// don't need two different low latency functions for taking advantage of when
+// 'b' was recently unchanged vs. when 'a' was recently unchanged.
+template <>
+struct impl_modular_subtraction_unsigned<std::uint32_t, LowlatencyTag> {
+  HURCHALLA_FORCE_INLINE static
+  std::uint32_t call(std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
+  {
+    using std::uint32_t;
+    HPBC_PRECONDITION2(modulus>0);
+    HPBC_PRECONDITION2(a<modulus);  // uint32_t guarantees a>=0.
+    HPBC_PRECONDITION2(b<modulus);  // uint32_t guarantees b>=0.
+
+    uint32_t diff = b - modulus;
+    uint32_t tmp = a - diff;
+
+    uint32_t a2 = a;   // we prefer not to overwrite an input
+    // Note we don't use LEA, so we don't worry about RBP/EBP or R13
+    __asm__ ("subl %[b], %[a2] \n\t"            /* res = a - b */
+             "cmovbl %[tmp], %[a2] \n\t"        /* res = (a<b) ? tmp : res */
+             : [a2]"+&r"(a2)
+# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [b]"r"(b), [tmp]"r"(tmp)
+# else
+             : [b]"rm"(b), [tmp]"rm"(tmp)
+# endif
+             : "cc");
+    uint32_t result = a2;
+
+    HPBC_POSTCONDITION2(result < modulus);  // uint32_t guarantees result>=0.
+    HPBC_POSTCONDITION2(result ==
+                   default_modsub_unsigned<LowlatencyTag>::call(a, b, modulus));
+    return result;
+  }
+};
+
+template <>
+struct impl_modular_subtraction_unsigned<std::uint64_t, LowlatencyTag> {
+  HURCHALLA_FORCE_INLINE static
+  std::uint64_t call(std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
+  {
+    using std::uint64_t;
+    HPBC_PRECONDITION2(modulus>0);
+    HPBC_PRECONDITION2(a<modulus);  // uint64_t guarantees a>=0.
+    HPBC_PRECONDITION2(b<modulus);  // uint64_t guarantees b>=0.
+
+    uint64_t diff = b - modulus;
+    uint64_t tmp = a - diff;
+
+    uint64_t a2 = a;   // we prefer not to overwrite an input
+    // Note we don't use LEA, so we don't worry about RBP/EBP or R13
+    __asm__ ("subq %[b], %[a2] \n\t"            /* res = a - b */
+             "cmovbq %[tmp], %[a2] \n\t"        /* res = (a<b) ? tmp : res */
+             : [a2]"+&r"(a2)
+# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [b]"r"(b), [tmp]"r"(tmp)
+# else
+             : [b]"rm"(b), [tmp]"rm"(tmp)
+# endif
+             : "cc");
+    uint64_t result = a2;
+
+    HPBC_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
+    HPBC_POSTCONDITION2(result ==
+                   default_modsub_unsigned<LowlatencyTag>::call(a, b, modulus));
+    return result;
+  }
+};
+
+#ifdef HURCHALLA_ENABLE_INLINE_ASM_128_BIT
+template <>
+struct impl_modular_subtraction_unsigned<__uint128_t, LowlatencyTag> {
+  HURCHALLA_FORCE_INLINE static
+  __uint128_t call(__uint128_t a, __uint128_t b, __uint128_t modulus)
+  {
+    using std::uint64_t;
+    HPBC_PRECONDITION2(modulus>0);
+    HPBC_PRECONDITION2(a<modulus);  // __uint128_t guarantees a>=0.
+    HPBC_PRECONDITION2(b<modulus);  // __uint128_t guarantees b>=0.
+
+    __uint128_t diff = b - modulus;
+    __uint128_t tmp = a - diff;
+
+    uint64_t tmplo = static_cast<uint64_t>(tmp);
+    uint64_t tmphi = static_cast<uint64_t>(tmp >> 64);
+    uint64_t alo = static_cast<uint64_t>(a);
+    uint64_t ahi = static_cast<uint64_t>(a >> 64);
+    uint64_t blo = static_cast<uint64_t>(b);
+    uint64_t bhi = static_cast<uint64_t>(b >> 64);
+    // Note we don't use LEA, so we don't worry about RBP/EBP or R13
+    __asm__ ("subq %[blo], %[alo] \n\t"         /* res = a - b */
+             "sbbq %[bhi], %[ahi] \n\t"
+             "cmovbq %[tmplo], %[alo] \n\t"     /* res = (a<b) ? tmp : res */
+             "cmovbq %[tmphi], %[ahi] \n\t"
+             : [alo]"+&r"(alo), [ahi]"+&r"(ahi)
+# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [blo]"r"(blo), [bhi]"r"(bhi), [tmplo]"r"(tmplo), [tmphi]"r"(tmphi)
+# else
+             : [blo]"rm"(blo), [bhi]"rm"(bhi), [tmplo]"rm"(tmplo), [tmphi]"rm"(tmphi)
+# endif
+             : "cc");
+    __uint128_t result = (static_cast<__uint128_t>(ahi) << 64) | alo;
+
+    HPBC_POSTCONDITION2(result < modulus);  // __uint128_t guarantees result>=0.
+    HPBC_POSTCONDITION2(result ==
+                   default_modsub_unsigned<LowlatencyTag>::call(a, b, modulus));
+    return result;
+  }
+};
+#endif
+
+// end of inline asm functions for x86_64
+#endif
+
+
 
 // version for unsigned T
-template <typename T, bool = ut_numeric_limits<T>::is_signed>
+template <typename T, class PTAG, bool = ut_numeric_limits<T>::is_signed>
 struct impl_modular_subtraction {
   HURCHALLA_FORCE_INLINE static T call(T a, T b, T modulus)
   {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
-    return impl_modular_subtraction_unsigned<T>::call(a, b, modulus);
+    return impl_modular_subtraction_unsigned<T,PTAG>::call(a, b, modulus);
   }
 };
 
 // version for signed T
-template <typename T>
-struct impl_modular_subtraction<T, true> {
+template <typename T, class PTAG>
+struct impl_modular_subtraction<T, PTAG, true> {
   HURCHALLA_FORCE_INLINE static T call(T a, T b, T modulus)
   {
     static_assert(ut_numeric_limits<T>::is_integer, "");
@@ -234,12 +465,13 @@ struct impl_modular_subtraction<T, true> {
     U mask = static_cast<U>(tmp >> ut_numeric_limits<T>::digits);
     U masked_modulus = static_cast<U>(mask & static_cast<U>(modulus));
     U result = static_cast<U>(static_cast<U>(tmp) + masked_modulus);
-    HPBC_ASSERT2(result == impl_modular_subtraction_unsigned<U>::call(
+    HPBC_ASSERT2(result == impl_modular_subtraction_unsigned<U,PTAG>::call(
                 static_cast<U>(a), static_cast<U>(b), static_cast<U>(modulus)));
 #else
-    U result = impl_modular_subtraction_unsigned<U>::call(static_cast<U>(a),
+    U result= impl_modular_subtraction_unsigned<U,PTAG>::call(static_cast<U>(a),
                                     static_cast<U>(b), static_cast<U>(modulus));
 #endif
+
     return static_cast<T>(result);
   }
 };

@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022 Jeffrey Hurchalla.
+// Copyright (c) 2020-2025 Jeffrey Hurchalla.
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -25,7 +25,9 @@ namespace hurchalla { namespace detail {
 // Returns  result = x (mod n),  with 0 <= result < n.
 
 
-// minor note: uses a static member function to disallow ADL.
+// Fyi: we use structs with static member functions to disallow ADL and to make
+// specializations simple and easy.
+
 struct default_halfrange_get_canonical {
   template <typename S>
   HURCHALLA_FORCE_INLINE static S call(S x, S n)
@@ -88,6 +90,51 @@ struct halfrange_get_canonical {
 #if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
      defined(HURCHALLA_ALLOW_INLINE_ASM_HALFRANGE_GET_CANONICAL)) && \
       defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
+
+#ifdef HURCHALLA_ENABLE_INLINE_ASM_128_BIT
+template <>
+struct halfrange_get_canonical<__int128_t> {
+  HURCHALLA_FORCE_INLINE
+  static __int128_t call(__int128_t x, __int128_t n)
+  {
+    using std::uint64_t;
+    HPBC_PRECONDITION2(n > 0);
+    HPBC_PRECONDITION2(-n <= x && x < n);
+
+    static_assert(static_cast<__int128_t>(-1) == ~(static_cast<__int128_t>(0)),
+                         "__int128_t must use two's complement representation");
+    static_assert(static_cast<__int128_t>(static_cast<__uint128_t>(static_cast<__int128_t>(-1))) ==
+                  static_cast<__int128_t>(-1),
+                  "Casting a signed __int128_t value to unsigned and back "
+                  "again must result in the original value");
+
+    uint64_t xlo = static_cast<uint64_t>(x);
+    uint64_t xhi = static_cast<uint64_t>(x >> 64);
+    uint64_t xlo2 = xlo;
+    uint64_t xhi2 = xhi;
+    uint64_t nlo = static_cast<uint64_t>(n);
+    uint64_t nhi = static_cast<uint64_t>(n >> 64);
+    __asm__ ("addq %[nlo], %[xlo] \n\t"        /* res = x + n */
+             "adcq %[nhi], %[xhi] \n\t"
+             "cmovaeq %[xlo2], %[xlo] \n\t"    /* res = (res>=n) ? x : res */
+             "cmovaeq %[xhi2], %[xhi] \n\t"
+             : [xlo]"+&r"(xlo), [xhi]"+&r"(xhi)
+# if defined(__clang__)       /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [nlo]"r"(nlo), [nhi]"r"(nhi), [xlo2]"r"(xlo2), [xhi2]"r"(xhi2)
+# else
+             : [nlo]"rm"(nlo), [nhi]"rm"(nhi), [xlo2]"rm"(xlo2), [xhi2]"rm"(xhi2)
+# endif
+             : "cc");
+    __int128_t result = static_cast<__int128_t>(
+                                   (static_cast<__uint128_t>(xhi) << 64) | xlo);
+
+    HPBC_POSTCONDITION2(0 <= result && result < n);
+    HPBC_POSTCONDITION2(result == default_halfrange_get_canonical::call(x,n));
+    return result;
+  }
+};
+#endif
+
 template <>
 struct halfrange_get_canonical<std::int64_t> {
   HURCHALLA_FORCE_INLINE

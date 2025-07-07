@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022 Jeffrey Hurchalla.
+// Copyright (c) 2020-2025 Jeffrey Hurchalla.
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -19,7 +19,9 @@
 namespace hurchalla { namespace detail {
 
 
-// note: uses a static member function to disallow ADL.
+// Fyi: the purpose of having structs with static member functions is to
+// disallow ADL and to make specializations simple and easy.
+
 struct default_impl_absdiff_unsigned {
   template <typename T>
   HURCHALLA_FORCE_INLINE static T call(T a, T b)
@@ -63,7 +65,11 @@ struct impl_absolute_value_difference_unsigned<std::uint32_t> {
     __asm__ ("subl %[b], %[tmp] \n\t"       /* tmp = a - b */
              "cmovbl %[diff], %[tmp] \n\t"  /* tmp = (a < b) ? diff : tmp */
              : [tmp]"+&r"(tmp)
+# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
              : [b]"r"(b), [diff]"r"(diff)
+# else
+             : [b]"rm"(b), [diff]"rm"(diff)
+# endif
              : "cc");
     uint32_t result = tmp;
 
@@ -84,7 +90,11 @@ struct impl_absolute_value_difference_unsigned<std::uint64_t> {
     __asm__ ("subq %[b], %[tmp] \n\t"       /* tmp = a - b */
              "cmovbq %[diff], %[tmp] \n\t"  /* tmp = (a < b) ? diff : tmp */
              : [tmp]"+&r"(tmp)
+# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
              : [b]"r"(b), [diff]"r"(diff)
+# else
+             : [b]"rm"(b), [diff]"rm"(diff)
+# endif
              : "cc");
     uint64_t result = tmp;
 
@@ -93,6 +103,41 @@ struct impl_absolute_value_difference_unsigned<std::uint64_t> {
     return result;
   }
 };
+
+#ifdef HURCHALLA_ENABLE_INLINE_ASM_128_BIT
+template <>
+struct impl_absolute_value_difference_unsigned<__uint128_t> {
+  HURCHALLA_FORCE_INLINE
+  static __uint128_t call(__uint128_t a, __uint128_t b)
+  {
+    using std::uint64_t;
+    __uint128_t diff = static_cast<__uint128_t>(b - a);
+
+    uint64_t alo = static_cast<uint64_t>(a);
+    uint64_t ahi = static_cast<uint64_t>(a >> 64);
+    uint64_t difflo = static_cast<uint64_t>(diff);
+    uint64_t diffhi = static_cast<uint64_t>(diff >> 64);
+    uint64_t blo = static_cast<uint64_t>(b);
+    uint64_t bhi = static_cast<uint64_t>(b >> 64);
+    __asm__ ("subq %[blo], %[alo] \n\t"       /* tmp = a - b */
+             "sbbq %[bhi], %[ahi] \n\t"
+             "cmovbq %[difflo], %[alo] \n\t"  /* tmp = (a < b) ? diff : tmp */
+             "cmovbq %[diffhi], %[ahi] \n\t"
+             : [alo]"+&r"(alo), [ahi]"+&r"(ahi)
+# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [blo]"r"(blo), [bhi]"r"(bhi), [difflo]"r"(difflo), [diffhi]"r"(diffhi)
+# else
+             : [blo]"rm"(blo), [bhi]"rm"(bhi), [difflo]"rm"(difflo), [diffhi]"rm"(diffhi)
+# endif
+             : "cc");
+    __uint128_t result = (static_cast<__uint128_t>(ahi) << 64) | alo;
+
+    HPBC_POSTCONDITION2(result<=a || result<=b);
+    HPBC_POSTCONDITION2(result == default_impl_absdiff_unsigned::call(a, b));
+    return result;
+  }
+};
+#endif
 
 #endif
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022 Jeffrey Hurchalla.
+// Copyright (c) 2020-2025 Jeffrey Hurchalla.
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -11,7 +11,7 @@
 
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/quarterrange_get_canonical.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
-#include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
+#include "hurchalla/modular_arithmetic/detail/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"

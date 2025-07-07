@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2022 Jeffrey Hurchalla.
+# Copyright (c) 2020-2025 Jeffrey Hurchalla.
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -47,6 +47,7 @@ target_sources(hurchalla_basic_modular_arithmetic INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/modular_subtraction.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/impl_modular_multiplicative_inverse.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/impl_modular_pow.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/optimization_tag_structs.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/platform_specific/impl_absolute_value_difference.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/platform_specific/impl_modular_addition.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/platform_specific/impl_modular_multiplication.h>

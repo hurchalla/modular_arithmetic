@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022 Jeffrey Hurchalla.
+// Copyright (c) 2020-2025 Jeffrey Hurchalla.
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -17,10 +17,10 @@
 namespace hurchalla {
 
 
-// Alternatively, please consider using the montgomery_multiplication class
+// Alternatively, please consider using the montgomery multiplication class
 // MontgomeryForm (specifically its multiply function) instead of this function
 // modular_multiplication_prereduced_inputs().  If you are heavily using modular
-// multiplication in your code, there's a decent chance that montgomery
+// multiplication in your code, there's a very good chance that montgomery
 // multiplication will improve performance- often significantly.  It always
 // requires an odd modulus though.
 
@@ -44,8 +44,9 @@ T modular_multiplication_prereduced_inputs(T a, T b, T modulus)
 // You may find the function modular_multiplication_has_slow_perf() to be useful
 // when you have a calculation that seems borderline as to whether standard
 // modular multiplication or montgomery multiplication would perform better, in
-// general across systems.  You can use this function to choose at compile-time
-// between using montgomery or standard modmult (e.g. with constexpr if).
+// general across systems.  You can use this function to help you choose at
+// compile-time whether you will perform a montgomery or standard modmult (e.g.
+// by calling this function in a constexpr if).
 template <typename T>
 HURCHALLA_FORCE_INLINE constexpr bool modular_multiplication_has_slow_perf()
 {

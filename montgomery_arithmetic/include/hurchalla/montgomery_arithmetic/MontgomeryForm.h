@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2024 Jeffrey Hurchalla.
+// Copyright (c) 2020-2025 Jeffrey Hurchalla.
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -12,7 +12,7 @@
 #include "hurchalla/montgomery_arithmetic/detail/ImplMontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontgomeryDefault.h"
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/montgomery_pow.h"
-#include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
+#include "hurchalla/modular_arithmetic/detail/optimization_tag_structs.h"
 #include "hurchalla/util/traits/is_equality_comparable.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
@@ -402,12 +402,9 @@ public:
 
 
     // Returns the modular evaluation of  x * x.
-    // Performance notes:
-    //   For some MontyTypes, this function can offer better performance than
-    // multiply(x, x), so long as type T is the same size or smaller than the
-    // CPU's native integer register size.  If type T is larger than the CPU's
-    // integer register size, this function is likely to perform worse or no
-    // better than multiply(x, x).
+    // Performance note: for some MontyTypes, this function will provide better
+    // performance than multiply(x, x).  It is never less efficient, and so you
+    // should always prefer to use it over multiply(x, x).
     template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
     MontgomeryValue square(MontgomeryValue x) const
     {
@@ -417,9 +414,7 @@ public:
         return ret;
     }
     // "Fused square with subtract" operation.  Returns the modular evaluation
-    // of (x * x) - cv.  Note that this function is usually but not always a
-    // good performance replacement for fmsub(x, x, cv); see the comments above
-    // square() for details.
+    // of (x * x) - cv.
     template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
     MontgomeryValue fusedSquareSub(MontgomeryValue x, CanonicalValue cv) const
     {
@@ -429,9 +424,7 @@ public:
         return ret;
     }
     // "Fused square with add" operation.  Returns the modular evaluation
-    // of (x * x) + cv.  Note that this function is usually but not always a
-    // good performance replacement for fmsub(x, x, cv); see the comments above
-    // square() for details.
+    // of (x * x) + cv.
     template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
     MontgomeryValue fusedSquareAdd(MontgomeryValue x, CanonicalValue cv) const
     {
@@ -487,14 +480,15 @@ public:
 
 
     // Returns the "greatest common divisor" of the standard representations
-    // (non-montgomery) of both x and the modulus, using the supplied functor.
-    // The functor must take two integral arguments of the same type and return
-    // the gcd of its two arguments.  [Usually you would make the functor's
-    // operator() a templated function, where the template parameter represents
-    // the integral argument type.  Or more simply, you can just use a lambda,
-    // with 'auto' type for its function parameters.]
-    // Calling  gcd_with_modulus(x)  is more efficient than computing the
-    // equivalent value  gcd_functor(convertOut(x), modulus).
+    // (non-montgomery) of both x and the modulus, using the gcd functor that
+    // you supply. The functor must take two integral arguments of the same type
+    // and return the gcd of its two arguments.  Calling gcd_with_modulus(x)
+    // will return the same value as gcd_functor(convertOut(x), modulus), but
+    // using  gcd_with_modulus()  is more efficient.
+    // [With regard to the functor you supply, usually you would make the
+    // functor's operator() a templated function, where the template parameter
+    // represents the integral argument type.  Or more simply, you could just
+    // use a lambda, with 'auto' type for its function parameters.]
     template <class F> HURCHALLA_FORCE_INLINE
     T gcd_with_modulus(MontgomeryValue x, const F& gcd_functor) const
     {

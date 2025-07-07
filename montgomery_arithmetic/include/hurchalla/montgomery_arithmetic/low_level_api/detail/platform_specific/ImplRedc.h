@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022 Jeffrey Hurchalla.
+// Copyright (c) 2020-2025 Jeffrey Hurchalla.
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,7 +9,7 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_IMPL_REDC_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
+#include "hurchalla/modular_arithmetic/detail/optimization_tag_structs.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
@@ -173,6 +173,15 @@ struct RedcIncomplete {
 
 
 
+
+
+
+#if 1
+// This is the old code, which is well proven.  The #else section should in
+// theory be preferable, but I need to test it for speed and correctness to be
+// certain it's ready to use.
+
+
 template <typename T>
 struct DefaultRedcStandard
 {
@@ -280,6 +289,66 @@ struct RedcStandard<std::uint64_t>
 #endif   // (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) ||
          //  defined(HURCHALLA_ALLOW_INLINE_ASM_REDC)) &&
          // defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
+
+
+
+#else
+
+
+template <typename T>
+struct RedcStandard
+{
+  static_assert(ut_numeric_limits<T>::is_integer, "");
+  static_assert(!(ut_numeric_limits<T>::is_signed), "");
+  static_assert(ut_numeric_limits<T>::is_modulo, "");
+
+  // For PTAGs see optimization_tag_structs.h
+  template <class PTAG>
+  static HURCHALLA_FORCE_INLINE T call(T u_hi, T u_lo, T n, T inv_n, PTAG)
+  {
+    using P = typename safely_promote_unsigned<T>::type;
+    // This implementation is based closely on RedcIncomplete::call() above.
+    // Thus the algorithm should be correct for the same reasons given there.
+    // REDC requires u = (u_hi*R + u_lo) < n*R.  As shown in precondition #1 in
+    // RedcIncomplete's call, u_hi < n guarantees this.
+    HPBC_PRECONDITION2(u_hi < n);
+    HPBC_PRECONDITION2(
+                static_cast<T>(static_cast<P>(n) * static_cast<P>(inv_n)) == 1);
+    HPBC_PRECONDITION2(n % 2 == 1);
+    HPBC_PRECONDITION2(n > 1);
+
+    T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
+    T mn_lo;
+    T mn_hi = ::hurchalla::unsigned_multiply_to_hilo_product(mn_lo, m, n);
+    HPBC_ASSERT2(mn_hi < n);
+#if 0
+    // If we copied the rest of RedcIncomplete::call(), we would get:
+    T t_hi = static_cast<T>(u_hi - mn_hi);   // t_hi = (u_hi - mn_hi) mod R
+    ovf = (u_hi < mn_hi);    // tells us if the subtraction wrapped/overflowed
+    HPBC_ASSERT2(u_lo == mn_lo);
+    // And by RedcIncomplete::call()'s Postcondition #1, we would have:
+    T result = (ovf) ? static_cast<T>(t_hi + n) : t_hi;
+#else
+    // Looking closely at the #if section above, it's a modular subtraction.
+    // The most efficient way to compute it is to call our dedicated function:
+    T result =
+     ::hurchalla::modular_subtraction_prereduced_inputs<T,PTAG>(u_hi, mn_hi, n);
+#endif
+
+    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
+        bool overf;
+        T res = RedcIncomplete::call(overf, u_hi, u_lo, n, inv_n);
+        res = (overf) ? static_cast<T>(res + n) : res;
+        HPBC_POSTCONDITION2(result == res);
+    }
+    HPBC_POSTCONDITION2(result < n);
+    return result;
+  }
+};
+
+
+#endif
+
 
 
 }} // end namespace

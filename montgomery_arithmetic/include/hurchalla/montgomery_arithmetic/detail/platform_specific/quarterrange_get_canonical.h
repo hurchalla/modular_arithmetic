@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022 Jeffrey Hurchalla.
+// Copyright (c) 2020-2025 Jeffrey Hurchalla.
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -25,7 +25,9 @@ namespace hurchalla { namespace detail {
 // Returns  result = x (mod n),  with 0 <= result < n.
 
 
-// minor note: uses a static member function to disallow ADL.
+// Fyi: we use structs with static member functions to disallow ADL and to make
+// specializations simple and easy.
+
 struct default_quarterrange_get_canonical {
   template <typename T>
   HURCHALLA_FORCE_INLINE static T call(T x, T n)
@@ -86,6 +88,42 @@ struct quarterrange_get_canonical {
 #if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
      defined(HURCHALLA_ALLOW_INLINE_ASM_QUARTERRANGE_GET_CANONICAL)) && \
       defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
+
+#ifdef HURCHALLA_ENABLE_INLINE_ASM_128_BIT
+template <>
+struct quarterrange_get_canonical<__uint128_t> {
+  HURCHALLA_FORCE_INLINE
+  static __uint128_t call(__uint128_t x, __uint128_t n)
+  {
+    using std::uint64_t;
+    HPBC_PRECONDITION2(x < static_cast<__uint128_t>(2*n));
+
+    uint64_t xlo = static_cast<uint64_t>(x);
+    uint64_t xhi = static_cast<uint64_t>(x >> 64);
+    uint64_t xlo2 = xlo;
+    uint64_t xhi2 = xhi;
+    uint64_t nlo = static_cast<uint64_t>(n);
+    uint64_t nhi = static_cast<uint64_t>(n >> 64);
+    __asm__ ("subq %[nlo], %[xlo] \n\t"       /* res = x - n */
+             "sbbq %[nhi], %[xhi] \n\t"
+             "cmovbq %[xlo2], %[xlo] \n\t"    /* res = (x<n) ? x : res */
+             "cmovbq %[xhi2], %[xhi] \n\t"
+             : [xlo]"+&r"(xlo), [xhi]"+&r"(xhi)
+# if defined(__clang__)       /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [nlo]"r"(nlo), [nhi]"r"(nhi), [xlo2]"r"(xlo2), [xhi2]"r"(xhi2)
+# else
+             : [nlo]"rm"(nlo), [nhi]"rm"(nhi), [xlo2]"rm"(xlo2), [xhi2]"rm"(xhi2)
+# endif
+             : "cc");
+    __uint128_t result = (static_cast<__uint128_t>(xhi) << 64) | xlo;
+
+    HPBC_POSTCONDITION2(result < n);
+    HPBC_POSTCONDITION2(result== default_quarterrange_get_canonical::call(x,n));
+    return result;
+  }
+};
+#endif
+
 template <>
 struct quarterrange_get_canonical<std::uint64_t> {
   HURCHALLA_FORCE_INLINE
@@ -95,16 +133,17 @@ struct quarterrange_get_canonical<std::uint64_t> {
 
     std::uint64_t res = x;
     std::uint64_t tmp = x;
-    __asm__ ("subq %[n], %[tmp] \n\t"       /* tmp = x - n */
-             "cmovaeq %[tmp], %[res] \n\t"  /* res = (x>=n) ? tmp : x */
-             : [tmp]"+&r"(tmp), [res]"+r"(res)
+    __asm__ ("subq %[n], %[res] \n\t"       /* res = x - n */
+             "cmovbq %[tmp], %[res] \n\t"   /* res = (x<n) ? x : res */
+             : [res]"+&r"(res)
 # if defined(__clang__)       /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
-             : [n]"r"(n)
+             : [n]"r"(n), [tmp]"r"(tmp)
 # else
-             : [n]"rm"(n)
+             : [n]"rm"(n), [tmp]"rm"(tmp)
 # endif
              : "cc");
     std::uint64_t result = res;
+
     HPBC_POSTCONDITION2(result < n);
     HPBC_POSTCONDITION2(result== default_quarterrange_get_canonical::call(x,n));
     return result;
@@ -120,16 +159,17 @@ struct quarterrange_get_canonical<std::uint32_t> {
 
     std::uint32_t res = x;
     std::uint32_t tmp = x;
-    __asm__ ("subl %[n], %[tmp] \n\t"       /* tmp = x - n */
-             "cmovael %[tmp], %[res] \n\t"  /* res = (x>=n) ? tmp : x */
-             : [tmp]"+&r"(tmp), [res]"+r"(res)
+    __asm__ ("subl %[n], %[res] \n\t"       /* res = x - n */
+             "cmovbl %[tmp], %[res] \n\t"   /* res = (x<n) ? x : res */
+             : [res]"+&r"(res)
 # if defined(__clang__)       /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
-             : [n]"r"(n)
+             : [n]"r"(n), [tmp]"r"(tmp)
 # else
-             : [n]"rm"(n)
+             : [n]"rm"(n), [tmp]"rm"(tmp)
 # endif
              : "cc");
     std::uint32_t result = res;
+
     HPBC_POSTCONDITION2(result < n);
     HPBC_POSTCONDITION2(result== default_quarterrange_get_canonical::call(x,n));
     return result;

@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022 Jeffrey Hurchalla.
+// Copyright (c) 2020-2025 Jeffrey Hurchalla.
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -16,6 +16,11 @@
 namespace hurchalla {
 
 
+// Alternatively, please consider using the MontgomeryForm class member function
+// pow() instead of this function modular_pow().  There's an excellent chance
+// that you will achieve much better perfomance using MontgomeryForm's pow -
+// though note that MontgomeryForm can only be used if your modulus is odd.
+
 template <typename T>
 T modular_pow(T base, T exponent, T modulus)
 {
@@ -26,7 +31,7 @@ T modular_pow(T base, T exponent, T modulus)
     T result = detail::impl_modular_pow::call(base, exponent, modulus);
 
     // POSTCONDITION:
-    //   Returns the modular exponentiation of base^exponent (mod modulus).
+    //  Returns the modular exponentiation of base to the exponent (mod modulus)
     HPBC_POSTCONDITION(result<modulus);
     return result;
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022 Jeffrey Hurchalla.
+// Copyright (c) 2020-2025 Jeffrey Hurchalla.
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -10,6 +10,7 @@
 
 
 #include "hurchalla/modular_arithmetic/modular_addition.h"
+#include "hurchalla/modular_arithmetic/detail/optimization_tag_structs.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/conditional_select.h"
@@ -47,11 +48,13 @@
 namespace hurchalla { namespace detail {
 
 
+// Fyi: the purpose of having structs with static member functions is to
+// disallow ADL and to make specializations simple and easy.
+
 // Slow implementation that works for all compilers and architectures.
 // Ideally for best performance, call with a >= b.
 // Credit: this code was adapted from mulmod() at
 //   http://community.topcoder.com/tc?module=Static&d1=tutorials&d2=primalityTesting
-// Note: uses a static member function to disallow ADL.
 struct slow_modular_multiplication {
   template <typename T>
   HURCHALLA_FORCE_INLINE static T call(T a, T b, T modulus)
@@ -65,10 +68,12 @@ struct slow_modular_multiplication {
     T result = 0;
     while (b > 0) {
         namespace hc = ::hurchalla;
-        T tmp = hc::modular_addition_prereduced_inputs(result, a, modulus);
+        T tmp = hc::modular_addition_prereduced_inputs<T,LowlatencyTag>(
+                                                            a, result, modulus);
           // result = (b&1) ? tmp : result
         result = hc::conditional_select((b & 1u), tmp, result);
-        a = hc::modular_addition_prereduced_inputs(a, a, modulus);
+        a = hc::modular_addition_prereduced_inputs<T,LowlatencyTag>(
+                                                                 a, a, modulus);
         b = static_cast<T>(b >> 1);
     }
     return result;
@@ -164,7 +169,7 @@ template <> struct impl_modular_multiplication<std::uint32_t> {
     using P = safely_promote_unsigned<std::uint64_t>::type;
     std::uint32_t result;
     // Note: at the time of this writing (April 2020), the MS documentation of
-    // udiv64 is likely incomplete.  udiv64 is almost certainly a direct
+    // _udiv64 is likely incomplete.  _udiv64 is almost certainly a direct
     // translation of the x86/x64 assembly "div" instruction (which we want).
     // See  https://developercommunity.visualstudio.com/content/problem/896815/-udiv128-causes-integer-overflow-and-doesnt-have-a.html
     _udiv64(__emulu(a, b), modulus, &result);
@@ -251,7 +256,7 @@ template <> struct impl_modular_multiplication<std::uint64_t> {
                         std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
   {
     // Note: at the time of this writing (April 2020), the MS documentation of
-    // udiv128 is likely incomplete.  udiv128 is almost certainly a direct
+    // _udiv128 is likely incomplete.  _udiv128 is almost certainly a direct
     // translation of the x64 assembly "div" instruction (which we want!).
     // See  https://developercommunity.visualstudio.com/content/problem/896815/-udiv128-causes-integer-overflow-and-doesnt-have-a.html
     std::uint64_t productHigh, result;

@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Jeffrey Hurchalla.
+// Copyright (c) 2024-2025 Jeffrey Hurchalla.
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,7 +9,7 @@
 #define HURCHALLA_MONTGOMERY_ARITHMETIC_IMPL_MONTGOMERY_FORM_H_INCLUDED
 
 
-#include "hurchalla/montgomery_arithmetic/low_level_api/optimization_tag_structs.h"
+#include "hurchalla/modular_arithmetic/detail/optimization_tag_structs.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
@@ -22,7 +22,7 @@ namespace hurchalla { namespace detail {
 // The primary template below handles when InlineAll == true, and annotates
 // all class functions with a force inline attribute.
 // The template specialization handles InlineAll == false, and does not annotate
-// any of the class functionw with a force inline attibute.
+// any of the class functions with a force inline attibute.
 //
 // Note: this is a rare case where ugly #define / #undef / #include hacking
 // seems to be the best way to make the code clear and maintainable.  Placing or
