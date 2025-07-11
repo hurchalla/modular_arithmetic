@@ -169,10 +169,23 @@ public:
     }
 
 
-    // Returns the modular sum of (the montgomery values) x and y.  Performance
-    // note: add may have lower latency than subtract (it should never have
-    // higher latency), and subtract may use fewer uops than add (it should
-    // never use more uops).
+    // Returns the modular sum of (the montgomery values) x and y.
+    // [Note on Performance #1:] You will get add() to complete with its lowest
+    // latency if 'y' was not recently changed or set before your call of add().
+    // Since addition is a commutative operation, you can optionally switch the
+    // order of 'x' and 'y' in your call to add() - this will give you the
+    // benefit of lower latency when you see that it is 'x' rather than 'y' that
+    // has not recently changed.
+    // [Note on Performance #2:] By default this class's function subtract()
+    // will use one fewer uop than add uses (subtract never uses more uops).  So
+    // optionally, if you will be performing many additions involving 'y' and
+    // you want to minimize the uop count (presumably to increase throughput),
+    // *and* if you see that 'y' will remain constant throughout many calls of
+    // add(), then you could calculate  negative_y = negate(y)  and then
+    // afterward instead of calling add() you could call
+    // subtract(x, negative_y), with different values for x.  So long as you
+    // call subtract() many times and call negate() only once, you will likely
+    // get a lower total uop count than you would from using add().
     HURCHALLA_FORCE_INLINE
     MontgomeryValue add(MontgomeryValue x, MontgomeryValue y) const
     {
@@ -212,10 +225,14 @@ public:
 
     // Returns the modular difference of (the montgomery values) x and y.  More
     // precisely, x minus y.
-    HURCHALLA_FORCE_INLINE
+    // Usually you don't want to specify PTAG (just accept the default of
+    // LowuopsTag).  For advanced use: PTAG can be either LowlatencyTag or
+    // LowuopsTag, which will optimize this function for either low latency or a
+    // low uop count.
+    template <class PTAG = LowuopsTag> HURCHALLA_FORCE_INLINE
     MontgomeryValue subtract(MontgomeryValue x, MontgomeryValue y) const
     {
-        return impl.subtract(x, y);
+        return impl.template subtract<PTAG>(x, y);
     }
     // Returns the modular difference of the montgomery value x minus the
     // canonical value y.  Performance note: this function is sometimes more
@@ -223,27 +240,27 @@ public:
     // efficient, so it can be useful to call getCanonicalValue outside of a
     // loop to get 'y' as a CanonicalValue, when you are calling subtract()
     // inside a loop.
-    HURCHALLA_FORCE_INLINE
+    template <class PTAG = LowuopsTag> HURCHALLA_FORCE_INLINE
     MontgomeryValue subtract(MontgomeryValue x, CanonicalValue y) const
     {
-        MontgomeryValue ret = impl.subtract(x, y);
+        MontgomeryValue ret = impl.template subtract<PTAG>(x, y);
         HPBC_ASSERT(getCanonicalValue(ret) ==
                getCanonicalValue(subtract(x, static_cast<MontgomeryValue>(y))));
         return ret;
     }
-    HURCHALLA_FORCE_INLINE
+    template <class PTAG = LowuopsTag> HURCHALLA_FORCE_INLINE
     MontgomeryValue subtract(CanonicalValue x, MontgomeryValue y) const
     {
-        MontgomeryValue ret = impl.subtract(x, y);
+        MontgomeryValue ret = impl.template subtract<PTAG>(x, y);
         HPBC_ASSERT(getCanonicalValue(ret) ==
                getCanonicalValue(subtract(static_cast<MontgomeryValue>(x), y)));
         return ret;
     }
     // Subtracting CanonicalValues can be more efficient than the above funcs
-    HURCHALLA_FORCE_INLINE
+    template <class PTAG = LowuopsTag> HURCHALLA_FORCE_INLINE
     CanonicalValue subtract(CanonicalValue x, CanonicalValue y) const
     {
-        CanonicalValue ret = impl.subtract(x, y);
+        CanonicalValue ret = impl.template subtract<PTAG>(x, y);
         HPBC_ASSERT(ret == getCanonicalValue(subtract(
             static_cast<MontgomeryValue>(x), static_cast<MontgomeryValue>(y))));
         return ret;

@@ -149,18 +149,6 @@ public:
     virtual CanonicalValue add(CanonicalValue x, CanonicalValue y)
         const = 0;
 
-    virtual MontgomeryValue subtract(MontgomeryValue x, MontgomeryValue y)
-        const = 0;
-
-    virtual MontgomeryValue subtract(MontgomeryValue x, CanonicalValue y)
-        const = 0;
-
-    virtual MontgomeryValue subtract(CanonicalValue x, MontgomeryValue y)
-        const = 0;
-
-    virtual CanonicalValue subtract(CanonicalValue x, CanonicalValue y)
-        const = 0;
-
     virtual MontgomeryValue unorderedSubtract(MontgomeryValue x,
         MontgomeryValue y) const = 0;
     
@@ -181,6 +169,17 @@ public:
 
 
 private:
+    virtual MontgomeryValue subtract(MontgomeryValue x, MontgomeryValue y,
+        bool useLowlatencyTag) const = 0;
+
+    virtual MontgomeryValue subtract(MontgomeryValue x, CanonicalValue y,
+        bool useLowlatencyTag) const = 0;
+
+    virtual MontgomeryValue subtract(CanonicalValue x, MontgomeryValue y,
+        bool useLowlatencyTag) const = 0;
+
+    virtual CanonicalValue subtract(CanonicalValue x, CanonicalValue y,
+        bool useLowlatencyTag) const = 0;
 
     virtual MontgomeryValue multiply2(MontgomeryValue x, MontgomeryValue y,
         bool useLowlatencyTag) const = 0;
@@ -218,6 +217,27 @@ private:
 public:
 // adapters for functions that have template params; we wrap the virtual funcs
 // since virtual funcs can't be templated.
+
+    template <class PTAG = LowuopsTag>
+    MontgomeryValue subtract(MontgomeryValue x, MontgomeryValue y) const
+    {
+        return subtract(x, y, std::is_same<PTAG, LowlatencyTag>::value);
+    }
+    template <class PTAG = LowuopsTag>
+    MontgomeryValue subtract(MontgomeryValue x, CanonicalValue y) const
+    {
+        return subtract(x, y, std::is_same<PTAG, LowlatencyTag>::value);
+    }
+    template <class PTAG = LowuopsTag>
+    MontgomeryValue subtract(CanonicalValue x, MontgomeryValue y) const
+    {
+        return subtract(x, y, std::is_same<PTAG, LowlatencyTag>::value);
+    }
+    template <class PTAG = LowuopsTag>
+    CanonicalValue subtract(CanonicalValue x, CanonicalValue y) const
+    {
+        return subtract(x, y, std::is_same<PTAG, LowlatencyTag>::value);
+    }
 
     template <class PTAG = LowlatencyTag>
     MontgomeryValue multiply(MontgomeryValue x, MontgomeryValue y) const

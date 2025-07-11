@@ -142,7 +142,7 @@ class MontyHalfRange final :
         S result = static_cast<S>(-sx);
         HPBC_POSTCONDITION2(isValid(V(result)));
         HPBC_POSTCONDITION2(getCanonicalValue(V(result)) ==
-                                          getCanonicalValue(subtract(C(0), x)));
+                            getCanonicalValue(subtract(C(0), x, LowuopsTag())));
         return V(result);
     }
 
@@ -387,7 +387,8 @@ class MontyHalfRange final :
         return C(result);
     }
 
-    HURCHALLA_FORCE_INLINE V subtract(V x, V y) const
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V subtract(V x, V y, PTAG) const
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isValid(y));
@@ -397,7 +398,8 @@ class MontyHalfRange final :
         T n2 = static_cast<T>(n_ + n_);
         HPBC_ASSERT2(tx < n2);
         HPBC_ASSERT2(ty < n2);
-        T diff = ::hurchalla::modular_subtraction_prereduced_inputs(tx, ty, n2);
+        namespace hc = ::hurchalla;
+        T diff = hc::modular_subtraction_prereduced_inputs<T,PTAG>(tx, ty, n2);
         S result = static_cast<S>(diff - n_);
 #else
         C cx = getCanonicalValue(x);
@@ -408,7 +410,8 @@ class MontyHalfRange final :
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
-    HURCHALLA_FORCE_INLINE V subtract(V x, C cy) const
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V subtract(V x, C cy, PTAG) const
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(cy.get() < n_);
@@ -418,7 +421,8 @@ class MontyHalfRange final :
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
-    HURCHALLA_FORCE_INLINE V subtract(C cx, V y) const
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V subtract(C cx, V y, PTAG) const
     {
         HPBC_PRECONDITION2(cx.get() < n_);
         HPBC_PRECONDITION2(isValid(y));
@@ -428,7 +432,8 @@ class MontyHalfRange final :
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
-    HURCHALLA_FORCE_INLINE C subtract(C cx, C cy) const
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE C subtract(C cx, C cy, PTAG) const
     {
         HPBC_PRECONDITION2(cx.get() < n_);
         HPBC_PRECONDITION2(cy.get() < n_);
@@ -441,7 +446,7 @@ class MontyHalfRange final :
         S sy = static_cast<S>(cy.get());
         S sn = static_cast<S>(n_);
         namespace hc = ::hurchalla;
-        S moddiff = hc::modular_subtraction_prereduced_inputs(sx, sy, sn);
+        S moddiff = hc::modular_subtraction_prereduced_inputs<S,PTAG>(sx,sy,sn);
         HPBC_ASSERT2(moddiff >= 0);
         T result = static_cast<T>(moddiff);
         HPBC_POSTCONDITION2(result < n_);
@@ -451,7 +456,7 @@ class MontyHalfRange final :
     template <typename J, typename K>
     HURCHALLA_FORCE_INLINE V unordered_subtract(J x, K y) const
     {
-        return subtract(x, y);
+        return subtract(x, y, LowuopsTag());
     }
 
 private:

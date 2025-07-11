@@ -136,7 +136,7 @@ class MontyWrappedStandardMath final {
 
     HURCHALLA_FORCE_INLINE V negate(V x) const
     {
-        return subtract(getZeroValue(), x);
+        return subtract(getZeroValue(), x, 0);  // 0 is arbitrary, for PTAG
     }
 
     template <class PTAG>   // Performance TAG (ignored by this class)
@@ -158,7 +158,7 @@ class MontyWrappedStandardMath final {
         HPBC_PRECONDITION2(isCanonical(z));
         bool isZero;
         V product = multiply(x, y, isZero, PTAG());
-        V result = subtract(product, z);
+        V result = subtract(product, z, 0);  // 0 is arbitrary, for PTAG
         HPBC_POSTCONDITION2(isCanonical(result));
         return result;
     }
@@ -213,7 +213,8 @@ class MontyWrappedStandardMath final {
         return C(v.get());
     }
 
-    HURCHALLA_FORCE_INLINE V subtract(V x, V y) const
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V subtract(V x, V y, PTAG) const
     {
         HPBC_PRECONDITION2(isCanonical(x));
         HPBC_PRECONDITION2(isCanonical(y));
@@ -222,11 +223,12 @@ class MontyWrappedStandardMath final {
         HPBC_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
-    // Note: subtract(V, C) and subtract(C, V) will match to subtract(V x, V y)
-    // above.
-    HURCHALLA_FORCE_INLINE C subtract(C x, C y) const
+    // Note: subtract(V, C, PTAG) and subtract(C, V, PTAG) will match to
+    // subtract(V x, V y, PTAG) above.
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE C subtract(C x, C y, PTAG) const
     {
-        V v = subtract(V(x), V(y));
+        V v = subtract(V(x), V(y), 0);  // 0 is arbitrary, for PTAG
         return C(v.get());
     }
 

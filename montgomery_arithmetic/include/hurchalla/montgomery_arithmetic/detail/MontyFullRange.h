@@ -97,7 +97,7 @@ class MontyFullRange final :
 
     HURCHALLA_FORCE_INLINE V negate(V x) const
     {
-        return subtract(BC::getZeroValue(), x);
+        return subtract(BC::getZeroValue(), x, LowuopsTag());
     }
 
     HURCHALLA_FORCE_INLINE C getCanonicalValue(V x) const
@@ -152,23 +152,25 @@ class MontyFullRange final :
         return C(result);
     }
 
-    HURCHALLA_FORCE_INLINE V subtract(V x, V y) const
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V subtract(V x, V y, PTAG) const
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(isValid(y));
-        T result = ::hurchalla::
-                    modular_subtraction_prereduced_inputs(x.get(), y.get(), n_);
+        T result = ::hurchalla::modular_subtraction_prereduced_inputs
+                                      <decltype(n_),PTAG>(x.get(), y.get(), n_);
         HPBC_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
-    // Note: subtract(V, C) will match to subtract(V x, V y) above
-    // Note: subtract(C, V) will match to subtract(V x, V y) above
-    HURCHALLA_FORCE_INLINE C subtract(C cx, C cy) const
+    // Note: subtract(V, C, PTAG) will match to subtract(V x, V y, PTAG) above
+    // Note: subtract(C, V, PTAG) will match to subtract(V x, V y, PTAG) above
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE C subtract(C cx, C cy, PTAG) const
     {
         HPBC_PRECONDITION2(cx.get() < n_);
         HPBC_PRECONDITION2(cy.get() < n_);
-        T result = ::hurchalla::
-                  modular_subtraction_prereduced_inputs(cx.get(), cy.get(), n_);
+        T result = ::hurchalla::modular_subtraction_prereduced_inputs
+                                    <decltype(n_),PTAG>(cx.get(), cy.get(), n_);
         HPBC_POSTCONDITION2(result < n_);
         return C(result);
     }

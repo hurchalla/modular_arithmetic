@@ -38,19 +38,28 @@ T modular_addition_prereduced_inputs(T a, T b, T modulus)
 
 // --Performance Notes--
 
-// This function can often have lower latency than
-// modular_subtraction_prereduced_inputs, and should never have higher latency.
-// However, modular_subtraction_prereduced_inputs usually has fewer uops.  If
-// you need modular addition and you want to optimize for a low uop count
-// (presumably to increase throughput), *and* if you see that 'b' will remain
-// constant over many of your modular addition calls (typically due to you
-// calling in a loop), then as an option, you could calculate
-// negative_b = (modulus - b),  and then, instead of calling
+// For this function to be able to complete at its lowest latency, you will need
+// to ensure in your calling code (if possible) that neither 'b' nor 'modulus'
+// was recently changed (or set) prior to your call of this function - note that
+// "recently" could be on a prior loop iteration.  Generally speaking, if either
+// 'b' or 'modulus' was changed on an immediately preceding (modular) arithmetic
+// instruction, or if one of those two variables was otherwise changed
+// immediately beforehand, then usually this function will need one more cycle
+// to complete than it would need at its ideal lowest latency.
+// If you wish to maximize throughput rather than minimize latency, then you may
+// find modular subtraction to be useful - modular subtraction by default has
+// fewer uops than modular addition (note that subtraction never has lower
+// latency).  Given that modular subtraction by default uses fewer uops, if you
+// need to do modular additions and you want to optimize for a low uop count,
+// *and* if you see that 'b' will remain constant over many of your modular
+// addition calls (typically due to you calling in a loop), then as an option,
+// you could calculate:
+// negative_b = (b == 0) ? 0 : (modulus - b),  and then, instead of calling
 // modular_addition_prereduced_inputs(a, b, modulus),  you can instead call
 // modular_subtraction_prereduced_inputs(a, negative_b, modulus).  If you
 // calculate negative_b once, and then use it over many calls of
-// modular_subtraction_prereduced_inputs, then you will get most of the benefit
-// of modular subtraction's lower uop count.
+// modular_subtraction_prereduced_inputs, then potentially modular subtraction's
+// lowered uop count might increase your overall throughput slightly.
 
 // Performance note for RISC-V (and other uncommon CPU architectures that do not
 // have an instruction for conditional move or conditional select):

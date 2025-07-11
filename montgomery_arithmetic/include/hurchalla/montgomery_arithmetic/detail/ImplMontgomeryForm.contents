@@ -105,25 +105,25 @@ public:
         return impl.add(x, y);
     }
 
-    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
     MontgomeryValue subtract(MontgomeryValue x, MontgomeryValue y) const
     {
-        return impl.subtract(x, y);
+        return impl.subtract(x, y, PTAG());
     }
-    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
     MontgomeryValue subtract(MontgomeryValue x, CanonicalValue y) const
     {
-        return impl.subtract(x, y);
+        return impl.subtract(x, y, PTAG());
     }
-    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
     MontgomeryValue subtract(CanonicalValue x, MontgomeryValue y) const
     {
-        return impl.subtract(x, y);
+        return impl.subtract(x, y, PTAG());
     }
-    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
     CanonicalValue subtract(CanonicalValue x, CanonicalValue y) const
     {
-        return impl.subtract(x, y);
+        return impl.subtract(x, y, PTAG());
     }
 
     HURCHALLA_IMF_MAYBE_FORCE_INLINE
@@ -156,7 +156,7 @@ public:
         // we dont expect an impl would be able to do better than this. The
         // obvious optimization (modulus-x) generally is no good for x==0.
         // (we do not directly call the impl, so we use HURCHALLA_FLATTEN)
-        return subtract(getZeroValue(), x);
+        return subtract<LowuopsTag>(getZeroValue(), x);
     }
 
     template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
@@ -228,4 +228,3 @@ public:
         HPBC_PRECONDITION(a >= 0);
         return static_cast<T>(impl.remainder(static_cast<U>(a)));
     }
-

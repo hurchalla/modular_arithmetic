@@ -255,34 +255,6 @@ public:
         return OpenC(static_cast<typename OpenC::OT>(mfc.get()));
     }
 
-    virtual V subtract(V x, V y) const override
-    {
-        OpenMFV mfv(mf.subtract(OpenMFV(OpenV(x)), OpenMFV(OpenV(y))));
-        // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
-    }
-
-    virtual V subtract(V x, C y) const override
-    {
-        OpenMFV mfv(mf.subtract(OpenMFV(OpenV(x)), OpenMFC(OpenC(y))));
-        // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
-    }
-
-    virtual V subtract(C x, V y) const override
-    {
-        OpenMFV mfv(mf.subtract(OpenMFC(OpenC(x)), OpenMFV(OpenV(y))));
-        // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
-    }
-
-    virtual C subtract(C x, C y) const override
-    {
-        OpenMFC mfc(mf.subtract(OpenMFC(OpenC(x)), OpenMFC(OpenC(y))));
-        // note: mfc.get() might be signed or unsigned; OpenC::OT is unsigned
-        return OpenC(static_cast<typename OpenC::OT>(mfc.get()));
-    }
-
     virtual V unorderedSubtract(V x, V y) const override
     {
         OpenMFV mfv(mf.unorderedSubtract(OpenMFV(OpenV(x)), OpenMFV(OpenV(y))));
@@ -359,6 +331,62 @@ public:
     }
 
 private:
+
+    virtual V subtract(V x, V y, bool useLowlatencyTag) const override
+    {
+        OpenMFV mfv;
+        if (useLowlatencyTag) {
+            OpenMFV mfv2(mf.template subtract<LowlatencyTag>(OpenMFV(OpenV(x)), OpenMFV(OpenV(y))));
+            mfv = mfv2;
+        } else {
+            OpenMFV mfv2(mf.template subtract<LowuopsTag>(OpenMFV(OpenV(x)), OpenMFV(OpenV(y))));
+            mfv = mfv2;
+        }
+        // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
+    }
+
+    virtual V subtract(V x, C y, bool useLowlatencyTag) const override
+    {
+        OpenMFV mfv;
+        if (useLowlatencyTag) {
+            OpenMFV mfv2(mf.template subtract<LowlatencyTag>(OpenMFV(OpenV(x)), OpenMFC(OpenC(y))));
+            mfv = mfv2;
+        } else {
+            OpenMFV mfv2(mf.template subtract<LowuopsTag>(OpenMFV(OpenV(x)), OpenMFC(OpenC(y))));
+            mfv = mfv2;
+        }
+        // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
+    }
+
+    virtual V subtract(C x, V y, bool useLowlatencyTag) const override
+    {
+        OpenMFV mfv;
+        if (useLowlatencyTag) {
+            OpenMFV mfv2(mf.template subtract<LowlatencyTag>(OpenMFC(OpenC(x)), OpenMFV(OpenV(y))));
+            mfv = mfv2;
+        } else {
+            OpenMFV mfv2(mf.template subtract<LowuopsTag>(OpenMFC(OpenC(x)), OpenMFV(OpenV(y))));
+            mfv = mfv2;
+        }
+        // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
+    }
+
+    virtual C subtract(C x, C y, bool useLowlatencyTag) const override
+    {
+        OpenMFC mfc;
+        if (useLowlatencyTag) {
+            OpenMFC mfc2(mf.template subtract<LowlatencyTag>(OpenMFC(OpenC(x)), OpenMFC(OpenC(y))));
+            mfc = mfc2;
+        } else {
+            OpenMFC mfc2(mf.template subtract<LowuopsTag>(OpenMFC(OpenC(x)), OpenMFC(OpenC(y))));
+            mfc = mfc2;
+        }
+        // note: mfc.get() might be signed or unsigned; OpenC::OT is unsigned
+        return OpenC(static_cast<typename OpenC::OT>(mfc.get()));
+    }
 
     virtual V multiply2(V x, V y, bool useLowlatencyTag) const override
     {

@@ -51,14 +51,20 @@ public:
         { return pimpl->add(x, y); }
     CanonicalValue add(CanonicalValue x, CanonicalValue y) const
         { return pimpl->add(x, y); }
+
+    template <class PTAG = LowuopsTag>
     MontgomeryValue subtract(MontgomeryValue x, MontgomeryValue y) const
-        { return pimpl->subtract(x, y); }
+        { return pimpl->template subtract<PTAG>(x, y); }
+    template <class PTAG = LowuopsTag>
     MontgomeryValue subtract(MontgomeryValue x, CanonicalValue y) const
-        { return pimpl->subtract(x, y); }
+        { return pimpl->template subtract<PTAG>(x, y); }
+    template <class PTAG = LowuopsTag>
     MontgomeryValue subtract(CanonicalValue x, MontgomeryValue y) const
-        { return pimpl->subtract(x, y); }
+        { return pimpl->template subtract<PTAG>(x, y); }
+    template <class PTAG = LowuopsTag>
     CanonicalValue subtract(CanonicalValue x, CanonicalValue y) const
-        { return pimpl->subtract(x, y); }
+        { return pimpl->template subtract<PTAG>(x, y); }
+
     MontgomeryValue unorderedSubtract(MontgomeryValue x, MontgomeryValue y) const
         { return pimpl->unorderedSubtract(x, y); }
     MontgomeryValue unorderedSubtract(MontgomeryValue x, CanonicalValue y) const

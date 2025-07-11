@@ -140,6 +140,39 @@ struct GcdFunctor {
 
 namespace {
 
+template <typename M>
+void test_subtract_variants(const M& mf, typename M::MontgomeryValue x,
+         typename M::MontgomeryValue y, typename M::IntegerType expected_result)
+{
+    namespace hc = ::hurchalla;
+    using C = typename M::CanonicalValue;
+    C cx = mf.getCanonicalValue(x);
+    C cy = mf.getCanonicalValue(y);
+
+    EXPECT_TRUE(mf.convertOut(mf.subtract(x,y)) == expected_result);
+    EXPECT_TRUE(mf.convertOut(
+            mf.template subtract<hc::LowlatencyTag>(x,y)) == expected_result);
+    EXPECT_TRUE(mf.convertOut(
+            mf.template subtract<hc::LowuopsTag>(x,y)) == expected_result);
+
+    EXPECT_TRUE(mf.convertOut(mf.subtract(cx,y)) == expected_result);
+    EXPECT_TRUE(mf.convertOut(
+            mf.template subtract<hc::LowlatencyTag>(cx,y)) == expected_result);
+    EXPECT_TRUE(mf.convertOut(
+            mf.template subtract<hc::LowuopsTag>(cx,y)) == expected_result);
+
+    EXPECT_TRUE(mf.convertOut(mf.subtract(x,cy)) == expected_result);
+    EXPECT_TRUE(mf.convertOut(
+            mf.template subtract<hc::LowlatencyTag>(x,cy)) == expected_result);
+    EXPECT_TRUE(mf.convertOut(
+            mf.template subtract<hc::LowuopsTag>(x,cy)) == expected_result);
+
+    EXPECT_TRUE(mf.convertOut(mf.subtract(cx,cy)) == expected_result);
+    EXPECT_TRUE(mf.convertOut(
+            mf.template subtract<hc::LowlatencyTag>(cx,cy)) == expected_result);
+    EXPECT_TRUE(mf.convertOut(
+            mf.template subtract<hc::LowuopsTag>(cx,cy)) == expected_result);
+}
 
 template <typename M>
 void test_multiply_variants(const M& mf, typename M::MontgomeryValue x,
@@ -298,11 +331,9 @@ void test_mf_general_checks(const M& mf, typename M::IntegerType a,
                              mf.getCanonicalValue(mf.convertIn(reference_sum)));
 
     T diff1 = tma::modsub(b, a, modulus);
-    EXPECT_TRUE(mf.convertOut(mf.subtract(y,x)) == diff1);
-    EXPECT_TRUE(mf.convertOut(mf.subtract(y,xc)) == diff1);
+    test_subtract_variants(mf, y, x, diff1);
     T diff2 = tma::modsub(a, b, modulus);
-    EXPECT_TRUE(mf.convertOut(mf.subtract(x,y)) == diff2);
-    EXPECT_TRUE(mf.convertOut(mf.subtract(x,yc)) == diff2);
+    test_subtract_variants(mf, x, y, diff2);
     T us = mf.convertOut(mf.unorderedSubtract(x,y));
     EXPECT_TRUE(us == diff1 || us == diff2);
     us = mf.convertOut(mf.unorderedSubtract(y,x));
@@ -428,10 +459,8 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.add(y,x)) == 4);
         EXPECT_TRUE(mf.convertOut(mf.add(x,yc)) == 4);
         EXPECT_TRUE(mf.convertOut(mf.add(y,xc)) == 4);
-        EXPECT_TRUE(mf.convertOut(mf.subtract(y,x)) == 5);
-        EXPECT_TRUE(mf.convertOut(mf.subtract(x,y)) == 8);
-        EXPECT_TRUE(mf.convertOut(mf.subtract(y,xc)) == 5);
-        EXPECT_TRUE(mf.convertOut(mf.subtract(x,yc)) == 8);
+        test_subtract_variants(mf, y, x, 5);
+        test_subtract_variants(mf, x, y, 8);
         T us = mf.convertOut(mf.unorderedSubtract(x,y));
         EXPECT_TRUE(us == 8 || us == 5);
         us = mf.convertOut(mf.unorderedSubtract(y,x));
@@ -497,10 +526,8 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.add(y,x)) == 0);
         EXPECT_TRUE(mf.convertOut(mf.add(x,yc)) == 0);
         EXPECT_TRUE(mf.convertOut(mf.add(y,xc)) == 0);
-        EXPECT_TRUE(mf.convertOut(mf.subtract(y,x)) == 1);
-        EXPECT_TRUE(mf.convertOut(mf.subtract(x,y)) == 2);
-        EXPECT_TRUE(mf.convertOut(mf.subtract(y,xc)) == 1);
-        EXPECT_TRUE(mf.convertOut(mf.subtract(x,yc)) == 2);
+        test_subtract_variants(mf, y, x, 1);
+        test_subtract_variants(mf, x, y, 2);
         EXPECT_TRUE(mf.getCanonicalValue(mf.subtract(x,y)) ==
                                          mf.getCanonicalValue(mf.convertIn(2)));
         T us = mf.convertOut(mf.unorderedSubtract(x,y));
@@ -559,10 +586,8 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.add(y,x)) == 1);
         EXPECT_TRUE(mf.convertOut(mf.add(x,yc)) == 1);
         EXPECT_TRUE(mf.convertOut(mf.add(y,xc)) == 1);
-        EXPECT_TRUE(mf.convertOut(mf.subtract(y,x)) == 3);
-        EXPECT_TRUE(mf.convertOut(mf.subtract(x,y)) == modulus - 3);
-        EXPECT_TRUE(mf.convertOut(mf.subtract(y,xc)) == 3);
-        EXPECT_TRUE(mf.convertOut(mf.subtract(x,yc)) == modulus - 3);
+        test_subtract_variants(mf, y, x, 3);
+        test_subtract_variants(mf, x, y, modulus - 3);
         EXPECT_TRUE(mf.getCanonicalValue(mf.add(x,y)) ==
                                         mf.getCanonicalValue(mf.convertIn(1)));
         T us = mf.convertOut(mf.unorderedSubtract(x,y));

@@ -132,7 +132,7 @@ class MontyCommonBase {
         //   getZeroValue() returns a value belonging to the equivalence class
         //   0*R (mod n_).  This equivalence class can equally be represented by
         //   the value n_ (mod n_).  getUnityValue() returns a value belonging
-        //   to the equivalence class 1*R (mod n_), which is the same as 
+        //   to the equivalence class 1*R (mod n_), which is the same as
         //   r_mod_n_ (mod n_).  Therefore the subtraction results in the
         //   equivalence class (n_ - r_mod_n_) (mod n_).
         //   The constructor established the invariant  0 < r_mod_n_ < n_
@@ -178,7 +178,7 @@ class MontyCommonBase {
         // this provides the same results as the #if code, but can be more
         // efficient for some monty types
         HPBC_ASSERT2(child->isCanonical(C(u_hi)));
-        u_hi = child->subtract(C(u_hi), cv).get();
+        u_hi = child->subtract(C(u_hi), cv, LowuopsTag()).get();
 #endif
         HPBC_ASSERT2(u_hi < n_);  // verifies  u < n*R, as required for REDC
         V result = child->montyREDC(u_hi, u_lo, PTAG());
@@ -271,7 +271,7 @@ class MontyCommonBase {
         // this provides the same results as the #if code, but can be more
         // efficient for some monty types
         HPBC_ASSERT2(child->isCanonical(C(u_hi)));
-        u_hi = child->subtract(C(u_hi), z).get();
+        u_hi = child->subtract(C(u_hi), z, LowuopsTag()).get();
 #endif
         HPBC_ASSERT2(u_hi < n_);
         V result = child->montyREDC(u_hi, u_lo, PTAG());
@@ -345,7 +345,7 @@ class MontyCommonBase {
         HPBC_ASSERT2(child->isCanonical(C(u_hi)));
         T v_hi = child->add(C(u_hi), z).get();
 #endif
-        // By substitution we have 
+        // By substitution we have
         // sum        ≡ (v_hi*R + u_lo)*Rinverse  (mod n_)
         //
         // Because v_hi == (u_hi + z)%n_,  we know  v_hi < n_.

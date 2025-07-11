@@ -121,20 +121,13 @@ struct default_modsub_unsigned<LowlatencyTag> {
     // schedule it where it is sure to be calculated (by the CPU) in parallel
     // with earlier instructions, at a cost of zero additional latency.
     // This is why we only need one version of this function for low latency.
-    //
-    // Update: For the inline asm functions in this file, the explanation above
-    // isn't 100% accurate, though it's close...  If we assume that 'a' is
-    // mostly unchanging and that the compiler makes the above transformation
-    // prior to an inline asm section, then the compiler may need to make an
-    // extra copy of 'a' before entering our inline asm (as the asm stands in
-    // this file at the time this comment was written), which it wouldn't need
-    // to do when it doesn't make the transformation.  We could write new
-    // slightly different inline asm sections inside new functions (intended for
-    // when 'a' is constant) which would avoid the need for a copy, but this
-    // seems like more work and complexity than justifiable, unless we find we
-    // *REALLY* want the potential perf of definitely avoiding one possible
-    // copy.  Keep in mind on x86 a mov is free in the backend, using no uops
-    // and no execution units, and only has a cost during the frontend decode.
+    // [Note: inside an inline asm section, we need to calculate  "a - b"  both
+    // to have the result available and in order to set the carry flag for the
+    // cmov that follows (note, on x86 the subtraction will overwrite 'a', or a
+    // copy of it if the compiler made a copy before entering the asm section).
+    // I don't think we can avoid doing this in the inline asm.  So if we were
+    // for some reason to make two versions of the function, as best I can tell
+    // we would want/need to use this same inline asm for both versions.]
 
     T diff = b - modulus;
     // note: the next two lines can begin on the same clock cycle
@@ -465,8 +458,8 @@ struct impl_modular_subtraction<T, PTAG, true> {
     U mask = static_cast<U>(tmp >> ut_numeric_limits<T>::digits);
     U masked_modulus = static_cast<U>(mask & static_cast<U>(modulus));
     U result = static_cast<U>(static_cast<U>(tmp) + masked_modulus);
-    HPBC_ASSERT2(result == impl_modular_subtraction_unsigned<U,PTAG>::call(
-                static_cast<U>(a), static_cast<U>(b), static_cast<U>(modulus)));
+    HPBC_ASSERT2(result == (impl_modular_subtraction_unsigned<U,PTAG>::call(
+               static_cast<U>(a), static_cast<U>(b), static_cast<U>(modulus))));
 #else
     U result= impl_modular_subtraction_unsigned<U,PTAG>::call(static_cast<U>(a),
                                     static_cast<U>(b), static_cast<U>(modulus));

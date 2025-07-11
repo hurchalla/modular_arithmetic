@@ -132,7 +132,7 @@ class MontyFullRangeMasked final :
 
     HURCHALLA_FORCE_INLINE V negate(V x) const
     {
-        return subtract(BC::getZeroValue(), x);
+        return subtract(BC::getZeroValue(), x, LowuopsTag());
     }
 
     HURCHALLA_FORCE_INLINE C getCanonicalValue(V x) const
@@ -210,7 +210,8 @@ class MontyFullRangeMasked final :
         return C(result);
     }
 
-    HURCHALLA_FORCE_INLINE V subtract(V x, C cy) const
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V subtract(V x, C cy, PTAG) const
     {
         HPBC_PRECONDITION2(isValid(x));
         HPBC_PRECONDITION2(0 <= cy.get() && cy.get() < n_);
@@ -223,7 +224,8 @@ class MontyFullRangeMasked final :
         HPBC_POSTCONDITION2(isValid(result));
         return result;
     }
-    HURCHALLA_FORCE_INLINE V subtract(C cx, V y) const
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V subtract(C cx, V y, PTAG) const
     {
         HPBC_PRECONDITION2(0 <= cx.get() && cx.get() < n_);
         HPBC_PRECONDITION2(isValid(y));
@@ -236,17 +238,19 @@ class MontyFullRangeMasked final :
         HPBC_POSTCONDITION2(isValid(result));
         return result;
     }
-    HURCHALLA_FORCE_INLINE V subtract(V x, V y) const
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE V subtract(V x, V y, PTAG) const
     {
         C cy = getCanonicalValue(y);
-        return subtract(x, cy);
+        return subtract(x, cy, PTAG());
     }
-    HURCHALLA_FORCE_INLINE C subtract(C cx, C cy) const
+    template <class PTAG>
+    HURCHALLA_FORCE_INLINE C subtract(C cx, C cy, PTAG) const
     {
         HPBC_PRECONDITION2(cx.get() < n_);
         HPBC_PRECONDITION2(cy.get() < n_);
-        T result = ::hurchalla::modular_subtraction_prereduced_inputs(
-                                                        cx.get(), cy.get(), n_);
+        T result = ::hurchalla::modular_subtraction_prereduced_inputs
+                                    <decltype(n_),PTAG>(cx.get(), cy.get(), n_);
         HPBC_POSTCONDITION2(result < n_);
         return C(result);
     }
@@ -254,7 +258,7 @@ class MontyFullRangeMasked final :
     template <typename J, typename K>
     HURCHALLA_FORCE_INLINE V unordered_subtract(J x, K y) const
     {
-        return subtract(x, y);
+        return subtract(x, y, LowuopsTag());
     }
 
 private:
