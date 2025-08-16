@@ -84,7 +84,7 @@ struct impl_montgomery_two_pow {
         HPBC_ASSERT2(numbits > P2);
 
         int shift = numbits - P2;
-        U tmp = n >> shift;
+        U tmp = static_cast<U>(n >> shift);
         HPBC_ASSERT2(tmp <= MASK);
         size_t index = static_cast<size_t>(tmp);
         V result = MFE::twoPowLimited(mf, index);
@@ -130,7 +130,7 @@ struct impl_montgomery_two_pow {
         HPBC_ASSERT2(numbits > (P2 + 1));
 
         int shift = numbits - (P2 + 1);
-        U tmp = n >> shift;
+        U tmp = static_cast<U>(n >> shift);
         HPBC_ASSERT2(tmp <= 2u*MASK + 1u);
         size_t loindex = static_cast<size_t>(tmp) & MASK;
         V val1 = MFE::RTimesTwoPowLimited(mf, loindex, magicValue);
@@ -145,7 +145,7 @@ struct impl_montgomery_two_pow {
                 }
             }
             shift -= (P2 + 1);
-            tmp = n >> shift;
+            tmp = static_cast<U>(n >> shift);
             loindex = static_cast<size_t>(tmp) & MASK;
             val1 = MFE::RTimesTwoPowLimited(mf, loindex, magicValue);
             val2 = MFE::twoPowLimited(mf, loindex);
@@ -236,7 +236,7 @@ struct impl_montgomery_two_pow {
         std::array<V, ARRAY_SIZE> result;
         std::array<U, ARRAY_SIZE> tmp;
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-            tmp[j] = n[j] >> shift;
+            tmp[j] = static_cast<U>(n[j] >> shift);
             HPBC_ASSERT2(tmp[j] <= MASK);
             // normally we use (tmp & MASK), but it's redundant with tmp <= MASK
             result[j] = MFE::twoPowLimited(mf[j], static_cast<size_t>(tmp[j]));
@@ -247,7 +247,7 @@ struct impl_montgomery_two_pow {
             std::array<size_t, ARRAY_SIZE> index;
             std::array<V, ARRAY_SIZE> tableVal;
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-                tmp[j] = n[j] >> shift;
+                tmp[j] = static_cast<U>(n[j] >> shift);
                 index[j] = static_cast<size_t>(tmp[j]) & MASK;
                 tableVal[j] = MFE::twoPowLimited(mf[j], index[j]);
             }
@@ -306,7 +306,7 @@ struct impl_montgomery_two_pow {
 
         std::array<V, ARRAY_SIZE> result;
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-            U tmp = n[j] >> shift;
+            U tmp = static_cast<U>(n[j] >> shift);
             HPBC_ASSERT2(tmp <= MASK);
             size_t index = static_cast<size_t>(tmp);
             result[j] = table[index][j];
