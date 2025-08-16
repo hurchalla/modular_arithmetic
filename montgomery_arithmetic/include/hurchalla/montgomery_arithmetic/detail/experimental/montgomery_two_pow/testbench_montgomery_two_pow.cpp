@@ -229,7 +229,7 @@ U generate_random_value(std::mt19937_64& gen,
    static_assert(hurchalla::ut_numeric_limits<U>::is_integer, "");
    static_assert(!hurchalla::ut_numeric_limits<U>::is_signed, "");
    static_assert(hurchalla::ut_numeric_limits<U>::digits <= 128, "");
-   if (hurchalla::ut_numeric_limits<U>::digits > 64) {
+   if HURCHALLA_CPP17_CONSTEXPR (hurchalla::ut_numeric_limits<U>::digits > 64) {
       uint64_t u1 = distrib64(gen);
       uint64_t u2 = distrib64(gen);
       using P = typename hurchalla::safely_promote_unsigned<U>::type;

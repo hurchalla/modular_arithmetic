@@ -20,21 +20,6 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 endif()
 
 
-# if this is the top level CMakeLists.txt, add testing options, and enable
-# testing when testing options have been set to ON.
-if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-    option(TEST_HURCHALLA_MODULAR_ARITHMETIC
-        "Build the tests for the Hurchalla modular arithmetic library project."
-        ON)
-    option(FORCE_TEST_HURCHALLA_CPP11_STANDARD
-       "If testing this library, ensure we build googletest and tests using -std=c++11")
-    if(TEST_HURCHALLA_MODULAR_ARITHMETIC)
-        enable_testing()
-        # include(CTest)
-    endif()
-endif()
-
-
 if(NOT DEFINED CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 endif()
@@ -79,9 +64,22 @@ target_include_directories(hurchalla_modular_arithmetic
 
 # ***Tests***
 
-# if this is the top level CMakeLists.txt
+# If this is the top level CMakeLists.txt, add testing options, and enable
+# testing when testing options have been set to ON.
+
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    option(TEST_HURCHALLA_MODULAR_ARITHMETIC
+        "Build the tests for the Hurchalla modular arithmetic library project."
+        OFF)
+    option(HURCHALLA_TEST_MODULAR_ARITHMETIC_HEAVYWEIGHT
+        "Include extensive and time consuming tests."
+        OFF)
+    option(FORCE_TEST_HURCHALLA_CPP11_STANDARD
+       "If testing this library, ensure we build googletest and tests using -std=c++11")
+
     if(TEST_HURCHALLA_MODULAR_ARITHMETIC)
+        enable_testing()
+        # include(CTest)
         add_subdirectory(test)
     endif()
 endif()

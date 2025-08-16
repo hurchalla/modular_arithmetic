@@ -28,6 +28,7 @@
 #include <array>
 #include <vector>
 #include <cstddef>
+#include <utility>
 
 namespace hurchalla {
 
@@ -48,24 +49,24 @@ private:
     using U = typename extensible_make_unsigned<T>::type;
 
     struct OpenV : public V {
-        auto get() const -> decltype(V::get()) { return V::get(); }
         // for explanation of OT declaration, see
         // https://stackoverflow.com/questions/26435084/how-to-get-the-return-type-of-a-member-function-from-within-a-class
-        using OT = decltype((std::declval<OpenV>().*std::declval<decltype(&OpenV::get)>())());
+        using OT = decltype((std::declval<V>().*std::declval<decltype(&V::get)>())());
+        OT get() const { return V::get(); }
         OpenV() = default;
         explicit OpenV(OT a) : V(a) {}
         explicit OpenV(V x) : V(x) {}
     };
     struct OpenC : public C {
-        auto get() const -> decltype(C::get()) { return C::get(); }
-        using OT = decltype((std::declval<OpenC>().*std::declval<decltype(&OpenC::get)>())());
+        using OT = decltype((std::declval<C>().*std::declval<decltype(&C::get)>())());
+        OT get() const { return C::get(); }
         OpenC() = default;
         explicit OpenC(OT a) : C(a) {}
         explicit OpenC(C x) : C(x) {}
     };
     struct OpenFV : public FV {
-        auto get() const -> decltype(FV::get()) { return FV::get(); }
-        using OT = decltype((std::declval<OpenFV>().*std::declval<decltype(&OpenFV::get)>())());
+        using OT = decltype((std::declval<FV>().*std::declval<decltype(&FV::get)>())());
+        OT get() const { return FV::get(); }
         OpenFV() = default;
         explicit OpenFV(OT a) : FV(a) {}
         explicit OpenFV(FV x) : FV(x) {}
@@ -83,15 +84,15 @@ private:
 
 
     struct OpenMFV : public MFV {
-        auto get() const -> decltype(MFV::get()) { return MFV::get(); }
-        using OT = decltype((std::declval<OpenMFV>().*std::declval<decltype(&OpenMFV::get)>())());
+        using OT = decltype((std::declval<MFV>().*std::declval<decltype(&MFV::get)>())());
+        OT get() const { return MFV::get(); }
         OpenMFV() = default;
         explicit OpenMFV(OT a) : MFV(a) {}
         explicit OpenMFV(MFV x) : MFV(x) {}
         explicit OpenMFV(OpenV x) : MFV(static_cast<OT>(x.get()))
         {
             static_assert(!ut_numeric_limits<typename OpenV::OT>::is_signed, "");
-            if (ut_numeric_limits<OT>::is_signed) {
+            if HURCHALLA_CPP17_CONSTEXPR (ut_numeric_limits<OT>::is_signed) {
                 using S = typename extensible_make_signed<typename OpenV::OT>::type;
                 S s = static_cast<S>(x.get());
                 HPBC_ASSERT2(ut_numeric_limits<OT>::min() <= s &&
@@ -104,15 +105,15 @@ private:
         }
     };
     struct OpenMFC : public MFC {
-        auto get() const -> decltype(MFC::get()) { return MFC::get(); }
-        using OT = decltype((std::declval<OpenMFC>().*std::declval<decltype(&OpenMFC::get)>())());
+        using OT = decltype((std::declval<MFC>().*std::declval<decltype(&MFC::get)>())());
+        OT get() const { return MFC::get(); }
         OpenMFC() = default;
         explicit OpenMFC(OT a) : MFC(a) {}
         explicit OpenMFC(MFC x) : MFC(x) {}
         explicit OpenMFC(OpenC x) : MFC(static_cast<OT>(x.get()))
         {
             static_assert(!ut_numeric_limits<typename OpenC::OT>::is_signed, "");
-            if (ut_numeric_limits<OT>::is_signed) {
+            if HURCHALLA_CPP17_CONSTEXPR (ut_numeric_limits<OT>::is_signed) {
                 using S = typename extensible_make_signed<typename OpenC::OT>::type;
                 S s = static_cast<S>(x.get());
                 HPBC_ASSERT2(ut_numeric_limits<OT>::min() <= s &&
@@ -125,15 +126,15 @@ private:
         }
     };
     struct OpenMFFV : public MFFV {
-        auto get() const -> decltype(MFFV::get()) { return MFFV::get(); }
-        using OT = decltype((std::declval<OpenMFFV>().*std::declval<decltype(&OpenMFFV::get)>())());
+        using OT = decltype((std::declval<MFFV>().*std::declval<decltype(&MFFV::get)>())());
+        OT get() const { return MFFV::get(); }
         OpenMFFV() = default;
         explicit OpenMFFV(OT a) : MFFV(a) {}
         explicit OpenMFFV(MFFV x) : MFFV(x) {}
         explicit OpenMFFV(OpenFV x) : MFFV(static_cast<OT>(x.get()))
         {
             static_assert(!ut_numeric_limits<typename OpenFV::OT>::is_signed, "");
-            if (ut_numeric_limits<OT>::is_signed) {
+            if HURCHALLA_CPP17_CONSTEXPR (ut_numeric_limits<OT>::is_signed) {
                 using S = typename extensible_make_signed<typename OpenFV::OT>::type;
                 S s = static_cast<S>(x.get());
                 HPBC_ASSERT2(ut_numeric_limits<OT>::min() <= s &&

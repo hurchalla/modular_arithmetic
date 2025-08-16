@@ -27,6 +27,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
+#include "hurchalla/util/compiler_macros.h"
 #include "gtest/gtest.h"
 #include <cstdint>
 #include <type_traits>
@@ -98,12 +99,12 @@ void test_two_pow_array(typename MF::IntegerType starting_modulus,
 
     std::array<V,ARRAY_SIZE> results;
 
-    results = two_pow::call<MF,U,ARRAY_SIZE,0,0>(mfs, exponents);
+    results = two_pow::call<0,0,MF,U,ARRAY_SIZE>(mfs, exponents);
     for (std::size_t i=0; i<ARRAY_SIZE; ++i) {
         EXPECT_TRUE(mfs[i].convertOut(results[i]) ==
                       hc::modular_pow<T>(2, exponents[i], mfs[i].getModulus()));
     }
-    results = two_pow::call<MF,U,ARRAY_SIZE,0,2>(mfs, exponents);
+    results = two_pow::call<0,2,MF,U,ARRAY_SIZE>(mfs, exponents);
     for (std::size_t i=0; i<ARRAY_SIZE; ++i) {
         EXPECT_TRUE(mfs[i].convertOut(results[i]) ==
                       hc::modular_pow<T>(2, exponents[i], mfs[i].getModulus()));
@@ -123,13 +124,13 @@ void test_two_pow(typename M::IntegerType modulus, U exponent)
     M mf(modulus);
     T answer = hc::modular_pow<T>(2, exponent, modulus);
     T result;
-    result = mf.convertOut(two_pow::call<M,U,true,0,2>(mf,exponent));
+    result = mf.convertOut(two_pow::call<true,0,2,M,U>(mf,exponent));
     EXPECT_TRUE(result == answer);
-    result = mf.convertOut(two_pow::call<M,U,true,0,3>(mf,exponent));
+    result = mf.convertOut(two_pow::call<true,0,3,M,U>(mf,exponent));
     EXPECT_TRUE(result == answer);
-    result = mf.convertOut(two_pow::call<M,U,false,0,2>(mf,exponent));
+    result = mf.convertOut(two_pow::call<false,0,2,M,U>(mf,exponent));
     EXPECT_TRUE(result == answer);
-    result = mf.convertOut(two_pow::call<M,U,false,0,3>(mf,exponent));
+    result = mf.convertOut(two_pow::call<false,0,3,M,U>(mf,exponent));
     EXPECT_TRUE(result == answer);
 
     // test the array version of two_pow with different array sizes
@@ -163,7 +164,7 @@ U generate_random_value(std::mt19937_64& gen,
    static_assert(hurchalla::ut_numeric_limits<U>::is_integer, "");
    static_assert(!hurchalla::ut_numeric_limits<U>::is_signed, "");
    static_assert(hurchalla::ut_numeric_limits<U>::digits <= 128, "");
-   if (hurchalla::ut_numeric_limits<U>::digits > 64) {
+   if HURCHALLA_CPP17_CONSTEXPR (hurchalla::ut_numeric_limits<U>::digits > 64) {
       uint64_t u1 = distrib64(gen);
       uint64_t u2 = distrib64(gen);
       using P = typename hurchalla::safely_promote_unsigned<U>::type;

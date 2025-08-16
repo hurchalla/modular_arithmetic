@@ -47,9 +47,10 @@ struct impl_montgomery_two_pow {
 
   // Calculate pow(2, n), modulo the modulus of mf, and return the result in
   // montgomeryform representation.
-  template <class MF, typename U,
-            bool USE_SLIDING_WINDOW_OPTIMIZATION ,
-            size_t TABLE_BITS, size_t CODE_SECTION>
+  template <bool USE_SLIDING_WINDOW_OPTIMIZATION,
+            size_t TABLE_BITS,
+            size_t CODE_SECTION,
+            class MF, typename U>
   HURCHALLA_FORCE_INLINE
   static typename MF::MontgomeryValue call(const MF& mf, U n)
   {
@@ -180,8 +181,9 @@ struct impl_montgomery_two_pow {
 #endif
 
   // Array version of montgomery two pow
-  template <class MF, typename U,
-            size_t ARRAY_SIZE, size_t TABLE_BITS, size_t CODE_SECTION>
+  template <size_t TABLE_BITS,
+            size_t CODE_SECTION,
+            class MF, typename U, size_t ARRAY_SIZE>
   HURCHALLA_FORCE_INLINE
   static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
   call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)

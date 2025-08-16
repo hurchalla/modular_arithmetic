@@ -45,6 +45,16 @@ add_executable(test_hurchalla_modular_arithmetic
 EnableMaxWarnings(test_hurchalla_modular_arithmetic)
 
 
+if(HURCHALLA_TEST_MODULAR_ARITHMETIC_HEAVYWEIGHT)
+    target_compile_definitions(test_hurchalla_modular_arithmetic
+                               PRIVATE
+                               HURCHALLA_TEST_MODULAR_ARITHMETIC_HEAVYWEIGHT)
+endif()
+if(MSVC)
+    target_compile_options(test_hurchalla_modular_arithmetic PRIVATE /bigobj)
+endif()
+
+
 set_target_properties(test_hurchalla_modular_arithmetic
                       PROPERTIES FOLDER "Tests")
 target_link_libraries(test_hurchalla_modular_arithmetic
