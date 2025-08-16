@@ -11,6 +11,7 @@
 
 #include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontyTags.h"
 #include "hurchalla/modular_arithmetic/detail/optimization_tag_structs.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
@@ -27,9 +28,6 @@ namespace hurchalla { namespace detail {
 
 // The name "Fullrange" signifies that there are essentially no preconditions on
 // the value of the modulus used in the Montgomery representation.
-
-
-struct TagMontyFullrangeMasked final {};
 
 
 // struct used internally by MontyFullRangeMasked
@@ -259,6 +257,15 @@ class MontyFullRangeMasked final :
     HURCHALLA_FORCE_INLINE V unordered_subtract(J x, K y) const
     {
         return subtract(x, y, LowuopsTag());
+    }
+
+    HURCHALLA_FORCE_INLINE V two_times(V x) const
+    {
+        return add(x, x);
+    }
+    HURCHALLA_FORCE_INLINE C two_times(C cx) const
+    {
+        return add(cx, cx);
     }
 
 private:

@@ -10,6 +10,8 @@
 
 
 #include "hurchalla/montgomery_arithmetic/detail/BaseMontgomeryValue.h"
+#include "hurchalla/montgomery_arithmetic/low_level_api/get_R_mod_n.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontyTags.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
@@ -24,9 +26,6 @@ namespace hurchalla { namespace detail {
 // This class provides a standard modular arithmetic implementation, wrapped
 // inside a Monty template.  This allows standard modular arithmetic to be used
 // with a generic MontgomeryForm interface.
-
-
-struct TagMontyWrappedmath final {};  //IDs MontyWrappedStandardMath without T
 
 
 template <typename T>
@@ -89,7 +88,8 @@ class MontyWrappedStandardMath final {
         return modulus_;
     }
 
-    HURCHALLA_FORCE_INLINE V convertIn(T a) const
+    template <class PTAG>   // PTAG is ignored by this class
+    HURCHALLA_FORCE_INLINE V convertIn(T a, PTAG) const
     {
         HPBC_PRECONDITION2(0 <= a);
         if HURCHALLA_LIKELY(a < modulus_)
@@ -243,6 +243,15 @@ class MontyWrappedStandardMath final {
     // Note: unordered_subtract(V, C) and unordered_subtract(C, V) will match
     // to unordered_subtract(V x, V y) above.
 
+    HURCHALLA_FORCE_INLINE V two_times(V x) const
+    {
+        return add(x, x);
+    }
+    HURCHALLA_FORCE_INLINE C two_times(C cx) const
+    {
+        return add(cx, cx);
+    }
+
 
     // Returns the greatest common divisor of the standard representations
     // (non-montgomery) of both x and the modulus, using the supplied functor.
@@ -288,6 +297,61 @@ class MontyWrappedStandardMath final {
     {
         HPBC_PRECONDITION2(isCanonical(x));
         return fmadd(x, x, cv, PTAG());
+    }
+
+
+    HURCHALLA_FORCE_INLINE T getMagicValue() const
+    {
+        T result = ::hurchalla::get_R_mod_n(modulus_);
+        HPBC_POSTCONDITION2(result < modulus_);
+        return result;
+    }
+    template <class PTAG>   // Performance TAG (ignored by this class)
+    HURCHALLA_FORCE_INLINE V convertInExtended_aTimesR(T a, T RmodN, PTAG) const
+    {
+        HPBC_PRECONDITION2(RmodN == getMagicValue());
+        T tmp = a;
+        if (tmp >= modulus_)
+            tmp = static_cast<T>(tmp % modulus_);
+        HPBC_ASSERT2(tmp < modulus_);
+        HPBC_ASSERT2(RmodN < modulus_);
+        T result = ::hurchalla::modular_multiplication_prereduced_inputs(
+                                                          tmp, RmodN, modulus_);
+        HPBC_POSTCONDITION2(isCanonical(V(result)));
+        return V(result);
+    }
+
+    template <class PTAG>   // Performance TAG (ignored by this class)
+    HURCHALLA_FORCE_INLINE V twoPowLimited(size_t exponent, PTAG) const
+    {
+        static constexpr int digitsT = ut_numeric_limits<T>::digits;
+        int power = static_cast<int>(exponent);
+        HPBC_PRECONDITION2(0 <= power && power < digitsT);
+        T tmp = static_cast<T>(static_cast<T>(1) << power);
+        if (tmp >= modulus_)
+            tmp = static_cast<T>(tmp % modulus_);
+        HPBC_POSTCONDITION2(tmp < modulus_);
+        return V(tmp);
+    }
+    // PTAG Performance TAG - ignored by this class
+    template <class PTAG> HURCHALLA_FORCE_INLINE
+    V RTimesTwoPowLimited(size_t exponent, T RmodN, PTAG) const
+    {
+        HPBC_PRECONDITION2(RmodN == getMagicValue());
+        static constexpr int digitsT = ut_numeric_limits<T>::digits;
+        int power = static_cast<int>(exponent);
+        HPBC_PRECONDITION2(0 <= power && power < digitsT);
+
+        T tmp = static_cast<T>(static_cast<T>(1) << power);
+        if (tmp >= modulus_)
+            tmp = static_cast<T>(tmp % modulus_);
+
+        HPBC_ASSERT2(tmp < modulus_);
+        HPBC_ASSERT2(RmodN < modulus_);
+        T result = ::hurchalla::modular_multiplication_prereduced_inputs(
+                                                          tmp, RmodN, modulus_);
+        HPBC_POSTCONDITION2(isCanonical(V(result)));
+        return V(result);
     }
 };
 

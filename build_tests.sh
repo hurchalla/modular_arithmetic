@@ -526,12 +526,29 @@ exit_on_failure () {
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 
+# We don't usually want to force c++11 standard, since that requires that we use
+# an older version of googletest that was the final version to support C++11.
+# That googletest version's CMakeLists.txt isn't updated for more recent CMake
+# versions, and so we have to work around CMake deprecation warnings and errors
+# (you can see how this is done in FetchGoogleTest.cmake), which isn't a good
+# normal practice to do.  However, it is good to prove that our library is C++11
+# compatible from time to time.  To force c+11, change the line below to true.
+force_cpp11=false
+
+
+if [ "$force_cpp11" = true ]; then
+  force_cpp11_testing="ON"
+else
+  force_cpp11_testing="OFF"
+fi
+
 
 if [ "${mode,,}" = "release" ]; then
     pushd script_dir > /dev/null 2>&1
     build_dir=build/release_$compiler_name$compiler_version
     mkdir -p $build_dir
-    cmake -S. -B./$build_dir -DTEST_HURCHALLA_LIBS=ON \
+    cmake -S. -B./$build_dir -DTEST_HURCHALLA_MODULAR_ARITHMETIC=ON \
+            -DFORCE_TEST_HURCHALLA_CPP11_STANDARD=$force_cpp11_testing \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_FLAGS="$cpp_standard  $cpp_stdlib \
             $test_avoid_cselect  $test_heavyweight \
@@ -546,7 +563,8 @@ elif [ "${mode,,}" = "debug" ]; then
     pushd script_dir > /dev/null 2>&1
     build_dir=build/debug_$compiler_name$compiler_version
     mkdir -p $build_dir
-    cmake -S. -B./$build_dir -DTEST_HURCHALLA_LIBS=ON \
+    cmake -S. -B./$build_dir -DTEST_HURCHALLA_MODULAR_ARITHMETIC=ON \
+            -DFORCE_TEST_HURCHALLA_CPP11_STANDARD=$force_cpp11_testing \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_EXE_LINKER_FLAGS="$clang_ubsan_link_flags" \
             -DCMAKE_CXX_FLAGS="$cpp_standard  $cpp_stdlib \
@@ -566,17 +584,11 @@ fi
 
 
 # -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
-# cmake  -S.  -B./build_tmp  -DCMAKE_CXX_FLAGS="-std=c++17"  -DTEST_HURCHALLA_LIBS=ON  -DCMAKE_BUILD_TYPE=Debug  -DCMAKE_CXX_COMPILER=icpc  -DCMAKE_C_COMPILER=icc
+# cmake  -S.  -B./build_tmp  -DCMAKE_CXX_FLAGS="-std=c++17"  -DTEST_HURCHALLA_MODULAR_ARITHMETIC=ON  -DCMAKE_BUILD_TYPE=Debug  -DCMAKE_CXX_COMPILER=icpc  -DCMAKE_C_COMPILER=icc
 # cmake --build ./build_tmp --config Debug
 
 
 if [ "$run_tests" = true ]; then
-#  ./$build_dir/test_ndebug_programming_by_contract --gtest_break_on_failure
-#  exit_on_failure
-#  ./$build_dir/test_programming_by_contract --gtest_break_on_failure
-#  exit_on_failure
-  ./$build_dir/test_hurchalla_util --gtest_break_on_failure
-  exit_on_failure
   ./$build_dir/test_hurchalla_modular_arithmetic --gtest_break_on_failure
   exit_on_failure
 fi

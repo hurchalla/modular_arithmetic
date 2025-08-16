@@ -1,12 +1,22 @@
-# The "Clockwork" Modular Arithmetic Library
+# The Clockwork Modular Arithmetic library
 
 ![Alt text](images/clockxtrasmall_border2.jpg?raw=true "Clock Gears, photo by Krzysztof Golik, licensed CC BY-SA 4.0")
 
-Clockwork is a high performance, easy to use Modular Arithmetic library for C++ provided as a "header-only" library, for up to 128 bit integer types, with extensive support for Montgomery arithmetic.  If you want or need Montgomery arithmetic in this range, or general modular arithmetic functions, Clockwork is almost certainly the fastest and easiest library you could use.  For best performance make sure you define the standard C++ macro NDEBUG.
+Clockwork is a high performance, easy to use Modular Arithmetic library for C++ provided as a "header-only" library, supporting up to 128 bit integer types, and providing extensive support for Montgomery arithmetic.  If you want or need Montgomery arithmetic in this range, or general modular arithmetic functions, Clockwork is almost certainly the fastest and easiest library you could use.  For best performance make sure you define the standard C++ macro NDEBUG.  
+
+The library requires only C++11, and works with all higher versions of the C++ standard.
 
 ## Design goals
 
-Clockwork is designed to be a flexible and bulletproof library with the best performance achievable for modular arithmetic of native (on the CPU) integer types.  For integer types that are double the native bit width (e.g. 128 bit), performance should still be close to ideal, though not as completely optimized as for native types.  Larger than 128 bit types are permissible by [specialization](https://github.com/hurchalla/util/blob/master/include/hurchalla/util/traits/ut_numeric_limits.h); however a library like [GMP](https://gmplib.org/) is likely to be a better choice for such sizes.
+Clockwork is designed to be a flexible and bulletproof library with the best performance achievable for modular arithmetic using standard C++ language integer types (e.g. uint32_t or uint64_t) and the language extension types \_\_uint128_t and \_\_int128_t.  Larger than 128 bit types are permissible by [specialization](https://github.com/hurchalla/util/blob/master/include/hurchalla/util/traits/ut_numeric_limits.h); however a library like [GMP](https://gmplib.org/) is likely to be a better choice for such sizes.
+
+## Requirements
+
+The Clockwork library requires only compiler support for C++11, which is essentially supported universally at this point.
+
+For good performance you *must* ensure that the standard macro NDEBUG (see &lt;cassert&gt;) is defined when compiling.  
+
+Compilers that are confirmed to build this library without warnings or errors on Ubuntu linux (x64) include clang6, clang10, clang18, gcc7, gcc10, gcc13, and intel compiler 19.  On Windows, Microsoft Visual C++ 2017, 2019, 2022 are all confirmed to build the library without warnings or errors.  On MacOS, clang16 and gcc14 are confirmed to build without warnings or errors.  The library is intended for use on all architectures (e.g. x86/64, ARM, RISC-V), but has so far been tested only with x86, x64 (Windows and Ubuntu), and ARM64 (MacOS).
 
 ## Status
 
@@ -36,7 +46,7 @@ It may help to see a simple [example project with CMake](examples/example_with_c
 
 ### Without CMake
 
-If you're not using CMake for your project, you'll need to install/copy Clockwork's modular arithmetic headers and dependencies to some directory in order to use them.  To do this, first clone this git repository onto your system.  You'll need CMake on your system (at least temporarily), so install CMake if you don't have it.  Then from your shell run the following commands:  
+If you're not using CMake for your project, you'll need to install Clockwork's modular arithmetic headers and its dependencies to some directory in order to use them.  To do this, first clone this git repository onto your system.  You'll need to have CMake (at least temporarily) on your system, so install CMake if you don't have it.  Then from your shell run the following commands:  
 
 >cd *path_of_the_cloned_modular_arithmetic_repository*  
 >mkdir tmp  
@@ -63,9 +73,9 @@ From the modular_arithmetic group, the files *absolute_value_difference.h*, *mod
 *hurchalla::modular_addition_prereduced_inputs(T a, T b, T modulus)*.  Returns (a+b)%modulus, performed as if a and b have infinite precision and thus as if (a+b) is never subject to integer overflow.  
 *hurchalla::modular_multiplication_prereduced_inputs(T a, T b, T modulus)*.   Returns (a\*b)%modulus, performed as if a and b have infinite precision.  
 *hurchalla::modular_multiplicative_inverse(T a, T modulus)*.  Returns the multiplicative inverse of a if it exists, and otherwise returns 0.  
-*hurchalla::modular_pow(T base, T exponent, T modulus)*.  Returns the modular exponentiation of base^exponent (mod modulus).  
+*hurchalla::modular_pow(T base, T exponent, T modulus)*.  Returns the modular exponentiation of base to the exponent (mod modulus).  
 
-From the montgomery_arithmetic group, the file *MontgomeryForm.h* provides the easy to use (and zero cost abstraction) class *hurchalla::MontgomeryForm*, which has member functions for effortlessly performing operations in the Montgomery domain.  These operations include converting to/from Montgomery domain, add, subtract, multiply, square, [fused-multiply-add/sub](https://jeffhurchalla.com/2022/05/01/the-montgomery-multiply-accumulate), pow, gcd, and more.  For improved performance in some situations, the file *montgomery_form_aliases.h* provides simple aliases for faster (with limitations on allowed modulus) instantiations of the class MontgomeryForm.
+From the montgomery_arithmetic group, the file *MontgomeryForm.h* provides the easy to use (and zero cost abstraction) class *hurchalla::MontgomeryForm*, which has simple member functions for performing operations in the Montgomery domain.  These operations include converting to/from Montgomery domain, add, subtract, multiply, square, [fused-multiply-add/sub](https://jeffhurchalla.com/2022/05/01/the-montgomery-multiply-accumulate), pow, gcd, and more.  For improved performance, if you can guarantee your modulus will be under half or under a quarter of the maximum value of your integer type T, the file *montgomery_form_aliases.h* provides aliases of the class MontgomeryForm which typically run ~5-10% faster.
 
 For an easy demonstration of MontgomeryForm, you can see one of the [examples](examples/example_without_cmake).
 

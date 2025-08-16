@@ -15,10 +15,12 @@
 #include "hurchalla/montgomery_arithmetic/low_level_api/get_R_mod_n.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/inverse_mod_R.h"
 #include "hurchalla/montgomery_arithmetic/detail/BaseMontgomeryValue.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontyTags.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/programming_by_contract.h"
+#include <type_traits>
 
 namespace hurchalla { namespace detail {
 
@@ -52,9 +54,11 @@ class MontyCommonBase {
          n_(modulus),
          r_mod_n_(::hurchalla::get_R_mod_n(n_)),
          inv_n_(::hurchalla::inverse_mod_R(n_)),
-         r_squared_mod_n_(::hurchalla::get_Rsquared_mod_n(n_,inv_n_,r_mod_n_))
+         r_squared_mod_n_(::hurchalla::get_Rsquared_mod_n
+            <T, std::is_same<typename D::MontyTag,TagMontyQuarterrange>::value>
+            (n_,inv_n_,r_mod_n_))
     {
-        HPBC_PRECONDITION2(modulus % 2 == 1);
+        HPBC_PRECONDITION(modulus % 2 == 1);
         HPBC_PRECONDITION2(modulus > 1);
         // Note: unityValue == (the montgomery form of 1)==(1*R)%n_ == r_mod_n_.
         //
@@ -67,7 +71,8 @@ class MontyCommonBase {
  public:
     HURCHALLA_FORCE_INLINE T getModulus() const { return n_; }
 
-    HURCHALLA_FORCE_INLINE V convertIn(T a) const
+    template <class PTAG> HURCHALLA_FORCE_INLINE
+    V convertIn(T a, PTAG) const
     {
         HPBC_INVARIANT2(r_squared_mod_n_ < n_);
         // As a precondition, REDC requires  a * r_squared_mod_n < n*R.  This
@@ -81,7 +86,7 @@ class MontyCommonBase {
         // See RedcIncomplete() in ImplRedc.h for proof.
         HPBC_ASSERT2(u_hi < n_);
         const D* child = static_cast<const D*>(this);
-        V result = child->montyREDC(u_hi, u_lo, LowlatencyTag());
+        V result = child->montyREDC(u_hi, u_lo, PTAG());
         HPBC_POSTCONDITION2(child->isValid(result));
         return result;
     }
@@ -427,6 +432,81 @@ class MontyCommonBase {
         HPBC_POSTCONDITION2(n_ % p == 0);
         HPBC_POSTCONDITION2(g % p == 0);
         return p;
+    }
+
+
+
+    // returns (R*R*R) mod N
+    HURCHALLA_FORCE_INLINE T getMagicValue() const
+    {
+        HPBC_INVARIANT2(r_squared_mod_n_ < n_);
+        namespace hc = ::hurchalla;
+        T u_lo;
+        T u_hi = hc::unsigned_multiply_to_hilo_product(u_lo,
+                                            r_squared_mod_n_, r_squared_mod_n_);
+        HPBC_ASSERT2(u_hi < n_);  // verify that (u_hi*R + u_lo) < n*R
+        T result = hc::REDC_standard(u_hi, u_lo, n_, inv_n_, LowlatencyTag());
+        HPBC_POSTCONDITION2(result < n_);
+        return result;
+    }
+    // returns the montgomery representation of ((R * a) % N).
+    // We accomplish this via  REDC(((R*R*R)%N) * a).
+    template <class PTAG> HURCHALLA_FORCE_INLINE
+    V convertInExtended_aTimesR(T a, T magicValue, PTAG) const
+    {
+        // see convertIn() comments for explanation
+        HPBC_PRECONDITION2(magicValue == getMagicValue());
+        HPBC_ASSERT2(magicValue < n_);
+        namespace hc = ::hurchalla;
+        T u_lo;
+        T u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, a, magicValue);
+        HPBC_ASSERT2(u_hi < n_);
+        const D* child = static_cast<const D*>(this);
+        V result = child->montyREDC(u_hi, u_lo, PTAG());
+        HPBC_POSTCONDITION2(child->isValid(result));
+        return result;
+    }
+
+    // left shift RsquaredModN by exponent (rather than multiplying by
+    // (1<<power)), then call REDC as usual.
+    template <class PTAG> HURCHALLA_FORCE_INLINE
+    V twoPowLimited(size_t exponent, PTAG) const
+    {
+        HPBC_INVARIANT2(r_squared_mod_n_ < n_);
+        static constexpr int digitsT = ut_numeric_limits<T>::digits;
+        int power = static_cast<int>(exponent);
+        HPBC_PRECONDITION2(0 <= power && power < digitsT);
+
+        T u_lo = static_cast<T>(r_squared_mod_n_ << power);
+        int rshift = digitsT - power;
+        HPBC_ASSERT2(rshift > 0);
+        T u_hi = (r_squared_mod_n_ >> 1) >> (rshift - 1);
+
+        HPBC_ASSERT2(u_hi < n_);
+        const D* child = static_cast<const D*>(this);
+        V result = child->montyREDC(u_hi, u_lo, PTAG());
+        HPBC_POSTCONDITION2(child->isValid(result));
+        return result;
+    }
+    template <class PTAG> HURCHALLA_FORCE_INLINE
+    V RTimesTwoPowLimited(size_t exponent, T magicValue, PTAG) const
+    {
+        HPBC_PRECONDITION2(magicValue == getMagicValue());
+        HPBC_ASSERT2(magicValue < n_);
+        static constexpr int digitsT = ut_numeric_limits<T>::digits;
+        int power = static_cast<int>(exponent);
+        HPBC_PRECONDITION2(0 <= power && power < digitsT);
+
+        T u_lo = static_cast<T>(magicValue << power);
+        int rshift = digitsT - power;
+        HPBC_ASSERT2(rshift > 0);
+        T u_hi = (magicValue >> 1) >> (rshift - 1);
+
+        HPBC_ASSERT2(u_hi < n_);
+        const D* child = static_cast<const D*>(this);
+        V result = child->montyREDC(u_hi, u_lo, PTAG());
+        HPBC_POSTCONDITION2(child->isValid(result));
+        return result;
     }
 };
 

@@ -10,9 +10,11 @@
 
 
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/quarterrange_get_canonical.h"
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/two_times_restricted.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
 #include "hurchalla/modular_arithmetic/detail/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontyTags.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/modular_arithmetic/absolute_value_difference.h"
@@ -43,9 +45,6 @@ namespace hurchalla { namespace detail {
 // as required.  For more details, see also section 5 from
 // "Montgomery's Multiplication Technique: How to Make It Smaller and Faster"
 // https://www.comodo.com/resources/research/cryptography/CDW_CHES_99.ps
-
-
-struct TagMontyQuarterrange final {};  // IDs MontyQuarterRange independent of T
 
 
 // struct used internally by MontyQuarterRange
@@ -279,6 +278,36 @@ class MontyQuarterRange final : public
     }
     // Note: unordered_subtract(C, V) and unordered_subtract(V, C) and
     // unordered_subtract(C, C) all match to unordered_subtract(V x, V y) above.
+
+    HURCHALLA_FORCE_INLINE V two_times(V x) const
+    {
+        constexpr T Rdiv4 = static_cast<T>(static_cast<T>(1) <<
+                                            (ut_numeric_limits<T>::digits - 2));
+        constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
+                                            (ut_numeric_limits<T>::digits - 1));
+        HPBC_INVARIANT2(0 <= n_ && n_ < Rdiv4);
+        HPBC_INVARIANT2(0 <= 2*n_ && 2*n_ < Rdiv2);
+        static_assert(std::is_same<decltype(x.get()), T>::value, "");
+        T tx = x.get();
+        T n2 = static_cast<T>(2*n_);
+        HPBC_ASSERT2(0 <= tx && tx < n2);
+        T result = two_times_restricted<T>::call(tx, n2);
+        HPBC_POSTCONDITION2(0 <= result && result < n2);
+        HPBC_POSTCONDITION2(isValid(V(result)));
+        return V(result);
+    }
+    HURCHALLA_FORCE_INLINE C two_times(C cx) const
+    {
+        constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
+                                            (ut_numeric_limits<T>::digits - 1));
+        HPBC_INVARIANT2(0 <= n_ && n_ < Rdiv2);
+        static_assert(std::is_same<decltype(cx.get()), T>::value, "");
+        T tcx = cx.get();
+        HPBC_ASSERT2(0 <= tcx && tcx < n_);
+        T result = two_times_restricted<T>::call(tcx, n_);
+        HPBC_POSTCONDITION2(0 <= result && result < n_);
+        return C(result);
+    }
 
 private:
     // functions called by the 'curiously recurring template pattern' base (BC).

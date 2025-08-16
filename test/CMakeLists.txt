@@ -8,7 +8,8 @@ if(TARGET test_hurchalla_modular_arithmetic)
     return()
 endif()
 
-cmake_minimum_required(VERSION 3.14)
+# later versions are probably fine, but are untested
+cmake_minimum_required(VERSION 3.14...4.03)
 
 
 include(FetchGoogleTest.cmake)
@@ -35,7 +36,9 @@ add_executable(test_hurchalla_modular_arithmetic
                montgomery_arithmetic/low_level_api/test_inverse_mod_R.cpp
                montgomery_arithmetic/low_level_api/test_REDC.cpp
                montgomery_arithmetic/test_montgomery_pow.cpp
+               montgomery_arithmetic/test_montgomery_two_pow.cpp
                montgomery_arithmetic/test_MontgomeryForm.cpp
+               montgomery_arithmetic/test_MontgomeryFormExtensions.cpp
                montgomery_arithmetic/test_MontgomeryForm_extra.cpp
                )
 

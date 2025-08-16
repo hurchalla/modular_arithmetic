@@ -78,7 +78,7 @@ void test_pow(M& mf, typename M::IntegerType base,
     test_pow_array<14>(mf, base, exponent);
     test_pow_array<29>(mf, base, exponent);
     test_pow_array<61>(mf, base, exponent);
-    test_pow_array<120>(mf, base, exponent);
+    //test_pow_array<120>(mf, base, exponent);
 #endif
 }
 

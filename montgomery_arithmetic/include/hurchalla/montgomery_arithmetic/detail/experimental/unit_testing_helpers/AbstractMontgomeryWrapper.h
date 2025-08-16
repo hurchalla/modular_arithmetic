@@ -23,6 +23,7 @@ public:
     using MontgomeryValue = typename AMF::MontgomeryValue;
     using CanonicalValue = typename AMF::CanonicalValue;
     using FusingValue = typename AMF::FusingValue;
+//    using RU = typename AMF::RU;
 
     explicit AbstractMontgomeryWrapper(std::unique_ptr<const AMF> pimpl_)
         : pimpl(std::move(pimpl_)) {}
@@ -76,6 +77,11 @@ public:
     CanonicalValue negate(CanonicalValue x) const
         { return pimpl->negate(x); }
 
+    MontgomeryValue two_times(MontgomeryValue x) const
+        { return pimpl->two_times(x); }
+    CanonicalValue two_times(CanonicalValue x) const
+        { return pimpl->two_times(x); }
+
     template <class PTAG = LowlatencyTag>
     MontgomeryValue multiply(MontgomeryValue x, MontgomeryValue y) const
         { return pimpl->template multiply<PTAG>(x, y); }
@@ -112,17 +118,20 @@ public:
     MontgomeryValue fusedSquareAdd(MontgomeryValue x, CanonicalValue cv) const
         { return pimpl->template fusedSquareAdd<PTAG>(x, cv); }
 
-    template <class F>
-    IntegerType gcd_with_modulus(MontgomeryValue x, const F& gcd_functor) const
-        { return pimpl->gcd_with_modulus(x, gcd_functor); }
+    MontgomeryValue pow(MontgomeryValue base, IntegerType exponent) const
+        { return pimpl->pow(base, exponent); }
+
+    MontgomeryValue two_pow(IntegerType exponent) const
+        { return pimpl->two_pow(exponent); }
 
     template <std::size_t NUM_BASES>
     std::array<MontgomeryValue, NUM_BASES>
     pow(const std::array<MontgomeryValue, NUM_BASES>& bases, IntegerType exponent) const
         { return pimpl->pow(bases, exponent); }
 
-    MontgomeryValue pow(MontgomeryValue base, IntegerType exponent) const
-        { return pimpl->pow(base, exponent); }
+    template <class F>
+    IntegerType gcd_with_modulus(MontgomeryValue x, const F& gcd_functor) const
+        { return pimpl->gcd_with_modulus(x, gcd_functor); }
 
     IntegerType remainder(IntegerType a) const
         { return pimpl->remainder(a); }

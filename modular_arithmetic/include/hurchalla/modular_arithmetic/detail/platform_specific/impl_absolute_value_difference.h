@@ -39,6 +39,8 @@ struct default_impl_absdiff_unsigned {
 };
 
 
+
+
 // primary template
 template <typename T>
 struct impl_absolute_value_difference_unsigned {
@@ -49,35 +51,46 @@ struct impl_absolute_value_difference_unsigned {
 };
 
 
+// x86_64
 // MSVC doesn't support inline asm so we skip it.
 #if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
      defined(HURCHALLA_ALLOW_INLINE_ASM_ABSDIFF)) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 
+# if defined(HURCHALLA_ENABLE_INLINE_ASM_128_BIT) && (HURCHALLA_COMPILER_HAS_UINT128_T())
 template <>
-struct impl_absolute_value_difference_unsigned<std::uint32_t> {
+struct impl_absolute_value_difference_unsigned<__uint128_t> {
   HURCHALLA_FORCE_INLINE
-  static std::uint32_t call(std::uint32_t a, std::uint32_t b)
+  static __uint128_t call(__uint128_t a, __uint128_t b)
   {
-    using std::uint32_t;
-    uint32_t diff = static_cast<uint32_t>(b - a);
-    uint32_t tmp = a;  // we prefer not to overwrite an input (a)
-    __asm__ ("subl %[b], %[tmp] \n\t"       /* tmp = a - b */
-             "cmovbl %[diff], %[tmp] \n\t"  /* tmp = (a < b) ? diff : tmp */
-             : [tmp]"+&r"(tmp)
-# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
-             : [b]"r"(b), [diff]"r"(diff)
-# else
-             : [b]"rm"(b), [diff]"rm"(diff)
-# endif
+    using std::uint64_t;
+    __uint128_t diff = static_cast<__uint128_t>(b - a);
+
+    uint64_t alo = static_cast<uint64_t>(a);
+    uint64_t ahi = static_cast<uint64_t>(a >> 64);
+    uint64_t difflo = static_cast<uint64_t>(diff);
+    uint64_t diffhi = static_cast<uint64_t>(diff >> 64);
+    uint64_t blo = static_cast<uint64_t>(b);
+    uint64_t bhi = static_cast<uint64_t>(b >> 64);
+    __asm__ ("subq %[blo], %[alo] \n\t"       /* tmp = a - b */
+             "sbbq %[bhi], %[ahi] \n\t"
+             "cmovbq %[difflo], %[alo] \n\t"  /* tmp = (a < b) ? diff : tmp */
+             "cmovbq %[diffhi], %[ahi] \n\t"
+             : [alo]"+&r"(alo), [ahi]"+&r"(ahi)
+#  if defined(__clang__)       /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [blo]"r"(blo), [bhi]"r"(bhi), [difflo]"r"(difflo), [diffhi]"r"(diffhi)
+#  else
+             : [blo]"rm"(blo), [bhi]"rm"(bhi), [difflo]"rm"(difflo), [diffhi]"rm"(diffhi)
+#  endif
              : "cc");
-    uint32_t result = tmp;
+    __uint128_t result = (static_cast<__uint128_t>(ahi) << 64) | alo;
 
     HPBC_POSTCONDITION2(result<=a || result<=b);
     HPBC_POSTCONDITION2(result == default_impl_absdiff_unsigned::call(a, b));
     return result;
   }
 };
+# endif
 
 template <>
 struct impl_absolute_value_difference_unsigned<std::uint64_t> {
@@ -104,7 +117,45 @@ struct impl_absolute_value_difference_unsigned<std::uint64_t> {
   }
 };
 
-#ifdef HURCHALLA_ENABLE_INLINE_ASM_128_BIT
+template <>
+struct impl_absolute_value_difference_unsigned<std::uint32_t> {
+  HURCHALLA_FORCE_INLINE
+  static std::uint32_t call(std::uint32_t a, std::uint32_t b)
+  {
+    using std::uint32_t;
+    uint32_t diff = static_cast<uint32_t>(b - a);
+    uint32_t tmp = a;  // we prefer not to overwrite an input (a)
+    __asm__ ("subl %[b], %[tmp] \n\t"       /* tmp = a - b */
+             "cmovbl %[diff], %[tmp] \n\t"  /* tmp = (a < b) ? diff : tmp */
+             : [tmp]"+&r"(tmp)
+# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+             : [b]"r"(b), [diff]"r"(diff)
+# else
+             : [b]"rm"(b), [diff]"rm"(diff)
+# endif
+             : "cc");
+    uint32_t result = tmp;
+
+    HPBC_POSTCONDITION2(result<=a || result<=b);
+    HPBC_POSTCONDITION2(result == default_impl_absdiff_unsigned::call(a, b));
+    return result;
+  }
+};
+
+// end of inline asm functions for x86_64
+#endif
+
+
+
+#if 0  // dont enable arm64 assembly yet
+/*
+// ARM64
+// MSVC doesn't support inline asm so we skip it.
+#if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
+     defined(HURCHALLA_ALLOW_INLINE_ASM_ABSDIFF)) && \
+    defined(HURCHALLA_TARGET_ISA_ARM_64) && !defined(_MSC_VER)
+*/
+# if defined(HURCHALLA_ENABLE_INLINE_ASM_128_BIT) && (HURCHALLA_COMPILER_HAS_UINT128_T())
 template <>
 struct impl_absolute_value_difference_unsigned<__uint128_t> {
   HURCHALLA_FORCE_INLINE
@@ -119,16 +170,12 @@ struct impl_absolute_value_difference_unsigned<__uint128_t> {
     uint64_t diffhi = static_cast<uint64_t>(diff >> 64);
     uint64_t blo = static_cast<uint64_t>(b);
     uint64_t bhi = static_cast<uint64_t>(b >> 64);
-    __asm__ ("subq %[blo], %[alo] \n\t"       /* tmp = a - b */
-             "sbbq %[bhi], %[ahi] \n\t"
-             "cmovbq %[difflo], %[alo] \n\t"  /* tmp = (a < b) ? diff : tmp */
-             "cmovbq %[diffhi], %[ahi] \n\t"
+    __asm__ ("subs %[alo], %[alo], %[blo] \n\t"         /* tmp = a - b */
+             "sbcs %[ahi], %[ahi], %[bhi] \n\t"
+             "csel %[alo], %[difflo], %[alo], lo \n\t"  /* tmp = (a < b) ? diff : tmp */
+             "csel %[ahi], %[diffhi], %[ahi], lo \n\t"
              : [alo]"+&r"(alo), [ahi]"+&r"(ahi)
-# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
              : [blo]"r"(blo), [bhi]"r"(bhi), [difflo]"r"(difflo), [diffhi]"r"(diffhi)
-# else
-             : [blo]"rm"(blo), [bhi]"rm"(bhi), [difflo]"rm"(difflo), [diffhi]"rm"(diffhi)
-# endif
              : "cc");
     __uint128_t result = (static_cast<__uint128_t>(ahi) << 64) | alo;
 
@@ -137,9 +184,69 @@ struct impl_absolute_value_difference_unsigned<__uint128_t> {
     return result;
   }
 };
+# endif
+
+template <>
+struct impl_absolute_value_difference_unsigned<std::uint64_t> {
+  HURCHALLA_FORCE_INLINE
+  static std::uint64_t call(std::uint64_t a, std::uint64_t b)
+  {
+    using std::uint64_t;
+    uint64_t diff = static_cast<uint64_t>(b - a);
+    uint64_t tmp;
+    __asm__ ("subs %[tmp], %[a], %[b] \n\t"           /* tmp = a - b */
+             "csel %[tmp], %[diff], %[tmp], lo \n\t"  /* tmp = (a < b) ? diff : tmp */
+             : [tmp]"=&r"(tmp)
+             : [b]"r"(b), [diff]"r"(diff)
+             : "cc");
+    uint64_t result = tmp;
+
+    HPBC_POSTCONDITION2(result<=a || result<=b);
+    HPBC_POSTCONDITION2(result == default_impl_absdiff_unsigned::call(a, b));
+    return result;
+  }
+};
+
+template <>
+struct impl_absolute_value_difference_unsigned<std::uint32_t> {
+  using U = std::uint32_t;
+  HURCHALLA_FORCE_INLINE static U call(U a, U b)
+  {
+    std::uint64_t result = impl_absolute_value_difference_unsigned
+                                                    <std::uint64_t>::call(a, b);
+    return static_cast<U>(result);
+  }
+};
+
+// end of inline asm functions for ARM_64
 #endif
 
-#endif
+
+
+template <>
+struct impl_absolute_value_difference_unsigned<std::uint16_t> {
+  using U = std::uint16_t;
+  HURCHALLA_FORCE_INLINE static U call(U a, U b)
+  {
+    std::uint32_t result = impl_absolute_value_difference_unsigned
+                                                    <std::uint32_t>::call(a, b);
+    return static_cast<U>(result);
+  }
+};
+template <>
+struct impl_absolute_value_difference_unsigned<std::uint8_t> {
+  using U = std::uint8_t;
+  HURCHALLA_FORCE_INLINE static U call(U a, U b)
+  {
+    std::uint32_t result = impl_absolute_value_difference_unsigned
+                                                    <std::uint32_t>::call(a, b);
+    return static_cast<U>(result);
+  }
+};
+
+
+
+
 
 
 // version for unsigned T

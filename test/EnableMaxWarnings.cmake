@@ -58,10 +58,37 @@ else()
 
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
       # CLANG -----------
+        if(FORCE_TEST_HURCHALLA_CPP11_STANDARD)
+            # strangely enough clang seems to ignore the options below when
+            # compiling with -std=c++11, but we'll use it anyway, mostly just
+            # for documentation purposes about the options' uselessness for us.
+            # I believe they will have no effect whatsoever since we should get
+            # into this section only when we are compiling -std=c++11.  Making
+            # clang even more useless for enforcing C++11 compiliance is that
+            # clang's normal compilation doesn't complain if it encounters code
+            # that uses a feature from a higher C++ standard than the one
+            # requested by -std=c++11, and I couldn't find any way to make it
+            # complain.  However, gcc *does* complain when it sees features that
+            # are from a standard higher than specified by -std=c++ZZ, without
+            # any need for options, so we get our C++11 compliance testing via
+            # gcc.
+            # Note that the modular arithmetic code has a few #ifdefs to allow
+            # it to use a few c++14/17 features - they're #ifdeffed to be
+            # enabled only when compiling in one of those corresponding modes
+            # (or higher).  This means we can't use the options below (in clang)
+            # with -std=c++14 or 17, because clang would give us false warnings
+            # about those safely guarded features.  That's why this section is
+            # inside if(FORCE_TEST_HURCHALLA_CPP11_STANDARD) -
+            # FORCE_TEST_HURCHALLA_CPP11_STANDARD (if ON) forces this project
+            # and its googletest dependency to compile with C++11.
+            #
+            target_compile_options(${target} PRIVATE
+                    -Wc++11-compat-pedantic -Wc++14-compat-pedantic)
+        endif()
         target_compile_options(${target} PRIVATE  -ferror-limit=3
                 -Wcast-align -Wmismatched-tags -Wabstract-vbase-init
                 -Warray-bounds-pointer-arithmetic -Wassign-enum
-                -Watomic-properties -Wauto-import -Wc++14-compat-pedantic
+                -Watomic-properties -Wauto-import
                 -Wno-c++14-extensions -Wclass-varargs -Wcomma
                 -Wconditional-uninitialized -Wconsumed -Wcuda-compat
                 -Wdeprecated -Wduplicate-enum -Wformat-non-iso -Wformat-pedantic
@@ -99,7 +126,7 @@ else()
                     -Wno-c++20-extensions -Wctad-maybe-unsupported
                     -Wextra-semi-stmt -Wformat-type-confusion
                     -Wimplicit-int-float-conversion -Wmisexpect
-                    -Wpoison-system-directories -Wnon-modular-include-in-module
+                    -Wnon-modular-include-in-module
                     -Wquoted-include-in-framework-header -Wsuspicious-memaccess)
         endif()
 

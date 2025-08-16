@@ -19,12 +19,26 @@ if (NOT TARGET gtest_main)
 
 
     include(FetchContent)
-    FetchContent_Declare(
-        googletest
-        GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG        main
-    )
-    #git tag of release-1.8.0 instead?
+
+    if(FORCE_TEST_HURCHALLA_CPP11_STANDARD)
+        # googletest v1.12 is the final release that supports C++11
+        FetchContent_Declare(
+            googletest
+            GIT_REPOSITORY https://github.com/google/googletest.git
+            GIT_TAG        release-1.12.1
+        )
+        set(CMAKE_POLICY_VERSION_MINIMUM 3.10)
+        #
+        # when using GIT_TAG release-1.12.1, setting CMAKE_POLICY_VERSION_MINIMUM
+        # to 3.10 avoids deprecation warnings (gtest v1.12's cmakelists.txt
+        # evidently set cmake_minimum_required to somethimg under 3.10).
+    else()
+        FetchContent_Declare(
+            googletest
+            GIT_REPOSITORY https://github.com/google/googletest.git
+            GIT_TAG        main
+        )
+    endif()
 
 
     # For Windows: Prevent overriding the parent project's compiler/linker settings

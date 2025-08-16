@@ -47,7 +47,7 @@ public:
     HURCHALLA_IMF_MAYBE_FORCE_INLINE
     MontgomeryValue convertIn(T a) const
     {
-        return impl.convertIn(static_cast<U>(a));
+        return impl.convertIn(static_cast<U>(a), LowlatencyTag());
     }
 
     HURCHALLA_IMF_MAYBE_FORCE_INLINE
@@ -159,6 +159,17 @@ public:
         return subtract<LowuopsTag>(getZeroValue(), x);
     }
 
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue two_times(MontgomeryValue x) const
+    {
+        return impl.two_times(x);
+    }
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    CanonicalValue two_times(CanonicalValue x) const
+    {
+        return impl.two_times(x);
+    }
+
     template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
     MontgomeryValue multiply(MontgomeryValue x, MontgomeryValue y) const
     {
@@ -227,4 +238,33 @@ public:
     {
         HPBC_PRECONDITION(a >= 0);
         return static_cast<T>(impl.remainder(static_cast<U>(a)));
+    }
+
+
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue convertInExtended(U a) const
+    {
+        return impl.convertIn(a, PTAG());
+    }
+
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE U getMagicValue() const
+    {
+        return impl.getMagicValue();
+    }
+
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue convertInExtended_aTimesR(U a, U magicValue) const
+    {
+        return impl.convertInExtended_aTimesR(a, magicValue, PTAG());
+    }
+
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue twoPowLimited(size_t exponent) const
+    {
+        return impl.twoPowLimited(exponent, PTAG());
+    }
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue RTimesTwoPowLimited(size_t exponent, U magicValue) const
+    {
+        return impl.RTimesTwoPowLimited(exponent, magicValue, PTAG());
     }

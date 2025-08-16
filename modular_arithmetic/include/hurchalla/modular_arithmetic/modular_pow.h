@@ -21,11 +21,13 @@ namespace hurchalla {
 // that you will achieve much better perfomance using MontgomeryForm's pow -
 // though note that MontgomeryForm can only be used if your modulus is odd.
 
-template <typename T>
-T modular_pow(T base, T exponent, T modulus)
+template <typename T, typename U>
+T modular_pow(T base, U exponent, T modulus)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
+    static_assert(ut_numeric_limits<U>::is_integer, "");
+    static_assert(!(ut_numeric_limits<U>::is_signed), "");
     HPBC_PRECONDITION(modulus > 1);
 
     T result = detail::impl_modular_pow::call(base, exponent, modulus);

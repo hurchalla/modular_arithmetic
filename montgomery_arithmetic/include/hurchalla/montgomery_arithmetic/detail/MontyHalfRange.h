@@ -10,9 +10,11 @@
 
 
 #include "hurchalla/montgomery_arithmetic/detail/platform_specific/halfrange_get_canonical.h"
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/two_times_restricted.h"
 #include "hurchalla/modular_arithmetic/detail/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontyTags.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
@@ -30,9 +32,6 @@ namespace hurchalla { namespace detail {
 // The name "Halfrange" signifies that the modulus must be less than R/2, where
 // R = 1<<(ut_numeric_limits<T>::digits).  For example, if T is uint64_t then
 // R = 1<<64 and R/2 == 1<<63, and thus it would require  modulus < (1<<63).
-
-
-struct TagMontyHalfrange final {};
 
 
 // struct used internally by MontyHalfRange
@@ -457,6 +456,36 @@ class MontyHalfRange final :
     HURCHALLA_FORCE_INLINE V unordered_subtract(J x, K y) const
     {
         return subtract(x, y, LowuopsTag());
+    }
+
+    HURCHALLA_FORCE_INLINE V two_times(V x) const
+    {
+        constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
+                                            (ut_numeric_limits<T>::digits - 1));
+        HPBC_INVARIANT2(0 <= n_ && n_ < Rdiv2);
+        C cx = getCanonicalValue(x);
+        static_assert(std::is_same<decltype(cx.get()), T>::value, "");
+        T tcx = cx.get();
+        HPBC_ASSERT2(0 <= tcx && tcx < n_);
+        S scx = static_cast<S>(tcx);
+        HPBC_ASSERT2(0 <= scx && scx < static_cast<S>(n_));
+        S tmp = static_cast<S>(scx - static_cast<S>(n_));
+        HPBC_ASSERT2(-static_cast<S>(n_) <= tmp && tmp < 0);
+        S result = scx + tmp;
+        HPBC_POSTCONDITION2(isValid(V(result)));
+        return V(result);
+    }
+    HURCHALLA_FORCE_INLINE C two_times(C cx) const
+    {
+        constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
+                                            (ut_numeric_limits<T>::digits - 1));
+        HPBC_INVARIANT2(0 <= n_ && n_ < Rdiv2);
+        static_assert(std::is_same<decltype(cx.get()), T>::value, "");
+        T tcx = cx.get();
+        HPBC_ASSERT2(0 <= tcx && tcx < n_);
+        T result = two_times_restricted<T>::call(tcx, n_);
+        HPBC_POSTCONDITION2(0 <= result && result < n_);
+        return C(result);
     }
 
 private:

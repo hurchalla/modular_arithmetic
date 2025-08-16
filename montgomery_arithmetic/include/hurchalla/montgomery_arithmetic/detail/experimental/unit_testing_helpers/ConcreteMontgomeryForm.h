@@ -290,6 +290,46 @@ public:
         return OpenC(static_cast<typename OpenC::OT>(mfc.get()));
     }
 
+    virtual V two_times(V x) const override
+    {
+        OpenMFV mfv(mf.two_times(OpenMFV(OpenV(x))));
+        // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
+    }
+
+    virtual C two_times(C x) const override
+    {
+        OpenMFC mfc(mf.two_times(OpenMFC(OpenC(x))));
+        // note: mfc.get() might be signed or unsigned; OpenC::OT is unsigned
+        return OpenC(static_cast<typename OpenC::OT>(mfc.get()));
+    }
+
+    virtual V two_pow(T exponent) const override
+    {
+        HPBC_PRECONDITION2(0 <= exponent);
+        if (ut_numeric_limits<T>::max() > ut_numeric_limits<MFT>::max()) {
+            // kind of an unavoidable hack, so that AbstractMontgomeryForm has
+            // the same contract for two_pow() as MongomeryForm, which allows
+            // exponent to have any value of T >= 0.
+            static constexpr MFT mft_max = ut_numeric_limits<MFT>::max();
+            if (exponent > mft_max) {
+                MFV maxpow = mf.two_pow(mft_max);
+                MFV accum = mf.getUnityValue();
+                do {
+                    accum = mf.multiply(accum, maxpow);
+                    exponent -= mft_max;
+                } while (exponent > static_cast<T>(mft_max));
+                accum = mf.multiply(accum, mf.two_pow(static_cast<MFT>(exponent)));
+                OpenMFV result(accum);
+                // note: result.get() might be signed or unsigned; OpenV::OT is unsigned
+                return OpenV(static_cast<typename OpenV::OT>(result.get()));
+            }
+        }
+        OpenMFV mfv(mf.two_pow(static_cast<MFT>(exponent)));
+        // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
+    }
+
     virtual V pow(V base, T exponent) const override
     {
         HPBC_PRECONDITION2(0 <= exponent);

@@ -11,6 +11,7 @@
 
 #include "hurchalla/modular_arithmetic/detail/optimization_tag_structs.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyQuarterRange.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/Unroll.h"
 #include "hurchalla/util/compiler_macros.h"
@@ -65,9 +66,9 @@ struct montgomery_pow {
   // level parallelism, compared to the non-array montgomery_pow function.
   // They use the same algorithm as the non-array montgomery_pow().  They
   // require an array of bases, of which each element is modularly exponentiated
-  // to the same power and returned as an array.  At least one application is
-  // miller-rabin primality testing, since it needs to raise multiple bases to
-  // the same power.
+  // to the same power and returned as an array.  An example application where
+  // array pow can be useful is miller-rabin primality testing, since it needs
+  // to raise multiple bases to the same power.
   // These array version functions should all be equivalent to one another,
   // aside from their differences in performance.
   // --------
@@ -78,7 +79,8 @@ struct montgomery_pow {
   // providing the best performance when NUM_BASES gets huge (roughly values of
   // NUM_BASES > 50, though note that such situations are probably unusual in
   // practice, given that even having NUM_BASES > 1 could be considered a
-  // special case for pow).
+  // special case for pow).  The best reason to use this version is likely to be
+  // to avoid code bloat - when it has very little performance justification.
   template <std::size_t NUM_BASES>
   static HURCHALLA_FORCE_INLINE std::array<V, NUM_BASES>
   arraypow_cond_branch(const MF& mf, std::array<V, NUM_BASES> bases, T exponent)

@@ -11,6 +11,7 @@
 #include "hurchalla/montgomery_arithmetic/detail/experimental/unit_testing_helpers/AbstractMontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/detail/experimental/unit_testing_helpers/ConcreteMontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/detail/experimental/unit_testing_helpers/AbstractMontgomeryWrapper.h"
+#include "hurchalla/util/compiler_macros.h"
 #include "gtest/gtest.h"
 
 
@@ -53,12 +54,14 @@ TEST(MontgomeryArithmetic, MontyFullRangeMasked) {
 // AbstractMontgomeryWrapper, are experimental, so we skip testing them when
 // we're not doing extensive (heavyweight) testing.
 TEST(MontgomeryArithmetic, MontyVirtual) {
+#if HURCHALLA_COMPILER_HAS_UINT128_T()
     {
         using ConcreteMF = hurchalla::ConcreteMontgomeryForm<hurchalla::MontgomeryForm<__uint128_t>,
                                                              TESTABLE_ARRAY_POW_SIZES()>;
         using Wrapper = hurchalla::AbstractMontgomeryWrapper<ConcreteMF::Parent>;
         test_MontgomeryForm<Wrapper, ConcreteMF>();
     }
+#endif
     {
         using ConcreteMF = hurchalla::ConcreteMontgomeryForm<hurchalla::MontgomeryForm<uint32_t>,
                                                              TESTABLE_ARRAY_POW_SIZES()>;

@@ -8,7 +8,8 @@ if(TARGET hurchalla_basic_modular_arithmetic)
     return()
 endif()
 
-cmake_minimum_required(VERSION 3.14)
+# later versions are probably fine, but are untested
+cmake_minimum_required(VERSION 3.14...4.03)
 
 project(hurchalla_basic_modular_arithmetic VERSION 1.0.0 LANGUAGES CXX)
 
@@ -73,7 +74,7 @@ include(FetchContent)
 FetchContent_Declare(
     hurchalla_util
     GIT_REPOSITORY https://github.com/hurchalla/util.git
-    GIT_TAG        master
+    GIT_TAG        9163344ee69f21a21cb8928dd30fc2ff15e94f0c
 )
 FetchContent_MakeAvailable(hurchalla_util)
 

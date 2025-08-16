@@ -5,6 +5,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+#ifndef HURCHALLA_TEST_MONTGOMERY_FORM_H_INCLUDED
+#define HURCHALLA_TEST_MONTGOMERY_FORM_H_INCLUDED
+
 
 // Strictly for testing purposes, we'll define HURCHALLA_ALLOW_INLINE_ASM_ALL,
 // which will cause MontgomeryForm to use all helper inline asm functions that
@@ -330,6 +333,17 @@ void test_mf_general_checks(const M& mf, typename M::IntegerType a,
     EXPECT_TRUE(mf.getCanonicalValue(mf.add(x,yc)) ==
                              mf.getCanonicalValue(mf.convertIn(reference_sum)));
 
+    T reference_two_a = tma::modadd(a, a, modulus);
+    T reference_two_b = tma::modadd(b, b, modulus);
+    EXPECT_TRUE(mf.convertOut(mf.two_times(x)) == reference_two_a);
+    EXPECT_TRUE(mf.convertOut(mf.two_times(xc)) == reference_two_a);
+    EXPECT_TRUE(mf.convertOut(mf.two_times(y)) == reference_two_b);
+    EXPECT_TRUE(mf.convertOut(mf.two_times(yc)) == reference_two_b);
+    EXPECT_TRUE(mf.getCanonicalValue(mf.two_times(x)) ==
+                           mf.getCanonicalValue(mf.convertIn(reference_two_a)));
+    EXPECT_TRUE(mf.getCanonicalValue(mf.two_times(xc)) ==
+                           mf.getCanonicalValue(mf.convertIn(reference_two_a)));
+
     T diff1 = tma::modsub(b, a, modulus);
     test_subtract_variants(mf, y, x, diff1);
     T diff2 = tma::modsub(a, b, modulus);
@@ -363,6 +377,12 @@ void test_mf_general_checks(const M& mf, typename M::IntegerType a,
 
     test_square_variants(mf, x, zc);
     test_square_variants(mf, y, zc);
+
+    EXPECT_TRUE(mf.convertOut(mf.two_pow(0)) == 1);
+    EXPECT_TRUE(mf.convertOut(mf.two_pow(1)) == 2);
+    EXPECT_TRUE(mf.convertOut(mf.two_pow(3)) == tma::modpow<T>(2,3,modulus));
+    EXPECT_TRUE(mf.convertOut(mf.two_pow(11)) == tma::modpow<T>(2,11,modulus));
+    EXPECT_TRUE(mf.convertOut(mf.two_pow(127)) == tma::modpow<T>(2,127,modulus));
 
     EXPECT_TRUE(mf.convertOut(mf.pow(y,0)) == 1);
     EXPECT_TRUE(mf.convertOut(mf.pow(y,1)) == b);
@@ -459,6 +479,10 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.add(y,x)) == 4);
         EXPECT_TRUE(mf.convertOut(mf.add(x,yc)) == 4);
         EXPECT_TRUE(mf.convertOut(mf.add(y,xc)) == 4);
+        EXPECT_TRUE(mf.convertOut(mf.two_times(x)) == 12);
+        EXPECT_TRUE(mf.convertOut(mf.two_times(xc)) == 12);
+        EXPECT_TRUE(mf.convertOut(mf.two_times(y)) == 9);
+        EXPECT_TRUE(mf.convertOut(mf.two_times(yc)) == 9);
         test_subtract_variants(mf, y, x, 5);
         test_subtract_variants(mf, x, y, 8);
         T us = mf.convertOut(mf.unorderedSubtract(x,y));
@@ -469,6 +493,10 @@ void test_MontgomeryForm()
                                          mf.getCanonicalValue(mf.convertIn(4)));
         EXPECT_TRUE(mf.getCanonicalValue(mf.add(x,yc)) ==
                                          mf.getCanonicalValue(mf.convertIn(4)));
+        EXPECT_TRUE(mf.getCanonicalValue(mf.two_times(y)) ==
+                                         mf.getCanonicalValue(mf.convertIn(9)));
+        EXPECT_TRUE(mf.getCanonicalValue(mf.two_times(yc)) ==
+                                         mf.getCanonicalValue(mf.convertIn(9)));
         EXPECT_TRUE(mf.getUnityValue()== mf.getCanonicalValue(mf.convertIn(1)));
         EXPECT_TRUE(mf.getZeroValue() == mf.getCanonicalValue(mf.convertIn(0)));
         EXPECT_TRUE(modulus > 0);
@@ -526,6 +554,10 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.add(y,x)) == 0);
         EXPECT_TRUE(mf.convertOut(mf.add(x,yc)) == 0);
         EXPECT_TRUE(mf.convertOut(mf.add(y,xc)) == 0);
+        EXPECT_TRUE(mf.convertOut(mf.two_times(x)) == 2);
+        EXPECT_TRUE(mf.convertOut(mf.two_times(xc)) == 2);
+        EXPECT_TRUE(mf.convertOut(mf.two_times(y)) == 1);
+        EXPECT_TRUE(mf.convertOut(mf.two_times(yc)) == 1);
         test_subtract_variants(mf, y, x, 1);
         test_subtract_variants(mf, x, y, 2);
         EXPECT_TRUE(mf.getCanonicalValue(mf.subtract(x,y)) ==
@@ -586,6 +618,12 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.add(y,x)) == 1);
         EXPECT_TRUE(mf.convertOut(mf.add(x,yc)) == 1);
         EXPECT_TRUE(mf.convertOut(mf.add(y,xc)) == 1);
+        EXPECT_TRUE(mf.convertOut(mf.two_times(x)) ==static_cast<T>(modulus-2));
+        EXPECT_TRUE(mf.convertOut(mf.two_times(xc))==static_cast<T>(modulus-2));
+        EXPECT_TRUE(mf.convertOut(mf.two_times(y)) == 4);
+        EXPECT_TRUE(mf.convertOut(mf.two_times(yc)) == 4);
+        EXPECT_TRUE(mf.two_times(xc) ==
+                 mf.getCanonicalValue(mf.convertIn(static_cast<T>(modulus-2))));
         test_subtract_variants(mf, y, x, 3);
         test_subtract_variants(mf, x, y, modulus - 3);
         EXPECT_TRUE(mf.getCanonicalValue(mf.add(x,y)) ==
@@ -729,3 +767,6 @@ void test_custom_monty()
 
 
 } // end unnamed namespace
+
+#endif
+

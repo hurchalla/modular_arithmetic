@@ -19,6 +19,7 @@
 #include "hurchalla/modular_arithmetic/detail/optimization_tag_structs.h"
 #include "hurchalla/util/traits/is_equality_comparable.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
+#include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include "hurchalla/util/compiler_macros.h"
 #include <type_traits>
 #include <array>
@@ -95,6 +96,7 @@ protected:
 
 public:
     using IntegerType = T;
+//    using RU = typename extensible_make_unsigned<T>::type;
 
     using MontgomeryValue = typename AMFValueTypes<U>::V;
     static_assert(std::is_default_constructible<MontgomeryValue>::value, "");
@@ -162,8 +164,14 @@ public:
 
     virtual CanonicalValue negate(CanonicalValue x) const = 0;
 
+    virtual MontgomeryValue two_times(MontgomeryValue x) const = 0;
+
+    virtual CanonicalValue two_times(CanonicalValue x) const = 0;
+
     virtual MontgomeryValue pow(MontgomeryValue base, IntegerType exponent)
         const = 0;
+
+    virtual MontgomeryValue two_pow(IntegerType exponent) const = 0;
 
     virtual IntegerType remainder(IntegerType a) const = 0;
 
