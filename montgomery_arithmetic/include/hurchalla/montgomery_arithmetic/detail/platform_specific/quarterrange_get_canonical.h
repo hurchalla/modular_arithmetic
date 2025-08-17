@@ -89,7 +89,7 @@ struct quarterrange_get_canonical {
      defined(HURCHALLA_ALLOW_INLINE_ASM_QUARTERRANGE_GET_CANONICAL)) && \
       defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 
-#ifdef HURCHALLA_ENABLE_INLINE_ASM_128_BIT
+# if (HURCHALLA_COMPILER_HAS_UINT128_T())
 template <>
 struct quarterrange_get_canonical<__uint128_t> {
   HURCHALLA_FORCE_INLINE
@@ -176,6 +176,30 @@ struct quarterrange_get_canonical<std::uint32_t> {
   }
 };
 #endif
+
+
+
+
+template <>
+struct quarterrange_get_canonical<std::uint16_t> {
+  using U = std::uint16_t;
+  HURCHALLA_FORCE_INLINE static U call(U x, U n)
+  {
+    std::uint32_t result = quarterrange_get_canonical
+                                                    <std::uint32_t>::call(x, n);
+    return static_cast<U>(result);
+  }
+};
+template <>
+struct quarterrange_get_canonical<std::uint8_t> {
+  using U = std::uint8_t;
+  HURCHALLA_FORCE_INLINE static U call(U x, U n)
+  {
+    std::uint32_t result = quarterrange_get_canonical
+                                                    <std::uint32_t>::call(x, n);
+    return static_cast<U>(result);
+  }
+};
 
 
 }} // end namespace

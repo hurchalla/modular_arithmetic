@@ -91,7 +91,7 @@ struct halfrange_get_canonical {
      defined(HURCHALLA_ALLOW_INLINE_ASM_HALFRANGE_GET_CANONICAL)) && \
       defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 
-#ifdef HURCHALLA_ENABLE_INLINE_ASM_128_BIT
+# if (HURCHALLA_COMPILER_HAS_UINT128_T())
 template <>
 struct halfrange_get_canonical<__int128_t> {
   HURCHALLA_FORCE_INLINE
@@ -119,11 +119,11 @@ struct halfrange_get_canonical<__int128_t> {
              "cmovaeq %[xlo2], %[xlo] \n\t"    /* res = (res>=n) ? x : res */
              "cmovaeq %[xhi2], %[xhi] \n\t"
              : [xlo]"+&r"(xlo), [xhi]"+&r"(xhi)
-# if defined(__clang__)       /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+#  if defined(__clang__)       /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
              : [nlo]"r"(nlo), [nhi]"r"(nhi), [xlo2]"r"(xlo2), [xhi2]"r"(xhi2)
-# else
+#  else
              : [nlo]"rm"(nlo), [nhi]"rm"(nhi), [xlo2]"rm"(xlo2), [xhi2]"rm"(xhi2)
-# endif
+#  endif
              : "cc");
     __int128_t result = static_cast<__int128_t>(
                                    (static_cast<__uint128_t>(xhi) << 64) | xlo);
@@ -133,7 +133,7 @@ struct halfrange_get_canonical<__int128_t> {
     return result;
   }
 };
-#endif
+# endif
 
 template <>
 struct halfrange_get_canonical<std::int64_t> {
@@ -185,6 +185,28 @@ struct halfrange_get_canonical<std::int32_t> {
   }
 };
 #endif
+
+
+
+
+template <>
+struct halfrange_get_canonical<std::int16_t> {
+  using T = std::int16_t;
+  HURCHALLA_FORCE_INLINE static T call(T x, T n)
+  {
+    std::int32_t result = halfrange_get_canonical<std::int32_t>::call(x, n);
+    return static_cast<T>(result);
+  }
+};
+template <>
+struct halfrange_get_canonical<std::int8_t> {
+  using T = std::int8_t;
+  HURCHALLA_FORCE_INLINE static T call(T x, T n)
+  {
+    std::int32_t result = halfrange_get_canonical<std::int32_t>::call(x, n);
+    return static_cast<T>(result);
+  }
+};
 
 
 }} // end namespace

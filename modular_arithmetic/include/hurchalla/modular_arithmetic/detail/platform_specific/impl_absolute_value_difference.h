@@ -57,7 +57,7 @@ struct impl_absolute_value_difference_unsigned {
      defined(HURCHALLA_ALLOW_INLINE_ASM_ABSDIFF)) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 
-# if defined(HURCHALLA_ENABLE_INLINE_ASM_128_BIT) && (HURCHALLA_COMPILER_HAS_UINT128_T())
+# if (HURCHALLA_COMPILER_HAS_UINT128_T())
 template <>
 struct impl_absolute_value_difference_unsigned<__uint128_t> {
   HURCHALLA_FORCE_INLINE
@@ -155,7 +155,7 @@ struct impl_absolute_value_difference_unsigned<std::uint32_t> {
      defined(HURCHALLA_ALLOW_INLINE_ASM_ABSDIFF)) && \
     defined(HURCHALLA_TARGET_ISA_ARM_64) && !defined(_MSC_VER)
 */
-# if defined(HURCHALLA_ENABLE_INLINE_ASM_128_BIT) && (HURCHALLA_COMPILER_HAS_UINT128_T())
+# if (HURCHALLA_COMPILER_HAS_UINT128_T())
 template <>
 struct impl_absolute_value_difference_unsigned<__uint128_t> {
   HURCHALLA_FORCE_INLINE

@@ -161,7 +161,7 @@ struct impl_modular_subtraction_unsigned {
      defined(HURCHALLA_ALLOW_INLINE_ASM_MODSUB)) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 
-# if defined(HURCHALLA_ENABLE_INLINE_ASM_128_BIT) && (HURCHALLA_COMPILER_HAS_UINT128_T())
+# if (HURCHALLA_COMPILER_HAS_UINT128_T())
 template <>
 struct impl_modular_subtraction_unsigned<__uint128_t, LowuopsTag> {
   HURCHALLA_FORCE_INLINE static
@@ -309,7 +309,7 @@ struct impl_modular_subtraction_unsigned<std::uint32_t, LowuopsTag> {
 };
 
 
-# if defined(HURCHALLA_ENABLE_INLINE_ASM_128_BIT) && (HURCHALLA_COMPILER_HAS_UINT128_T())
+# if (HURCHALLA_COMPILER_HAS_UINT128_T())
 template <>
 struct impl_modular_subtraction_unsigned<__uint128_t, LowlatencyTag> {
   HURCHALLA_FORCE_INLINE static
@@ -434,7 +434,7 @@ struct impl_modular_subtraction_unsigned<std::uint32_t, LowlatencyTag> {
     defined(HURCHALLA_TARGET_ISA_ARM_64) && !defined(_MSC_VER)
 */
 
-# if defined(HURCHALLA_ENABLE_INLINE_ASM_128_BIT) && (HURCHALLA_COMPILER_HAS_UINT128_T())
+# if (HURCHALLA_COMPILER_HAS_UINT128_T())
 template <>
 struct impl_modular_subtraction_unsigned<__uint128_t, LowuopsTag> {
   HURCHALLA_FORCE_INLINE static
@@ -502,7 +502,7 @@ struct impl_modular_subtraction_unsigned<std::uint64_t, LowuopsTag> {
 };
 
 
-# if defined(HURCHALLA_ENABLE_INLINE_ASM_128_BIT) && (HURCHALLA_COMPILER_HAS_UINT128_T())
+# if (HURCHALLA_COMPILER_HAS_UINT128_T())
 template <>
 struct impl_modular_subtraction_unsigned<__uint128_t, LowlatencyTag> {
   HURCHALLA_FORCE_INLINE static
