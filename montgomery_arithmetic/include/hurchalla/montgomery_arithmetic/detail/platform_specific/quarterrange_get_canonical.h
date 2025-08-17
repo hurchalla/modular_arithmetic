@@ -41,6 +41,11 @@ struct default_quarterrange_get_canonical {
     HPBC_PRECONDITION2(0 <= n && n < Rdiv4);
     HPBC_PRECONDITION2(0 <= x && x < static_cast<T>(2*n));
 
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic warning "-Wstrict-overflow=2"
+#endif
+
 #if 0
    // this should be correct, but the #else is preferred for performance
     T result = static_cast<T>(x - n);
@@ -71,6 +76,10 @@ struct default_quarterrange_get_canonical {
 #endif
     HPBC_POSTCONDITION2(result < n);
     return result;
+
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
   }
 };
 
