@@ -108,7 +108,7 @@ struct two_times_restricted_unsigned {
      defined(HURCHALLA_ALLOW_INLINE_ASM_MODADD)) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 
-#ifdef HURCHALLA_ENABLE_INLINE_ASM_128_BIT
+# if (HURCHALLA_COMPILER_HAS_UINT128_T())
 template <>
 struct two_times_restricted_unsigned<__uint128_t> {
   HURCHALLA_FORCE_INLINE static
@@ -133,11 +133,11 @@ struct two_times_restricted_unsigned<__uint128_t> {
              "cmovbq %[tmplo], %[sumlo] \n\t"   /* sum = (sum<m) ? tmp : tmp2 */
              "cmovbq %[tmphi], %[sumhi] \n\t"
              : [sumlo]"+&r"(sumlo), [sumhi]"+&r"(sumhi)
-# if defined(__clang__)        /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
+#  if defined(__clang__)       /* https://bugs.llvm.org/show_bug.cgi?id=20197 */
              : [mlo]"r"(mlo), [mhi]"r"(mhi), [tmplo]"r"(tmplo), [tmphi]"r"(tmphi)
-# else
+#  else
              : [mlo]"rm"(mlo), [mhi]"rm"(mhi), [tmplo]"rm"(tmplo), [tmphi]"rm"(tmphi)
-# endif
+#  endif
              : "cc");
     __uint128_t result = (static_cast<__uint128_t>(sumhi) << 64) | sumlo;
 
@@ -147,7 +147,7 @@ struct two_times_restricted_unsigned<__uint128_t> {
     return result;
   }
 };
-#endif
+# endif
 
 template <>
 struct two_times_restricted_unsigned<std::uint64_t> {
@@ -227,7 +227,7 @@ struct two_times_restricted_unsigned<std::uint32_t> {
 #if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
      defined(HURCHALLA_ALLOW_INLINE_ASM_ABSDIFF)) && \
     defined(HURCHALLA_TARGET_ISA_ARM_64) && !defined(_MSC_VER)
-# if defined(HURCHALLA_ENABLE_INLINE_ASM_128_BIT) && (HURCHALLA_COMPILER_HAS_UINT128_T())
+# if (HURCHALLA_COMPILER_HAS_UINT128_T())
 */
 template <>
 struct two_times_restricted_unsigned<__uint128_t> {

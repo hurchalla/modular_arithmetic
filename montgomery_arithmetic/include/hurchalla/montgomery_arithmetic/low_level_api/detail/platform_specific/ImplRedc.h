@@ -192,17 +192,28 @@ struct DefaultRedcStandard
   static HURCHALLA_FORCE_INLINE
   T call(T u_hi, T u_lo, T n, T inv_n)
   {
+#if defined(HURCHALLA_AVOID_CSELECT)
     bool ovf;
     T result = RedcIncomplete::call(ovf, u_hi, u_lo, n, inv_n);
     // By RedcIncomplete::call()'s Postcondition #1, we get
     // T final_result = (ovf) ? static_cast<T>(result + n) : result;
-#if defined(HURCHALLA_AVOID_CSELECT)
     T mask = static_cast<T>(-static_cast<T>(ovf));
     T final_result = static_cast<T>(result + (mask & n));
 #else
+# if 0
+    bool ovf;
+    T result = RedcIncomplete::call(ovf, u_hi, u_lo, n, inv_n);
       // final_result = (ovf) ? static_cast<T>(result+n) : result
     T final_result = ::hurchalla::conditional_select(
                                          ovf, static_cast<T>(result+n), result);
+# else
+    using P = typename safely_promote_unsigned<T>::type;
+    T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
+    T mn_lo;
+    T mn_hi = ::hurchalla::unsigned_multiply_to_hilo_product(mn_lo, m, n);
+    T final_result = ::hurchalla::modular_subtraction_prereduced_inputs
+                                    <T,::hurchalla::LowuopsTag>(u_hi, mn_hi, n);
+# endif
 #endif
     HPBC_POSTCONDITION2(final_result < n);
     return final_result;
@@ -232,6 +243,65 @@ struct RedcStandard
 #if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
      defined(HURCHALLA_ALLOW_INLINE_ASM_REDC)) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
+
+# if (HURCHALLA_COMPILER_HAS_UINT128_T())
+// specialization for __uint128_t (for x86_64)
+template <>
+struct RedcStandard<__uint128_t>
+{
+  using T = __uint128_t;
+
+  static HURCHALLA_FORCE_INLINE
+  T call(T u_hi, T u_lo, T n, T inv_n, LowlatencyTag)
+  {
+    using P = typename safely_promote_unsigned<T>::type;
+    // see uint64_t version's comments for explanations
+    HPBC_PRECONDITION2(u_hi < n);
+    HPBC_PRECONDITION2(
+                static_cast<T>(static_cast<P>(n) * static_cast<P>(inv_n)) == 1);
+    HPBC_PRECONDITION2(n % 2 == 1);
+    HPBC_PRECONDITION2(n > 1);
+
+    T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
+    T mn_lo;
+    T mn_hi = ::hurchalla::unsigned_multiply_to_hilo_product(mn_lo, m, n);
+    HPBC_ASSERT2(mn_hi < n);
+    T reg = u_hi + n;
+
+    using std::uint64_t;
+    uint64_t reglo = static_cast<uint64_t>(reg);
+    uint64_t reghi = static_cast<uint64_t>(reg >> 64);
+    uint64_t uhilo = static_cast<uint64_t>(u_hi);
+    uint64_t uhihi = static_cast<uint64_t>(u_hi >> 64);
+    uint64_t mnhilo = static_cast<uint64_t>(mn_hi);
+    uint64_t mnhihi = static_cast<uint64_t>(mn_hi >> 64);
+    __asm__ (
+        "subq %[mnhilo], %[reglo] \n\t"     /* reg = u_hi + n - mn_hi */
+        "sbbq %[mnhihi], %[reghi] \n\t"
+        "subq %[mnhilo], %[uhilo] \n\t"     /* t_hi = u_hi - mn_hi */
+        "sbbq %[mnhihi], %[uhihi] \n\t"
+        "cmovaeq %[uhilo], %[reglo] \n\t"   /* reg = (u_hi >= mn_hi) ? t_hi : reg */
+        "cmovaeq %[uhihi], %[reghi] \n\t"
+        : [reglo]"+&r"(reglo), [reghi]"+&r"(reghi), [uhilo]"+&r"(uhilo), [uhihi]"+&r"(uhihi)
+        : [mnhilo]"r"(mnhilo), [mnhihi]"r"(mnhihi)
+        : "cc");
+    T result = (static_cast<__uint128_t>(reghi) << 64) | reglo;
+    HPBC_ASSERT2(result == DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n));
+    HPBC_POSTCONDITION2(result < n);
+    return result;
+  }
+
+  static HURCHALLA_FORCE_INLINE
+  T call(T u_hi, T u_lo, T n, T inv_n, LowuopsTag)
+  {
+    T result = DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n);
+    HPBC_POSTCONDITION2(result < n);
+    return result;
+  }
+};
+# endif
+
+
 // specialization for uint64_t (for x86_64)
 template <>
 struct RedcStandard<std::uint64_t>
@@ -281,6 +351,52 @@ struct RedcStandard<std::uint64_t>
     // Calling DefaultRedcStandard::call will give us optimal code (we're
     // relying upon modular_subtract_prereduced_inputs() being optimized for low
     // uops - which it is, at least at the time of writing this)
+    T result = DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n);
+    HPBC_POSTCONDITION2(result < n);
+    return result;
+  }
+};
+
+
+// specialization for uint32_t
+template <>
+struct RedcStandard<std::uint32_t>
+{
+  using T = std::uint32_t;
+
+  static HURCHALLA_FORCE_INLINE
+  T call(T u_hi, T u_lo, T n, T inv_n, LowlatencyTag)
+  {
+    using P = typename safely_promote_unsigned<T>::type;
+    // see uint64_t version's comments for explanations
+    HPBC_PRECONDITION2(u_hi < n);
+    HPBC_PRECONDITION2(
+                static_cast<T>(static_cast<P>(n) * static_cast<P>(inv_n)) == 1);
+    HPBC_PRECONDITION2(n % 2 == 1);
+    HPBC_PRECONDITION2(n > 1);
+
+    T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
+    T mn_lo;
+    T mn_hi = ::hurchalla::unsigned_multiply_to_hilo_product(mn_lo, m, n);
+    HPBC_ASSERT2(mn_hi < n);
+    T reg = u_hi + n;
+    T uhi = u_hi;
+    __asm__ (
+        "subl %[mnhi], %[reg] \n\t"     /* reg = u_hi + n - mn_hi */
+        "subl %[mnhi], %[uhi] \n\t"     /* t_hi = u_hi - mn_hi */
+        "cmovael %[uhi], %[reg] \n\t"   /* reg = (u_hi >= mn_hi) ? t_hi : reg */
+        : [reg]"+&r"(reg), [uhi]"+&r"(uhi)
+        : [mnhi]"r"(mn_hi)
+        : "cc");
+    T result = reg;
+    HPBC_ASSERT2(result == DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n));
+    HPBC_POSTCONDITION2(result < n);
+    return result;
+  }
+
+  static HURCHALLA_FORCE_INLINE
+  T call(T u_hi, T u_lo, T n, T inv_n, LowuopsTag)
+  {
     T result = DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n);
     HPBC_POSTCONDITION2(result < n);
     return result;
