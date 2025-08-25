@@ -425,14 +425,12 @@ struct impl_modular_subtraction_unsigned<std::uint32_t, LowlatencyTag> {
 
 
 
-#if 0  // dont enable arm64 assembly yet
-/*
+
 // ARM64
 // MSVC doesn't support inline asm so we skip it.
 #if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
      defined(HURCHALLA_ALLOW_INLINE_ASM_MODSUB)) && \
     defined(HURCHALLA_TARGET_ISA_ARM_64) && !defined(_MSC_VER)
-*/
 
 # if (HURCHALLA_COMPILER_HAS_UINT128_T())
 template <>
@@ -445,6 +443,8 @@ struct impl_modular_subtraction_unsigned<__uint128_t, LowuopsTag> {
     HPBC_PRECONDITION2(a<modulus);  // __uint128_t guarantees a>=0.
     HPBC_PRECONDITION2(b<modulus);  // __uint128_t guarantees b>=0.
 
+    uint64_t difflo;
+    uint64_t diffhi;
     uint64_t mozlo;
     uint64_t mozhi;
     uint64_t alo = static_cast<uint64_t>(a);
@@ -453,15 +453,13 @@ struct impl_modular_subtraction_unsigned<__uint128_t, LowuopsTag> {
     uint64_t bhi = static_cast<uint64_t>(b >> 64);
     uint64_t mlo = static_cast<uint64_t>(modulus);
     uint64_t mhi = static_cast<uint64_t>(modulus >> 64);
-    __asm__ ("subs %[alo], %[alo], %[blo] \n\t"       /* diff = a - b */
-             "sbcs %[ahi], %[ahi], %[bhi] \n\t"
+    __asm__ ("subs %[difflo], %[alo], %[blo] \n\t"   /* diff = a - b */
+             "sbcs %[diffhi], %[ahi], %[bhi] \n\t"
              "csel %[mozlo], %[mlo], xzr, lo \n\t"   /* mozlo = (a<b) ? mlo : 0 */
              "csel %[mozhi], %[mhi], xzr, lo \n\t"   /* mozhi = (a<b) ? mhi : 0 */
-             : [alo]"+&r"(alo), [ahi]"+&r"(ahi), [mozlo]"=&r"(mozlo), [mozhi]"=r"(mozhi)
-             : [blo]"r"(blo), [bhi]"r"(bhi), [mlo]"r"(mlo), [mhi]"r"(mhi)
+             : [difflo]"=&r"(difflo), [diffhi]"=&r"(diffhi), [mozlo]"=&r"(mozlo), [mozhi]"=r"(mozhi)
+             : [alo]"r"(alo), [ahi]"r"(ahi), [blo]"r"(blo), [bhi]"r"(bhi), [mlo]"r"(mlo), [mhi]"r"(mhi)
              : "cc");
-    uint64_t difflo = alo;
-    uint64_t diffhi = ahi;
     __uint128_t diff = (static_cast<__uint128_t>(diffhi) << 64) | difflo;
     __uint128_t moz = (static_cast<__uint128_t>(mozhi) << 64) | mozlo;
 
@@ -485,14 +483,15 @@ struct impl_modular_subtraction_unsigned<std::uint64_t, LowuopsTag> {
     HPBC_PRECONDITION2(a<modulus);  // uint64_t guarantees a>=0.
     HPBC_PRECONDITION2(b<modulus);  // uint64_t guarantees b>=0.
 
-    uint64_t tmp;
-    uint64_t result;
-    __asm__ ("subs %[tmp], %[a], %[b] \n\t"          /* tmp = a - b */
-             "add  %[res], %[tmp], %[m] \n\t"        /* res = tmp + modulus */
-             "csel %[res], %[res], %[tmp], lo \n\t"  /* res = (a<b) ? res : tmp */
-             : [tmp]"=&r"(tmp), [res]"=r"(result)
-             : [m]"r"(modulus), [b]"r"(b)
+    uint64_t diff;
+    uint64_t res;
+    __asm__ ("subs %[diff], %[a], %[b] \n\t"          /* diff = a - b */
+             "add  %[res], %[diff], %[m] \n\t"        /* res = diff + modulus */
+             "csel %[res], %[res], %[diff], lo \n\t"  /* res = (a<b) ? res : diff */
+             : [diff]"=&r"(diff), [res]"=r"(res)
+             : [a]"r"(a), [b]"r"(b), [m]"r"(modulus)
              : "cc");
+    uint64_t result = res;
 
     HPBC_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
     HPBC_POSTCONDITION2(result ==
@@ -553,12 +552,14 @@ struct impl_modular_subtraction_unsigned<std::uint64_t, LowlatencyTag> {
 
     uint64_t diff = b - modulus;
     uint64_t tmp = a - diff;
-    uint64_t result;
+
+    uint64_t res;
     __asm__ ("subs %[res], %[a], %[b] \n\t"         /* res = a - b */
              "csel %[res], %[tmp], %[res], lo \n\t" /* res = (a<b) ? tmp : res */
-             : [res]"=&r"(result)
+             : [res]"=&r"(res)
              : [a]"r"(a), [b]"r"(b), [tmp]"r"(tmp)
              : "cc");
+    uint64_t result = res;
 
     HPBC_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
     HPBC_POSTCONDITION2(result ==

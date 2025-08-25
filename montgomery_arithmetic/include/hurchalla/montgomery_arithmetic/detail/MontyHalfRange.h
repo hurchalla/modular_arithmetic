@@ -139,6 +139,8 @@ class MontyHalfRange final :
         HPBC_PRECONDITION2(isValid(x));
         S sx = x.get();
         S result = static_cast<S>(-sx);
+        if (result == static_cast<S>(n_))
+            result = 0;
         HPBC_POSTCONDITION2(isValid(V(result)));
         HPBC_POSTCONDITION2(getCanonicalValue(V(result)) ==
                             getCanonicalValue(subtract(C(0), x, LowuopsTag())));

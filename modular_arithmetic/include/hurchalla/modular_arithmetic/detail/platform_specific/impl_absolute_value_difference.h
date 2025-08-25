@@ -147,14 +147,12 @@ struct impl_absolute_value_difference_unsigned<std::uint32_t> {
 
 
 
-#if 0  // dont enable arm64 assembly yet
-/*
+
 // ARM64
 // MSVC doesn't support inline asm so we skip it.
 #if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
      defined(HURCHALLA_ALLOW_INLINE_ASM_ABSDIFF)) && \
     defined(HURCHALLA_TARGET_ISA_ARM_64) && !defined(_MSC_VER)
-*/
 # if (HURCHALLA_COMPILER_HAS_UINT128_T())
 template <>
 struct impl_absolute_value_difference_unsigned<__uint128_t> {
@@ -170,14 +168,16 @@ struct impl_absolute_value_difference_unsigned<__uint128_t> {
     uint64_t diffhi = static_cast<uint64_t>(diff >> 64);
     uint64_t blo = static_cast<uint64_t>(b);
     uint64_t bhi = static_cast<uint64_t>(b >> 64);
-    __asm__ ("subs %[alo], %[alo], %[blo] \n\t"         /* tmp = a - b */
-             "sbcs %[ahi], %[ahi], %[bhi] \n\t"
-             "csel %[alo], %[difflo], %[alo], lo \n\t"  /* tmp = (a < b) ? diff : tmp */
-             "csel %[ahi], %[diffhi], %[ahi], lo \n\t"
-             : [alo]"+&r"(alo), [ahi]"+&r"(ahi)
-             : [blo]"r"(blo), [bhi]"r"(bhi), [difflo]"r"(difflo), [diffhi]"r"(diffhi)
+    uint64_t reslo;
+    uint64_t reshi;
+    __asm__ ("subs %[reslo], %[alo], %[blo] \n\t"           /* res = a - b */
+             "sbcs %[reshi], %[ahi], %[bhi] \n\t"
+             "csel %[reslo], %[difflo], %[reslo], lo \n\t"  /* res = (a < b) ? diff : res */
+             "csel %[reshi], %[diffhi], %[reshi], lo \n\t"
+             : [reslo]"=&r"(reslo), [reshi]"=&r"(reshi)
+             : [alo]"r"(alo), [ahi]"r"(ahi), [blo]"r"(blo), [bhi]"r"(bhi), [difflo]"r"(difflo), [diffhi]"r"(diffhi)
              : "cc");
-    __uint128_t result = (static_cast<__uint128_t>(ahi) << 64) | alo;
+    __uint128_t result = (static_cast<__uint128_t>(reshi) << 64) | reslo;
 
     HPBC_POSTCONDITION2(result<=a || result<=b);
     HPBC_POSTCONDITION2(result == default_impl_absdiff_unsigned::call(a, b));
@@ -197,7 +197,7 @@ struct impl_absolute_value_difference_unsigned<std::uint64_t> {
     __asm__ ("subs %[tmp], %[a], %[b] \n\t"           /* tmp = a - b */
              "csel %[tmp], %[diff], %[tmp], lo \n\t"  /* tmp = (a < b) ? diff : tmp */
              : [tmp]"=&r"(tmp)
-             : [b]"r"(b), [diff]"r"(diff)
+             : [a]"r"(a), [b]"r"(b), [diff]"r"(diff)
              : "cc");
     uint64_t result = tmp;
 

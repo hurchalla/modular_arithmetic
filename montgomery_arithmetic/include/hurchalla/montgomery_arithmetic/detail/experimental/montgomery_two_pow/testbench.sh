@@ -373,16 +373,16 @@ exit_on_failure () {
 
 
 # Array two_pow  -O3  M2,  no asm,  uint128_t,  MontQuarter
-# clang: 0 code2 wins, regardless getRSquaredModN
-# gcc:   0 code0 wins at full mod, 0 code2 bad.  with mod reduce by 7, 0 code 2 10% faster with rsquaredmodn considered
+# clang: [update no change]   0 code2 wins, regardless getRSquaredModN
+# gcc:   [update: with asm 0 code 2 wins slightly over 0 code0 - but presumably 0 code0 still far better without asm]  0 code0 wins at full mod, 0 code2 bad.  with mod reduce by 7, 0 code 2 10% faster with rsquaredmodn considered
 #
 # Array two_pow  -O3  M2,  no asm,  uint128_t,  MontHalfrange
-# clang:  0 code2 pretty clearly wins
-# gcc:    0 code0 wins big-time
+# clang:  [update no change]  0 code2 pretty clearly wins
+# gcc:    [update no change]  0 code0 wins big-time
 #
 # Array two_pow  -O3  M2,  no asm,  uint128_t,  MontFullrange
-# clang:  0 code0 wins.  when considering getRSquaredModN,  5 code0 wins.
-# gcc:    0 code0 wins clearly.  (note: gcc is being pretty badly hobbled all around at full mod - branch prediction I'm guessing)
+# clang:  [update no change]  0 code0 wins.  when considering getRSquaredModN,  5 code0 wins.
+# gcc:    [update no change]  0 code0 wins clearly.  (note: gcc is being pretty badly hobbled all around at full mod - branch prediction I'm guessing)
 
 
 # Array two_pow  -O2  M2,  no asm,  uint128_t,  MontQuarter
@@ -398,54 +398,54 @@ exit_on_failure () {
 # gcc:    0 code0 wins clearly.
 
 
-
 #gcc   uint64_t cost to make array r2modN is  ~0.00037
 #clang uint64_t cost to make array r2modN is  ~0.0003525
 
 # Array two_pow  -O3  M2,  no asm,  uint64_t,  MontQuarter
-# clang:  0 code0 wins when not considering r2modn,  0 code2 wins when considering it.  pretty even advantage to both, depending on the criteria.
-# gcc:    0 code0 wins when not considering r2modn,  0 code2 definitely wins when considering it.
+# clang:  [update 0 code 0 wins, 0 code2 roughly even with it considering r2modn]  0 code0 wins when not considering r2modn,  0 code2 wins when considering it.  pretty even advantage to both, depending on the criteria.
+# gcc:    [update no change]   0 code0 wins when not considering r2modn,  0 code2 definitely wins when considering it.
 #
 # Array two_pow  -O3  M2,  no asm,  uint64_t,  MontHalfrange
-# clang:  0 code0 slight advantage when not considering r2modn; otherwise 0 code2 clear winner.
-# gcc:    0 code0 wins when not considering r2modn,  0 code2 wins when considering it.  pretty even advantage to both, depending on the criteria.
+# clang:  [update 0 code 0 wins, 0 code2 maybe wins considering r2modn]  0 code0 slight advantage when not considering r2modn; otherwise 0 code2 clear winner.
+# gcc:    [update no change]  0 code0 wins when not considering r2modn,  0 code2 wins when considering it.  pretty even advantage to both, depending on the criteria.
 #
 # Array two_pow  -O3  M2,  no asm,  uint64_t,  MontFullrange
-# clang:  0 code0 wins, regardless getRSquaredModN
-# gcc:    0 code0 wins, regardless getRSquaredModN
+# clang:  [update no change]  0 code0 wins, regardless getRSquaredModN
+# gcc:    [update no change]  0 code0 wins, regardless getRSquaredModN
 #
 # using -O2, the relative standings seem to stay mostly the same.
 
 
 
+
+
 # Standard two_pow  -O3  M2,  no asm,  uint128_t,  MontQuarter, full range modulus (and some noted reduced ranges)
-# clang:  0 false code3  wins,  regardless of rsquaredmodn.  modulus reduction makes no difference.  exponent reduction makes no difference.
-# gcc:  0 false code2  wins,  regardless of rsquaredmodn.  0 false 3 not too far behind, though not as good.
+# clang:  [update 0 true 3 wins, asm or not]  0 false code3  wins,  regardless of rsquaredmodn.  modulus reduction makes no difference.  exponent reduction makes no difference.
+# gcc:  [update 0 true 1 wins, asm or not]  0 false code2  wins,  regardless of rsquaredmodn.  0 false 3 not too far behind, though not as good.
 #
 # Standard two_pow  -O3  M2,  no asm,  uint128_t,  MontHalfrange
-# clang:  0 true 2  wins...  but really,  0 false 3  is equally as good.
-# gcc:  0 false 2  wins.  0 false 3  is close to just as good.
+# clang:  [update 0 true 3 wins, asm or not]  0 true 2  -or-  0 false 3 , equally as good.
+# gcc:  [update 0 false 2 wins, asm or not]   0 false 2  wins.  0 false 3  is close to just as good.
 #
 # Standard two_pow  -O3  M2,  no asm,  uint128_t,  MontFullrange
-# clang:   0 false 3  wins.   0 false 2 is definitely not as good.
-# gcc:  0 false 0 wins. (code section 0???).  Use 0 false 2 instead.
-
+# clang:   [update 0 true 3 wins, asm or not]  0 false 3  wins.   0 false 2 is definitely not as good.
+# gcc:  [update 0 false 2 without asm, 0 true 3 wins with asm]   0 false 0 wins. (code section 0???).  Use 0 false 2 instead.
 
 
 #gcc   uint64_t  getRSquaredModN penalty is 0.00061
 #clang uint64_t  getRSquaredModN penalty is 0.00055
 
 # Standard two_pow  -O3  M2,  no asm,  uint64_t,  MontQuarter
-# clang: 0 true  3 wins, regardless.  0 false 3 is about 1.5% slower.
-# gcc:   0 false 3 wins, regardless.
+# clang: [update 0 true 3 wins with asm, 0 true 1 without]   0 true  3 wins, regardless.  0 false 3 is about 1.5% slower.
+# gcc:   [update 0 true 3 wins, asm or not]   0 false 3 wins, regardless.
 #
 # Standard two_pow  -O3  M2,  no asm,  uint64_t,  MontHalf
-# clang: 0 true  3 wins, regardless.  0 false 3 is about 2% slower.
-# gcc:   0 false 3 wins, regardless.
+# clang: [update 0 true 3 wins with asm, 0 true 1 without]   0 true  3 wins, regardless.  0 false 3 is about 2% slower.
+# gcc:   [update 0 true 3 wins, with or without asm]   0 false 3 wins, regardless.
 #
 # Standard two_pow  -O3  M2,  no asm,  uint64_t,  MontFull
-# clang: 0 true 3 wins, regardless.  0 false 3 about 2.5% slower
-# gcc:   0 true 3 wins, regardless.  0 false 3 about 1.3% slower
+# clang: [update 0 true 1 wins, asm or not]   0 true 3 wins, regardless.  0 false 3 about 2.5% slower
+# gcc:   [update 0 true 3 wins, asm or not]   0 true 3 wins, regardless.  0 false 3 about 1.3% slower
 #
 # using -O2, the relative standings seem to stay mostly the same.
 
@@ -466,6 +466,7 @@ optimization_level=$2
 define_mont_type=-DPREDEF_MONT_TYPE=$3
 define_uint_type=-DPREDEF_UINT_TYPE=$4
 
+define_use_asm=$8
 
 
 cpp_standard=c++17
@@ -490,10 +491,13 @@ else
 fi
 
 
+# argument $8 (if present), should be -DHURCHALLA_ALLOW_INLINE_ASM_ALL
+
+
 
 $cppcompiler  \
         $error_limit   -$optimization_level  $ndebug \
-        $define_mont_type  $define_uint_type \
+        $define_mont_type  $define_uint_type  $define_use_asm \
         -Wall -Wextra -Wpedantic \
         -std=$cpp_standard \
         -I${repo_directory}/modular_arithmetic/modular_arithmetic/include \
@@ -513,8 +517,12 @@ echo "compilation finished, now executing:"
 
 
 # argument $5 (if present), is the randomization seed for std::mt19937_64
-# argument $6 (if present), is max_modulus_divisor
+# argument $6 (if present), is max_modulus_bits_reduce
 # argument $7 (if present), is exponent_bits_reduce
 
 ./testbench_montgomery_two_pow $5 $6 $7
+
+# To give you an example of invoking this script at the command line:
+#   ./testbench.sh clang++ O3 MontgomeryFull __uint128_t 191 8 50
+
 

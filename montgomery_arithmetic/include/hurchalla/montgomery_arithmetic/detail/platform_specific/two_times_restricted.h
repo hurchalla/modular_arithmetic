@@ -105,7 +105,7 @@ struct two_times_restricted_unsigned {
 
 // MSVC doesn't support inline asm, so we skip it.
 #if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
-     defined(HURCHALLA_ALLOW_INLINE_ASM_MODADD)) && \
+     defined(HURCHALLA_ALLOW_INLINE_ASM_TWOTIMES)) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 
 # if (HURCHALLA_COMPILER_HAS_UINT128_T())
@@ -219,16 +219,14 @@ struct two_times_restricted_unsigned<std::uint32_t> {
 
 
 
-#if 0  // temp hack
-# if 1  // temp hack
-/*
+
 // ARM64
 // MSVC doesn't support inline asm so we skip it.
 #if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
-     defined(HURCHALLA_ALLOW_INLINE_ASM_ABSDIFF)) && \
+     defined(HURCHALLA_ALLOW_INLINE_ASM_TWOTIMES)) && \
     defined(HURCHALLA_TARGET_ISA_ARM_64) && !defined(_MSC_VER)
+
 # if (HURCHALLA_COMPILER_HAS_UINT128_T())
-*/
 template <>
 struct two_times_restricted_unsigned<__uint128_t> {
   HURCHALLA_FORCE_INLINE
@@ -279,8 +277,8 @@ struct two_times_restricted_unsigned<std::uint64_t> {
 
     uint64_t sum = static_cast<uint64_t>(a + a);
     uint64_t res;
-    __asm__ ("subs %[res], %[sum], %[m] \n\t"       /* res = sum - m */
-             "csel %[res], %[sum], %[res] lo \n\t"  /* res = (sum<m) ? sum : res */
+    __asm__ ("subs %[res], %[sum], %[m] \n\t"        /* res = sum - m */
+             "csel %[res], %[sum], %[res], lo \n\t"  /* res = (sum<m) ? sum : res */
              : [res]"=&r"(res)
              : [m]"r"(modulus), [sum]"r"(sum)
              : "cc");

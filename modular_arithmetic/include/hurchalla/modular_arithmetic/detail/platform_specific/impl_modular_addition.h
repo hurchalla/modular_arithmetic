@@ -125,7 +125,6 @@ struct impl_modular_addition_unsigned {
      defined(HURCHALLA_ALLOW_INLINE_ASM_MODADD)) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
 
-
 // Note: these functions contain the calculation "b - modulus".  If neither 'b'
 // nor 'modulus' was recently set/modified, then "b - modulus" will usually be
 // calculated at the same time as earlier work by the CPU, or in a loop it could
@@ -242,6 +241,95 @@ struct impl_modular_addition_unsigned<std::uint32_t> {
 
 // end of inline asm functions for x86_64
 #endif
+
+
+
+
+// ARM64
+// MSVC doesn't support inline asm so we skip it.
+#if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
+     defined(HURCHALLA_ALLOW_INLINE_ASM_MODADD)) && \
+    defined(HURCHALLA_TARGET_ISA_ARM_64) && !defined(_MSC_VER)
+# if (HURCHALLA_COMPILER_HAS_UINT128_T())
+template <>
+struct impl_modular_addition_unsigned<__uint128_t> {
+  HURCHALLA_FORCE_INLINE static
+  __uint128_t call(__uint128_t a, __uint128_t b, __uint128_t modulus)
+  {
+    using std::uint64_t;
+    HPBC_PRECONDITION2(modulus>0);
+    HPBC_PRECONDITION2(a<modulus);  // __uint128_t guarantees a>=0.
+    HPBC_PRECONDITION2(b<modulus);  // __uint128_t guarantees b>=0.
+
+    __uint128_t tmp = static_cast<__uint128_t>(b - modulus);
+    __uint128_t sum = static_cast<__uint128_t>(a + b);
+    uint64_t alo = static_cast<uint64_t>(a);
+    uint64_t ahi = static_cast<uint64_t>(a >> 64);
+    uint64_t tmplo = static_cast<uint64_t>(tmp);
+    uint64_t tmphi = static_cast<uint64_t>(tmp >> 64);
+    uint64_t sumlo = static_cast<uint64_t>(sum);
+    uint64_t sumhi = static_cast<uint64_t>(sum >> 64);
+    uint64_t reslo;
+    uint64_t reshi;
+    __asm__ ("adds %[reslo], %[alo], %[tmplo] \n\t"         /* res = a + tmp */
+             "adcs %[reshi], %[ahi], %[tmphi] \n\t"
+             "csel %[reslo], %[sumlo], %[reslo], lo \n\t"   /* res = (res>=a) ? sum : res */
+             "csel %[reshi], %[sumhi], %[reshi], lo \n\t"
+             : [reslo]"=&r"(reslo), [reshi]"=&r"(reshi)
+             : [alo]"r"(alo), [ahi]"r"(ahi), [tmplo]"r"(tmplo), [tmphi]"r"(tmphi), [sumlo]"r"(sumlo), [sumhi]"r"(sumhi)
+             : "cc");
+    __uint128_t result = (static_cast<__uint128_t>(reshi) << 64) | reslo;
+
+    HPBC_POSTCONDITION2(result < modulus);  // __uint128_t guarantees result>=0.
+    HPBC_POSTCONDITION2(result ==
+                             default_impl_modadd_unsigned::call(a, b, modulus));
+    return result;
+  }
+};
+# endif
+
+template <>
+struct impl_modular_addition_unsigned<std::uint64_t> {
+  HURCHALLA_FORCE_INLINE static
+  std::uint64_t call(std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
+  {
+    using std::uint64_t;
+    HPBC_PRECONDITION2(modulus>0);
+    HPBC_PRECONDITION2(a<modulus);  // uint64_t guarantees a>=0.
+    HPBC_PRECONDITION2(b<modulus);  // uint64_t guarantees b>=0.
+
+    uint64_t sum = static_cast<uint64_t>(a + b);
+    uint64_t tmp = static_cast<uint64_t>(b - modulus);
+    uint64_t res;
+    __asm__ ("adds %[res], %[a], %[tmp] \n\t"        /* res = a + tmp */
+             "csel %[res], %[sum], %[res], lo \n\t"  /* res = (res>=a) ? sum : res */
+             : [res]"=&r"(res)
+             : [a]"r"(a), [tmp]"r"(tmp), [sum]"r"(sum)
+             : "cc");
+    uint64_t result = res;
+
+    HPBC_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
+    HPBC_POSTCONDITION2(result ==
+                             default_impl_modadd_unsigned::call(a, b, modulus));
+    return result;
+  }
+};
+
+template <>
+struct impl_modular_addition_unsigned<std::uint32_t> {
+  using U = std::uint32_t;
+  HURCHALLA_FORCE_INLINE static U call(U a, U b, U modulus)
+  {
+    std::uint64_t result = impl_modular_addition_unsigned
+                                           <std::uint64_t>::call(a, b, modulus);
+    return static_cast<U>(result);
+  }
+};
+
+// end of inline asm functions for ARM_64
+#endif
+
+
 
 
 template <>

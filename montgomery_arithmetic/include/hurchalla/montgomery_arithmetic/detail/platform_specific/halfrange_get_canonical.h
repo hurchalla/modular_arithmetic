@@ -189,6 +189,89 @@ struct halfrange_get_canonical<std::int32_t> {
 
 
 
+#if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
+     defined(HURCHALLA_ALLOW_INLINE_ASM_HALFRANGE_GET_CANONICAL)) && \
+      defined(HURCHALLA_TARGET_ISA_ARM_64) && !defined(_MSC_VER)
+
+# if (HURCHALLA_COMPILER_HAS_UINT128_T())
+template <>
+struct halfrange_get_canonical<__int128_t> {
+  HURCHALLA_FORCE_INLINE
+  static __int128_t call(__int128_t x, __int128_t n)
+  {
+    using std::uint64_t;
+    HPBC_PRECONDITION2(n > 0);
+    HPBC_PRECONDITION2(-n <= x && x < n);
+
+    static_assert(static_cast<__int128_t>(-1) == ~(static_cast<__int128_t>(0)),
+                         "__int128_t must use two's complement representation");
+    static_assert(static_cast<__int128_t>(static_cast<__uint128_t>(static_cast<__int128_t>(-1))) ==
+                  static_cast<__int128_t>(-1),
+                  "Casting a signed __int128_t value to unsigned and back "
+                  "again must result in the original value");
+
+    uint64_t xlo = static_cast<uint64_t>(x);
+    uint64_t xhi = static_cast<uint64_t>(x >> 64);
+    uint64_t nlo = static_cast<uint64_t>(n);
+    uint64_t nhi = static_cast<uint64_t>(n >> 64);
+
+    uint64_t reslo;
+    uint64_t reshi;
+    __asm__ ("adds %[reslo], %[xlo], %[nlo] \n\t"         /* res = x + n */
+             "adcs %[reshi], %[xhi], %[nhi] \n\t"
+             "csel %[reslo], %[xlo], %[reslo], lo \n\t"   /* res = (res>=n) ? x : res */
+             "csel %[reshi], %[xhi], %[reshi], lo \n\t"
+             : [reslo]"=&r"(reslo), [reshi]"=&r"(reshi)
+             : [xlo]"r"(xlo), [xhi]"r"(xhi), [nlo]"r"(nlo), [nhi]"r"(nhi)
+             : "cc");
+    __int128_t result = static_cast<__int128_t>(
+                               (static_cast<__uint128_t>(reshi) << 64) | reslo);
+
+    HPBC_POSTCONDITION2(0 <= result && result < n);
+    HPBC_POSTCONDITION2(result == default_halfrange_get_canonical::call(x,n));
+    return result;
+  }
+};
+# endif
+
+template <>
+struct halfrange_get_canonical<std::int64_t> {
+  HURCHALLA_FORCE_INLINE
+  static std::int64_t call(std::int64_t x, std::int64_t n)
+  {
+    HPBC_PRECONDITION2(n > 0);
+    HPBC_PRECONDITION2(-n <= x && x < n);
+
+    std::int64_t res;
+    __asm__ ("adds %[res], %[x], %[n] \n\t"         /* res = x + n */
+             "csel %[res], %[x], %[res], lo \n\t"   /* res = (res>=n) ? x : res */
+             : [res]"=&r"(res)
+             : [x]"r"(x), [n]"r"(n)
+             : "cc");
+    std::int64_t result = res;
+
+    HPBC_POSTCONDITION2(0 <= result && result < n);
+    HPBC_POSTCONDITION2(result == default_halfrange_get_canonical::call(x,n));
+    return result;
+  }
+};
+
+template <>
+struct halfrange_get_canonical<std::int32_t> {
+  using T = std::int32_t;
+  HURCHALLA_FORCE_INLINE static T call(T x, T n)
+  {
+    std::int64_t result = halfrange_get_canonical<std::int64_t>::call(x, n);
+    return static_cast<T>(result);
+  }
+};
+#endif
+
+
+
+
+
+
 template <>
 struct halfrange_get_canonical<std::int16_t> {
   using T = std::int16_t;

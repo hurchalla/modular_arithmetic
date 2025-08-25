@@ -46,7 +46,7 @@ template <> struct tagged_montgomery_two_pow
   template <class MF, typename U>  HURCHALLA_FORCE_INLINE
   static typename MF::MontgomeryValue call(const MF& mf, U n)
   {
-    return impl_montgomery_two_pow::call<false, 0, 3, MF, U>(mf, n);
+    return impl_montgomery_two_pow::call<true, 0, 3, MF, U>(mf, n);
   }
   template <class MF, typename U, std::size_t ARRAY_SIZE> HURCHALLA_FORCE_INLINE
   static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
@@ -62,7 +62,7 @@ template <class MontyTag> struct tagged_montgomery_two_pow
   template <class MF, typename U>  HURCHALLA_FORCE_INLINE
   static typename MF::MontgomeryValue call(const MF& mf, U n)
   {
-    return impl_montgomery_two_pow::call<false, 0, 3, MF, U>(mf, n);
+    return impl_montgomery_two_pow::call<true, 0, 3, MF, U>(mf, n);
   }
   template <class MF, typename U, std::size_t ARRAY_SIZE> HURCHALLA_FORCE_INLINE
   static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
@@ -71,14 +71,14 @@ template <class MontyTag> struct tagged_montgomery_two_pow
     return impl_montgomery_two_pow::call<0, 2, MF, U, ARRAY_SIZE>(mf, n);
   }
 };
-// Specialization: clang and small uint pow.
+// Partial specialization: clang and small uint pow.
 template <class MontyTag> struct tagged_montgomery_two_pow
        <MontyTag, Tag_montgomery_two_pow_clang, Tag_montgomery_two_pow_small>
 {
   template <class MF, typename U>  HURCHALLA_FORCE_INLINE
   static typename MF::MontgomeryValue call(const MF& mf, U n)
   {
-    return impl_montgomery_two_pow::call<true, 0, 3, MF, U>(mf, n);
+    return impl_montgomery_two_pow::call<true, 0, 1, MF, U>(mf, n);
   }
   template <class MF, typename U, std::size_t ARRAY_SIZE> HURCHALLA_FORCE_INLINE
   static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
@@ -88,7 +88,24 @@ template <class MontyTag> struct tagged_montgomery_two_pow
   }
 };
 
-// Specialization: gcc and big uint pow.
+
+// Full specialization: gcc and big uint pow and MontgomeryQuarter.
+template <> struct tagged_montgomery_two_pow
+  <TagMontyQuarterrange, Tag_montgomery_two_pow_gcc, Tag_montgomery_two_pow_big>
+{
+  template <class MF, typename U>  HURCHALLA_FORCE_INLINE
+  static typename MF::MontgomeryValue call(const MF& mf, U n)
+  {
+    return impl_montgomery_two_pow::call<true, 0, 1, MF, U>(mf, n);
+  }
+  template <class MF, typename U, std::size_t ARRAY_SIZE> HURCHALLA_FORCE_INLINE
+  static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
+  call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
+  {
+    return impl_montgomery_two_pow::call<0, 0, MF, U, ARRAY_SIZE>(mf, n);
+  }
+};
+// Partial specialization: gcc and big uint pow.
 template <class MontyTag> struct tagged_montgomery_two_pow
        <MontyTag, Tag_montgomery_two_pow_gcc, Tag_montgomery_two_pow_big>
 {
@@ -104,22 +121,6 @@ template <class MontyTag> struct tagged_montgomery_two_pow
     return impl_montgomery_two_pow::call<0, 0, MF, U, ARRAY_SIZE>(mf, n);
   }
 };
-// Full specialization: gcc and small uint pow and MontgomeryFull.
-template <> struct tagged_montgomery_two_pow
-   <TagMontyFullrange, Tag_montgomery_two_pow_gcc, Tag_montgomery_two_pow_small>
-{
-  template <class MF, typename U>  HURCHALLA_FORCE_INLINE
-  static typename MF::MontgomeryValue call(const MF& mf, U n)
-  {
-    return impl_montgomery_two_pow::call<true, 0, 3, MF, U>(mf, n);
-  }
-  template <class MF, typename U, std::size_t ARRAY_SIZE> HURCHALLA_FORCE_INLINE
-  static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
-  call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
-  {
-    return impl_montgomery_two_pow::call<0, 0, MF, U, ARRAY_SIZE>(mf, n);
-  }
-};
 // Partial specialization: gcc and small uint pow.
 template <class MontyTag> struct tagged_montgomery_two_pow
        <MontyTag, Tag_montgomery_two_pow_gcc, Tag_montgomery_two_pow_small>
@@ -127,7 +128,7 @@ template <class MontyTag> struct tagged_montgomery_two_pow
   template <class MF, typename U>  HURCHALLA_FORCE_INLINE
   static typename MF::MontgomeryValue call(const MF& mf, U n)
   {
-    return impl_montgomery_two_pow::call<false, 0, 3, MF, U>(mf, n);
+    return impl_montgomery_two_pow::call<true, 0, 3, MF, U>(mf, n);
   }
   template <class MF, typename U, std::size_t ARRAY_SIZE> HURCHALLA_FORCE_INLINE
   static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
@@ -166,11 +167,11 @@ struct montgomery_two_pow {
   }
 
 
-  // Helper function - delegated (call2) Array version of montgomery two pow
+  // Helper function - delegated Array version of montgomery two pow
   template <class MF, typename U, std::size_t ARRAY_SIZE>
   static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
   HURCHALLA_FORCE_INLINE
-  call2(const std::array<MF,ARRAY_SIZE>& mf, const std::array<U,ARRAY_SIZE>& n)
+  helper(const std::array<MF,ARRAY_SIZE>& mf, const std::array<U,ARRAY_SIZE>& n)
   {
     static_assert(hurchalla::ut_numeric_limits<U>::is_integer, "");
     static_assert(!hurchalla::ut_numeric_limits<U>::is_signed, "");
@@ -199,7 +200,7 @@ struct montgomery_two_pow {
                           >::type
   call(const std::array<MF,ARRAY_SIZE>& mf, const std::array<T,ARRAY_SIZE>& nt)
   {
-      return call2<MF, T, ARRAY_SIZE>(mf, nt);
+      return helper<MF, T, ARRAY_SIZE>(mf, nt);
   }
 
   // Array version of montgomery two pow, for signed T
@@ -216,7 +217,7 @@ struct montgomery_two_pow {
         HPBC_PRECONDITION(nt[i] >= 0);
         n[i] = static_cast<U>(nt[i]);
       }
-      return call2<MF, U, ARRAY_SIZE>(mf, n);
+      return helper<MF, U, ARRAY_SIZE>(mf, n);
   }
 };
 
