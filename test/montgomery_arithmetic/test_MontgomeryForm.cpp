@@ -5,8 +5,16 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+// Strictly for testing purposes, we'll ensure clockwork asserts are
+// enabled by defining HURCHALLA_CLOCKWORK_ENABLE_ASSERTS.
+#ifndef HURCHALLA_CLOCKWORK_ENABLE_ASSERTS
+#  define HURCHALLA_CLOCKWORK_ENABLE_ASSERTS
+#endif
+
+
 #include "test_MontgomeryForm.h"
 
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include "hurchalla/montgomery_arithmetic/MontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyFullRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
@@ -15,7 +23,6 @@
 #include "gtest/gtest.h"
 #include <cstdint>
 #include <type_traits>
-#include <cassert>
 
 
 namespace {
@@ -32,7 +39,7 @@ TEST(MontgomeryArithmetic, MontgomeryFormExamples) {
         int64_t y = 4;
 
         // montgomery arithmetic always requires an odd modulus
-        assert(modulus % 2 == 1);
+        HPBC_CLOCKWORK_ASSERT(modulus % 2 == 1);
         // first construct a MontgomeryForm object to do Montgomery arithmetic
         // with a particular modulus.
         hc::MontgomeryForm<int64_t> mf(modulus);
@@ -66,7 +73,7 @@ TEST(MontgomeryArithmetic, MontgomeryFormExamples) {
         int64_t base = 42;
         int64_t exponent = 123456789;
 
-        assert(modulus % 2 == 1);  // montgomery arithmetic requires odd modulus
+        HPBC_CLOCKWORK_ASSERT(modulus % 2 == 1);  // montgomery arithmetic requires odd modulus
         // first construct a MontgomeryForm object to do Montgomery arithmetic
         // with a particular modulus.
         hc::MontgomeryForm<int64_t> mf(modulus);

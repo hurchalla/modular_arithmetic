@@ -12,12 +12,14 @@
 // corresponding generic template helper functions inside a postcondition, in
 // order to make sure that the asm result is correct.  Of course postcondition
 // checks must be enabled for this check to occur - the easiest way to ensure
-// postconditions are enabled is to undefine NDEBUG, which is why we undef
-// NDEBUG here too.  This is all strictly for testing purposes.
+// postconditions are enabled is to define HURCHALLA_CLOCKWORK_ENABLE_ASSERTS,
+// which is why we do so here.  This is all strictly for testing purposes.
 #undef HURCHALLA_ALLOW_INLINE_ASM_ALL
 #define HURCHALLA_ALLOW_INLINE_ASM_ALL 1
 
-#undef NDEBUG
+#ifndef HURCHALLA_CLOCKWORK_ENABLE_ASSERTS
+#  define HURCHALLA_CLOCKWORK_ENABLE_ASSERTS
+#endif
 
 #ifdef HURCHALLA_TEST_MODULAR_ARITHMETIC_HEAVYWEIGHT
 // You can define the next macro to test all realistic function template arg
@@ -183,13 +185,13 @@ struct genseq<0> : seq<> {};
 template<class T, std::size_t... N>
 std::array<T, sizeof...(N)> vector_to_array_impl(std::vector<T>& vec, seq<N...>)
 {
-   HPBC_PRECONDITION(vec.size() >= sizeof...(N));
+   HPBC_CLOCKWORK_PRECONDITION2(vec.size() >= sizeof...(N));
    return { vec[N]... };
 }
 template<std::size_t SIZE, class T>
 std::array<T, SIZE> vector_to_array(std::vector<T>& vec)
 {
-   HPBC_PRECONDITION(vec.size() >= SIZE);
+   HPBC_CLOCKWORK_PRECONDITION2(vec.size() >= SIZE);
    return vector_to_array_impl(vec, typename genseq<SIZE>::type{} );
 }
 

@@ -15,7 +15,6 @@
 #include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/sized_uint.h"
-#include "hurchalla/util/compiler_macros.h"
 #include <type_traits>
 
 namespace hurchalla { namespace detail {

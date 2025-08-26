@@ -115,10 +115,10 @@ private:
             if HURCHALLA_CPP17_CONSTEXPR (ut_numeric_limits<OT>::is_signed) {
                 using S = typename extensible_make_signed<typename OpenV::OT>::type;
                 S s = static_cast<S>(x.get());
-                HPBC_ASSERT2(ut_numeric_limits<OT>::min() <= s &&
+                HPBC_CLOCKWORK_ASSERT2(ut_numeric_limits<OT>::min() <= s &&
                               s <= ut_numeric_limits<OT>::max());
             } else {
-                HPBC_ASSERT2(0 <= x.get() && x.get() <= ut_numeric_limits<OT>::max());
+                HPBC_CLOCKWORK_ASSERT2(0 <= x.get() && x.get() <= ut_numeric_limits<OT>::max());
             }
             static_assert(static_cast<OT>(-1) ==
                 static_cast<OT>(static_cast<typename OpenV::OT>(static_cast<OT>(-1))), "");
@@ -141,10 +141,10 @@ private:
             if HURCHALLA_CPP17_CONSTEXPR (ut_numeric_limits<OT>::is_signed) {
                 using S = typename extensible_make_signed<typename OpenC::OT>::type;
                 S s = static_cast<S>(x.get());
-                HPBC_ASSERT2(ut_numeric_limits<OT>::min() <= s &&
+                HPBC_CLOCKWORK_ASSERT2(ut_numeric_limits<OT>::min() <= s &&
                               s <= ut_numeric_limits<OT>::max());
             } else {
-                HPBC_ASSERT2(0 <= x.get() && x.get() <= ut_numeric_limits<OT>::max());
+                HPBC_CLOCKWORK_ASSERT2(0 <= x.get() && x.get() <= ut_numeric_limits<OT>::max());
             }
             static_assert(static_cast<OT>(-1) ==
                 static_cast<OT>(static_cast<typename OpenC::OT>(static_cast<OT>(-1))), "");
@@ -167,10 +167,10 @@ private:
             if HURCHALLA_CPP17_CONSTEXPR (ut_numeric_limits<OT>::is_signed) {
                 using S = typename extensible_make_signed<typename OpenFV::OT>::type;
                 S s = static_cast<S>(x.get());
-                HPBC_ASSERT2(ut_numeric_limits<OT>::min() <= s &&
+                HPBC_CLOCKWORK_ASSERT2(ut_numeric_limits<OT>::min() <= s &&
                               s <= ut_numeric_limits<OT>::max());
             } else {
-                HPBC_ASSERT2(0 <= x.get() && x.get() <= ut_numeric_limits<OT>::max());
+                HPBC_CLOCKWORK_ASSERT2(0 <= x.get() && x.get() <= ut_numeric_limits<OT>::max());
             }
             static_assert(static_cast<OT>(-1) ==
                 static_cast<OT>(static_cast<typename OpenFV::OT>(static_cast<OT>(-1))), "");
@@ -181,7 +181,7 @@ public:
 
     explicit ConcreteMontgomeryForm(T modulus) : mf(static_cast<MFT>(modulus))
     {
-        HPBC_PRECONDITION2(ut_numeric_limits<MFT>::min() <= modulus &&
+        HPBC_CLOCKWORK_PRECONDITION2(ut_numeric_limits<MFT>::min() <= modulus &&
                            modulus <= ut_numeric_limits<MFT>::max());
     }
 
@@ -205,7 +205,7 @@ public:
 
     virtual V convertIn(T a) const override
     {
-        HPBC_PRECONDITION2(0 <= a);
+        HPBC_CLOCKWORK_PRECONDITION2(0 <= a);
         if (ut_numeric_limits<T>::max() > ut_numeric_limits<MFT>::max()) {
             // kind of an unavoidable hack, so that AbstractMontgomeryForm has
             // the same contract for convertIn() as MongomeryForm, which allows
@@ -337,7 +337,7 @@ public:
 
     virtual V two_pow(T exponent) const override
     {
-        HPBC_PRECONDITION2(0 <= exponent);
+        HPBC_CLOCKWORK_PRECONDITION2(0 <= exponent);
         if (ut_numeric_limits<T>::max() > ut_numeric_limits<MFT>::max()) {
             // kind of an unavoidable hack, so that AbstractMontgomeryForm has
             // the same contract for two_pow() as MongomeryForm, which allows
@@ -363,7 +363,7 @@ public:
 
     virtual V pow(V base, T exponent) const override
     {
-        HPBC_PRECONDITION2(0 <= exponent);
+        HPBC_CLOCKWORK_PRECONDITION2(0 <= exponent);
         if (ut_numeric_limits<T>::max() > ut_numeric_limits<MFT>::max()) {
             // kind of an unavoidable hack, so that AbstractMontgomeryForm has
             // the same contract for pow() as MongomeryForm, which allows
@@ -390,7 +390,7 @@ public:
 
     virtual T remainder(T a) const override
     {
-        HPBC_PRECONDITION2(0 <= a);
+        HPBC_CLOCKWORK_PRECONDITION2(0 <= a);
         if (ut_numeric_limits<T>::max() > ut_numeric_limits<MFT>::max()) {
             // kind of an unavoidable hack, so that AbstractMontgomeryForm has
             // the same contract for remainder() as MongomeryForm, which allows
@@ -631,7 +631,7 @@ private:
     static void fixed_size_vector_pow(const MF& mf,
         const std::vector<V>& bases, T exponent, std::vector<V>& answers)
     {
-        HPBC_ASSERT(bases.size() == A);   // if this fails, it is because
+        HPBC_CLOCKWORK_ASSERT(bases.size() == A);   // if this fails, it is because
         // ConcreteMontgomeryForm was constructed with template variadic size_t
         // argument POW_ARRAY_SIZES that did not include the size of bases (as
         // used in this run-time assertion).
@@ -710,13 +710,13 @@ private:
         {
             static_assert(ut_numeric_limits<T1>::is_integer, "");
             static_assert(!ut_numeric_limits<T1>::is_signed, "");
-            HPBC_PRECONDITION2(a > 0 || b > 0);
+            HPBC_CLOCKWORK_PRECONDITION2(a > 0 || b > 0);
             while (a != 0) {
                 T1 tmp = a;
                 a = static_cast<T1>(b % a);
                 b = tmp;
             }
-            HPBC_POSTCONDITION2(b > 0);
+            HPBC_CLOCKWORK_POSTCONDITION2(b > 0);
             return b;
         }
     };

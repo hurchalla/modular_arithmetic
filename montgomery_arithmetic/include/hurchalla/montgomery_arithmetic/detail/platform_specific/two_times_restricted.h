@@ -13,7 +13,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <cstdint>
 #include <type_traits>
 
@@ -46,8 +46,8 @@ struct default_two_times_restricted_unsigned {
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
                                             (ut_numeric_limits<T>::digits - 1));
-    HPBC_PRECONDITION2(0 < modulus && modulus < Rdiv2);
-    HPBC_PRECONDITION2(a < modulus);  // i.e. the input must be prereduced
+    HPBC_CLOCKWORK_PRECONDITION2(0 < modulus && modulus < Rdiv2);
+    HPBC_CLOCKWORK_PRECONDITION2(a < modulus);  // i.e. the input must be prereduced
 
     // note: because modulus < R/2, and a < modulus, we know a+a won't overflow.
     T sum = static_cast<T>(a + a);
@@ -55,7 +55,7 @@ struct default_two_times_restricted_unsigned {
       // result = (sum < modulus) ? sum : result
     result = ::hurchalla::conditional_select(sum < modulus, sum, result);
 
-    HPBC_POSTCONDITION2(static_cast<T>(0) <= result && result < modulus);
+    HPBC_CLOCKWORK_POSTCONDITION2(static_cast<T>(0) <= result && result < modulus);
     return result;
   }
 };
@@ -69,8 +69,8 @@ struct default_two_times_restricted_unsigned {
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
                                             (ut_numeric_limits<T>::digits - 1));
-    HPBC_PRECONDITION2(0 < modulus && modulus < Rdiv2);
-    HPBC_PRECONDITION2(a < modulus);  // the input must be prereduced
+    HPBC_CLOCKWORK_PRECONDITION2(0 < modulus && modulus < Rdiv2);
+    HPBC_CLOCKWORK_PRECONDITION2(a < modulus);  // the input must be prereduced
 
     T sum = static_cast<T>(a + a);
     T tmp = static_cast<T>(a - modulus);
@@ -78,7 +78,7 @@ struct default_two_times_restricted_unsigned {
       // result = (result >= a) ? sum : result
     result = ::hurchalla::conditional_select(result >= a, sum, result);
 
-    HPBC_POSTCONDITION2(static_cast<T>(0) <= result && result < modulus);
+    HPBC_CLOCKWORK_POSTCONDITION2(static_cast<T>(0) <= result && result < modulus);
     return result;
   }
 };
@@ -118,8 +118,8 @@ struct two_times_restricted_unsigned<__uint128_t> {
     using T = __uint128_t;
     constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
                                             (ut_numeric_limits<T>::digits - 1));
-    HPBC_PRECONDITION2(0 < modulus && modulus < Rdiv2);
-    HPBC_PRECONDITION2(a < modulus);  // __uint128_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(0 < modulus && modulus < Rdiv2);
+    HPBC_CLOCKWORK_PRECONDITION2(a < modulus);  // __uint128_t guarantees a>=0.
 
     __uint128_t sum = static_cast<__uint128_t>(a + a);
     uint64_t sumlo = static_cast<uint64_t>(sum);
@@ -141,8 +141,8 @@ struct two_times_restricted_unsigned<__uint128_t> {
              : "cc");
     __uint128_t result = (static_cast<__uint128_t>(sumhi) << 64) | sumlo;
 
-    HPBC_POSTCONDITION2(result < modulus);  // __uint128_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // __uint128_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                        default_two_times_restricted_unsigned::call(a, modulus));
     return result;
   }
@@ -158,8 +158,8 @@ struct two_times_restricted_unsigned<std::uint64_t> {
     using T = uint64_t;
     constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
                                             (ut_numeric_limits<T>::digits - 1));
-    HPBC_PRECONDITION2(0 < modulus && modulus < Rdiv2);
-    HPBC_PRECONDITION2(a < modulus);  // uint64_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(0 < modulus && modulus < Rdiv2);
+    HPBC_CLOCKWORK_PRECONDITION2(a < modulus);  // uint64_t guarantees a>=0.
 
     uint64_t sum = static_cast<uint64_t>(a + a);
     uint64_t tmp = sum;
@@ -174,8 +174,8 @@ struct two_times_restricted_unsigned<std::uint64_t> {
              : "cc");
     uint64_t result = sum;
 
-    HPBC_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                        default_two_times_restricted_unsigned::call(a, modulus));
     return result;
   }
@@ -190,8 +190,8 @@ struct two_times_restricted_unsigned<std::uint32_t> {
     using T = uint32_t;
     constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
                                             (ut_numeric_limits<T>::digits - 1));
-    HPBC_PRECONDITION2(0 < modulus && modulus < Rdiv2);
-    HPBC_PRECONDITION2(a < modulus);  // uint32_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(0 < modulus && modulus < Rdiv2);
+    HPBC_CLOCKWORK_PRECONDITION2(a < modulus);  // uint32_t guarantees a>=0.
 
     uint32_t sum = static_cast<uint32_t>(a + a);
     uint32_t tmp = sum;
@@ -206,8 +206,8 @@ struct two_times_restricted_unsigned<std::uint32_t> {
              : "cc");
     uint32_t result = sum;
 
-    HPBC_POSTCONDITION2(result < modulus);  // uint32_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // uint32_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                        default_two_times_restricted_unsigned::call(a, modulus));
     return result;
   }
@@ -236,8 +236,8 @@ struct two_times_restricted_unsigned<__uint128_t> {
     using T = __uint128_t;
     constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
                                             (ut_numeric_limits<T>::digits - 1));
-    HPBC_PRECONDITION2(0 < modulus && modulus < Rdiv2);
-    HPBC_PRECONDITION2(a < modulus);  // __uint128_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(0 < modulus && modulus < Rdiv2);
+    HPBC_CLOCKWORK_PRECONDITION2(a < modulus);  // __uint128_t guarantees a>=0.
 
     __uint128_t sum = static_cast<__uint128_t>(a + a);
     uint64_t sumlo = static_cast<uint64_t>(sum);
@@ -255,8 +255,8 @@ struct two_times_restricted_unsigned<__uint128_t> {
              : "cc");
     __uint128_t result = (static_cast<__uint128_t>(reshi) << 64) | reslo;
 
-    HPBC_POSTCONDITION2(result < modulus);  // __uint128_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // __uint128_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                        default_two_times_restricted_unsigned::call(a, modulus));
     return result;
   }
@@ -272,8 +272,8 @@ struct two_times_restricted_unsigned<std::uint64_t> {
     using T = std::uint64_t;
     constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
                                             (ut_numeric_limits<T>::digits - 1));
-    HPBC_PRECONDITION2(0 < modulus && modulus < Rdiv2);
-    HPBC_PRECONDITION2(a < modulus);  // uint64_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(0 < modulus && modulus < Rdiv2);
+    HPBC_CLOCKWORK_PRECONDITION2(a < modulus);  // uint64_t guarantees a>=0.
 
     uint64_t sum = static_cast<uint64_t>(a + a);
     uint64_t res;
@@ -284,8 +284,8 @@ struct two_times_restricted_unsigned<std::uint64_t> {
              : "cc");
     uint64_t result = res;
 
-    HPBC_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                        default_two_times_restricted_unsigned::call(a, modulus));
     return result;
   }
@@ -341,8 +341,8 @@ struct two_times_restricted {
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
                                             (ut_numeric_limits<T>::digits - 1));
-    HPBC_PRECONDITION2(0 < modulus && modulus < Rdiv2);
-    HPBC_PRECONDITION2(a < modulus);  // i.e. the input must be prereduced
+    HPBC_CLOCKWORK_PRECONDITION2(0 < modulus && modulus < Rdiv2);
+    HPBC_CLOCKWORK_PRECONDITION2(a < modulus);  // i.e. the input must be prereduced
 
     return two_times_restricted_unsigned<T>::call(a, modulus);
   }
@@ -363,20 +363,20 @@ struct two_times_restricted<T, true> {
                                " back again must result in the original value");
     constexpr U Rdiv2 = static_cast<U>(static_cast<U>(1) <<
                                             (ut_numeric_limits<U>::digits - 1));
-    HPBC_PRECONDITION2(0 < modulus && modulus < Rdiv2);
-    HPBC_PRECONDITION2(0 <= a && a < modulus);
+    HPBC_CLOCKWORK_PRECONDITION2(0 < modulus && modulus < Rdiv2);
+    HPBC_CLOCKWORK_PRECONDITION2(0 <= a && a < modulus);
 
 #if defined(HURCHALLA_AVOID_CSELECT)
     static_assert((static_cast<T>(-1) >> 1) == static_cast<T>(-1),
                           "Arithmetic right shift is required but unavailable");
     T tmp = static_cast<T>(a - modulus);
-    HPBC_ASSERT2(tmp < 0);
+    HPBC_CLOCKWORK_ASSERT2(tmp < 0);
     tmp = static_cast<T>(tmp + a);
     // if tmp is negative, use a bit mask of all 1s.  Otherwise use all 0s.
     U mask = static_cast<U>(tmp >> ut_numeric_limits<T>::digits);
     U masked_modulus = static_cast<U>(mask & static_cast<U>(modulus));
     U result = static_cast<U>(static_cast<U>(tmp) + masked_modulus);
-    HPBC_ASSERT2(result == two_times_restricted_unsigned<U>::call(
+    HPBC_CLOCKWORK_ASSERT2(result == two_times_restricted_unsigned<U>::call(
                                    static_cast<U>(a), static_cast<U>(modulus)));
 #else
     U result = two_times_restricted_unsigned<U>::call(static_cast<U>(a),

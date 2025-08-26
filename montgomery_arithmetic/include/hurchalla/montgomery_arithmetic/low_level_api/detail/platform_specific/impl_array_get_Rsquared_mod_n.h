@@ -16,7 +16,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <array>
 
 #if defined(_MSC_VER)
@@ -48,11 +48,11 @@ struct impl_array_get_Rsquared_mod_n {
 
     using std::size_t;
     namespace hc = ::hurchalla;
-    if (HPBC_PRECONDITION2_MACRO_IS_ACTIVE) {
+    if (HPBC_CLOCKWORK_PRECONDITION2_MACRO_IS_ACTIVE) {
         for (size_t j=0; j<ARRAY_SIZE; ++j) {
-            HPBC_PRECONDITION2(n[j] % 2 == 1);
-            HPBC_PRECONDITION2(n[j] > 1);
-            HPBC_PRECONDITION2(Rmod_n[j] < n[j]);
+            HPBC_CLOCKWORK_PRECONDITION2(n[j] % 2 == 1);
+            HPBC_CLOCKWORK_PRECONDITION2(n[j] > 1);
+            HPBC_CLOCKWORK_PRECONDITION2(Rmod_n[j] < n[j]);
         }
     }
     std::array<T, ARRAY_SIZE> rSquaredModN;
@@ -79,12 +79,12 @@ struct impl_array_get_Rsquared_mod_n {
                 tmp[j] = hc::REDC_standard(u_hi, u_lo, n[j], inverse_n_modR[j], PTAG());
             }
         }
-        HPBC_ASSERT2(i == bitsT);
+        HPBC_CLOCKWORK_ASSERT2(i == bitsT);
         rSquaredModN = tmp;
 
-        if (HPBC_PRECONDITION2_MACRO_IS_ACTIVE) {
+        if (HPBC_CLOCKWORK_PRECONDITION2_MACRO_IS_ACTIVE) {
             for (size_t j=0; j<ARRAY_SIZE; ++j) {
-                HPBC_POSTCONDITION2(rSquaredModN[j] ==
+                HPBC_CLOCKWORK_POSTCONDITION2(rSquaredModN[j] ==
                                    hc::modular_multiplication_prereduced_inputs(
                                                    Rmod_n[j], Rmod_n[j], n[j]));
             }
@@ -96,9 +96,9 @@ struct impl_array_get_Rsquared_mod_n {
         }
     }
 
-    if (HPBC_PRECONDITION2_MACRO_IS_ACTIVE) {
+    if (HPBC_CLOCKWORK_PRECONDITION2_MACRO_IS_ACTIVE) {
         for (size_t j=0; j<ARRAY_SIZE; ++j)
-            HPBC_POSTCONDITION2(rSquaredModN[j] < n[j]);
+            HPBC_CLOCKWORK_POSTCONDITION2(rSquaredModN[j] < n[j]);
     }
     return rSquaredModN;
   }
@@ -122,12 +122,12 @@ struct impl_array_get_Rsquared_mod_n<true, PTAG> {
     namespace hc = ::hurchalla;
     constexpr T Rdiv4 = static_cast<T>(static_cast<T>(1) <<
                                             (ut_numeric_limits<T>::digits - 2));
-    if (HPBC_PRECONDITION2_MACRO_IS_ACTIVE) {
+    if (HPBC_CLOCKWORK_PRECONDITION2_MACRO_IS_ACTIVE) {
         for (size_t j=0; j<ARRAY_SIZE; ++j) {
-            HPBC_PRECONDITION2(n[j] % 2 == 1);
-            HPBC_PRECONDITION2(n[j] > 1);
-            HPBC_PRECONDITION2(n[j] < Rdiv4);
-            HPBC_PRECONDITION2(Rmod_n[j] < n[j]);
+            HPBC_CLOCKWORK_PRECONDITION2(n[j] % 2 == 1);
+            HPBC_CLOCKWORK_PRECONDITION2(n[j] > 1);
+            HPBC_CLOCKWORK_PRECONDITION2(n[j] < Rdiv4);
+            HPBC_CLOCKWORK_PRECONDITION2(Rmod_n[j] < n[j]);
         }
     }
     std::array<T, ARRAY_SIZE> rSquaredModN;
@@ -155,10 +155,10 @@ struct impl_array_get_Rsquared_mod_n<true, PTAG> {
                 bool isNegative;  // ignored
                 tmp[j] = hc::REDC_incomplete(isNegative, u_hi, u_lo, n[j], inverse_n_modR[j]);
                 tmp[j] = static_cast<T>(tmp[j] + n[j]);
-                HPBC_ASSERT2(0 < tmp[j] && tmp[j] < static_cast<T>(2*n[j]));
+                HPBC_CLOCKWORK_ASSERT2(0 < tmp[j] && tmp[j] < static_cast<T>(2*n[j]));
             }
         }
-        HPBC_ASSERT2(i == bitsT/2);
+        HPBC_CLOCKWORK_ASSERT2(i == bitsT/2);
         {
             // This final iteration was unrolled from the loop above so we can
             // use standard REDC, which will end with tmp in the range [0, n).
@@ -170,9 +170,9 @@ struct impl_array_get_Rsquared_mod_n<true, PTAG> {
         }
         rSquaredModN = tmp;
 
-        if (HPBC_PRECONDITION2_MACRO_IS_ACTIVE) {
+        if (HPBC_CLOCKWORK_PRECONDITION2_MACRO_IS_ACTIVE) {
             for (size_t j=0; j<ARRAY_SIZE; ++j) {
-                HPBC_POSTCONDITION2(rSquaredModN[j] ==
+                HPBC_CLOCKWORK_POSTCONDITION2(rSquaredModN[j] ==
                                    hc::modular_multiplication_prereduced_inputs(
                                                    Rmod_n[j], Rmod_n[j], n[j]));
             }
@@ -184,9 +184,9 @@ struct impl_array_get_Rsquared_mod_n<true, PTAG> {
         }
     }
 
-    if (HPBC_PRECONDITION2_MACRO_IS_ACTIVE) {
+    if (HPBC_CLOCKWORK_PRECONDITION2_MACRO_IS_ACTIVE) {
         for (size_t j=0; j<ARRAY_SIZE; ++j)
-            HPBC_POSTCONDITION2(rSquaredModN[j] < n[j]);
+            HPBC_CLOCKWORK_POSTCONDITION2(rSquaredModN[j] < n[j]);
     }
     return rSquaredModN;
   }

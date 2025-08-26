@@ -11,7 +11,7 @@
 
 #include "hurchalla/modular_arithmetic/detail/impl_modular_pow.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 
 namespace hurchalla {
 
@@ -28,13 +28,13 @@ T modular_pow(T base, U exponent, T modulus)
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     static_assert(ut_numeric_limits<U>::is_integer, "");
     static_assert(!(ut_numeric_limits<U>::is_signed), "");
-    HPBC_PRECONDITION(modulus > 1);
+    HPBC_CLOCKWORK_PRECONDITION(modulus > 1);
 
     T result = detail::impl_modular_pow::call(base, exponent, modulus);
 
     // POSTCONDITION:
     //  Returns the modular exponentiation of base to the exponent (mod modulus)
-    HPBC_POSTCONDITION(result<modulus);
+    HPBC_CLOCKWORK_POSTCONDITION(result<modulus);
     return result;
 }
 

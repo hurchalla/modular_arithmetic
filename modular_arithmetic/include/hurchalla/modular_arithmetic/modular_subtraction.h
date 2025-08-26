@@ -13,7 +13,7 @@
 #include "hurchalla/modular_arithmetic/detail/optimization_tag_structs.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <type_traits>
 
 namespace hurchalla {
@@ -26,9 +26,9 @@ T modular_subtraction_prereduced_inputs(T a, T b, T modulus)
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(std::is_same<PTAG,LowlatencyTag>::value ||
                   std::is_same<PTAG,LowuopsTag>::value, "");
-    HPBC_PRECONDITION(modulus > 0);
-    HPBC_PRECONDITION(0<=a && a<modulus);   // i.e. the input must be prereduced
-    HPBC_PRECONDITION(0<=b && b<modulus);   // i.e. the input must be prereduced
+    HPBC_CLOCKWORK_PRECONDITION(modulus > 0);
+    HPBC_CLOCKWORK_PRECONDITION(0<=a && a<modulus);   // i.e. the input must be prereduced
+    HPBC_CLOCKWORK_PRECONDITION(0<=b && b<modulus);   // i.e. the input must be prereduced
 
     T result = detail::impl_modular_subtraction<T,PTAG>::call(a, b, modulus);
 
@@ -38,7 +38,7 @@ T modular_subtraction_prereduced_inputs(T a, T b, T modulus)
     // This function returns (a-b) %% modulus, performed as if a and b are
     // infinite precision signed ints (and thus as if it is impossible for the
     // subtraction (a-b) to overflow).
-    HPBC_POSTCONDITION(0<=result && result<modulus);
+    HPBC_CLOCKWORK_POSTCONDITION(0<=result && result<modulus);
     return result;
 }
 

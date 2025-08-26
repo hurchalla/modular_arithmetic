@@ -12,7 +12,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 
 //#include "hurchalla/montgomery_arithmetic/detail/impl_montgomery_pow_2kary.h"
 #include "experimental_montgomery_two_pow.h"
@@ -27,8 +27,8 @@
 #include <random>
 
 
-#ifndef NDEBUG
-#warning "asserts are enabled and will slow performance"
+#if defined(HURCHALLA_CLOCKWORK_ENABLE_ASSERTS) || defined(HURCHALLA_UTIL_ENABLE_ASSERTS)
+#  warning "asserts are enabled and will slow performance"
 #endif
 
 
@@ -55,7 +55,7 @@ U div_2U_by_1U(U dividend_hi, U dividend_lo, U divisor, U& remainder)
     static_assert(!hc::ut_numeric_limits<U>::is_signed, "");
     static_assert(hc::ut_numeric_limits<U>::is_integer, "");
 
-    HPBC_PRECONDITION2(dividend_hi < divisor);
+    HPBC_CLOCKWORK_PRECONDITION2(dividend_hi < divisor);
 
     constexpr int bitsU = hc::ut_numeric_limits<U>::digits;
 
@@ -67,7 +67,7 @@ U div_2U_by_1U(U dividend_hi, U dividend_lo, U divisor, U& remainder)
             rhat;                   // A remainder.
     int s;                          // Shift amount for norm.
 
-    HPBC_ASSERT2(divisor > 0);
+    HPBC_CLOCKWORK_ASSERT2(divisor > 0);
     s = hc::count_leading_zeros(divisor);
     divisor = divisor << s;         // Normalize divisor.
 
@@ -77,7 +77,7 @@ U div_2U_by_1U(U dividend_hi, U dividend_lo, U divisor, U& remainder)
     vn1 = divisor >> (bitsU/2);     // Break divisor up into
     vn0 = divisor & mask;           // into hi and lo parts
 
-    HPBC_ASSERT2(s < bitsU);
+    HPBC_CLOCKWORK_ASSERT2(s < bitsU);
     un32 = (dividend_hi << s) |
            ((dividend_lo >> (bitsU - s - 1)) >> 1);
     un10 = dividend_lo << s;        // Shift dividend left.
@@ -128,13 +128,13 @@ struct genseq<0> : seq<> {};
 template<class T, std::size_t... N>
 std::array<T, sizeof...(N)> vector_to_stdarray_impl(const std::vector<T>& vec, seq<N...>)
 {
-   HPBC_PRECONDITION(vec.size() >= sizeof...(N));
+   HPBC_CLOCKWORK_PRECONDITION2(vec.size() >= sizeof...(N));
    return { vec[N]... };
 }
 template<std::size_t SIZE, class T>
 std::array<T, SIZE> vector_to_stdarray(const std::vector<T>& vec)
 {
-   HPBC_PRECONDITION(vec.size() >= SIZE);
+   HPBC_CLOCKWORK_PRECONDITION2(vec.size() >= SIZE);
    return vector_to_stdarray_impl(vec, typename genseq<SIZE>::type{} );
 }
 
@@ -262,7 +262,7 @@ template <size_t TABLE_BITS, size_t CODE_SECTION, size_t ARRAY_SIZE,
 TimingA
 bench_array_two_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST seed, int exponent_bits_reduce)
 {
-   HPBC_PRECONDITION(max_modulus_bits_reduce <
+   HPBC_CLOCKWORK_PRECONDITION2(max_modulus_bits_reduce <
                      hurchalla::ut_numeric_limits<decltype(MontType::max_modulus())>::digits);
 
 //   std::cout << TABLE_BITS;
@@ -308,10 +308,10 @@ bench_array_two_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_red
 
 
    {
-      HPBC_ASSERT(max > 0);
+      HPBC_CLOCKWORK_ASSERT(max > 0);
       int leading_zeros = hurchalla::count_leading_zeros(max);
       int numbits = hurchalla::ut_numeric_limits<U>::digits - leading_zeros;
-      HPBC_ASSERT(numbits > 0);
+      HPBC_CLOCKWORK_ASSERT(numbits > 0);
       U maxmask = static_cast<U>(1) << (numbits - 1);  //we need numbits-1 since numbits may be big enough to be UB to shift by.
       maxmask = 2 * maxmask - 1;
 
@@ -469,7 +469,7 @@ template <size_t TABLE_BITS, bool USE_SLIDING_WINDOW_OPTIMIZATION,
 Timing
 bench_range(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST seed, int exponent_bits_reduce)
 {
-   HPBC_PRECONDITION(max_modulus_bits_reduce <
+   HPBC_CLOCKWORK_PRECONDITION2(max_modulus_bits_reduce <
                      hurchalla::ut_numeric_limits<decltype(MontType::max_modulus())>::digits);
 
 //   std::cout << TABLE_BITS;
@@ -523,10 +523,10 @@ bench_range(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST 
 //   std::cout << "min is " << uint_to_octal_string(min) << "\n";
 
    {
-      HPBC_ASSERT(max > 0);
+      HPBC_CLOCKWORK_ASSERT(max > 0);
       int leading_zeros = hurchalla::count_leading_zeros(max);
       int numbits = hurchalla::ut_numeric_limits<U>::digits - leading_zeros;
-      HPBC_ASSERT(numbits > 0);
+      HPBC_CLOCKWORK_ASSERT(numbits > 0);
       U maxmask = static_cast<U>(1) << (numbits - 1);  //we need numbits-1 since numbits may be big enough to be UB to shift by.
       maxmask += maxmask - 1;
 

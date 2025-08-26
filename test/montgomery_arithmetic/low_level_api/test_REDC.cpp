@@ -14,7 +14,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 
 #include "gtest/gtest.h"
 #include <cstdint>
@@ -36,8 +36,8 @@ void test_REDC_identity(T a, T n, T inv_n, T Rmod_n)
 {
     static_assert(hc::ut_numeric_limits<T>::is_integer, "");
     static_assert(!(hc::ut_numeric_limits<T>::is_signed), "");
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(n > 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n % 2 == 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     T u_hi, u_lo;
     u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, Rmod_n, a);
@@ -62,8 +62,8 @@ void multi_tests_REDC_identity(T n)
 {
     static_assert(hc::ut_numeric_limits<T>::is_integer, "");
     static_assert(!(hc::ut_numeric_limits<T>::is_signed), "");
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(n > 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n % 2 == 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     T inv_n = hc::inverse_mod_R(n);
     T Rmod_n = hc::get_R_mod_n(n);
@@ -107,8 +107,8 @@ void test_REDCstandard_multiply(T a, T b, T n, T inv_n, T Rsqrd_mod_n)
 {
     static_assert(hc::ut_numeric_limits<T>::is_integer, "");
     static_assert(!(hc::ut_numeric_limits<T>::is_signed), "");
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(n > 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n % 2 == 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     T u_hi, u_lo;
     // convert a and b into montgomery domain
@@ -137,8 +137,8 @@ void test_REDCincomplete_multiply(T a, T b, T n, T inv_n, T Rsqrd_mod_n)
 {
     static_assert(hc::ut_numeric_limits<T>::is_integer, "");
     static_assert(!(hc::ut_numeric_limits<T>::is_signed), "");
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(n > 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n % 2 == 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     T u_hi, u_lo;
     // convert a and b into montgomery domain
@@ -183,8 +183,8 @@ void multi_tests_REDC_multiply(T n)
 {
     static_assert(hc::ut_numeric_limits<T>::is_integer, "");
     static_assert(!(hc::ut_numeric_limits<T>::is_signed), "");
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(n > 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n % 2 == 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     T inv_n = hc::inverse_mod_R(n);
     T Rmod_n = hc::get_R_mod_n(n);

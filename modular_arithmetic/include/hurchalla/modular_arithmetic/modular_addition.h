@@ -12,7 +12,7 @@
 #include "hurchalla/modular_arithmetic/detail/platform_specific/impl_modular_addition.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 
 namespace hurchalla {
 
@@ -22,16 +22,16 @@ template <typename T>  HURCHALLA_FORCE_INLINE
 T modular_addition_prereduced_inputs(T a, T b, T modulus)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
-    HPBC_PRECONDITION(modulus > 0);
-    HPBC_PRECONDITION(0<=a && a<modulus);   // i.e. the input must be prereduced
-    HPBC_PRECONDITION(0<=b && b<modulus);   // i.e. the input must be prereduced
+    HPBC_CLOCKWORK_PRECONDITION(modulus > 0);
+    HPBC_CLOCKWORK_PRECONDITION(0<=a && a<modulus);   // i.e. the input must be prereduced
+    HPBC_CLOCKWORK_PRECONDITION(0<=b && b<modulus);   // i.e. the input must be prereduced
     
     T result = detail::impl_modular_addition<T>::call(a, b, modulus);
 
     // POSTCONDITION:
     // Returns (a+b)%modulus, performed as if a and b have infinite precision
     // and thus as if (a+b) is never subject to integer overflow.
-    HPBC_POSTCONDITION(0<=result && result<modulus);
+    HPBC_CLOCKWORK_POSTCONDITION(0<=result && result<modulus);
     return result;
 }
 

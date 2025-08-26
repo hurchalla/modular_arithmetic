@@ -13,7 +13,7 @@
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 
 namespace hurchalla {
 
@@ -30,14 +30,14 @@ T modular_multiplicative_inverse(T a, T modulus, T& gcd)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
-    HPBC_PRECONDITION(modulus > 1);
+    HPBC_CLOCKWORK_PRECONDITION(modulus > 1);
 
     T inv = detail::impl_modular_multiplicative_inverse::call(a, modulus, gcd);
 
-    HPBC_POSTCONDITION(inv < modulus);
+    HPBC_CLOCKWORK_POSTCONDITION(inv < modulus);
     //POSTCONDITION: Returns 0 if the inverse does not exist. Otherwise returns
     //   the value of the inverse (which is never 0, given that modulus>1).
-    HPBC_POSTCONDITION(inv == 0 ||
+    HPBC_CLOCKWORK_POSTCONDITION(inv == 0 ||
                        ::hurchalla::modular_multiplication_prereduced_inputs(
                            static_cast<T>(a % modulus), inv, modulus) == 1);
     return inv;

@@ -13,7 +13,7 @@
 #include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <cstdint>
 #include <algorithm>
 
@@ -41,8 +41,8 @@ struct default_halfrange_get_canonical {
     static_assert(static_cast<S>(static_cast<T>(static_cast<S>(-1))) ==
                   static_cast<S>(-1), "Casting a signed S value to unsigned and"
                                " back again must result in the original value");
-    HPBC_PRECONDITION2(n > 0);
-    HPBC_PRECONDITION2(-n <= x && x < n);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 0);
+    HPBC_CLOCKWORK_PRECONDITION2(-n <= x && x < n);
 
     T tx = static_cast<T>(x);
     T tn = static_cast<T>(n);
@@ -71,7 +71,7 @@ struct default_halfrange_get_canonical {
 #  endif
 #endif
 
-    HPBC_POSTCONDITION2(tc < tn);
+    HPBC_CLOCKWORK_POSTCONDITION2(tc < tn);
     return static_cast<S>(tc);
   }
 };
@@ -98,8 +98,8 @@ struct halfrange_get_canonical<__int128_t> {
   static __int128_t call(__int128_t x, __int128_t n)
   {
     using std::uint64_t;
-    HPBC_PRECONDITION2(n > 0);
-    HPBC_PRECONDITION2(-n <= x && x < n);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 0);
+    HPBC_CLOCKWORK_PRECONDITION2(-n <= x && x < n);
 
     static_assert(static_cast<__int128_t>(-1) == ~(static_cast<__int128_t>(0)),
                          "__int128_t must use two's complement representation");
@@ -128,8 +128,8 @@ struct halfrange_get_canonical<__int128_t> {
     __int128_t result = static_cast<__int128_t>(
                                    (static_cast<__uint128_t>(xhi) << 64) | xlo);
 
-    HPBC_POSTCONDITION2(0 <= result && result < n);
-    HPBC_POSTCONDITION2(result == default_halfrange_get_canonical::call(x,n));
+    HPBC_CLOCKWORK_POSTCONDITION2(0 <= result && result < n);
+    HPBC_CLOCKWORK_POSTCONDITION2(result == default_halfrange_get_canonical::call(x,n));
     return result;
   }
 };
@@ -140,8 +140,8 @@ struct halfrange_get_canonical<std::int64_t> {
   HURCHALLA_FORCE_INLINE
   static std::int64_t call(std::int64_t x, std::int64_t n)
   {
-    HPBC_PRECONDITION2(n > 0);
-    HPBC_PRECONDITION2(-n <= x && x < n);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 0);
+    HPBC_CLOCKWORK_PRECONDITION2(-n <= x && x < n);
 
     std::int64_t tmp = x;
     __asm__ ("addq %[n], %[tmp] \n\t"       /* tmp = x + n */
@@ -154,8 +154,8 @@ struct halfrange_get_canonical<std::int64_t> {
 # endif
              : "cc");
     std::int64_t result = tmp;
-    HPBC_POSTCONDITION2(0 <= result && result < n);
-    HPBC_POSTCONDITION2(result == default_halfrange_get_canonical::call(x,n));
+    HPBC_CLOCKWORK_POSTCONDITION2(0 <= result && result < n);
+    HPBC_CLOCKWORK_POSTCONDITION2(result == default_halfrange_get_canonical::call(x,n));
     return result;
   }
 };
@@ -165,8 +165,8 @@ struct halfrange_get_canonical<std::int32_t> {
   HURCHALLA_FORCE_INLINE
   static std::int32_t call(std::int32_t x, std::int32_t n)
   {
-    HPBC_PRECONDITION2(n > 0);
-    HPBC_PRECONDITION2(-n <= x && x < n);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 0);
+    HPBC_CLOCKWORK_PRECONDITION2(-n <= x && x < n);
 
     std::int32_t tmp = x;
     __asm__ ("addl %[n], %[tmp] \n\t"       /* tmp = x + n */
@@ -179,8 +179,8 @@ struct halfrange_get_canonical<std::int32_t> {
 # endif
              : "cc");
     std::int32_t result = tmp;
-    HPBC_POSTCONDITION2(0 <= result && result < n);
-    HPBC_POSTCONDITION2(result == default_halfrange_get_canonical::call(x,n));
+    HPBC_CLOCKWORK_POSTCONDITION2(0 <= result && result < n);
+    HPBC_CLOCKWORK_POSTCONDITION2(result == default_halfrange_get_canonical::call(x,n));
     return result;
   }
 };
@@ -200,8 +200,8 @@ struct halfrange_get_canonical<__int128_t> {
   static __int128_t call(__int128_t x, __int128_t n)
   {
     using std::uint64_t;
-    HPBC_PRECONDITION2(n > 0);
-    HPBC_PRECONDITION2(-n <= x && x < n);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 0);
+    HPBC_CLOCKWORK_PRECONDITION2(-n <= x && x < n);
 
     static_assert(static_cast<__int128_t>(-1) == ~(static_cast<__int128_t>(0)),
                          "__int128_t must use two's complement representation");
@@ -227,8 +227,8 @@ struct halfrange_get_canonical<__int128_t> {
     __int128_t result = static_cast<__int128_t>(
                                (static_cast<__uint128_t>(reshi) << 64) | reslo);
 
-    HPBC_POSTCONDITION2(0 <= result && result < n);
-    HPBC_POSTCONDITION2(result == default_halfrange_get_canonical::call(x,n));
+    HPBC_CLOCKWORK_POSTCONDITION2(0 <= result && result < n);
+    HPBC_CLOCKWORK_POSTCONDITION2(result == default_halfrange_get_canonical::call(x,n));
     return result;
   }
 };
@@ -239,8 +239,8 @@ struct halfrange_get_canonical<std::int64_t> {
   HURCHALLA_FORCE_INLINE
   static std::int64_t call(std::int64_t x, std::int64_t n)
   {
-    HPBC_PRECONDITION2(n > 0);
-    HPBC_PRECONDITION2(-n <= x && x < n);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 0);
+    HPBC_CLOCKWORK_PRECONDITION2(-n <= x && x < n);
 
     std::int64_t res;
     __asm__ ("adds %[res], %[x], %[n] \n\t"         /* res = x + n */
@@ -250,8 +250,8 @@ struct halfrange_get_canonical<std::int64_t> {
              : "cc");
     std::int64_t result = res;
 
-    HPBC_POSTCONDITION2(0 <= result && result < n);
-    HPBC_POSTCONDITION2(result == default_halfrange_get_canonical::call(x,n));
+    HPBC_CLOCKWORK_POSTCONDITION2(0 <= result && result < n);
+    HPBC_CLOCKWORK_POSTCONDITION2(result == default_halfrange_get_canonical::call(x,n));
     return result;
   }
 };

@@ -10,7 +10,7 @@
 
 
 #include "hurchalla/util/traits/ut_numeric_limits.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 
 namespace hurchalla {
 
@@ -26,8 +26,8 @@ T get_R_mod_n(T n)
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     static_assert(ut_numeric_limits<T>::is_modulo, "");
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(n > 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n % 2 == 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     // Assign a tmp T variable rather than directly using the intermediate
     // expression, in order to avoid a negative value (and a wrong answer)
@@ -39,7 +39,7 @@ T get_R_mod_n(T n)
     T rModN = static_cast<T>(tmp % n);
     // Since n is odd and > 1, n does not divide R==1<<x.  Thus, rModN != 0.
 
-    HPBC_POSTCONDITION2(0 < rModN && rModN < n);
+    HPBC_CLOCKWORK_POSTCONDITION2(0 < rModN && rModN < n);
     return rModN;
 }
 

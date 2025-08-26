@@ -13,7 +13,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <cstdint>
 
 namespace hurchalla { namespace detail {
@@ -33,7 +33,7 @@ struct default_impl_absdiff_unsigned {
                                (a<b), static_cast<T>(b-a), static_cast<T>(a-b));
     // POSTCONDITION:
     // This function returns absolute_value(a-b).
-    HPBC_POSTCONDITION(result<=a || result<=b);
+    HPBC_CLOCKWORK_POSTCONDITION(result<=a || result<=b);
     return result;
   }
 };
@@ -85,8 +85,8 @@ struct impl_absolute_value_difference_unsigned<__uint128_t> {
              : "cc");
     __uint128_t result = (static_cast<__uint128_t>(ahi) << 64) | alo;
 
-    HPBC_POSTCONDITION2(result<=a || result<=b);
-    HPBC_POSTCONDITION2(result == default_impl_absdiff_unsigned::call(a, b));
+    HPBC_CLOCKWORK_POSTCONDITION2(result<=a || result<=b);
+    HPBC_CLOCKWORK_POSTCONDITION2(result == default_impl_absdiff_unsigned::call(a, b));
     return result;
   }
 };
@@ -111,8 +111,8 @@ struct impl_absolute_value_difference_unsigned<std::uint64_t> {
              : "cc");
     uint64_t result = tmp;
 
-    HPBC_POSTCONDITION2(result<=a || result<=b);
-    HPBC_POSTCONDITION2(result == default_impl_absdiff_unsigned::call(a, b));
+    HPBC_CLOCKWORK_POSTCONDITION2(result<=a || result<=b);
+    HPBC_CLOCKWORK_POSTCONDITION2(result == default_impl_absdiff_unsigned::call(a, b));
     return result;
   }
 };
@@ -136,8 +136,8 @@ struct impl_absolute_value_difference_unsigned<std::uint32_t> {
              : "cc");
     uint32_t result = tmp;
 
-    HPBC_POSTCONDITION2(result<=a || result<=b);
-    HPBC_POSTCONDITION2(result == default_impl_absdiff_unsigned::call(a, b));
+    HPBC_CLOCKWORK_POSTCONDITION2(result<=a || result<=b);
+    HPBC_CLOCKWORK_POSTCONDITION2(result == default_impl_absdiff_unsigned::call(a, b));
     return result;
   }
 };
@@ -179,8 +179,8 @@ struct impl_absolute_value_difference_unsigned<__uint128_t> {
              : "cc");
     __uint128_t result = (static_cast<__uint128_t>(reshi) << 64) | reslo;
 
-    HPBC_POSTCONDITION2(result<=a || result<=b);
-    HPBC_POSTCONDITION2(result == default_impl_absdiff_unsigned::call(a, b));
+    HPBC_CLOCKWORK_POSTCONDITION2(result<=a || result<=b);
+    HPBC_CLOCKWORK_POSTCONDITION2(result == default_impl_absdiff_unsigned::call(a, b));
     return result;
   }
 };
@@ -201,8 +201,8 @@ struct impl_absolute_value_difference_unsigned<std::uint64_t> {
              : "cc");
     uint64_t result = tmp;
 
-    HPBC_POSTCONDITION2(result<=a || result<=b);
-    HPBC_POSTCONDITION2(result == default_impl_absdiff_unsigned::call(a, b));
+    HPBC_CLOCKWORK_POSTCONDITION2(result<=a || result<=b);
+    HPBC_CLOCKWORK_POSTCONDITION2(result == default_impl_absdiff_unsigned::call(a, b));
     return result;
   }
 };
@@ -273,8 +273,8 @@ struct impl_absolute_value_difference<T, true> {
     static_assert(static_cast<T>(static_cast<U>(static_cast<T>(-1))) ==
                   static_cast<T>(-1), "Casting a signed T value to unsigned and"
                                " back again must result in the original value");
-    HPBC_PRECONDITION2(a >= 0);
-    HPBC_PRECONDITION2(b >= 0);
+    HPBC_CLOCKWORK_PRECONDITION2(a >= 0);
+    HPBC_CLOCKWORK_PRECONDITION2(b >= 0);
 #if defined(HURCHALLA_AVOID_CSELECT)
     static_assert((static_cast<T>(-1) >> 1) == static_cast<T>(-1),
                           "Arithmetic right shift is required but unavailable");
@@ -293,7 +293,7 @@ struct impl_absolute_value_difference<T, true> {
     // [quoted from https://en.wikipedia.org/wiki/Two%27s_complement]
     U tmp = static_cast<U>(static_cast<U>(diff) ^ mask);
     U result = static_cast<U>(tmp - mask);
-    HPBC_ASSERT2(result == impl_absolute_value_difference_unsigned<U>::call(
+    HPBC_CLOCKWORK_ASSERT2(result == impl_absolute_value_difference_unsigned<U>::call(
                                          static_cast<U>(a), static_cast<U>(b)));
 #else
     U result = impl_absolute_value_difference_unsigned<U>::call(

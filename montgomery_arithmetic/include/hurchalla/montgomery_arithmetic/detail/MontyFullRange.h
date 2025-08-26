@@ -19,7 +19,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <type_traits>
 
 namespace hurchalla { namespace detail {
@@ -102,7 +102,7 @@ class MontyFullRange final :
     {
         // this static_assert guarantees 0 <= x.get()
         static_assert(!(ut_numeric_limits<decltype(x.get())>::is_signed), "");
-        HPBC_PRECONDITION2(x.get() < n_);
+        HPBC_CLOCKWORK_PRECONDITION2(x.get() < n_);
         return C(x.get());
     }
 
@@ -132,32 +132,32 @@ class MontyFullRange final :
 
     HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
-        HPBC_PRECONDITION2(isValid(x));
-        HPBC_PRECONDITION2(isValid(y));
+        HPBC_CLOCKWORK_PRECONDITION2(isValid(x));
+        HPBC_CLOCKWORK_PRECONDITION2(isValid(y));
         namespace hc = ::hurchalla;
         T result = hc::modular_addition_prereduced_inputs(x.get(), y.get(), n_);
-        HPBC_POSTCONDITION2(isValid(V(result)));
+        HPBC_CLOCKWORK_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
     // Note: add(V, C) will match to add(V x, V y) above
     HURCHALLA_FORCE_INLINE C add(C cx, C cy) const
     {
-        HPBC_PRECONDITION2(cx.get() < n_);
-        HPBC_PRECONDITION2(cy.get() < n_);
+        HPBC_CLOCKWORK_PRECONDITION2(cx.get() < n_);
+        HPBC_CLOCKWORK_PRECONDITION2(cy.get() < n_);
         namespace hc = ::hurchalla;
         T result = hc::modular_addition_prereduced_inputs(cx.get(),cy.get(),n_);
-        HPBC_POSTCONDITION2(result < n_);
+        HPBC_CLOCKWORK_POSTCONDITION2(result < n_);
         return C(result);
     }
 
     template <class PTAG>
     HURCHALLA_FORCE_INLINE V subtract(V x, V y, PTAG) const
     {
-        HPBC_PRECONDITION2(isValid(x));
-        HPBC_PRECONDITION2(isValid(y));
+        HPBC_CLOCKWORK_PRECONDITION2(isValid(x));
+        HPBC_CLOCKWORK_PRECONDITION2(isValid(y));
         T result = ::hurchalla::modular_subtraction_prereduced_inputs
                                       <decltype(n_),PTAG>(x.get(), y.get(), n_);
-        HPBC_POSTCONDITION2(isValid(V(result)));
+        HPBC_CLOCKWORK_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
     // Note: subtract(V, C, PTAG) will match to subtract(V x, V y, PTAG) above
@@ -165,20 +165,20 @@ class MontyFullRange final :
     template <class PTAG>
     HURCHALLA_FORCE_INLINE C subtract(C cx, C cy, PTAG) const
     {
-        HPBC_PRECONDITION2(cx.get() < n_);
-        HPBC_PRECONDITION2(cy.get() < n_);
+        HPBC_CLOCKWORK_PRECONDITION2(cx.get() < n_);
+        HPBC_CLOCKWORK_PRECONDITION2(cy.get() < n_);
         T result = ::hurchalla::modular_subtraction_prereduced_inputs
                                     <decltype(n_),PTAG>(cx.get(), cy.get(), n_);
-        HPBC_POSTCONDITION2(result < n_);
+        HPBC_CLOCKWORK_POSTCONDITION2(result < n_);
         return C(result);
     }
 
     HURCHALLA_FORCE_INLINE V unordered_subtract(V x, V y) const
     {
-        HPBC_PRECONDITION2(isValid(x));
-        HPBC_PRECONDITION2(isValid(y));
+        HPBC_CLOCKWORK_PRECONDITION2(isValid(x));
+        HPBC_CLOCKWORK_PRECONDITION2(isValid(y));
         T result = ::hurchalla::absolute_value_difference(x.get(), y.get());
-        HPBC_POSTCONDITION2(isValid(V(result)));
+        HPBC_CLOCKWORK_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
     // Note: unordered_subtract(C, V) and unordered_subtract(V, C) will match to
@@ -200,11 +200,11 @@ private:
     template <class PTAG> HURCHALLA_FORCE_INLINE
     V montyREDC(bool& resultIsZero, T u_hi, T u_lo, PTAG) const
     {
-        HPBC_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
+        HPBC_CLOCKWORK_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
         namespace hc = ::hurchalla;
         T result = hc::REDC_standard(u_hi, u_lo, n_, BC::inv_n_, PTAG());
         resultIsZero = (result == 0);
-        HPBC_ASSERT2(result < n_);
+        HPBC_CLOCKWORK_ASSERT2(result < n_);
         return V(result);
     }
     template <class PTAG> HURCHALLA_FORCE_INLINE

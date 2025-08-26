@@ -14,13 +14,16 @@
 // are available.  Internally, these inline asm functions will also call their
 // corresponding generic template helper functions inside a postcondition, in
 // order to make sure that the asm result is correct.  Of course postcondition
+
 // checks must be enabled for this check to occur - the easiest way to ensure
-// postconditions are enabled is to undefine NDEBUG, which is why we undef
-// NDEBUG here too.
+// postconditions are enabled is to define HURCHALLA_CLOCKWORK_ENABLE_ASSERTS,
+// which is why we do so here.  This is all strictly for testing purposes.
 #undef HURCHALLA_ALLOW_INLINE_ASM_ALL
 #define HURCHALLA_ALLOW_INLINE_ASM_ALL 1
 
-#undef NDEBUG
+#ifndef HURCHALLA_CLOCKWORK_ENABLE_ASSERTS
+#  define HURCHALLA_CLOCKWORK_ENABLE_ASSERTS
+#endif
 
 
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
@@ -31,7 +34,7 @@
 #include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include "gtest/gtest.h"
 #include <cstdint>
 #include <type_traits>
@@ -57,15 +60,15 @@ namespace testmf_adapters {
     T modadd(T a, T b, T modulus)
     {
         static_assert(hc::ut_numeric_limits<T>::is_integer, "");
-        HPBC_PRECONDITION(0 <= a && a < modulus);
-        HPBC_PRECONDITION(0 <= b && b < modulus);
-        HPBC_PRECONDITION(modulus > 1);
+        HPBC_CLOCKWORK_PRECONDITION1(0 <= a && a < modulus);
+        HPBC_CLOCKWORK_PRECONDITION1(0 <= b && b < modulus);
+        HPBC_CLOCKWORK_PRECONDITION1(modulus > 1);
 
         using U = typename hc::extensible_make_unsigned<T>::type;
         T result = static_cast<T>(hc::modular_addition_prereduced_inputs(
                 static_cast<U>(a), static_cast<U>(b), static_cast<U>(modulus)));
 
-        HPBC_POSTCONDITION(0 <= result && result < modulus);
+        HPBC_CLOCKWORK_POSTCONDITION(0 <= result && result < modulus);
         return result;
     }
 
@@ -73,15 +76,15 @@ namespace testmf_adapters {
     T modsub(T a, T b, T modulus)
     {
         static_assert(hc::ut_numeric_limits<T>::is_integer, "");
-        HPBC_PRECONDITION(0 <= a && a < modulus);
-        HPBC_PRECONDITION(0 <= b && b < modulus);
-        HPBC_PRECONDITION(modulus > 1);
+        HPBC_CLOCKWORK_PRECONDITION1(0 <= a && a < modulus);
+        HPBC_CLOCKWORK_PRECONDITION1(0 <= b && b < modulus);
+        HPBC_CLOCKWORK_PRECONDITION1(modulus > 1);
 
         using U = typename hc::extensible_make_unsigned<T>::type;
         T result = static_cast<T>(hc::modular_subtraction_prereduced_inputs(
                 static_cast<U>(a), static_cast<U>(b), static_cast<U>(modulus)));
 
-        HPBC_POSTCONDITION(0 <= result && result < modulus);
+        HPBC_CLOCKWORK_POSTCONDITION(0 <= result && result < modulus);
         return result;
     }
 
@@ -89,15 +92,15 @@ namespace testmf_adapters {
     T modmul(T a, T b, T modulus)
     {
         static_assert(hc::ut_numeric_limits<T>::is_integer, "");
-        HPBC_PRECONDITION(0 <= a && a < modulus);
-        HPBC_PRECONDITION(0 <= b && b < modulus);
-        HPBC_PRECONDITION(modulus > 1);
+        HPBC_CLOCKWORK_PRECONDITION1(0 <= a && a < modulus);
+        HPBC_CLOCKWORK_PRECONDITION1(0 <= b && b < modulus);
+        HPBC_CLOCKWORK_PRECONDITION1(modulus > 1);
 
         using U = typename hc::extensible_make_unsigned<T>::type;
         T result = static_cast<T>(hc::modular_multiplication_prereduced_inputs(
                 static_cast<U>(a), static_cast<U>(b), static_cast<U>(modulus)));
 
-        HPBC_POSTCONDITION(0 <= result && result < modulus);
+        HPBC_CLOCKWORK_POSTCONDITION(0 <= result && result < modulus);
         return result;
     }
 
@@ -105,15 +108,15 @@ namespace testmf_adapters {
     T modpow(T base, T exponent, T modulus)
     {
         static_assert(hc::ut_numeric_limits<T>::is_integer, "");
-        HPBC_PRECONDITION(base >= 0);
-        HPBC_PRECONDITION(exponent >= 0);
-        HPBC_PRECONDITION(modulus > 1);
+        HPBC_CLOCKWORK_PRECONDITION1(base >= 0);
+        HPBC_CLOCKWORK_PRECONDITION1(exponent >= 0);
+        HPBC_CLOCKWORK_PRECONDITION1(modulus > 1);
 
         using U = typename hc::extensible_make_unsigned<T>::type;
         T result = static_cast<T>(hc::modular_pow(static_cast<U>(base),
                             static_cast<U>(exponent), static_cast<U>(modulus)));
 
-        HPBC_POSTCONDITION(0 <= result && result < modulus);
+        HPBC_CLOCKWORK_POSTCONDITION(0 <= result && result < modulus);
         return result;
     }
 }
@@ -127,13 +130,13 @@ struct GcdFunctor {
         namespace hc = ::hurchalla;
         static_assert(hc::ut_numeric_limits<T>::is_integer, "");
         static_assert(!hc::ut_numeric_limits<T>::is_signed, "");
-        HPBC_PRECONDITION2(a > 0 || b > 0);
+        HPBC_CLOCKWORK_PRECONDITION2(a > 0 || b > 0);
         while (a != 0) {
             T tmp = a;
             a = static_cast<T>(b % a);
             b = tmp;
         }
-        HPBC_POSTCONDITION2(b > 0);
+        HPBC_CLOCKWORK_POSTCONDITION2(b > 0);
         return b;
     }
 };

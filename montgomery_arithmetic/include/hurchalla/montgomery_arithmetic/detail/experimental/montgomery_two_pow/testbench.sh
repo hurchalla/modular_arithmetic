@@ -470,7 +470,6 @@ define_use_asm=$8
 
 
 cpp_standard=c++17
-ndebug=-DNDEBUG
 
 
 # You need to clone the util, factoring, and modular_arithmetic repos
@@ -496,7 +495,7 @@ fi
 
 
 $cppcompiler  \
-        $error_limit   -$optimization_level  $ndebug \
+        $error_limit   -$optimization_level \
         $define_mont_type  $define_uint_type  $define_use_asm \
         -Wall -Wextra -Wpedantic \
         -std=$cpp_standard \

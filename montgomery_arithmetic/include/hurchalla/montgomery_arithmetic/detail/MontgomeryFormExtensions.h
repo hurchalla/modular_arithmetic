@@ -12,7 +12,7 @@
 #include "hurchalla/modular_arithmetic/detail/optimization_tag_structs.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <cstddef>
 
 namespace hurchalla { namespace detail { 
@@ -49,7 +49,7 @@ struct MontgomeryFormExtensions final {
     static MontgomeryValue
     convertInExtended_aTimesR(const MF& mf, RU a, RU magicValue)
     {
-        HPBC_PRECONDITION(magicValue == getMagicValue(mf));
+        HPBC_CLOCKWORK_PRECONDITION1(magicValue == getMagicValue(mf));
         return mf.impl.template convertInExtended_aTimesR<PTAG>(a, magicValue);
     }
 
@@ -61,7 +61,7 @@ struct MontgomeryFormExtensions final {
     HURCHALLA_FORCE_INLINE
     static MontgomeryValue twoPowLimited(const MF& mf, size_t exponent)
     {
-        HPBC_PRECONDITION(exponent < ut_numeric_limits<RU>::digits);
+        HPBC_CLOCKWORK_PRECONDITION1(exponent < ut_numeric_limits<RU>::digits);
         return mf.impl.template twoPowLimited<PTAG>(exponent);
     }
 
@@ -73,7 +73,7 @@ struct MontgomeryFormExtensions final {
     static MontgomeryValue
     RTimesTwoPowLimited(const MF& mf, size_t exponent, RU magicValue)
     {
-        HPBC_PRECONDITION(exponent < ut_numeric_limits<RU>::digits);
+        HPBC_CLOCKWORK_PRECONDITION1(exponent < ut_numeric_limits<RU>::digits);
         return mf.impl.template RTimesTwoPowLimited<PTAG>(exponent, magicValue);
     }
 };

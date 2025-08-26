@@ -12,7 +12,7 @@
 #include "hurchalla/modular_arithmetic/detail/optimization_tag_structs.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <type_traits>
 #include <cstddef>
 

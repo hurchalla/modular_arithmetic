@@ -15,7 +15,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <cstdint>
 #include <type_traits>
 #if defined(_MSC_VER)
@@ -61,9 +61,9 @@ struct slow_modular_multiplication {
   {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);
-    HPBC_PRECONDITION2(b<modulus);
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);
 
     T result = 0;
     while (b > 0) {
@@ -171,7 +171,7 @@ template <> struct impl_modular_multiplication<std::uint32_t> {
     // translation of the x86/x64 assembly "div" instruction (which we want).
     // See  https://developercommunity.visualstudio.com/content/problem/896815/-udiv128-causes-integer-overflow-and-doesnt-have-a.html
     _udiv64(__emulu(a, b), modulus, &result);
-    HPBC_POSTCONDITION2((P)result == (P)a*(P)b % (P)modulus);
+    HPBC_CLOCKWORK_POSTCONDITION2((P)result == (P)a*(P)b % (P)modulus);
     return result;
   }
 };
@@ -196,7 +196,7 @@ template <> struct impl_modular_multiplication<std::uint32_t> {
         div modulus     ; (quotient EAX, remainder EDX) = EDX:EAX/modulus
         mov result, edx ; save the remainder
     }
-    HPBC_POSTCONDITION2((P)result == (P)a*(P)b % (P)modulus);
+    HPBC_CLOCKWORK_POSTCONDITION2((P)result == (P)a*(P)b % (P)modulus);
     return result;
   }
 };
@@ -226,7 +226,7 @@ template <> struct impl_modular_multiplication<std::uint32_t> {
              : [b]"rm"(b), [m]"rm"(modulus)
 # endif
              : "cc");
-    HPBC_POSTCONDITION2((P)result == (P)a*(P)b % (P)modulus);
+    HPBC_CLOCKWORK_POSTCONDITION2((P)result == (P)a*(P)b % (P)modulus);
     return result;
   }
 };
@@ -260,7 +260,7 @@ template <> struct impl_modular_multiplication<std::uint64_t> {
     std::uint64_t productHigh, result;
     std::uint64_t productLow = _umul128(a, b, &productHigh);
     _udiv128(productHigh, productLow, modulus, &result);
-    HPBC_POSTCONDITION3(result ==
+    HPBC_CLOCKWORK_POSTCONDITION3(result ==
                               slow_modular_multiplication::call(a, b, modulus));
     return result;
   }
@@ -277,7 +277,7 @@ template <> struct impl_modular_multiplication<std::uint64_t> {
     // The older versions of MSVC don't have the _udiv128 intrinsic.  Since
     // MSVC doesn't support inline asm for 64 bit targets, use an asm function
     uint64_t result = modular_multiply_uint64_asm_UID7b5f83fc983(a, b, modulus);
-    HPBC_POSTCONDITION3(result ==
+    HPBC_CLOCKWORK_POSTCONDITION3(result ==
                               slow_modular_multiplication::call(a, b, modulus));
     return result;
   }
@@ -305,7 +305,7 @@ template <> struct impl_modular_multiplication<std::uint64_t> {
              : [b]"rm"(b), [m]"rm"(modulus)
 # endif
              : "cc");
-    HPBC_POSTCONDITION3(result ==
+    HPBC_CLOCKWORK_POSTCONDITION3(result ==
                               slow_modular_multiplication::call(a, b, modulus));
     return result;
   }

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (c) 2020-2022 Jeffrey Hurchalla.
+# Copyright (c) 2020-2025 Jeffrey Hurchalla.
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -27,8 +27,7 @@ cpp_compiler=g++
 
 
 $cpp_compiler -std="c++17" \
-        -Wall -Wextra  \
-        -O2  -DNDEBUG  \
+        -Wall -Wextra  -O2  \
         -I$include_path \
         -o example  example.cpp
 

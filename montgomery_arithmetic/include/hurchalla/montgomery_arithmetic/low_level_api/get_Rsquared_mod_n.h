@@ -14,7 +14,7 @@
 #include "hurchalla/modular_arithmetic/detail/optimization_tag_structs.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <type_traits>
 #include <array>
 
@@ -52,17 +52,17 @@ T get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n)
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     static_assert(ut_numeric_limits<T>::is_modulo, "");
-    HPBC_PRECONDITION2(n % 2 == 1);  // REDC requires an odd modulus.
-    HPBC_PRECONDITION2(n > 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n % 2 == 1);  // REDC requires an odd modulus.
+    HPBC_CLOCKWORK_PRECONDITION2(n > 1);
     using P = typename safely_promote_unsigned<T>::type;
     // verify that  n * inverse_n_modR ≡ 1 (mod R)
-    HPBC_PRECONDITION2(
+    HPBC_CLOCKWORK_PRECONDITION2(
        static_cast<T>(static_cast<P>(n) * static_cast<P>(inverse_n_modR)) == 1);
 
     T rSquaredModN = detail::impl_get_Rsquared_mod_n
             <nIsGuaranteedLessThanRdiv4, PTAG>::call(n, inverse_n_modR, Rmod_n);
 
-    HPBC_POSTCONDITION2(rSquaredModN < n);
+    HPBC_CLOCKWORK_POSTCONDITION2(rSquaredModN < n);
     return rSquaredModN;
 }
 
@@ -83,11 +83,11 @@ get_Rsquared_mod_n(const std::array<T, ARRAY_SIZE>& n,
 
     using P = typename safely_promote_unsigned<T>::type;
 
-    if (HPBC_PRECONDITION2_MACRO_IS_ACTIVE) {
+    if (HPBC_CLOCKWORK_PRECONDITION2_MACRO_IS_ACTIVE) {
         for (std::size_t i = 0; i < ARRAY_SIZE; ++i) {
-            HPBC_PRECONDITION2(n[i] % 2 == 1);  // REDC requires an odd modulus.
-            HPBC_PRECONDITION2(n[i] > 1);
-            HPBC_PRECONDITION2(static_cast<T>(static_cast<P>(n[i]) *
+            HPBC_CLOCKWORK_PRECONDITION2(n[i] % 2 == 1);  // REDC requires an odd modulus.
+            HPBC_CLOCKWORK_PRECONDITION2(n[i] > 1);
+            HPBC_CLOCKWORK_PRECONDITION2(static_cast<T>(static_cast<P>(n[i]) *
                                static_cast<P>(inverse_n_modR[i])) == 1);
         }
     }
@@ -95,9 +95,9 @@ get_Rsquared_mod_n(const std::array<T, ARRAY_SIZE>& n,
     std::array<T, ARRAY_SIZE> result = detail::impl_array_get_Rsquared_mod_n
             <nIsGuaranteedLessThanRdiv4, PTAG>::call(n, inverse_n_modR, Rmod_n);
 
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
+    if (HPBC_CLOCKWORK_POSTCONDITION2_MACRO_IS_ACTIVE) {
         for (std::size_t i = 0; i < ARRAY_SIZE; ++i)
-            HPBC_POSTCONDITION2(result[i] < n[i]);
+            HPBC_CLOCKWORK_POSTCONDITION2(result[i] < n[i]);
     }
     return result;
 }

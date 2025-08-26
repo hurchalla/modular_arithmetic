@@ -13,7 +13,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/count_leading_zeros.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include <type_traits>
 #include <cstddef>
@@ -57,7 +57,7 @@ struct impl_montgomery_pow_2kary {
         "above 9 is probably a very bad idea even if it works (9+ would cause "
         "the beginning of this function to calculate 1024+ table entries!)");
 
-    HPBC_PRECONDITION(nexp >= 0);
+    HPBC_CLOCKWORK_PRECONDITION1(nexp >= 0);
 
     using V = typename MF::MontgomeryValue;
     using std::size_t;
@@ -133,7 +133,7 @@ struct impl_montgomery_pow_2kary {
     } else {
         // we should check for a ((power of 2) >= 64), but this is
         // probably adequate for our needs
-        HPBC_ASSERT(TABLESIZE % 64 == 0);
+        HPBC_CLOCKWORK_ASSERT(TABLESIZE % 64 == 0);
         table[2] = mf.square(x);
         table[3] = mf.multiply(x, table[2]);
         for (std::size_t i=4; i<TABLESIZE; i+=2) {
@@ -151,15 +151,15 @@ struct impl_montgomery_pow_2kary {
 
     // count_leading_zeros returns the number of leading 0-bits in n, starting
     // at the most significant bit position. If n is 0, the result is undefined
-    HPBC_ASSERT(n > 0);
+    HPBC_CLOCKWORK_ASSERT(n > 0);
     int leading_zeros = count_leading_zeros(n);
     int numbits = ut_numeric_limits<decltype(n)>::digits - leading_zeros;
     // because we returned above if (n <= MASK), we can assert the following:
-    HPBC_ASSERT(numbits > P);
+    HPBC_CLOCKWORK_ASSERT(numbits > P);
 
     int shift = numbits - P;
     U tmp = n >> shift;
-    HPBC_ASSERT(tmp <= MASK);
+    HPBC_CLOCKWORK_ASSERT(tmp <= MASK);
     // normally we'd use (tmp & MASK), but it's redundant with tmp <= MASK
     size_t index = static_cast<size_t>(tmp);
     V result = table[index];
@@ -185,7 +185,7 @@ struct impl_montgomery_pow_2kary {
 
     if (shift == 0)
         return result;
-    HPBC_ASSERT(0 < shift && shift < P);
+    HPBC_CLOCKWORK_ASSERT(0 < shift && shift < P);
 
     for (int i=0; i<shift; ++i)
         result = mf.square(result);
@@ -241,7 +241,7 @@ struct impl_montgomery_pow_2kary {
     if HURCHALLA_CPP17_CONSTEXPR (TABLESIZE >= 4) {
         // we should ideally check for a ((power of 2) >= 4), but this assert
         // is probably good enough for our needs:
-        HPBC_ASSERT(TABLESIZE % 4 == 0);
+        HPBC_CLOCKWORK_ASSERT(TABLESIZE % 4 == 0);
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
             table[2][j] = mf[j].template square<LowuopsTag>(x[j]);
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
@@ -277,17 +277,17 @@ struct impl_montgomery_pow_2kary {
     // count_leading_zeros returns the number of leading 0-bits in n_max,
     // starting at the most significant bit position. If n_max is 0, the result
     // is undefined
-    HPBC_ASSERT(n_max > 0);
+    HPBC_CLOCKWORK_ASSERT(n_max > 0);
     int leading_zeros = count_leading_zeros(n_max);
     int numbits = ut_numeric_limits<decltype(n_max)>::digits - leading_zeros;
     // because we returned above if (n_max <= MASK), we can assert the following
-    HPBC_ASSERT(numbits > P);
+    HPBC_CLOCKWORK_ASSERT(numbits > P);
 
     int shift = numbits - P;
     std::array<V, ARRAY_SIZE> result;
     std::array<size_t, ARRAY_SIZE> index;
     HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-        HPBC_ASSERT(static_cast<U>(n[j] >> shift) <= MASK);
+        HPBC_CLOCKWORK_ASSERT(static_cast<U>(n[j] >> shift) <= MASK);
         // We don't need to 'and' with MASK, because (n[j] >> shift) <= MASK.
         index[j] = static_cast<size_t>(n[j] >> shift);
         result[j] = table[index[j]][j];
@@ -310,7 +310,7 @@ struct impl_montgomery_pow_2kary {
 
     if (shift == 0)
         return result;
-    HPBC_ASSERT(0 < shift && shift < P);
+    HPBC_CLOCKWORK_ASSERT(0 < shift && shift < P);
 
     for (int i=0; i<shift; ++i) {
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
@@ -368,7 +368,7 @@ struct impl_montgomery_pow_2kary {
     if HURCHALLA_CPP17_CONSTEXPR (TABLESIZE >= 4) {
         // we should check for a ((power of 2) >= 4), but this is
         // probably adquate or our needs
-        HPBC_ASSERT(TABLESIZE % 4 == 0);
+        HPBC_CLOCKWORK_ASSERT(TABLESIZE % 4 == 0);
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
             table[2][j] = mf.template square<LowuopsTag>(x[j]);
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
@@ -394,16 +394,16 @@ struct impl_montgomery_pow_2kary {
 
     // count_leading_zeros returns the number of leading 0-bits in n, starting
     // at the most significant bit position. If n is 0, the result is undefined
-    HPBC_ASSERT(n > 0);
+    HPBC_CLOCKWORK_ASSERT(n > 0);
     int leading_zeros = count_leading_zeros(n);
     int numbits = ut_numeric_limits<decltype(n)>::digits - leading_zeros;
     // because we returned above if (n <= MASK), we can assert the following:
-    HPBC_ASSERT(numbits > P);
+    HPBC_CLOCKWORK_ASSERT(numbits > P);
 
     int shift = numbits - P;
     std::array<V, ARRAY_SIZE> result;
     size_t tmp = static_cast<size_t>(n >> shift);
-    HPBC_ASSERT(tmp <= MASK);
+    HPBC_CLOCKWORK_ASSERT(tmp <= MASK);
     HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
         // normally we'd use (tmp & MASK), but it's redundant with tmp <= MASK
         result[j] = table[tmp][j];
@@ -432,7 +432,7 @@ struct impl_montgomery_pow_2kary {
 
     if (shift == 0)
         return result;
-    HPBC_ASSERT(0 < shift && shift < P);
+    HPBC_CLOCKWORK_ASSERT(0 < shift && shift < P);
 
     for (int i=0; i<shift; ++i) {
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)

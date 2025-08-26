@@ -46,6 +46,7 @@ target_sources(hurchalla_basic_modular_arithmetic INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/modular_multiplicative_inverse.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/modular_pow.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/modular_subtraction.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/impl_modular_multiplicative_inverse.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/impl_modular_pow.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/hurchalla/modular_arithmetic/detail/optimization_tag_structs.h>

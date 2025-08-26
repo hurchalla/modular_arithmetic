@@ -13,7 +13,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/sized_uint.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <type_traits>
 
 namespace hurchalla { namespace detail {
@@ -52,7 +52,7 @@ public:
     {
         static_assert(bits == ut_numeric_limits<T>::digits, "");
         static_assert(std::is_unsigned<T>::value, ""); //native unsigned integer
-        HPBC_CONSTEXPR_PRECONDITION(a % 2 == 1);
+        HPBC_CLOCKWORK_CONSTEXPR_PRECONDITION(a % 2 == 1);
 
         // avoid undefined behavior that could result if T is an unsigned type
         // that would be promoted to (signed) 'int'.
@@ -91,7 +91,7 @@ public:
         constexpr bool is_valid_su = is_valid_sized_uint<bits/2>::value;
         using T2 = typename std::conditional<is_valid_su,
                                     typename sized_uint<bits/2>::type, T>::type;
-        HPBC_CONSTEXPR_PRECONDITION(a % 2 == 1);
+        HPBC_CLOCKWORK_CONSTEXPR_PRECONDITION(a % 2 == 1);
 
         // set x so that the lower ('bits'/2) half of the bits are good.
         T x = static_cast<T>(call<T2, bits/2>(static_cast<T2>(a)));

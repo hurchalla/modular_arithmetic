@@ -2,7 +2,7 @@
 
 ![Alt text](images/clockxtrasmall_border2.jpg?raw=true "Clock Gears, photo by Krzysztof Golik, licensed CC BY-SA 4.0")
 
-Clockwork is a high performance, easy to use Modular Arithmetic library for C++ provided as a "header-only" library, supporting up to 128 bit integer types, and providing extensive support for Montgomery arithmetic.  If you want or need Montgomery arithmetic in this range, or general modular arithmetic functions, Clockwork is almost certainly the fastest and easiest library you could use.  For best performance make sure you define the standard C++ macro NDEBUG.  
+Clockwork is a high performance, easy to use Modular Arithmetic library for C++ provided as a "header-only" library, supporting up to 128 bit integer types, and providing extensive support for Montgomery arithmetic.  If you want or need Montgomery arithmetic in this range, or general modular arithmetic functions, Clockwork is almost certainly the fastest and easiest library you could use.  
 
 The library requires only C++11, and works with all higher versions of the C++ standard.
 
@@ -12,9 +12,7 @@ Clockwork is designed to be a flexible and bulletproof library with the best per
 
 ## Requirements
 
-The Clockwork library requires only compiler support for C++11, which is essentially supported universally at this point.
-
-For good performance you *must* ensure that the standard macro NDEBUG (see &lt;cassert&gt;) is defined when compiling.  
+The Clockwork library requires only compiler support for C++11, which is essentially supported universally at this point.  
 
 Compilers that are confirmed to build this library without warnings or errors on Ubuntu linux (x64) include clang6, clang10, clang18, gcc7, gcc10, gcc13, and intel compiler 19.  On Windows, Microsoft Visual C++ 2017, 2019, 2022 are all confirmed to build the library without warnings or errors.  On MacOS, clang16 and gcc14 are confirmed to build without warnings or errors.  The library is intended for use on all architectures (e.g. x86/64, ARM, RISC-V), but has so far been tested only with x86, x64 (Windows and Ubuntu), and ARM64 (MacOS).
 
@@ -40,8 +38,6 @@ If you're using CMake for your project and you wish to add the Clockwork modular
 add_subdirectory(*path_of_the_cloned_modular_arithmetic_repository* &nbsp; *your_binary_dir*/modular_arithmetic)  
 target_link_libraries(*your_project_target_name* &nbsp; hurchalla_modular_arithmetic)  
 
-For best performance you *must* ensure that the standard macro NDEBUG (see &lt;cassert&gt;) is defined when compiling.  You can do this by calling CMake with -DCMAKE_BUILD_TYPE=Release.  
-
 It may help to see a simple [example project with CMake](examples/example_with_cmake).
 
 ### Without CMake
@@ -57,8 +53,6 @@ If you prefer, for the last command you could instead use CMake's default instal
 
 This will copy all the files needed for this modular arithmetic library to an "include" subfolder in the installation folder of your choosing.
 When compiling your project, you'll of course need to ensure that you have that include subfolder as part of your include path.  
-
-For best performance you *must* ensure that the standard macro NDEBUG (see &lt;cassert&gt;) is defined when compiling.  You can generally do this by adding the option flag -DNDEBUG to your compile command.  
 
 It may help to see a simple [example](examples/example_without_cmake).
 

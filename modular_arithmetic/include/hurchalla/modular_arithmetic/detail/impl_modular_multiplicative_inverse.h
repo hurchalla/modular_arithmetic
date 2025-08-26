@@ -14,7 +14,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <type_traits>
 
 namespace hurchalla { namespace detail {
@@ -29,7 +29,7 @@ struct impl_modular_multiplicative_inverse {
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     // I decided not to support modulus<=1, since it's not likely to be used and
     // it complicates the return type and adds conditional branches.
-    HPBC_PRECONDITION2(modulus > 1);
+    HPBC_CLOCKWORK_PRECONDITION2(modulus > 1);
 
     // POSTCONDITION1: Returns 0 if the inverse doesn't exist. Otherwise returns
     //    the inverse (which is never 0, given that modulus>1).
@@ -57,7 +57,7 @@ struct impl_modular_multiplicative_inverse {
         q = static_cast<U>(a0/a1);
         a2 = static_cast<U>(a0 - q*a1);
     }
-    HPBC_ASSERT2(a1 > 1);
+    HPBC_CLOCKWORK_ASSERT2(a1 > 1);
 
     if (a2 == 1) {
         gcd = 1;
@@ -66,12 +66,12 @@ struct impl_modular_multiplicative_inverse {
         U inv = ::hurchalla::conditional_select(y<0,
                                   static_cast<U>(static_cast<U>(y)+modulus),
                                   static_cast<U>(y));
-        HPBC_POSTCONDITION2(inv < modulus);
+        HPBC_CLOCKWORK_POSTCONDITION2(inv < modulus);
         return static_cast<T>(inv);
     }
     else {
         gcd = static_cast<T>(a1);
-        HPBC_ASSERT2(gcd > 1);
+        HPBC_CLOCKWORK_ASSERT2(gcd > 1);
         return 0;
     }
   }

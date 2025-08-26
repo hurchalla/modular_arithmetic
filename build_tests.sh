@@ -567,7 +567,8 @@ elif [ "${mode,,}" = "debug" ]; then
             -DFORCE_TEST_HURCHALLA_CPP11_STANDARD=$force_cpp11_testing \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_EXE_LINKER_FLAGS="$clang_ubsan_link_flags" \
-            -DCMAKE_CXX_FLAGS="$cpp_standard  $cpp_stdlib \
+            -DCMAKE_CXX_FLAGS="-DHURCHALLA_CLOCKWORK_ENABLE_ASSERTS=1 \
+            $cpp_standard  $cpp_stdlib \
             $clang_ubsan  $gcc_ubsan  \
             $test_avoid_cselect  $test_heavyweight \
             $use_inline_asm  $use_all_inline_asm \

@@ -16,7 +16,7 @@
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <cstdint>
 
 #if defined(_MSC_VER)
@@ -87,13 +87,13 @@ struct RedcIncomplete {
     // If u_hi >= n:  then u_hi*R >= n*R, and u == u_hi*R + u_lo >= n*R, which
     //   fails the precondition.
     // Thus u_hi < n is sufficient and necessary to satisfy the precondition.
-    HPBC_PRECONDITION2(u_hi < n);
+    HPBC_CLOCKWORK_PRECONDITION2(u_hi < n);
 
     // assert(n * inv_n ≡ 1 (mod R))
-    HPBC_PRECONDITION2(
+    HPBC_CLOCKWORK_PRECONDITION2(
                 static_cast<T>(static_cast<P>(n) * static_cast<P>(inv_n)) == 1);
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(n > 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n % 2 == 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     // compute  m = (u * inv_n) % R
     T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
@@ -105,7 +105,7 @@ struct RedcIncomplete {
     // Therefore mn == mn_hi*R + mn_lo < R*n, and mn_hi*R < R*n - mn_lo <= R*n,
     // and thus  mn_hi < n.
         // *** Assertion #1 ***
-    HPBC_ASSERT2(mn_hi < n);
+    HPBC_CLOCKWORK_ASSERT2(mn_hi < n);
 
     // The REDC algorithm from README_REDC.md assures us that (u - mn) is
     // divisible by R.  Compute (u - mn)/R  (and we can note that a negative
@@ -121,7 +121,7 @@ struct RedcIncomplete {
     // means that u_lo == mn_lo, and thus (u_lo - mn_lo) will never generate a
     // borrow/carry.  We will simply ignore this low part subtraction.
         // *** Assertion #2 ***
-    HPBC_ASSERT2(u_lo == mn_lo);
+    HPBC_CLOCKWORK_ASSERT2(u_lo == mn_lo);
 
     // Since u_hi and u_lo are type T (which is unsigned) variables, both
     // u_hi >= 0 and u_lo >= 0, and thus  u = u_hi*R + u_lo >= 0.  Along with
@@ -143,9 +143,9 @@ struct RedcIncomplete {
     // All this translates into
     // Postcondition #1
     // ----------------
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
+    if (HPBC_CLOCKWORK_POSTCONDITION2_MACRO_IS_ACTIVE) {
         T finalized_result = (ovf) ? static_cast<T>(t_hi + n) : t_hi;
-        HPBC_POSTCONDITION2(finalized_result < n);
+        HPBC_CLOCKWORK_POSTCONDITION2(finalized_result < n);
     }
     // * Aside from this postcondition, we do not actually compute the finalized
     // least residual mod n result, because some Montgomery Forms are
@@ -161,9 +161,9 @@ struct RedcIncomplete {
     // 0 < u_hi - mn_hi + n < 2*n.  Although this is true regardless of the size
     // of n, we can only test this postcondition when n < R/2 (any larger value
     // of n would overflow on 2*n).
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
+    if (HPBC_CLOCKWORK_POSTCONDITION2_MACRO_IS_ACTIVE) {
         T Rdiv2 = static_cast<T>(1) << (ut_numeric_limits<T>::digits - 1);
-        HPBC_POSTCONDITION2((n < Rdiv2) ? (0 < static_cast<T>(t_hi + n)) &&
+        HPBC_CLOCKWORK_POSTCONDITION2((n < Rdiv2) ? (0 < static_cast<T>(t_hi + n)) &&
                                        (static_cast<T>(t_hi + n) < 2*n) : true);
     }
 
@@ -216,7 +216,7 @@ struct DefaultRedcStandard
                                     <T,::hurchalla::LowuopsTag>(u_hi, mn_hi, n);
 # endif
 #endif
-    HPBC_POSTCONDITION2(final_result < n);
+    HPBC_CLOCKWORK_POSTCONDITION2(final_result < n);
     return final_result;
   }
 };
@@ -235,7 +235,7 @@ struct RedcStandard
   static HURCHALLA_FORCE_INLINE T call(T u_hi, T u_lo, T n, T inv_n, PTAG)
   {
     T result = DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n);
-    HPBC_POSTCONDITION2(result < n);
+    HPBC_CLOCKWORK_POSTCONDITION2(result < n);
     return result;
   }
 };
@@ -257,16 +257,16 @@ struct RedcStandard<__uint128_t>
   {
     using P = typename safely_promote_unsigned<T>::type;
     // see uint64_t version's comments for explanations
-    HPBC_PRECONDITION2(u_hi < n);
-    HPBC_PRECONDITION2(
+    HPBC_CLOCKWORK_PRECONDITION2(u_hi < n);
+    HPBC_CLOCKWORK_PRECONDITION2(
                 static_cast<T>(static_cast<P>(n) * static_cast<P>(inv_n)) == 1);
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(n > 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n % 2 == 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
     T mn_lo;
     T mn_hi = ::hurchalla::unsigned_multiply_to_hilo_product(mn_lo, m, n);
-    HPBC_ASSERT2(mn_hi < n);
+    HPBC_CLOCKWORK_ASSERT2(mn_hi < n);
     T reg = u_hi + n;
 
     using std::uint64_t;
@@ -287,8 +287,8 @@ struct RedcStandard<__uint128_t>
         : [mnhilo]"r"(mnhilo), [mnhihi]"r"(mnhihi)
         : "cc");
     T result = (static_cast<__uint128_t>(reghi) << 64) | reglo;
-    HPBC_ASSERT2(result == DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n));
-    HPBC_POSTCONDITION2(result < n);
+    HPBC_CLOCKWORK_ASSERT2(result == DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n));
+    HPBC_CLOCKWORK_POSTCONDITION2(result < n);
     return result;
   }
 
@@ -296,7 +296,7 @@ struct RedcStandard<__uint128_t>
   T call(T u_hi, T u_lo, T n, T inv_n, LowuopsTag)
   {
     T result = DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n);
-    HPBC_POSTCONDITION2(result < n);
+    HPBC_CLOCKWORK_POSTCONDITION2(result < n);
     return result;
   }
 };
@@ -320,16 +320,16 @@ struct RedcStandard<std::uint64_t>
     // Thus the algorithm should be correct for the same reasons given there.
     // We require u = (u_hi*R + u_lo) < n*R.  As shown in precondition #1 in
     // RedcIncomplete's call, u_hi < n guarantees this.
-    HPBC_PRECONDITION2(u_hi < n);
-    HPBC_PRECONDITION2(
+    HPBC_CLOCKWORK_PRECONDITION2(u_hi < n);
+    HPBC_CLOCKWORK_PRECONDITION2(
                 static_cast<T>(static_cast<P>(n) * static_cast<P>(inv_n)) == 1);
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(n > 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n % 2 == 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
     T mn_lo;
     T mn_hi = ::hurchalla::unsigned_multiply_to_hilo_product(mn_lo, m, n);
-    HPBC_ASSERT2(mn_hi < n);
+    HPBC_CLOCKWORK_ASSERT2(mn_hi < n);
     T reg = u_hi + n;
     T uhi = u_hi;
     __asm__ (
@@ -340,8 +340,8 @@ struct RedcStandard<std::uint64_t>
         : [mnhi]"r"(mn_hi)
         : "cc");
     T result = reg;
-    HPBC_ASSERT2(result == DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n));
-    HPBC_POSTCONDITION2(result < n);
+    HPBC_CLOCKWORK_ASSERT2(result == DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n));
+    HPBC_CLOCKWORK_POSTCONDITION2(result < n);
     return result;
   }
 
@@ -353,7 +353,7 @@ struct RedcStandard<std::uint64_t>
     // relying upon modular_subtract_prereduced_inputs() being optimized for low
     // uops - which it is, at least at the time of writing this)
     T result = DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n);
-    HPBC_POSTCONDITION2(result < n);
+    HPBC_CLOCKWORK_POSTCONDITION2(result < n);
     return result;
   }
 };
@@ -370,16 +370,16 @@ struct RedcStandard<std::uint32_t>
   {
     using P = typename safely_promote_unsigned<T>::type;
     // see uint64_t version's comments for explanations
-    HPBC_PRECONDITION2(u_hi < n);
-    HPBC_PRECONDITION2(
+    HPBC_CLOCKWORK_PRECONDITION2(u_hi < n);
+    HPBC_CLOCKWORK_PRECONDITION2(
                 static_cast<T>(static_cast<P>(n) * static_cast<P>(inv_n)) == 1);
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(n > 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n % 2 == 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
     T mn_lo;
     T mn_hi = ::hurchalla::unsigned_multiply_to_hilo_product(mn_lo, m, n);
-    HPBC_ASSERT2(mn_hi < n);
+    HPBC_CLOCKWORK_ASSERT2(mn_hi < n);
     T reg = u_hi + n;
     T uhi = u_hi;
     __asm__ (
@@ -390,8 +390,8 @@ struct RedcStandard<std::uint32_t>
         : [mnhi]"r"(mn_hi)
         : "cc");
     T result = reg;
-    HPBC_ASSERT2(result == DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n));
-    HPBC_POSTCONDITION2(result < n);
+    HPBC_CLOCKWORK_ASSERT2(result == DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n));
+    HPBC_CLOCKWORK_POSTCONDITION2(result < n);
     return result;
   }
 
@@ -399,7 +399,7 @@ struct RedcStandard<std::uint32_t>
   T call(T u_hi, T u_lo, T n, T inv_n, LowuopsTag)
   {
     T result = DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n);
-    HPBC_POSTCONDITION2(result < n);
+    HPBC_CLOCKWORK_POSTCONDITION2(result < n);
     return result;
   }
 };
@@ -429,16 +429,16 @@ struct RedcStandard<__uint128_t>
   {
     using P = typename safely_promote_unsigned<T>::type;
     // see uint64_t version's comments for explanations
-    HPBC_PRECONDITION2(u_hi < n);
-    HPBC_PRECONDITION2(
+    HPBC_CLOCKWORK_PRECONDITION2(u_hi < n);
+    HPBC_CLOCKWORK_PRECONDITION2(
                 static_cast<T>(static_cast<P>(n) * static_cast<P>(inv_n)) == 1);
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(n > 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n % 2 == 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
     T mn_lo;
     T mn_hi = ::hurchalla::unsigned_multiply_to_hilo_product(mn_lo, m, n);
-    HPBC_ASSERT2(mn_hi < n);
+    HPBC_CLOCKWORK_ASSERT2(mn_hi < n);
     T reg = u_hi + n;
 
     using std::uint64_t;
@@ -460,8 +460,8 @@ struct RedcStandard<__uint128_t>
         : "cc");
     T result = (static_cast<__uint128_t>(mnhihi) << 64) | mnhilo;
 
-    HPBC_ASSERT2(result == DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n));
-    HPBC_POSTCONDITION2(result < n);
+    HPBC_CLOCKWORK_ASSERT2(result == DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n));
+    HPBC_CLOCKWORK_POSTCONDITION2(result < n);
     return result;
   }
 
@@ -469,7 +469,7 @@ struct RedcStandard<__uint128_t>
   T call(T u_hi, T u_lo, T n, T inv_n, LowuopsTag)
   {
     T result = DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n);
-    HPBC_POSTCONDITION2(result < n);
+    HPBC_CLOCKWORK_POSTCONDITION2(result < n);
     return result;
   }
 };
@@ -492,16 +492,16 @@ struct RedcStandard<std::uint64_t>
     // Thus the algorithm should be correct for the same reasons given there.
     // We require u = (u_hi*R + u_lo) < n*R.  As shown in precondition #1 in
     // RedcIncomplete's call, u_hi < n guarantees this.
-    HPBC_PRECONDITION2(u_hi < n);
-    HPBC_PRECONDITION2(
+    HPBC_CLOCKWORK_PRECONDITION2(u_hi < n);
+    HPBC_CLOCKWORK_PRECONDITION2(
                 static_cast<T>(static_cast<P>(n) * static_cast<P>(inv_n)) == 1);
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(n > 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n % 2 == 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
     T mn_lo;
     T mn_hi = ::hurchalla::unsigned_multiply_to_hilo_product(mn_lo, m, n);
-    HPBC_ASSERT2(mn_hi < n);
+    HPBC_CLOCKWORK_ASSERT2(mn_hi < n);
     T reg = u_hi + n;
 
     __asm__ (
@@ -513,8 +513,8 @@ struct RedcStandard<std::uint64_t>
         : "cc");
     T result = mn_hi;
 
-    HPBC_ASSERT2(result == DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n));
-    HPBC_POSTCONDITION2(result < n);
+    HPBC_CLOCKWORK_ASSERT2(result == DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n));
+    HPBC_CLOCKWORK_POSTCONDITION2(result < n);
     return result;
   }
 
@@ -525,7 +525,7 @@ struct RedcStandard<std::uint64_t>
     // relying upon modular_subtract_prereduced_inputs() being optimized for low
     // uops - which it is, at least at the time of writing this)
     T result = DefaultRedcStandard<T>::call(u_hi, u_lo, n, inv_n);
-    HPBC_POSTCONDITION2(result < n);
+    HPBC_CLOCKWORK_POSTCONDITION2(result < n);
     return result;
   }
 };
@@ -557,21 +557,21 @@ struct RedcStandard
     // Thus the algorithm should be correct for the same reasons given there.
     // REDC requires u = (u_hi*R + u_lo) < n*R.  As shown in precondition #1 in
     // RedcIncomplete's call, u_hi < n guarantees this.
-    HPBC_PRECONDITION2(u_hi < n);
-    HPBC_PRECONDITION2(
+    HPBC_CLOCKWORK_PRECONDITION2(u_hi < n);
+    HPBC_CLOCKWORK_PRECONDITION2(
                 static_cast<T>(static_cast<P>(n) * static_cast<P>(inv_n)) == 1);
-    HPBC_PRECONDITION2(n % 2 == 1);
-    HPBC_PRECONDITION2(n > 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n % 2 == 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
     T mn_lo;
     T mn_hi = ::hurchalla::unsigned_multiply_to_hilo_product(mn_lo, m, n);
-    HPBC_ASSERT2(mn_hi < n);
+    HPBC_CLOCKWORK_ASSERT2(mn_hi < n);
 #if 0
     // If we copied the rest of RedcIncomplete::call(), we would get:
     T t_hi = static_cast<T>(u_hi - mn_hi);   // t_hi = (u_hi - mn_hi) mod R
     ovf = (u_hi < mn_hi);    // tells us if the subtraction wrapped/overflowed
-    HPBC_ASSERT2(u_lo == mn_lo);
+    HPBC_CLOCKWORK_ASSERT2(u_lo == mn_lo);
     // And by RedcIncomplete::call()'s Postcondition #1, we would have:
     T result = (ovf) ? static_cast<T>(t_hi + n) : t_hi;
 #else
@@ -581,13 +581,13 @@ struct RedcStandard
      ::hurchalla::modular_subtraction_prereduced_inputs<T,PTAG>(u_hi, mn_hi, n);
 #endif
 
-    if (HPBC_POSTCONDITION2_MACRO_IS_ACTIVE) {
+    if (HPBC_CLOCKWORK_POSTCONDITION2_MACRO_IS_ACTIVE) {
         bool overf;
         T res = RedcIncomplete::call(overf, u_hi, u_lo, n, inv_n);
         res = (overf) ? static_cast<T>(res + n) : res;
-        HPBC_POSTCONDITION2(result == res);
+        HPBC_CLOCKWORK_POSTCONDITION2(result == res);
     }
-    HPBC_POSTCONDITION2(result < n);
+    HPBC_CLOCKWORK_POSTCONDITION2(result < n);
     return result;
   }
 };

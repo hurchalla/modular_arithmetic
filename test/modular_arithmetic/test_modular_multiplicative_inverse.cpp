@@ -15,10 +15,13 @@
 // function version of modular multiplication inside a postcondition, in order
 // to make sure that the asm result is correct.  Of course postcondition checks
 // must be enabled for this check to occur - the easiest way to ensure
-// postconditions are enabled is to undefine NDEBUG, which is why we undef
-// NDEBUG here too.
+// postconditions are enabled is to define HURCHALLA_CLOCKWORK_ENABLE_ASSERTS,
+// which is why we do so here.  This is all strictly for testing purposes.
 #undef HURCHALLA_DISALLOW_INLINE_ASM_MODMUL
-#undef NDEBUG
+
+#ifndef HURCHALLA_CLOCKWORK_ENABLE_ASSERTS
+#  define HURCHALLA_CLOCKWORK_ENABLE_ASSERTS
+#endif
 
 
 #include "hurchalla/modular_arithmetic/modular_multiplicative_inverse.h"
@@ -41,8 +44,8 @@ namespace testmmi {
     T gcd(T a, T b)
     {
         static_assert(hc::ut_numeric_limits<T>::is_integer, "");
-        HPBC_PRECONDITION(a >= 0);
-        HPBC_PRECONDITION(b >= 0);
+        HPBC_CLOCKWORK_PRECONDITION1(a >= 0);
+        HPBC_CLOCKWORK_PRECONDITION1(b >= 0);
 
         while (a != 0) {
             T tmp = a;

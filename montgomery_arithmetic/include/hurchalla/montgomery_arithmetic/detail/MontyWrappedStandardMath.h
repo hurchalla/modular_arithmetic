@@ -17,7 +17,7 @@
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/modular_arithmetic/absolute_value_difference.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include "hurchalla/util/compiler_macros.h"
 
 namespace hurchalla { namespace detail {
@@ -75,7 +75,7 @@ class MontyWrappedStandardMath final {
 
     explicit MontyWrappedStandardMath(T modulus) : modulus_(modulus)
     {
-        HPBC_PRECONDITION2(modulus > 0);
+        HPBC_CLOCKWORK_PRECONDITION2(modulus > 0);
     }
 
     static HURCHALLA_FORCE_INLINE constexpr T max_modulus()
@@ -91,7 +91,7 @@ class MontyWrappedStandardMath final {
     template <class PTAG>   // PTAG is ignored by this class
     HURCHALLA_FORCE_INLINE V convertIn(T a, PTAG) const
     {
-        HPBC_PRECONDITION2(0 <= a);
+        HPBC_CLOCKWORK_PRECONDITION2(0 <= a);
         if HURCHALLA_LIKELY(a < modulus_)
             return V(a);
         else
@@ -99,9 +99,9 @@ class MontyWrappedStandardMath final {
     }
     HURCHALLA_FORCE_INLINE T convertOut(V x) const
     {
-        HPBC_PRECONDITION2(isCanonical(x));
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(x));
         T ret = x.get();
-        HPBC_POSTCONDITION2(0 <= ret && ret < modulus_);
+        HPBC_CLOCKWORK_POSTCONDITION2(0 <= ret && ret < modulus_);
         return ret;
     }
 
@@ -112,25 +112,25 @@ class MontyWrappedStandardMath final {
 
     HURCHALLA_FORCE_INLINE C getCanonicalValue(V x) const
     {
-        HPBC_PRECONDITION2(isCanonical(x));
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(x));
         return C(x.get());
     }
 
     HURCHALLA_FORCE_INLINE C getUnityValue() const
     {
-        HPBC_INVARIANT2(isCanonical(V(static_cast<T>(1))));
+        HPBC_CLOCKWORK_INVARIANT2(isCanonical(V(static_cast<T>(1))));
         return C(static_cast<T>(1));
     }
     HURCHALLA_FORCE_INLINE C getZeroValue() const
     {
-        HPBC_INVARIANT2(isCanonical(V(static_cast<T>(0))));
+        HPBC_CLOCKWORK_INVARIANT2(isCanonical(V(static_cast<T>(0))));
         return C(static_cast<T>(0));
     }
     HURCHALLA_FORCE_INLINE C getNegativeOneValue() const
     {
-        HPBC_INVARIANT2(modulus_ > 0);
+        HPBC_CLOCKWORK_INVARIANT2(modulus_ > 0);
         T negOne = static_cast<T>(modulus_ - static_cast<T>(1));
-        HPBC_INVARIANT2(isCanonical(V(negOne)));
+        HPBC_CLOCKWORK_INVARIANT2(isCanonical(V(negOne)));
         return C(negOne);
     }
 
@@ -142,36 +142,36 @@ class MontyWrappedStandardMath final {
     template <class PTAG>   // Performance TAG (ignored by this class)
     HURCHALLA_FORCE_INLINE V multiply(V x, V y, bool& isZero, PTAG) const
     {
-        HPBC_PRECONDITION2(isCanonical(x));
-        HPBC_PRECONDITION2(isCanonical(y));
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(x));
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(y));
         T result = ::hurchalla::modular_multiplication_prereduced_inputs(
                                                     x.get(), y.get(), modulus_);
         isZero = (getCanonicalValue(V(result)).get() == getZeroValue().get());
-        HPBC_POSTCONDITION2(isCanonical(V(result)));
+        HPBC_CLOCKWORK_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
     template <class PTAG>   // Performance TAG (ignored by this class)
     HURCHALLA_FORCE_INLINE V fmsub(V x, V y, C z, PTAG) const
     {
-        HPBC_PRECONDITION2(isCanonical(x));
-        HPBC_PRECONDITION2(isCanonical(y));
-        HPBC_PRECONDITION2(isCanonical(z));
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(x));
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(y));
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(z));
         bool isZero;
         V product = multiply(x, y, isZero, PTAG());
         V result = subtract(product, z, 0);  // 0 is arbitrary, for PTAG
-        HPBC_POSTCONDITION2(isCanonical(result));
+        HPBC_CLOCKWORK_POSTCONDITION2(isCanonical(result));
         return result;
     }
     template <class PTAG>   // Performance TAG (ignored by this class)
     HURCHALLA_FORCE_INLINE V fmadd(V x, V y, C z, PTAG) const
     {
-        HPBC_PRECONDITION2(isCanonical(x));
-        HPBC_PRECONDITION2(isCanonical(y));
-        HPBC_PRECONDITION2(isCanonical(z));
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(x));
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(y));
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(z));
         bool isZero;
         V product = multiply(x, y, isZero, PTAG());
         V result = add(product, z);
-        HPBC_POSTCONDITION2(isCanonical(result));
+        HPBC_CLOCKWORK_POSTCONDITION2(isCanonical(result));
         return result;
     }
 
@@ -199,11 +199,11 @@ class MontyWrappedStandardMath final {
 
     HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
-        HPBC_PRECONDITION2(isCanonical(x));
-        HPBC_PRECONDITION2(isCanonical(y));
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(x));
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(y));
         T result = ::hurchalla::modular_addition_prereduced_inputs(
                                                     x.get(), y.get(), modulus_);
-        HPBC_POSTCONDITION2(isCanonical(V(result)));
+        HPBC_CLOCKWORK_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
     // Note: add(V, C) and add(C, V) will match to add(V x, V y) above.
@@ -216,11 +216,11 @@ class MontyWrappedStandardMath final {
     template <class PTAG>
     HURCHALLA_FORCE_INLINE V subtract(V x, V y, PTAG) const
     {
-        HPBC_PRECONDITION2(isCanonical(x));
-        HPBC_PRECONDITION2(isCanonical(y));
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(x));
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(y));
         T result = ::hurchalla::modular_subtraction_prereduced_inputs(
                                                     x.get(), y.get(), modulus_);
-        HPBC_POSTCONDITION2(isCanonical(V(result)));
+        HPBC_CLOCKWORK_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
     // Note: subtract(V, C, PTAG) and subtract(C, V, PTAG) will match to
@@ -234,10 +234,10 @@ class MontyWrappedStandardMath final {
 
     HURCHALLA_FORCE_INLINE V unordered_subtract(V x, V y) const
     {
-        HPBC_PRECONDITION2(isCanonical(x));
-        HPBC_PRECONDITION2(isCanonical(y));
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(x));
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(y));
         T result = ::hurchalla::absolute_value_difference(x.get(), y.get());
-        HPBC_POSTCONDITION2(isCanonical(V(result)));
+        HPBC_CLOCKWORK_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
     // Note: unordered_subtract(V, C) and unordered_subtract(C, V) will match
@@ -263,16 +263,16 @@ class MontyWrappedStandardMath final {
     template <class F>
     HURCHALLA_FORCE_INLINE T gcd_with_modulus(V x, const F& gcd_functor) const
     {
-        HPBC_INVARIANT2(modulus_ > 0);
+        HPBC_CLOCKWORK_INVARIANT2(modulus_ > 0);
         // We want to return the value  q = gcd(convertOut(x), modulus_).  Since
         // this class simply wraps standard integer domain values within a
         // MontgomeryForm interface, x.get() == convertOut(x).
         T p = gcd_functor(x.get(), modulus_);
         // Our postconditions assume the Functor implementation is correct.
-        HPBC_POSTCONDITION2(0 < p && p <= modulus_ &&
+        HPBC_CLOCKWORK_POSTCONDITION2(0 < p && p <= modulus_ &&
                             (x.get() == 0 || p <= x.get()));
-        HPBC_POSTCONDITION2(modulus_ % p == 0);
-        HPBC_POSTCONDITION2(x.get() % p == 0);
+        HPBC_CLOCKWORK_POSTCONDITION2(modulus_ % p == 0);
+        HPBC_CLOCKWORK_POSTCONDITION2(x.get() % p == 0);
         return p;
     }
 
@@ -282,20 +282,20 @@ class MontyWrappedStandardMath final {
     template <class PTAG>
     HURCHALLA_FORCE_INLINE V square(V x, PTAG) const
     {
-        HPBC_PRECONDITION2(isCanonical(x));
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(x));
         bool isZero;
         return multiply(x, x, isZero, PTAG());
     }
     template <class PTAG>
     HURCHALLA_FORCE_INLINE V fusedSquareSub(V x, C cv, PTAG) const
     {
-        HPBC_PRECONDITION2(isCanonical(x));
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(x));
         return fmsub(x, x, cv, PTAG());
     }
     template <class PTAG>
     HURCHALLA_FORCE_INLINE V fusedSquareAdd(V x, C cv, PTAG) const
     {
-        HPBC_PRECONDITION2(isCanonical(x));
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(x));
         return fmadd(x, x, cv, PTAG());
     }
 
@@ -303,21 +303,21 @@ class MontyWrappedStandardMath final {
     HURCHALLA_FORCE_INLINE T getMagicValue() const
     {
         T result = ::hurchalla::get_R_mod_n(modulus_);
-        HPBC_POSTCONDITION2(result < modulus_);
+        HPBC_CLOCKWORK_POSTCONDITION2(result < modulus_);
         return result;
     }
     template <class PTAG>   // Performance TAG (ignored by this class)
     HURCHALLA_FORCE_INLINE V convertInExtended_aTimesR(T a, T RmodN, PTAG) const
     {
-        HPBC_PRECONDITION2(RmodN == getMagicValue());
+        HPBC_CLOCKWORK_PRECONDITION2(RmodN == getMagicValue());
         T tmp = a;
         if (tmp >= modulus_)
             tmp = static_cast<T>(tmp % modulus_);
-        HPBC_ASSERT2(tmp < modulus_);
-        HPBC_ASSERT2(RmodN < modulus_);
+        HPBC_CLOCKWORK_ASSERT2(tmp < modulus_);
+        HPBC_CLOCKWORK_ASSERT2(RmodN < modulus_);
         T result = ::hurchalla::modular_multiplication_prereduced_inputs(
                                                           tmp, RmodN, modulus_);
-        HPBC_POSTCONDITION2(isCanonical(V(result)));
+        HPBC_CLOCKWORK_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
 
@@ -326,31 +326,31 @@ class MontyWrappedStandardMath final {
     {
         static constexpr int digitsT = ut_numeric_limits<T>::digits;
         int power = static_cast<int>(exponent);
-        HPBC_PRECONDITION2(0 <= power && power < digitsT);
+        HPBC_CLOCKWORK_PRECONDITION2(0 <= power && power < digitsT);
         T tmp = static_cast<T>(static_cast<T>(1) << power);
         if (tmp >= modulus_)
             tmp = static_cast<T>(tmp % modulus_);
-        HPBC_POSTCONDITION2(tmp < modulus_);
+        HPBC_CLOCKWORK_POSTCONDITION2(tmp < modulus_);
         return V(tmp);
     }
     // PTAG Performance TAG - ignored by this class
     template <class PTAG> HURCHALLA_FORCE_INLINE
     V RTimesTwoPowLimited(size_t exponent, T RmodN, PTAG) const
     {
-        HPBC_PRECONDITION2(RmodN == getMagicValue());
+        HPBC_CLOCKWORK_PRECONDITION2(RmodN == getMagicValue());
         static constexpr int digitsT = ut_numeric_limits<T>::digits;
         int power = static_cast<int>(exponent);
-        HPBC_PRECONDITION2(0 <= power && power < digitsT);
+        HPBC_CLOCKWORK_PRECONDITION2(0 <= power && power < digitsT);
 
         T tmp = static_cast<T>(static_cast<T>(1) << power);
         if (tmp >= modulus_)
             tmp = static_cast<T>(tmp % modulus_);
 
-        HPBC_ASSERT2(tmp < modulus_);
-        HPBC_ASSERT2(RmodN < modulus_);
+        HPBC_CLOCKWORK_ASSERT2(tmp < modulus_);
+        HPBC_CLOCKWORK_ASSERT2(RmodN < modulus_);
         T result = ::hurchalla::modular_multiplication_prereduced_inputs(
                                                           tmp, RmodN, modulus_);
-        HPBC_POSTCONDITION2(isCanonical(V(result)));
+        HPBC_CLOCKWORK_POSTCONDITION2(isCanonical(V(result)));
         return V(result);
     }
 };

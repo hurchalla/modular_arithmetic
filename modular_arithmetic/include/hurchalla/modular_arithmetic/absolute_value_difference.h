@@ -12,7 +12,7 @@
 #include "hurchalla/modular_arithmetic/detail/platform_specific/impl_absolute_value_difference.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 
 namespace hurchalla {
 
@@ -24,13 +24,13 @@ template <typename T>  HURCHALLA_FORCE_INLINE
 T absolute_value_difference(T a, T b)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
-    HPBC_PRECONDITION(a >= 0);
-    HPBC_PRECONDITION(b >= 0);
+    HPBC_CLOCKWORK_PRECONDITION(a >= 0);
+    HPBC_CLOCKWORK_PRECONDITION(b >= 0);
 
     T result = detail::impl_absolute_value_difference<T>::call(a, b);
 
-    HPBC_POSTCONDITION(result >= 0);
-    HPBC_POSTCONDITION(result == ((a>b) ? a-b : b-a));
+    HPBC_CLOCKWORK_POSTCONDITION(result >= 0);
+    HPBC_CLOCKWORK_POSTCONDITION(result == ((a>b) ? a-b : b-a));
     return result;
 }
 

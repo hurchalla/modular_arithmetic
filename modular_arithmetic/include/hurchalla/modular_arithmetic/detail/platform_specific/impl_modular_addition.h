@@ -13,7 +13,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <cstdint>
 #include <type_traits>
 
@@ -55,9 +55,9 @@ struct default_impl_modadd_unsigned {
   {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);  // i.e. the input must be prereduced
-    HPBC_PRECONDITION2(b<modulus);  // i.e. the input must be prereduced
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);  // i.e. the input must be prereduced
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);  // i.e. the input must be prereduced
 
     // We want essentially-  result = (a+b < modulus) ? a+b : a+b-modulus
     //   But due to the potential for overflow on a+b, we need to instead test
@@ -70,7 +70,7 @@ struct default_impl_modadd_unsigned {
       // result = (a < tmp) ? sum : result
     result = ::hurchalla::conditional_select(a < tmp, sum, result);
 
-    HPBC_POSTCONDITION2(static_cast<T>(0) <= result && result < modulus);
+    HPBC_CLOCKWORK_POSTCONDITION2(static_cast<T>(0) <= result && result < modulus);
     return result;
   }
 };
@@ -87,9 +87,9 @@ struct default_impl_modadd_unsigned {
   {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);  // the input must be prereduced
-    HPBC_PRECONDITION2(b<modulus);  // the input must be prereduced
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);  // the input must be prereduced
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);  // the input must be prereduced
 
     T sum = static_cast<T>(a + b);
     T tmp = static_cast<T>(b - modulus);
@@ -97,7 +97,7 @@ struct default_impl_modadd_unsigned {
       // result = (result >= a) ? sum : result
     result = ::hurchalla::conditional_select(result >= a, sum, result);
 
-    HPBC_POSTCONDITION2(static_cast<T>(0) <= result && result < modulus);
+    HPBC_CLOCKWORK_POSTCONDITION2(static_cast<T>(0) <= result && result < modulus);
     return result;
   }
 };
@@ -138,9 +138,9 @@ struct impl_modular_addition_unsigned<__uint128_t> {
   __uint128_t call(__uint128_t a, __uint128_t b, __uint128_t modulus)
   {
     using std::uint64_t;
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);  // __uint128_t guarantees a>=0.
-    HPBC_PRECONDITION2(b<modulus);  // __uint128_t guarantees b>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);  // __uint128_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);  // __uint128_t guarantees b>=0.
 
     __uint128_t tmp = static_cast<__uint128_t>(b - modulus);
     __uint128_t sum = static_cast<__uint128_t>(a + b);
@@ -163,8 +163,8 @@ struct impl_modular_addition_unsigned<__uint128_t> {
              : "cc");
     __uint128_t result = (static_cast<__uint128_t>(ahi) << 64) | alo;
 
-    HPBC_POSTCONDITION2(result < modulus);  // __uint128_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // __uint128_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                              default_impl_modadd_unsigned::call(a, b, modulus));
     return result;
   }
@@ -177,9 +177,9 @@ struct impl_modular_addition_unsigned<std::uint64_t> {
   std::uint64_t call(std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
   {
     using std::uint64_t;
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);  // uint64_t guarantees a>=0.
-    HPBC_PRECONDITION2(b<modulus);  // uint64_t guarantees b>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);  // uint64_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);  // uint64_t guarantees b>=0.
 
     uint64_t sum = static_cast<uint64_t>(a + b);
     uint64_t tmp = static_cast<uint64_t>(b - modulus);
@@ -195,8 +195,8 @@ struct impl_modular_addition_unsigned<std::uint64_t> {
              : "cc");
     uint64_t result = tmp2;
 
-    HPBC_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                              default_impl_modadd_unsigned::call(a, b, modulus));
     return result;
   }
@@ -208,9 +208,9 @@ struct impl_modular_addition_unsigned<std::uint32_t> {
   std::uint32_t call(std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
   {
     using std::uint32_t;
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);  // uint32_t guarantees a>=0.
-    HPBC_PRECONDITION2(b<modulus);  // uint32_t guarantees b>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);  // uint32_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);  // uint32_t guarantees b>=0.
 
     // By calculating tmp outside of the __asm__, we allow the compiler to
     // potentially loop hoist tmp, if this function is inlined into a loop.
@@ -232,8 +232,8 @@ struct impl_modular_addition_unsigned<std::uint32_t> {
              : "cc");
     uint32_t result = tmp2;
 
-    HPBC_POSTCONDITION2(result < modulus);  // uint32_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // uint32_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                              default_impl_modadd_unsigned::call(a, b, modulus));
     return result;
   }
@@ -257,9 +257,9 @@ struct impl_modular_addition_unsigned<__uint128_t> {
   __uint128_t call(__uint128_t a, __uint128_t b, __uint128_t modulus)
   {
     using std::uint64_t;
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);  // __uint128_t guarantees a>=0.
-    HPBC_PRECONDITION2(b<modulus);  // __uint128_t guarantees b>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);  // __uint128_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);  // __uint128_t guarantees b>=0.
 
     __uint128_t tmp = static_cast<__uint128_t>(b - modulus);
     __uint128_t sum = static_cast<__uint128_t>(a + b);
@@ -280,8 +280,8 @@ struct impl_modular_addition_unsigned<__uint128_t> {
              : "cc");
     __uint128_t result = (static_cast<__uint128_t>(reshi) << 64) | reslo;
 
-    HPBC_POSTCONDITION2(result < modulus);  // __uint128_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // __uint128_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                              default_impl_modadd_unsigned::call(a, b, modulus));
     return result;
   }
@@ -294,9 +294,9 @@ struct impl_modular_addition_unsigned<std::uint64_t> {
   std::uint64_t call(std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
   {
     using std::uint64_t;
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);  // uint64_t guarantees a>=0.
-    HPBC_PRECONDITION2(b<modulus);  // uint64_t guarantees b>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);  // uint64_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);  // uint64_t guarantees b>=0.
 
     uint64_t sum = static_cast<uint64_t>(a + b);
     uint64_t tmp = static_cast<uint64_t>(b - modulus);
@@ -308,8 +308,8 @@ struct impl_modular_addition_unsigned<std::uint64_t> {
              : "cc");
     uint64_t result = res;
 
-    HPBC_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                              default_impl_modadd_unsigned::call(a, b, modulus));
     return result;
   }
@@ -380,21 +380,21 @@ struct impl_modular_addition<T, true> {
     static_assert(static_cast<T>(static_cast<U>(static_cast<T>(-1))) ==
                   static_cast<T>(-1), "Casting a signed T value to unsigned and"
                                " back again must result in the original value");
-    HPBC_PRECONDITION2(modulus > 0);
-    HPBC_PRECONDITION2(0 <= a && a < modulus);
-    HPBC_PRECONDITION2(0 <= b && b < modulus);
+    HPBC_CLOCKWORK_PRECONDITION2(modulus > 0);
+    HPBC_CLOCKWORK_PRECONDITION2(0 <= a && a < modulus);
+    HPBC_CLOCKWORK_PRECONDITION2(0 <= b && b < modulus);
 
 #if defined(HURCHALLA_AVOID_CSELECT)
     static_assert((static_cast<T>(-1) >> 1) == static_cast<T>(-1),
                           "Arithmetic right shift is required but unavailable");
     T tmp = static_cast<T>(b - modulus);
-    HPBC_ASSERT2(tmp < 0);
+    HPBC_CLOCKWORK_ASSERT2(tmp < 0);
     tmp = static_cast<T>(tmp + a);
     // if tmp is negative, use a bit mask of all 1s.  Otherwise use all 0s.
     U mask = static_cast<U>(tmp >> ut_numeric_limits<T>::digits);
     U masked_modulus = static_cast<U>(mask & static_cast<U>(modulus));
     U result = static_cast<U>(static_cast<U>(tmp) + masked_modulus);
-    HPBC_ASSERT2(result == impl_modular_addition_unsigned<U>::call(
+    HPBC_CLOCKWORK_ASSERT2(result == impl_modular_addition_unsigned<U>::call(
                 static_cast<U>(a), static_cast<U>(b), static_cast<U>(modulus)));
 #else
     U result = impl_modular_addition_unsigned<U>::call(static_cast<U>(a),

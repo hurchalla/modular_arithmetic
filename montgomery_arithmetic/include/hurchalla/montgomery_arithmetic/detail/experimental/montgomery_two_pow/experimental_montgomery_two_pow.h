@@ -14,7 +14,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/count_leading_zeros.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <type_traits>
 #include <cstddef>
 #include <array>
@@ -46,7 +46,7 @@ struct experimental_montgomery_two_pow {
     static_assert(ut_numeric_limits<U>::is_integer, "");
     static_assert(!ut_numeric_limits<U>::is_signed, "");
     // x > 0 required, but C++11 constexpr function won't allow this check
-    //HPBC_PRECONDITION2(x > 0);
+    //HPBC_CLOCKWORK_PRECONDITION2(x > 0);
     return (x <= 1) ? 0 : 1 + experimental_montgomery_two_pow::floor_log2(x >> 1);
   }
 
@@ -103,14 +103,14 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
             return MFE::convertInExtended(mf, num);
         }
 
-        HPBC_ASSERT2(n > 0);
+        HPBC_CLOCKWORK_ASSERT2(n > 0);
         int leading_zeros = count_leading_zeros(n);
         int numbits = ut_numeric_limits<decltype(n)>::digits - leading_zeros;
-        HPBC_ASSERT2(numbits > P2);
+        HPBC_CLOCKWORK_ASSERT2(numbits > P2);
 
         int shift = numbits - P2;
         size_t index = static_cast<size_t>(n >> shift);
-        HPBC_ASSERT2(index <= MASK);
+        HPBC_CLOCKWORK_ASSERT2(index <= MASK);
         RU num = static_cast<RU>(static_cast<RU>(1) << index);
         V result = MFE::convertInExtended(mf, num);
         while (shift >= P2) {
@@ -130,7 +130,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         }
         if (shift == 0)
             return result;
-        HPBC_ASSERT2(0 < shift && shift < P2);
+        HPBC_CLOCKWORK_ASSERT2(0 < shift && shift < P2);
 
         size_t tmpmask = (1u << shift) - 1u;
         index = static_cast<size_t>(n) & tmpmask;
@@ -148,17 +148,17 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         }
         RU magicValue = MFE::getMagicValue(mf);
 
-        HPBC_ASSERT2(n > 0);
+        HPBC_CLOCKWORK_ASSERT2(n > 0);
         int leading_zeros = count_leading_zeros(n);
         int numbits = ut_numeric_limits<decltype(n)>::digits - leading_zeros;
-        HPBC_ASSERT2(numbits >= (P2 + 1));
+        HPBC_CLOCKWORK_ASSERT2(numbits >= (P2 + 1));
 
         int shift = numbits - (P2 + 1);
-        HPBC_ASSERT2(shift >= 0);
+        HPBC_CLOCKWORK_ASSERT2(shift >= 0);
         size_t tmp = static_cast<size_t>(n >> shift);
-        HPBC_ASSERT2(tmp <= 2u*MASK + 1u);
+        HPBC_CLOCKWORK_ASSERT2(tmp <= 2u*MASK + 1u);
         // Bit P2 of tmp was the leading bit, so it should always be set.
-        HPBC_ASSERT2(((tmp >> P2) & 1u) == 1u);
+        HPBC_CLOCKWORK_ASSERT2(((tmp >> P2) & 1u) == 1u);
         size_t loindex = tmp & MASK;
         RU num = static_cast<RU>(static_cast<RU>(1) << loindex);
         V result = MFE::convertInExtended_aTimesR(mf, num, magicValue);
@@ -171,14 +171,14 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
                     if (shift < (P2 + 1))
                         goto break_0_1;
                 }
-                HPBC_ASSERT2(shift >= (P2 + 1));
+                HPBC_CLOCKWORK_ASSERT2(shift >= (P2 + 1));
 
                 shift -= (P2 + 1);
                 tmp = static_cast<size_t>(n >> shift);
                 loindex = tmp & MASK;
                 num = static_cast<RU>(static_cast<RU>(1) << loindex);
                 V val1 = MFE::convertInExtended_aTimesR(mf, num, magicValue);
-                HPBC_ASSERT2(((tmp >> P2) & 1u) == 1u);
+                HPBC_CLOCKWORK_ASSERT2(((tmp >> P2) & 1u) == 1u);
                 // since the high bit is always set, we always choose
                 // val1 = convertInExtended_aTimesR()
 
@@ -210,7 +210,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 goto break_0_1;
 break_0_1:
 
-        HPBC_ASSERT2(0 < shift && shift < (P2 + 1));
+        HPBC_CLOCKWORK_ASSERT2(0 < shift && shift < (P2 + 1));
 
         size_t tmpmask = (1u << shift) - 1u;
         size_t index = static_cast<size_t>(n) & tmpmask;
@@ -225,14 +225,14 @@ break_0_1:
         // calls to convertInExtended() with twoPowLimited().
         if (n <= MASK)
             return MFE::twoPowLimited(mf, static_cast<size_t>(n));
-        HPBC_ASSERT2(n > 0);
+        HPBC_CLOCKWORK_ASSERT2(n > 0);
         int leading_zeros = count_leading_zeros(n);
         int numbits = ut_numeric_limits<decltype(n)>::digits - leading_zeros;
-        HPBC_ASSERT2(numbits > P2);
+        HPBC_CLOCKWORK_ASSERT2(numbits > P2);
 
         int shift = numbits - P2;
         size_t index = static_cast<size_t>(n >> shift);
-        HPBC_ASSERT2(index <= MASK);
+        HPBC_CLOCKWORK_ASSERT2(index <= MASK);
         V result = MFE::twoPowLimited(mf, index);
         while (shift >= P2) {
             if (USE_SLIDING_WINDOW_OPTIMIZATION) {
@@ -250,7 +250,7 @@ break_0_1:
         }
         if (shift == 0)
             return result;
-        HPBC_ASSERT2(0 < shift && shift < P2);
+        HPBC_CLOCKWORK_ASSERT2(0 < shift && shift < P2);
 
         size_t tmpmask = (1u << shift) - 1u;
         index = static_cast<size_t>(n) & tmpmask;
@@ -269,17 +269,17 @@ break_0_1:
         }
         RU magicValue = MFE::getMagicValue(mf);
 
-        HPBC_ASSERT2(n > 0);
+        HPBC_CLOCKWORK_ASSERT2(n > 0);
         int leading_zeros = count_leading_zeros(n);
         int numbits = ut_numeric_limits<decltype(n)>::digits - leading_zeros;
-        HPBC_ASSERT2(numbits >= (P2 + 1));
+        HPBC_CLOCKWORK_ASSERT2(numbits >= (P2 + 1));
 
         int shift = numbits - (P2 + 1);
-        HPBC_ASSERT2(shift >= 0);
+        HPBC_CLOCKWORK_ASSERT2(shift >= 0);
         size_t tmp = static_cast<size_t>(n >> shift);
-        HPBC_ASSERT2(tmp <= 2u*MASK + 1u);
+        HPBC_CLOCKWORK_ASSERT2(tmp <= 2u*MASK + 1u);
         // Bit P2 of tmp was the leading bit, so it should always be set.
-        HPBC_ASSERT2(((tmp >> P2) & 1u) == 1u);
+        HPBC_CLOCKWORK_ASSERT2(((tmp >> P2) & 1u) == 1u);
         size_t loindex = tmp & MASK;
         V result = MFE::RTimesTwoPowLimited(mf, loindex, magicValue);
 
@@ -291,13 +291,13 @@ break_0_1:
                     if (shift < (P2 + 1))
                         goto break_0_3;
                 }
-                HPBC_ASSERT2(shift >= (P2 + 1));
+                HPBC_CLOCKWORK_ASSERT2(shift >= (P2 + 1));
 
                 shift -= (P2 + 1);
                 tmp = static_cast<size_t>(n >> shift);
                 loindex = tmp & MASK;
                 V val1 = MFE::RTimesTwoPowLimited(mf, loindex, magicValue);
-                HPBC_ASSERT2(((tmp >> P2) & 1u) == 1u);
+                HPBC_CLOCKWORK_ASSERT2(((tmp >> P2) & 1u) == 1u);
                 // since the high bit is always set, we always choose
                 // val1 = RTimesTwoPowLimited()
 
@@ -328,7 +328,7 @@ break_0_1:
 goto break_0_3;
 break_0_3:
 
-        HPBC_ASSERT2(0 < shift && shift < (P2 + 1));
+        HPBC_CLOCKWORK_ASSERT2(0 < shift && shift < (P2 + 1));
 
         size_t tmpmask = (1u << shift) - 1u;
         size_t index = static_cast<size_t>(n) & tmpmask;
@@ -355,15 +355,15 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
             else
                 return mf.two_times(mf.getUnityValue());
         }
-        HPBC_ASSERT2(n > 1);
+        HPBC_CLOCKWORK_ASSERT2(n > 1);
         int leading_zeros = count_leading_zeros(n);
         int numbits = ut_numeric_limits<decltype(n)>::digits - leading_zeros;
-        HPBC_ASSERT2(numbits > 1);
+        HPBC_CLOCKWORK_ASSERT2(numbits > 1);
         int shift = numbits - 1;
-        HPBC_ASSERT2((n >> shift) == 1);   // because shift == numbits - 1
+        HPBC_CLOCKWORK_ASSERT2((n >> shift) == 1);   // because shift == numbits - 1
         C mont_two = mf.two_times(mf.getUnityValue());
         C cresult = mont_two;
-        HPBC_ASSERT2(shift >= 1);
+        HPBC_CLOCKWORK_ASSERT2(shift >= 1);
         // since cresult == 2, this two_times() is equivalent to squaring
         cresult = mf.two_times(cresult);
         --shift;
@@ -409,13 +409,13 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         constexpr size_t MASK = TABLESIZE - 1;
         if (n <= MASK)
             return table[static_cast<size_t>(n)];
-        HPBC_ASSERT2(n > 0);
+        HPBC_CLOCKWORK_ASSERT2(n > 0);
         int leading_zeros = count_leading_zeros(n);
         int numbits = ut_numeric_limits<decltype(n)>::digits - leading_zeros;
-        HPBC_ASSERT2(numbits > P);
+        HPBC_CLOCKWORK_ASSERT2(numbits > P);
         int shift = numbits - P;
         U tmp = n >> shift;
-        HPBC_ASSERT2(tmp <= MASK);
+        HPBC_CLOCKWORK_ASSERT2(tmp <= MASK);
         size_t index = static_cast<size_t>(tmp);
         V result = table[index];
 
@@ -454,13 +454,13 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         constexpr size_t MASK = TABLESIZE - 1;
         if (n <= MASK)
             return table[static_cast<size_t>(n)];
-        HPBC_ASSERT2(n > 0);
+        HPBC_CLOCKWORK_ASSERT2(n > 0);
         int leading_zeros = count_leading_zeros(n);
         int numbits = ut_numeric_limits<decltype(n)>::digits - leading_zeros;
-        HPBC_ASSERT2(numbits > P);
+        HPBC_CLOCKWORK_ASSERT2(numbits > P);
         int shift = numbits - P;
         U tmp = n >> shift;
-        HPBC_ASSERT2(tmp <= MASK);
+        HPBC_CLOCKWORK_ASSERT2(tmp <= MASK);
         size_t index = static_cast<size_t>(tmp);
         V result = table[index];
 
@@ -921,7 +921,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         table[0] = mf.getUnityValue();   // montgomery one
         //return mf.getUnityValue();
 if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
-        HPBC_ASSERT2(TABLESIZE % 128 == 0);
+        HPBC_CLOCKWORK_ASSERT2(TABLESIZE % 128 == 0);
         for (size_t i=0; i<TABLESIZE-1; ++i)
             table[i+1] = mf.two_times(table[i]);
 } else if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 1) {
@@ -1027,7 +1027,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 }
     }
     else {
-        HPBC_ASSERT2(TABLESIZE % 256 == 0);
+        HPBC_CLOCKWORK_ASSERT2(TABLESIZE % 256 == 0);
         table[0] = mf.getUnityValue();   // montgomery one
         for (size_t i=0; i<TABLESIZE-1; ++i)
             table[i+1] = mf.two_times(table[i]);
@@ -1041,15 +1041,15 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
     // count_leading_zeros returns the number of leading 0-bits in n, starting
     // at the most significant bit position. If n is 0, the result is undefined
-    HPBC_ASSERT2(n > 0);
+    HPBC_CLOCKWORK_ASSERT2(n > 0);
     int leading_zeros = count_leading_zeros(n);
     int numbits = ut_numeric_limits<decltype(n)>::digits - leading_zeros;
     // because we returned above if (n <= MASK), we can assert the following:
-    HPBC_ASSERT2(numbits > P);
+    HPBC_CLOCKWORK_ASSERT2(numbits > P);
 
     int shift = numbits - P;
     U tmp = n >> shift;
-    HPBC_ASSERT2(tmp <= MASK);
+    HPBC_CLOCKWORK_ASSERT2(tmp <= MASK);
     // normally we'd use (tmp & MASK), but it's redundant with tmp <= MASK
     size_t index = static_cast<size_t>(tmp);
     V result = table[index];
@@ -1075,7 +1075,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
     if (shift == 0)
         return result;
-    HPBC_ASSERT2(0 < shift && shift < P);
+    HPBC_CLOCKWORK_ASSERT2(0 < shift && shift < P);
 
     for (int i=0; i<shift; ++i)
         result = mf.square(result);
@@ -1146,17 +1146,17 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
             return result;
         }
 
-        HPBC_ASSERT2(n_max > 0);
+        HPBC_CLOCKWORK_ASSERT2(n_max > 0);
         int leading_zeros = count_leading_zeros(n_max);
         int numbits= ut_numeric_limits<decltype(n_max)>::digits - leading_zeros;
-        HPBC_ASSERT2(numbits > P2);
+        HPBC_CLOCKWORK_ASSERT2(numbits > P2);
 
         int shift = numbits - P2;
         std::array<V, ARRAY_SIZE> result;
         std::array<size_t, ARRAY_SIZE> tmp;
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
             tmp[j] = static_cast<size_t>(n[j] >> shift);
-            HPBC_ASSERT2(tmp[j] <= MASK);
+            HPBC_CLOCKWORK_ASSERT2(tmp[j] <= MASK);
             // normally we use (tmp & MASK), but it's redundant with tmp <= MASK
             result[j] = MFE::twoPowLimited(mf[j], tmp[j]);
         }
@@ -1182,7 +1182,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         }
         if (shift == 0)
             return result;
-        HPBC_ASSERT2(0 < shift && shift < P2);
+        HPBC_CLOCKWORK_ASSERT2(0 < shift && shift < P2);
         size_t tmpmask = (1u << shift) - 1u;
 
         std::array<size_t, ARRAY_SIZE> index;
@@ -1218,23 +1218,23 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
             magicValue[j] = MFE::getMagicValue(mf[j]);
         }
 
-        HPBC_ASSERT2(n_max > 0);
+        HPBC_CLOCKWORK_ASSERT2(n_max > 0);
         int leading_zeros = count_leading_zeros(n_max);
         int numbits= ut_numeric_limits<decltype(n_max)>::digits - leading_zeros;
-        HPBC_ASSERT2(numbits >= (P2 + 1));
+        HPBC_CLOCKWORK_ASSERT2(numbits >= (P2 + 1));
 
         int shift = numbits - (P2 + 1);
-        HPBC_ASSERT2(shift >= 0);
+        HPBC_CLOCKWORK_ASSERT2(shift >= 0);
         std::array<V, ARRAY_SIZE> result;
         std::array<size_t, ARRAY_SIZE> tmp;
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
             tmp[j] = static_cast<size_t>(n[j] >> shift);
-            HPBC_ASSERT2(tmp[j] <= 2u*MASK + 1u);
+            HPBC_CLOCKWORK_ASSERT2(tmp[j] <= 2u*MASK + 1u);
             size_t loindex = tmp[j] & MASK;
             V val1 = MFE::RTimesTwoPowLimited(mf[j], loindex, magicValue[j]);
             V val2 = MFE::twoPowLimited(mf[j], loindex);
             size_t hibit = tmp[j] >> P2;
-            HPBC_ASSERT2(hibit <= 1);
+            HPBC_CLOCKWORK_ASSERT2(hibit <= 1);
             // val1 = (hibit == 0) ? val2 : val1;
             val1.cmov(hibit == 0, val2);
             result[j] = val1;
@@ -1268,7 +1268,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         }
         if (shift == 0)
             return result;
-        HPBC_ASSERT2(0 < shift && shift < (P2 + 1));
+        HPBC_CLOCKWORK_ASSERT2(0 < shift && shift < (P2 + 1));
         size_t tmpmask = (1u << shift) - 1u;
 
         std::array<size_t, ARRAY_SIZE> index;
@@ -1303,16 +1303,16 @@ else {
             }
             return result;
         }
-        HPBC_ASSERT2(n_max > 0);
+        HPBC_CLOCKWORK_ASSERT2(n_max > 0);
         int leading_zeros = count_leading_zeros(n_max);
         int numbits= ut_numeric_limits<decltype(n_max)>::digits - leading_zeros;
-        HPBC_ASSERT2(numbits > 3);
+        HPBC_CLOCKWORK_ASSERT2(numbits > 3);
         int shift = numbits - 3;
 
         std::array<V, ARRAY_SIZE> result;
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
             size_t index = static_cast<size_t>(n[j] >> shift);
-            HPBC_ASSERT2(index <= MASK);
+            HPBC_CLOCKWORK_ASSERT2(index <= MASK);
             result[j] = table[index][j];
         }
 
@@ -1350,18 +1350,18 @@ else {
     // count_leading_zeros returns the number of leading 0-bits in n_max,
     // starting at the most significant bit position. If n_max is 0, the
     // result is undefined
-    HPBC_ASSERT2(n_max > 0);
+    HPBC_CLOCKWORK_ASSERT2(n_max > 0);
     int leading_zeros = count_leading_zeros(n_max);
     int numbits = ut_numeric_limits<decltype(n_max)>::digits - leading_zeros;
     // because we returned above if (n_max <= MASK), we know the following:
-    HPBC_ASSERT2(numbits > P);
+    HPBC_CLOCKWORK_ASSERT2(numbits > P);
 
     int shift = numbits - P;
     std::array<V, ARRAY_SIZE> result;
     std::array<U, ARRAY_SIZE> tmp;
     HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
         tmp[j] = n[j] >> shift;
-        HPBC_ASSERT2(tmp[j] <= MASK);
+        HPBC_CLOCKWORK_ASSERT2(tmp[j] <= MASK);
         // normally we use (tmp & MASK), but it's redundant with tmp <= MASK
         result[j] = table[static_cast<size_t>(tmp[j])][j];
     }
@@ -1383,7 +1383,7 @@ else {
 
     if (shift == 0)
         return result;
-    HPBC_ASSERT2(0 < shift && shift < P);
+    HPBC_CLOCKWORK_ASSERT2(0 < shift && shift < P);
 
     for (int i=0; i<shift; ++i) {
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)

@@ -14,7 +14,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <cstdint>
 
 namespace hurchalla { namespace detail {
@@ -46,9 +46,9 @@ struct default_modsub_unsigned<LowuopsTag> {
   {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);  // i.e. the input must be prereduced
-    HPBC_PRECONDITION2(b<modulus);  // i.e. the input must be prereduced
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);  // i.e. the input must be prereduced
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);  // i.e. the input must be prereduced
 
     // POSTCONDITION:
     // Let a conceptual "%%" operator represent a modulo operator that always
@@ -69,7 +69,7 @@ struct default_modsub_unsigned<LowuopsTag> {
       // result = (a >= b) ? diff : result
     result = ::hurchalla::conditional_select(a >= b, diff, result);
 
-    HPBC_POSTCONDITION2(0<=result && result<modulus);
+    HPBC_CLOCKWORK_POSTCONDITION2(0<=result && result<modulus);
     return result;
   }
 };
@@ -86,9 +86,9 @@ struct default_modsub_unsigned<LowlatencyTag> {
   {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);  // i.e. the input must be prereduced
-    HPBC_PRECONDITION2(b<modulus);  // i.e. the input must be prereduced
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);  // i.e. the input must be prereduced
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);  // i.e. the input must be prereduced
 
     // POSTCONDITION:
     // Let a conceptual "%%" operator represent a modulo operator that always
@@ -136,7 +136,7 @@ struct default_modsub_unsigned<LowlatencyTag> {
       // result = (a < b) ? tmp : result;  //on x86, ideally a CMOVB instruction
     result = ::hurchalla::conditional_select(a < b, tmp, result);
 
-    HPBC_POSTCONDITION2(0<=result && result<modulus);
+    HPBC_CLOCKWORK_POSTCONDITION2(0<=result && result<modulus);
     return result;
   }
 };
@@ -168,9 +168,9 @@ struct impl_modular_subtraction_unsigned<__uint128_t, LowuopsTag> {
   __uint128_t call(__uint128_t a, __uint128_t b, __uint128_t modulus)
   {
     using std::uint64_t;
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);  // __uint128_t guarantees a>=0.
-    HPBC_PRECONDITION2(b<modulus);  // __uint128_t guarantees b>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);  // __uint128_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);  // __uint128_t guarantees b>=0.
 
 // We can't use LEA here, since our 128 bit operands would necessitate an add
 // with carry to calculate a high 64 bit part, and LEA can neither produce nor
@@ -210,8 +210,8 @@ struct impl_modular_subtraction_unsigned<__uint128_t, LowuopsTag> {
 
     __uint128_t result = diff + moz;
 
-    HPBC_POSTCONDITION2(result < modulus);  // __uint128_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // __uint128_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                       default_modsub_unsigned<LowuopsTag>::call(a, b, modulus));
     return result;
   }
@@ -224,9 +224,9 @@ struct impl_modular_subtraction_unsigned<std::uint64_t, LowuopsTag> {
   std::uint64_t call(std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
   {
     using std::uint64_t;
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);  // uint64_t guarantees a>=0.
-    HPBC_PRECONDITION2(b<modulus);  // uint64_t guarantees b>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);  // uint64_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);  // uint64_t guarantees b>=0.
 
     // Note: the issues and solutions with LEA and RBP/EBP/R13 are the same here
     // as for the uint32_t version of this function above.
@@ -253,8 +253,8 @@ struct impl_modular_subtraction_unsigned<std::uint64_t, LowuopsTag> {
 # endif
              : "cc");
 
-    HPBC_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                       default_modsub_unsigned<LowuopsTag>::call(a, b, modulus));
     return result;
   }
@@ -266,9 +266,9 @@ struct impl_modular_subtraction_unsigned<std::uint32_t, LowuopsTag> {
   std::uint32_t call(std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
   {
     using std::uint32_t;
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);  // uint32_t guarantees a>=0.
-    HPBC_PRECONDITION2(b<modulus);  // uint32_t guarantees b>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);  // uint32_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);  // uint32_t guarantees b>=0.
 
     // Note: we want to make sure the LEA instruction doesn't use RBP/EBP or R13
     // for the base register, since that would necessitate a slower form of LEA
@@ -301,8 +301,8 @@ struct impl_modular_subtraction_unsigned<std::uint32_t, LowuopsTag> {
 # endif
              : "cc");
 
-    HPBC_POSTCONDITION2(result < modulus);  // uint32_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // uint32_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                       default_modsub_unsigned<LowuopsTag>::call(a, b, modulus));
     return result;
   }
@@ -316,9 +316,9 @@ struct impl_modular_subtraction_unsigned<__uint128_t, LowlatencyTag> {
   __uint128_t call(__uint128_t a, __uint128_t b, __uint128_t modulus)
   {
     using std::uint64_t;
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);  // __uint128_t guarantees a>=0.
-    HPBC_PRECONDITION2(b<modulus);  // __uint128_t guarantees b>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);  // __uint128_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);  // __uint128_t guarantees b>=0.
 
     __uint128_t diff = b - modulus;
     __uint128_t tmp = a - diff;
@@ -343,8 +343,8 @@ struct impl_modular_subtraction_unsigned<__uint128_t, LowlatencyTag> {
              : "cc");
     __uint128_t result = (static_cast<__uint128_t>(ahi) << 64) | alo;
 
-    HPBC_POSTCONDITION2(result < modulus);  // __uint128_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // __uint128_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                    default_modsub_unsigned<LowlatencyTag>::call(a, b, modulus));
     return result;
   }
@@ -357,9 +357,9 @@ struct impl_modular_subtraction_unsigned<std::uint64_t, LowlatencyTag> {
   std::uint64_t call(std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
   {
     using std::uint64_t;
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);  // uint64_t guarantees a>=0.
-    HPBC_PRECONDITION2(b<modulus);  // uint64_t guarantees b>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);  // uint64_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);  // uint64_t guarantees b>=0.
 
     uint64_t diff = b - modulus;
     uint64_t tmp = a - diff;
@@ -377,8 +377,8 @@ struct impl_modular_subtraction_unsigned<std::uint64_t, LowlatencyTag> {
              : "cc");
     uint64_t result = a2;
 
-    HPBC_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                    default_modsub_unsigned<LowlatencyTag>::call(a, b, modulus));
     return result;
   }
@@ -393,9 +393,9 @@ struct impl_modular_subtraction_unsigned<std::uint32_t, LowlatencyTag> {
   std::uint32_t call(std::uint32_t a, std::uint32_t b, std::uint32_t modulus)
   {
     using std::uint32_t;
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);  // uint32_t guarantees a>=0.
-    HPBC_PRECONDITION2(b<modulus);  // uint32_t guarantees b>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);  // uint32_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);  // uint32_t guarantees b>=0.
 
     uint32_t diff = b - modulus;
     uint32_t tmp = a - diff;
@@ -413,8 +413,8 @@ struct impl_modular_subtraction_unsigned<std::uint32_t, LowlatencyTag> {
              : "cc");
     uint32_t result = a2;
 
-    HPBC_POSTCONDITION2(result < modulus);  // uint32_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // uint32_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                    default_modsub_unsigned<LowlatencyTag>::call(a, b, modulus));
     return result;
   }
@@ -439,9 +439,9 @@ struct impl_modular_subtraction_unsigned<__uint128_t, LowuopsTag> {
   __uint128_t call(__uint128_t a, __uint128_t b, __uint128_t modulus)
   {
     using std::uint64_t;
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);  // __uint128_t guarantees a>=0.
-    HPBC_PRECONDITION2(b<modulus);  // __uint128_t guarantees b>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);  // __uint128_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);  // __uint128_t guarantees b>=0.
 
     uint64_t difflo;
     uint64_t diffhi;
@@ -465,8 +465,8 @@ struct impl_modular_subtraction_unsigned<__uint128_t, LowuopsTag> {
 
     __uint128_t result = diff + moz;
 
-    HPBC_POSTCONDITION2(result < modulus);  // __uint128_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // __uint128_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                       default_modsub_unsigned<LowuopsTag>::call(a, b, modulus));
     return result;
   }
@@ -479,9 +479,9 @@ struct impl_modular_subtraction_unsigned<std::uint64_t, LowuopsTag> {
   std::uint64_t call(std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
   {
     using std::uint64_t;
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);  // uint64_t guarantees a>=0.
-    HPBC_PRECONDITION2(b<modulus);  // uint64_t guarantees b>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);  // uint64_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);  // uint64_t guarantees b>=0.
 
     uint64_t diff;
     uint64_t res;
@@ -493,8 +493,8 @@ struct impl_modular_subtraction_unsigned<std::uint64_t, LowuopsTag> {
              : "cc");
     uint64_t result = res;
 
-    HPBC_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                       default_modsub_unsigned<LowuopsTag>::call(a, b, modulus));
     return result;
   }
@@ -508,9 +508,9 @@ struct impl_modular_subtraction_unsigned<__uint128_t, LowlatencyTag> {
   __uint128_t call(__uint128_t a, __uint128_t b, __uint128_t modulus)
   {
     using std::uint64_t;
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);  // __uint128_t guarantees a>=0.
-    HPBC_PRECONDITION2(b<modulus);  // __uint128_t guarantees b>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);  // __uint128_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);  // __uint128_t guarantees b>=0.
 
     __uint128_t diff = b - modulus;
     __uint128_t tmp = a - diff;
@@ -532,8 +532,8 @@ struct impl_modular_subtraction_unsigned<__uint128_t, LowlatencyTag> {
              : "cc");
     __uint128_t result = (static_cast<__uint128_t>(reshi) << 64) | reslo;
 
-    HPBC_POSTCONDITION2(result < modulus);  // __uint128_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // __uint128_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                    default_modsub_unsigned<LowlatencyTag>::call(a, b, modulus));
     return result;
   }
@@ -546,9 +546,9 @@ struct impl_modular_subtraction_unsigned<std::uint64_t, LowlatencyTag> {
   std::uint64_t call(std::uint64_t a, std::uint64_t b, std::uint64_t modulus)
   {
     using std::uint64_t;
-    HPBC_PRECONDITION2(modulus>0);
-    HPBC_PRECONDITION2(a<modulus);  // uint64_t guarantees a>=0.
-    HPBC_PRECONDITION2(b<modulus);  // uint64_t guarantees b>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(modulus>0);
+    HPBC_CLOCKWORK_PRECONDITION2(a<modulus);  // uint64_t guarantees a>=0.
+    HPBC_CLOCKWORK_PRECONDITION2(b<modulus);  // uint64_t guarantees b>=0.
 
     uint64_t diff = b - modulus;
     uint64_t tmp = a - diff;
@@ -561,8 +561,8 @@ struct impl_modular_subtraction_unsigned<std::uint64_t, LowlatencyTag> {
              : "cc");
     uint64_t result = res;
 
-    HPBC_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
-    HPBC_POSTCONDITION2(result ==
+    HPBC_CLOCKWORK_POSTCONDITION2(result < modulus);  // uint64_t guarantees result>=0.
+    HPBC_CLOCKWORK_POSTCONDITION2(result ==
                    default_modsub_unsigned<LowlatencyTag>::call(a, b, modulus));
     return result;
   }
@@ -636,9 +636,9 @@ struct impl_modular_subtraction<T, PTAG, true> {
     static_assert(static_cast<T>(static_cast<U>(static_cast<T>(-1))) ==
                   static_cast<T>(-1), "Casting a signed T value to unsigned and"
                                " back again must result in the original value");
-    HPBC_PRECONDITION2(modulus > 0);
-    HPBC_PRECONDITION2(0 <= a && a < modulus);
-    HPBC_PRECONDITION2(0 <= b && b < modulus);
+    HPBC_CLOCKWORK_PRECONDITION2(modulus > 0);
+    HPBC_CLOCKWORK_PRECONDITION2(0 <= a && a < modulus);
+    HPBC_CLOCKWORK_PRECONDITION2(0 <= b && b < modulus);
 
 #if defined(HURCHALLA_AVOID_CSELECT)
     static_assert((static_cast<T>(-1) >> 1) == static_cast<T>(-1),
@@ -648,7 +648,7 @@ struct impl_modular_subtraction<T, PTAG, true> {
     U mask = static_cast<U>(tmp >> ut_numeric_limits<T>::digits);
     U masked_modulus = static_cast<U>(mask & static_cast<U>(modulus));
     U result = static_cast<U>(static_cast<U>(tmp) + masked_modulus);
-    HPBC_ASSERT2(result == (impl_modular_subtraction_unsigned<U,PTAG>::call(
+    HPBC_CLOCKWORK_ASSERT2(result == (impl_modular_subtraction_unsigned<U,PTAG>::call(
                static_cast<U>(a), static_cast<U>(b), static_cast<U>(modulus))));
 #else
     U result= impl_modular_subtraction_unsigned<U,PTAG>::call(static_cast<U>(a),

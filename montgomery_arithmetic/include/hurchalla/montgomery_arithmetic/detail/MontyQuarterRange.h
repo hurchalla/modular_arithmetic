@@ -22,7 +22,7 @@
 #include "hurchalla/util/traits/extensible_make_signed.h"
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/util/compiler_macros.h"
-#include "hurchalla/util/programming_by_contract.h"
+#include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <type_traits>
 
 namespace hurchalla { namespace detail {
@@ -115,7 +115,7 @@ class MontyQuarterRange final : public
         // MontyQuarterRange requires  modulus < R/4
         constexpr T Rdiv4 = static_cast<T>(static_cast<T>(1) <<
                                        (ut_numeric_limits<T>::digits - 2));
-        HPBC_PRECONDITION2(modulus < Rdiv4);
+        HPBC_CLOCKWORK_PRECONDITION2(modulus < Rdiv4);
     }
 
     static HURCHALLA_FORCE_INLINE constexpr T max_modulus()
@@ -131,9 +131,9 @@ class MontyQuarterRange final : public
 
     HURCHALLA_FORCE_INLINE C getCanonicalValue(V x) const
     {
-        HPBC_PRECONDITION2(0 <= x.get() && x.get() < static_cast<T>(2*n_));
+        HPBC_CLOCKWORK_PRECONDITION2(0 <= x.get() && x.get() < static_cast<T>(2*n_));
         T result = quarterrange_get_canonical<T>::call(x.get(), n_);
-        HPBC_POSTCONDITION2(0 <= result && result < n_);
+        HPBC_CLOCKWORK_POSTCONDITION2(0 <= result && result < n_);
         return C(result);
     }
 
@@ -163,97 +163,97 @@ class MontyQuarterRange final : public
 
     HURCHALLA_FORCE_INLINE V add(V x, V y) const
     {
-        HPBC_PRECONDITION2(isValid(x));
-        HPBC_PRECONDITION2(isValid(y));
+        HPBC_CLOCKWORK_PRECONDITION2(isValid(x));
+        HPBC_CLOCKWORK_PRECONDITION2(isValid(y));
         // a type V value can be up to 2*n_, which requires digits-1 bits.
         constexpr int max_bits_needed = ut_numeric_limits<T>::digits - 1;
         constexpr T limit = static_cast<T>(static_cast<T>(1)<<max_bits_needed);
         T n2 = static_cast<T>(2*n_);
-        HPBC_ASSERT2(x.get() < limit);
-        HPBC_ASSERT2(y.get() < limit);
-        HPBC_ASSERT2(n2 < limit);
+        HPBC_CLOCKWORK_ASSERT2(x.get() < limit);
+        HPBC_CLOCKWORK_ASSERT2(y.get() < limit);
+        HPBC_CLOCKWORK_ASSERT2(n2 < limit);
         S sx = static_cast<S>(x.get());
         S sy = static_cast<S>(y.get());
         S sn2 = static_cast<S>(n2);
         S modsum = ::hurchalla::modular_addition_prereduced_inputs(sx, sy, sn2);
-        HPBC_ASSERT2(modsum >= 0);
+        HPBC_CLOCKWORK_ASSERT2(modsum >= 0);
         T result = static_cast<T>(modsum);
-        HPBC_POSTCONDITION2(result < n2);
-        HPBC_POSTCONDITION2(isValid(V(result)));
+        HPBC_CLOCKWORK_POSTCONDITION2(result < n2);
+        HPBC_CLOCKWORK_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
     HURCHALLA_FORCE_INLINE V add(V x, C cy) const
     {
-        HPBC_PRECONDITION2(isValid(x));
-        HPBC_PRECONDITION2(cy.get() < n_);
+        HPBC_CLOCKWORK_PRECONDITION2(isValid(x));
+        HPBC_CLOCKWORK_PRECONDITION2(cy.get() < n_);
         C cx = getCanonicalValue(x);
         T result = static_cast<T>(cx.get() + cy.get());
-        HPBC_ASSERT2(result < 2*n_);
-        HPBC_POSTCONDITION2(isValid(V(result)));
+        HPBC_CLOCKWORK_ASSERT2(result < 2*n_);
+        HPBC_CLOCKWORK_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
     HURCHALLA_FORCE_INLINE C add(C cx, C cy) const
     {
-        HPBC_PRECONDITION2(cx.get() < n_);
-        HPBC_PRECONDITION2(cy.get() < n_);
+        HPBC_CLOCKWORK_PRECONDITION2(cx.get() < n_);
+        HPBC_CLOCKWORK_PRECONDITION2(cy.get() < n_);
         // a type C value has range [0,n), which requires digits-2 bits.
         constexpr int max_bits_needed = ut_numeric_limits<T>::digits - 2;
         constexpr T limit = static_cast<T>(static_cast<T>(1)<<max_bits_needed);
-        HPBC_ASSERT2(cx.get() < limit);
-        HPBC_ASSERT2(cy.get() < limit);
-        HPBC_ASSERT2(n_ < limit);
+        HPBC_CLOCKWORK_ASSERT2(cx.get() < limit);
+        HPBC_CLOCKWORK_ASSERT2(cy.get() < limit);
+        HPBC_CLOCKWORK_ASSERT2(n_ < limit);
         S sx = static_cast<S>(cx.get());
         S sy = static_cast<S>(cy.get());
         S sn = static_cast<S>(n_);
         S modsum = ::hurchalla::modular_addition_prereduced_inputs(sx, sy, sn);
-        HPBC_ASSERT2(modsum >= 0);
+        HPBC_CLOCKWORK_ASSERT2(modsum >= 0);
         T result = static_cast<T>(modsum);
-        HPBC_POSTCONDITION2(result < n_);
+        HPBC_CLOCKWORK_POSTCONDITION2(result < n_);
         return C(result);
     }
 
     template <class PTAG>
     HURCHALLA_FORCE_INLINE V subtract(V x, V y, PTAG) const
     {
-        HPBC_PRECONDITION2(isValid(x));
-        HPBC_PRECONDITION2(isValid(y));
+        HPBC_CLOCKWORK_PRECONDITION2(isValid(x));
+        HPBC_CLOCKWORK_PRECONDITION2(isValid(y));
         // a type V value can be up to 2*n, which requires digits-1 bits.
         constexpr int max_bits_needed = ut_numeric_limits<T>::digits - 1;
         constexpr T limit = static_cast<T>(static_cast<T>(1)<<max_bits_needed);
         T n2 = static_cast<T>(2*n_);
-        HPBC_ASSERT2(x.get() < limit);
-        HPBC_ASSERT2(y.get() < limit);
-        HPBC_ASSERT2(n2 < limit);
+        HPBC_CLOCKWORK_ASSERT2(x.get() < limit);
+        HPBC_CLOCKWORK_ASSERT2(y.get() < limit);
+        HPBC_CLOCKWORK_ASSERT2(n2 < limit);
         S sx = static_cast<S>(x.get());
         S sy = static_cast<S>(y.get());
         S sn2 = static_cast<S>(n2);
         namespace hc = ::hurchalla;
         S moddiff= hc::modular_subtraction_prereduced_inputs<S,PTAG>(sx,sy,sn2);
-        HPBC_ASSERT2(moddiff >= 0);
+        HPBC_CLOCKWORK_ASSERT2(moddiff >= 0);
         T result = static_cast<T>(moddiff);
-        HPBC_POSTCONDITION2(result < n2);
-        HPBC_POSTCONDITION2(isValid(V(result)));
+        HPBC_CLOCKWORK_POSTCONDITION2(result < n2);
+        HPBC_CLOCKWORK_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
     template <class PTAG>
     HURCHALLA_FORCE_INLINE C subtract(C cx, C cy, PTAG) const
     {
-        HPBC_PRECONDITION2(cx.get() < n_);
-        HPBC_PRECONDITION2(cy.get() < n_);
+        HPBC_CLOCKWORK_PRECONDITION2(cx.get() < n_);
+        HPBC_CLOCKWORK_PRECONDITION2(cy.get() < n_);
         // a type C value has range [0,n), which requires digits-2 bits.
         constexpr int max_bits_needed = ut_numeric_limits<T>::digits - 2;
         constexpr T limit = static_cast<T>(static_cast<T>(1)<<max_bits_needed);
-        HPBC_ASSERT2(cx.get() < limit);
-        HPBC_ASSERT2(cy.get() < limit);
-        HPBC_ASSERT2(n_ < limit);
+        HPBC_CLOCKWORK_ASSERT2(cx.get() < limit);
+        HPBC_CLOCKWORK_ASSERT2(cy.get() < limit);
+        HPBC_CLOCKWORK_ASSERT2(n_ < limit);
         S sx = static_cast<S>(cx.get());
         S sy = static_cast<S>(cy.get());
         S sn = static_cast<S>(n_);
         namespace hc = ::hurchalla;
         S moddiff = hc::modular_subtraction_prereduced_inputs<S,PTAG>(sx,sy,sn);
-        HPBC_ASSERT2(moddiff >= 0);
+        HPBC_CLOCKWORK_ASSERT2(moddiff >= 0);
         T result = static_cast<T>(moddiff);
-        HPBC_POSTCONDITION2(result < n_);
+        HPBC_CLOCKWORK_POSTCONDITION2(result < n_);
         return C(result);
     }
     // Note: subtract(C,V,PTAG) and subtract(V,C,PTAG) will match to
@@ -261,19 +261,19 @@ class MontyQuarterRange final : public
 
     HURCHALLA_FORCE_INLINE V unordered_subtract(V x, V y) const
     {
-        HPBC_PRECONDITION2(isValid(x));
-        HPBC_PRECONDITION2(isValid(y));
+        HPBC_CLOCKWORK_PRECONDITION2(isValid(x));
+        HPBC_CLOCKWORK_PRECONDITION2(isValid(y));
         // a type V value can be up to 2*n_, which requires digits-1 bits.
         constexpr int max_bits_needed = ut_numeric_limits<T>::digits - 1;
         constexpr T limit = static_cast<T>(static_cast<T>(1)<<max_bits_needed);
-        HPBC_ASSERT2(x.get() < limit);
-        HPBC_ASSERT2(y.get() < limit);
+        HPBC_CLOCKWORK_ASSERT2(x.get() < limit);
+        HPBC_CLOCKWORK_ASSERT2(y.get() < limit);
         S sx = static_cast<S>(x.get());
         S sy = static_cast<S>(y.get());
         S absdiff = ::hurchalla::absolute_value_difference(sx, sy);
-        HPBC_ASSERT2(absdiff >= 0);
+        HPBC_CLOCKWORK_ASSERT2(absdiff >= 0);
         T result = static_cast<T>(absdiff);
-        HPBC_POSTCONDITION2(isValid(V(result)));
+        HPBC_CLOCKWORK_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
     // Note: unordered_subtract(C, V) and unordered_subtract(V, C) and
@@ -285,27 +285,27 @@ class MontyQuarterRange final : public
                                             (ut_numeric_limits<T>::digits - 2));
         constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
                                             (ut_numeric_limits<T>::digits - 1));
-        HPBC_INVARIANT2(0 <= n_ && n_ < Rdiv4);
-        HPBC_INVARIANT2(0 <= 2*n_ && 2*n_ < Rdiv2);
+        HPBC_CLOCKWORK_INVARIANT2(0 <= n_ && n_ < Rdiv4);
+        HPBC_CLOCKWORK_INVARIANT2(0 <= 2*n_ && 2*n_ < Rdiv2);
         static_assert(std::is_same<decltype(x.get()), T>::value, "");
         T tx = x.get();
         T n2 = static_cast<T>(2*n_);
-        HPBC_ASSERT2(0 <= tx && tx < n2);
+        HPBC_CLOCKWORK_ASSERT2(0 <= tx && tx < n2);
         T result = two_times_restricted<T>::call(tx, n2);
-        HPBC_POSTCONDITION2(0 <= result && result < n2);
-        HPBC_POSTCONDITION2(isValid(V(result)));
+        HPBC_CLOCKWORK_POSTCONDITION2(0 <= result && result < n2);
+        HPBC_CLOCKWORK_POSTCONDITION2(isValid(V(result)));
         return V(result);
     }
     HURCHALLA_FORCE_INLINE C two_times(C cx) const
     {
         constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
                                             (ut_numeric_limits<T>::digits - 1));
-        HPBC_INVARIANT2(0 <= n_ && n_ < Rdiv2);
+        HPBC_CLOCKWORK_INVARIANT2(0 <= n_ && n_ < Rdiv2);
         static_assert(std::is_same<decltype(cx.get()), T>::value, "");
         T tcx = cx.get();
-        HPBC_ASSERT2(0 <= tcx && tcx < n_);
+        HPBC_CLOCKWORK_ASSERT2(0 <= tcx && tcx < n_);
         T result = two_times_restricted<T>::call(tcx, n_);
-        HPBC_POSTCONDITION2(0 <= result && result < n_);
+        HPBC_CLOCKWORK_POSTCONDITION2(0 <= result && result < n_);
         return C(result);
     }
 
@@ -317,13 +317,13 @@ private:
     template <class PTAG> HURCHALLA_FORCE_INLINE
     V montyREDC(bool& resultIsZero, T u_hi, T u_lo, PTAG) const
     {
-        HPBC_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
+        HPBC_CLOCKWORK_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
         namespace hc = ::hurchalla;
         bool isNegative;  // ignored
         T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
         resultIsZero = (result == 0);
         T sum = static_cast<T>(result + n_);
-        HPBC_POSTCONDITION2(0 < sum && sum < static_cast<T>(2*n_));
+        HPBC_CLOCKWORK_POSTCONDITION2(0 < sum && sum < static_cast<T>(2*n_));
         return V(sum);
     }
 #if 1
@@ -337,7 +337,7 @@ private:
     HURCHALLA_FORCE_INLINE
     V montyREDC(bool& resultIsZero, T u_hi, T u_lo, LowlatencyTag) const
     {
-        HPBC_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
+        HPBC_CLOCKWORK_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
         namespace hc = ::hurchalla;
         bool isNegative;  // ignored
 #if 0
@@ -356,13 +356,13 @@ private:
         T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
         resultIsZero = (result == n_);
 #endif
-        HPBC_POSTCONDITION2(0 < result && result < static_cast<T>(2*n_));
+        HPBC_CLOCKWORK_POSTCONDITION2(0 < result && result < static_cast<T>(2*n_));
         return V(result);
     }
     template <class PTAG> HURCHALLA_FORCE_INLINE
     V montyREDC(T u_hi, T u_lo, PTAG) const
     {
-        HPBC_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
+        HPBC_CLOCKWORK_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
         namespace hc = ::hurchalla;
         bool isNegative;  // ignored
 #if 0
@@ -375,7 +375,7 @@ private:
         u_hi = static_cast<T>(u_hi + n_);
         T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
 #endif
-        HPBC_POSTCONDITION2(0 < result && result < static_cast<T>(2*n_));
+        HPBC_CLOCKWORK_POSTCONDITION2(0 < result && result < static_cast<T>(2*n_));
         return V(result);
     }
 #endif
