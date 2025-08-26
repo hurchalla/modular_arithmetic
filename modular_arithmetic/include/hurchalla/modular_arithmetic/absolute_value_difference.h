@@ -24,8 +24,8 @@ template <typename T>  HURCHALLA_FORCE_INLINE
 T absolute_value_difference(T a, T b)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
-    HPBC_CLOCKWORK_PRECONDITION(a >= 0);
-    HPBC_CLOCKWORK_PRECONDITION(b >= 0);
+    HPBC_CLOCKWORK_API_PRECONDITION(a >= 0);
+    HPBC_CLOCKWORK_API_PRECONDITION(b >= 0);
 
     T result = detail::impl_absolute_value_difference<T>::call(a, b);
 

@@ -60,9 +60,9 @@ namespace testmf_adapters {
     T modadd(T a, T b, T modulus)
     {
         static_assert(hc::ut_numeric_limits<T>::is_integer, "");
-        HPBC_CLOCKWORK_PRECONDITION1(0 <= a && a < modulus);
-        HPBC_CLOCKWORK_PRECONDITION1(0 <= b && b < modulus);
-        HPBC_CLOCKWORK_PRECONDITION1(modulus > 1);
+        HPBC_CLOCKWORK_PRECONDITION(0 <= a && a < modulus);
+        HPBC_CLOCKWORK_PRECONDITION(0 <= b && b < modulus);
+        HPBC_CLOCKWORK_PRECONDITION(modulus > 1);
 
         using U = typename hc::extensible_make_unsigned<T>::type;
         T result = static_cast<T>(hc::modular_addition_prereduced_inputs(
@@ -76,9 +76,9 @@ namespace testmf_adapters {
     T modsub(T a, T b, T modulus)
     {
         static_assert(hc::ut_numeric_limits<T>::is_integer, "");
-        HPBC_CLOCKWORK_PRECONDITION1(0 <= a && a < modulus);
-        HPBC_CLOCKWORK_PRECONDITION1(0 <= b && b < modulus);
-        HPBC_CLOCKWORK_PRECONDITION1(modulus > 1);
+        HPBC_CLOCKWORK_PRECONDITION(0 <= a && a < modulus);
+        HPBC_CLOCKWORK_PRECONDITION(0 <= b && b < modulus);
+        HPBC_CLOCKWORK_PRECONDITION(modulus > 1);
 
         using U = typename hc::extensible_make_unsigned<T>::type;
         T result = static_cast<T>(hc::modular_subtraction_prereduced_inputs(
@@ -92,9 +92,9 @@ namespace testmf_adapters {
     T modmul(T a, T b, T modulus)
     {
         static_assert(hc::ut_numeric_limits<T>::is_integer, "");
-        HPBC_CLOCKWORK_PRECONDITION1(0 <= a && a < modulus);
-        HPBC_CLOCKWORK_PRECONDITION1(0 <= b && b < modulus);
-        HPBC_CLOCKWORK_PRECONDITION1(modulus > 1);
+        HPBC_CLOCKWORK_PRECONDITION(0 <= a && a < modulus);
+        HPBC_CLOCKWORK_PRECONDITION(0 <= b && b < modulus);
+        HPBC_CLOCKWORK_PRECONDITION(modulus > 1);
 
         using U = typename hc::extensible_make_unsigned<T>::type;
         T result = static_cast<T>(hc::modular_multiplication_prereduced_inputs(
@@ -108,9 +108,9 @@ namespace testmf_adapters {
     T modpow(T base, T exponent, T modulus)
     {
         static_assert(hc::ut_numeric_limits<T>::is_integer, "");
-        HPBC_CLOCKWORK_PRECONDITION1(base >= 0);
-        HPBC_CLOCKWORK_PRECONDITION1(exponent >= 0);
-        HPBC_CLOCKWORK_PRECONDITION1(modulus > 1);
+        HPBC_CLOCKWORK_PRECONDITION(base >= 0);
+        HPBC_CLOCKWORK_PRECONDITION(exponent >= 0);
+        HPBC_CLOCKWORK_PRECONDITION(modulus > 1);
 
         using U = typename hc::extensible_make_unsigned<T>::type;
         T result = static_cast<T>(hc::modular_pow(static_cast<U>(base),

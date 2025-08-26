@@ -30,7 +30,7 @@ T modular_multiplicative_inverse(T a, T modulus, T& gcd)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
-    HPBC_CLOCKWORK_PRECONDITION(modulus > 1);
+    HPBC_CLOCKWORK_API_PRECONDITION(modulus > 1);
 
     T inv = detail::impl_modular_multiplicative_inverse::call(a, modulus, gcd);
 

@@ -49,7 +49,7 @@ struct MontgomeryFormExtensions final {
     static MontgomeryValue
     convertInExtended_aTimesR(const MF& mf, RU a, RU magicValue)
     {
-        HPBC_CLOCKWORK_PRECONDITION1(magicValue == getMagicValue(mf));
+        HPBC_CLOCKWORK_PRECONDITION(magicValue == getMagicValue(mf));
         return mf.impl.template convertInExtended_aTimesR<PTAG>(a, magicValue);
     }
 
@@ -61,7 +61,7 @@ struct MontgomeryFormExtensions final {
     HURCHALLA_FORCE_INLINE
     static MontgomeryValue twoPowLimited(const MF& mf, size_t exponent)
     {
-        HPBC_CLOCKWORK_PRECONDITION1(exponent < ut_numeric_limits<RU>::digits);
+        HPBC_CLOCKWORK_PRECONDITION(exponent < ut_numeric_limits<RU>::digits);
         return mf.impl.template twoPowLimited<PTAG>(exponent);
     }
 
@@ -73,7 +73,7 @@ struct MontgomeryFormExtensions final {
     static MontgomeryValue
     RTimesTwoPowLimited(const MF& mf, size_t exponent, RU magicValue)
     {
-        HPBC_CLOCKWORK_PRECONDITION1(exponent < ut_numeric_limits<RU>::digits);
+        HPBC_CLOCKWORK_PRECONDITION(exponent < ut_numeric_limits<RU>::digits);
         return mf.impl.template RTimesTwoPowLimited<PTAG>(exponent, magicValue);
     }
 };

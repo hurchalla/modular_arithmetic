@@ -22,9 +22,9 @@ template <typename T>  HURCHALLA_FORCE_INLINE
 T modular_addition_prereduced_inputs(T a, T b, T modulus)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
-    HPBC_CLOCKWORK_PRECONDITION(modulus > 0);
-    HPBC_CLOCKWORK_PRECONDITION(0<=a && a<modulus);   // i.e. the input must be prereduced
-    HPBC_CLOCKWORK_PRECONDITION(0<=b && b<modulus);   // i.e. the input must be prereduced
+    HPBC_CLOCKWORK_API_PRECONDITION(modulus > 0);
+    HPBC_CLOCKWORK_API_PRECONDITION(0<=a && a<modulus);   // i.e. the input must be prereduced
+    HPBC_CLOCKWORK_API_PRECONDITION(0<=b && b<modulus);   // i.e. the input must be prereduced
     
     T result = detail::impl_modular_addition<T>::call(a, b, modulus);
 

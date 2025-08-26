@@ -61,13 +61,13 @@ struct genseq<0> : seq<> {};
 template<class T, std::size_t... N>
 std::array<T, sizeof...(N)> vector_to_stdarray_impl(const std::vector<T>& vec, seq<N...>)
 {
-   HPBC_CLOCKWORK_PRECONDITION1(vec.size() >= sizeof...(N));
+   HPBC_CLOCKWORK_PRECONDITION(vec.size() >= sizeof...(N));
    return { vec[N]... };
 }
 template<std::size_t SIZE, class T>
 std::array<T, SIZE> vector_to_stdarray(const std::vector<T>& vec)
 {
-   HPBC_CLOCKWORK_PRECONDITION1(vec.size() >= SIZE);
+   HPBC_CLOCKWORK_PRECONDITION(vec.size() >= SIZE);
    return vector_to_stdarray_impl(vec, typename genseq<SIZE>::type{} );
 }
 

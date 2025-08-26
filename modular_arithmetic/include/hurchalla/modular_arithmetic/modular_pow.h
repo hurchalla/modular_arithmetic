@@ -28,7 +28,7 @@ T modular_pow(T base, U exponent, T modulus)
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
     static_assert(ut_numeric_limits<U>::is_integer, "");
     static_assert(!(ut_numeric_limits<U>::is_signed), "");
-    HPBC_CLOCKWORK_PRECONDITION(modulus > 1);
+    HPBC_CLOCKWORK_API_PRECONDITION(modulus > 1);
 
     T result = detail::impl_modular_pow::call(base, exponent, modulus);
 

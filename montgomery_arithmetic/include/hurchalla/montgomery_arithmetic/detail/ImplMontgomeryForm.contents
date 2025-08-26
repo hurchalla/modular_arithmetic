@@ -236,7 +236,7 @@ public:
     HURCHALLA_IMF_MAYBE_FORCE_INLINE
     T remainder(T a) const
     {
-        HPBC_CLOCKWORK_PRECONDITION1(a >= 0);
+        HPBC_CLOCKWORK_PRECONDITION(a >= 0);
         return static_cast<T>(impl.remainder(static_cast<U>(a)));
     }
 

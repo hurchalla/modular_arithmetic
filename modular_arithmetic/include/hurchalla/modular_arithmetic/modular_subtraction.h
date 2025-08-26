@@ -26,9 +26,9 @@ T modular_subtraction_prereduced_inputs(T a, T b, T modulus)
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(std::is_same<PTAG,LowlatencyTag>::value ||
                   std::is_same<PTAG,LowuopsTag>::value, "");
-    HPBC_CLOCKWORK_PRECONDITION(modulus > 0);
-    HPBC_CLOCKWORK_PRECONDITION(0<=a && a<modulus);   // i.e. the input must be prereduced
-    HPBC_CLOCKWORK_PRECONDITION(0<=b && b<modulus);   // i.e. the input must be prereduced
+    HPBC_CLOCKWORK_API_PRECONDITION(modulus > 0);
+    HPBC_CLOCKWORK_API_PRECONDITION(0<=a && a<modulus);   // i.e. the input must be prereduced
+    HPBC_CLOCKWORK_API_PRECONDITION(0<=b && b<modulus);   // i.e. the input must be prereduced
 
     T result = detail::impl_modular_subtraction<T,PTAG>::call(a, b, modulus);
 

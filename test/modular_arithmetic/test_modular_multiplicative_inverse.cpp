@@ -44,8 +44,8 @@ namespace testmmi {
     T gcd(T a, T b)
     {
         static_assert(hc::ut_numeric_limits<T>::is_integer, "");
-        HPBC_CLOCKWORK_PRECONDITION1(a >= 0);
-        HPBC_CLOCKWORK_PRECONDITION1(b >= 0);
+        HPBC_CLOCKWORK_PRECONDITION(a >= 0);
+        HPBC_CLOCKWORK_PRECONDITION(b >= 0);
 
         while (a != 0) {
             T tmp = a;

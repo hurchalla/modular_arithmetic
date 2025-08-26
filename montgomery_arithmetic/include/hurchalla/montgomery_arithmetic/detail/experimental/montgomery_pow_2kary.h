@@ -57,7 +57,7 @@ struct impl_montgomery_pow_2kary {
         "above 9 is probably a very bad idea even if it works (9+ would cause "
         "the beginning of this function to calculate 1024+ table entries!)");
 
-    HPBC_CLOCKWORK_PRECONDITION1(nexp >= 0);
+    HPBC_CLOCKWORK_PRECONDITION(nexp >= 0);
 
     using V = typename MF::MontgomeryValue;
     using std::size_t;

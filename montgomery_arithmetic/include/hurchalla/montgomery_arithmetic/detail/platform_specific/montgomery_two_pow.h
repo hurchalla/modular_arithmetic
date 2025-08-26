@@ -147,7 +147,7 @@ struct montgomery_two_pow {
   template <class MF, typename T>
   static typename MF::MontgomeryValue call(const MF& mf, T nt)
   {
-    HPBC_CLOCKWORK_PRECONDITION1(nt >= 0);
+    HPBC_CLOCKWORK_PRECONDITION(nt >= 0);
     using U = typename extensible_make_unsigned<T>::type;
     U n = static_cast<U>(nt);
 
@@ -214,7 +214,7 @@ struct montgomery_two_pow {
       using U = typename extensible_make_unsigned<T>::type;
       std::array<U, ARRAY_SIZE> n;
       HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i<ARRAY_SIZE; ++i) {
-        HPBC_CLOCKWORK_PRECONDITION1(nt[i] >= 0);
+        HPBC_CLOCKWORK_PRECONDITION(nt[i] >= 0);
         n[i] = static_cast<U>(nt[i]);
       }
       return helper<MF, U, ARRAY_SIZE>(mf, n);

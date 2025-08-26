@@ -58,7 +58,7 @@ class MontyCommonBase {
             <T, std::is_same<typename D::MontyTag,TagMontyQuarterrange>::value>
             (n_,inv_n_,r_mod_n_))
     {
-        HPBC_CLOCKWORK_PRECONDITION1(modulus % 2 == 1);
+        HPBC_CLOCKWORK_PRECONDITION(modulus % 2 == 1);
         HPBC_CLOCKWORK_PRECONDITION2(modulus > 1);
         // Note: unityValue == (the montgomery form of 1)==(1*R)%n_ == r_mod_n_.
         //

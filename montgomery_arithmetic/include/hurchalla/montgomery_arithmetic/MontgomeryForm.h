@@ -84,8 +84,8 @@ public:
         // type doesn't actually do Montgomery arithmetic.  However, to maintain
         // compatibility with the normal MontyTypes, it's recommended to always
         // use an odd modulus even in that case.]
-        //HPBC_CLOCKWORK_PRECONDITION(modulus % 2 == 1);
-        HPBC_CLOCKWORK_PRECONDITION(modulus > 1);
+        //HPBC_CLOCKWORK_API_PRECONDITION(modulus % 2 == 1);
+        HPBC_CLOCKWORK_API_PRECONDITION(modulus > 1);
     }
 
     // Returns the largest valid modulus allowed for the constructor.
@@ -113,7 +113,7 @@ public:
     HURCHALLA_FORCE_INLINE
     MontgomeryValue convertIn(T a) const
     {
-        HPBC_CLOCKWORK_PRECONDITION(a >= 0);
+        HPBC_CLOCKWORK_API_PRECONDITION(a >= 0);
         return impl.convertIn(a);
     }
 
@@ -480,7 +480,7 @@ public:
     HURCHALLA_FORCE_INLINE
     MontgomeryValue pow(MontgomeryValue base, T exponent) const
     {
-        HPBC_CLOCKWORK_PRECONDITION(exponent >= 0);
+        HPBC_CLOCKWORK_API_PRECONDITION(exponent >= 0);
         std::array<MontgomeryValue, 1> bases = {{ base }};
         std::array<MontgomeryValue, 1> result =
                 detail::montgomery_array_pow<MontyTag,
@@ -495,7 +495,7 @@ public:
     HURCHALLA_FORCE_INLINE
     MontgomeryValue two_pow(T exponent) const
     {
-        HPBC_CLOCKWORK_PRECONDITION(exponent >= 0);
+        HPBC_CLOCKWORK_API_PRECONDITION(exponent >= 0);
         MontgomeryValue result =
                               detail::montgomery_two_pow::call(*this, exponent);
         HPBC_CLOCKWORK_POSTCONDITION(getCanonicalValue(result) ==
@@ -528,7 +528,7 @@ public:
     std::array<MontgomeryValue, NUM_BASES>
     pow(const std::array<MontgomeryValue, NUM_BASES>& bases, T exponent) const
     {
-        HPBC_CLOCKWORK_PRECONDITION(exponent >= 0);
+        HPBC_CLOCKWORK_API_PRECONDITION(exponent >= 0);
         return detail::montgomery_array_pow<MontyTag,
                                    MontgomeryForm>::pow(*this, bases, exponent);
     }
@@ -557,7 +557,7 @@ public:
     // even if your CPU has extremely fast division (like many new CPUs).
     HURCHALLA_FORCE_INLINE T remainder(T a) const
     {
-        HPBC_CLOCKWORK_PRECONDITION(a >= 0);
+        HPBC_CLOCKWORK_API_PRECONDITION(a >= 0);
         return impl.remainder(a);
     }
 

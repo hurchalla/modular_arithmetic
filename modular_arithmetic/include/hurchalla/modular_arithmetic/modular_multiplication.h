@@ -29,9 +29,9 @@ T modular_multiplication_prereduced_inputs(T a, T b, T modulus)
 {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(!(ut_numeric_limits<T>::is_signed), "");
-    HPBC_CLOCKWORK_PRECONDITION(modulus>0);
-    HPBC_CLOCKWORK_PRECONDITION(a<modulus);   // i.e. the input must be prereduced
-    HPBC_CLOCKWORK_PRECONDITION(b<modulus);   // i.e. the input must be prereduced
+    HPBC_CLOCKWORK_API_PRECONDITION(modulus>0);
+    HPBC_CLOCKWORK_API_PRECONDITION(a<modulus);   // i.e. the input must be prereduced
+    HPBC_CLOCKWORK_API_PRECONDITION(b<modulus);   // i.e. the input must be prereduced
 
     T result = detail::impl_modular_multiplication<T>::call(a, b, modulus);
 

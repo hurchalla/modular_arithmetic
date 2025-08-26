@@ -36,7 +36,7 @@ struct montgomery_pow {
 
   static HURCHALLA_FORCE_INLINE V scalarpow(const MF& mf, V base, T exponent)
   {
-    HPBC_CLOCKWORK_PRECONDITION1(exponent >= 0);
+    HPBC_CLOCKWORK_PRECONDITION(exponent >= 0);
     // This is an optimized version of Algorithm 14.76, from
     // Applied Handbook of Cryptography- http://cacr.uwaterloo.ca/hac/
     // See also: hurchalla/modular_arithmetic/detail/impl_modular_pow.h
@@ -85,7 +85,7 @@ struct montgomery_pow {
   static HURCHALLA_FORCE_INLINE std::array<V, NUM_BASES>
   arraypow_cond_branch(const MF& mf, std::array<V, NUM_BASES> bases, T exponent)
   {
-    HPBC_CLOCKWORK_PRECONDITION1(exponent >= 0);
+    HPBC_CLOCKWORK_PRECONDITION(exponent >= 0);
     std::array<V, NUM_BASES> result;
     if (exponent & static_cast<T>(1)) {
         for (std::size_t i=0; i<NUM_BASES; ++i)
@@ -112,7 +112,7 @@ struct montgomery_pow {
   arraypow_cond_branch_unrolled(const MF& mf, std::array<V, NUM_BASES> bases,
                                                                      T exponent)
   {
-    HPBC_CLOCKWORK_PRECONDITION1(exponent >= 0);
+    HPBC_CLOCKWORK_PRECONDITION(exponent >= 0);
     std::array<V, NUM_BASES> result;
     if (exponent & static_cast<T>(1)) {
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
@@ -142,7 +142,7 @@ struct montgomery_pow {
   static HURCHALLA_FORCE_INLINE std::array<V, NUM_BASES>
   arraypow_cmov(const MF& mf, std::array<V, NUM_BASES> bases, T exponent)
   {
-    HPBC_CLOCKWORK_PRECONDITION1(exponent >= 0);
+    HPBC_CLOCKWORK_PRECONDITION(exponent >= 0);
     std::array<V, NUM_BASES> result;
     if (exponent & static_cast<T>(1)) {
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
@@ -172,7 +172,7 @@ struct montgomery_pow {
   static HURCHALLA_FORCE_INLINE std::array<V, NUM_BASES>
   arraypow_masked(const MF& mf, std::array<V, NUM_BASES> bases, T exponent)
   {
-    HPBC_CLOCKWORK_PRECONDITION1(exponent >= 0);
+    HPBC_CLOCKWORK_PRECONDITION(exponent >= 0);
     std::array<V, NUM_BASES> result;
     if (exponent & static_cast<T>(1)) {
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
