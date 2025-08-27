@@ -1,10 +1,10 @@
 
-Optional macros to predefine to tune performance
-------------------------------------------------
-There are a number of macros you can optionally predefine to tune the
+Optional macros you can define to tune performance
+--------------------------------------------------
+There are a number of macros you can optionally define when you compile, to tune the
 performance on your system for the modular arithmetic functions.  It is
 generally recommended not to do so, but in some cases you may find it useful.
-You would predefine one or more of these macros when compiling *your* sources,
+You would define one or more of these macros when compiling *your* sources,
 given that Clockwork is a header-only library.
 
 For example, if you are compiling using clang or gcc from the command line, you would
@@ -15,17 +15,17 @@ to your CMakeLists.txt, similarly to the following:
 target_compile_definitions(&lt;your_target_name&gt;  PRIVATE  HURCHALLA_ALLOW_INLINE_ASM_ALL) 
 \
 \
-HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE - predefine this macro if your target system's
+HURCHALLA_TARGET_ISA_HAS_NO_DIVIDE - define this macro if your target system's
 instruction set does not include division.  Although it is unusual, some
-microcontrollers do not have division, and predefining this macro might improve
+microcontrollers do not have division, and defining this macro might improve
 performance in such a case.
 
-HURCHALLA_AVOID_CSELECT - you may wish to predefine this macro if your target
+HURCHALLA_AVOID_CSELECT - you may wish to define this macro if your target
 system's instruction set does not include conditional move or conditional
 select.  It may improve performance in such a case.  This macro is normally
-already predefined for RISC-V.
+already defined for RISC-V.
 
-HURCHALLA_ALLOW_INLINE_ASM_ALL - predefining this macro will enable all
+HURCHALLA_ALLOW_INLINE_ASM_ALL - defining this macro will enable all
 available inline asm functions.  Although this is the easiest macro to use, you
 can more selectively enable inline asm for particular functions, using macros
 listed below.  In some cases HURCHALLA_ALLOW_INLINE_ASM_ALL may improve

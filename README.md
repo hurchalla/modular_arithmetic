@@ -77,4 +77,4 @@ If you prefer not to use the high level interface of MontgomeryForm, and instead
 
 ## Performance Notes
 
-If you're interested in experimenting, predefining certain macros when compiling might improve performance - see [macros_for_performance.md](macros_for_performance.md).
+If you're interested in experimenting, defining certain macros when compiling might improve performance - see [macros_for_performance.md](macros_for_performance.md).

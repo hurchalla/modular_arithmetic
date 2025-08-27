@@ -568,6 +568,7 @@ elif [ "${mode,,}" = "debug" ]; then
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_EXE_LINKER_FLAGS="$clang_ubsan_link_flags" \
             -DCMAKE_CXX_FLAGS="-DHURCHALLA_CLOCKWORK_ENABLE_ASSERTS=1 \
+            -DHURCHALLA_UTIL_CHECK_API_PRECONDITIONS=1 \
             $cpp_standard  $cpp_stdlib \
             $clang_ubsan  $gcc_ubsan  \
             $test_avoid_cselect  $test_heavyweight \
