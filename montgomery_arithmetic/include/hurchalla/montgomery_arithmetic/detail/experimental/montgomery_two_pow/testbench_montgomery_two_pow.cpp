@@ -879,15 +879,15 @@ using namespace hurchalla;
 
 
 
-#ifndef PREDEF_UINT_TYPE
-#  error "PREDEF_UINT_TYPE was not defined"
+#ifndef DEF_UINT_TYPE
+#  error "DEF_UINT_TYPE was not defined"
 #else
-   using U = PREDEF_UINT_TYPE;
+   using U = DEF_UINT_TYPE;
 #endif
 
 //#define XSTR(x) STR(x)
 //#define STR(x) #x
-//#pragma message "The value of PREDEF_UINT_TYPE: " XSTR(PREDEF_UINT_TYPE)
+//#pragma message "The value of DEF_UINT_TYPE: " XSTR(DEF_UINT_TYPE)
 
 
 /*
@@ -898,10 +898,10 @@ using namespace hurchalla;
 #endif
 */
 
-#ifndef PREDEF_MONT_TYPE
-#  error "PREDEF_MONT_TYPE was not defined"
+#ifndef DEF_MONT_TYPE
+#  error "DEF_MONT_TYPE was not defined"
 #else
-   using MontType = PREDEF_MONT_TYPE<U>; // MontgomeryQuarter<U>;
+   using MontType = DEF_MONT_TYPE<U>; // MontgomeryQuarter<U>;
 #endif
 /*
 # if 1

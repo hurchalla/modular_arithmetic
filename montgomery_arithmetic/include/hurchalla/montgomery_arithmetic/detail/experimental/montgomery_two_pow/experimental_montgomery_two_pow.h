@@ -114,7 +114,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         RU num = static_cast<RU>(static_cast<RU>(1) << index);
         V result = MFE::convertInExtended(mf, num);
         while (shift >= P2) {
-            if (USE_SLIDING_WINDOW_OPTIMIZATION) {
+            if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
                 while (shift > P2 && (static_cast<size_t>(n>>(shift-1)) & 1u) == 0) {
                     result = mf.square(result);
                     --shift;
@@ -235,7 +235,7 @@ break_0_1:
         HPBC_CLOCKWORK_ASSERT2(index <= MASK);
         V result = MFE::twoPowLimited(mf, index);
         while (shift >= P2) {
-            if (USE_SLIDING_WINDOW_OPTIMIZATION) {
+            if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
                 while (shift > P2 && (static_cast<size_t>(n>>(shift-1)) & 1u) == 0) {
                     result = mf.square(result);
                     --shift;

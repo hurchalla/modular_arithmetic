@@ -462,9 +462,9 @@ cppcompiler=$1
 #optimization_level=O3
 optimization_level=$2
 
-#define_mont_type=-DPREDEF_MONT_TYPE=MontgomeryQuarter<U>
-define_mont_type=-DPREDEF_MONT_TYPE=$3
-define_uint_type=-DPREDEF_UINT_TYPE=$4
+#define_mont_type=-DDEF_MONT_TYPE=MontgomeryQuarter<U>
+define_mont_type=-DDEF_MONT_TYPE=$3
+define_uint_type=-DDEF_UINT_TYPE=$4
 
 define_use_asm=$8
 

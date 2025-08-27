@@ -97,7 +97,15 @@ class MontyCommonBase {
         // get a Natural number (i.e. number >= 0) congruent to x (mod n)
         T u_lo = static_cast<const D*>(this)->getNaturalEquivalence(x);
         namespace hc = ::hurchalla;
-        T result = hc::REDC_standard(u_hi, u_lo, n_, inv_n_, LowlatencyTag());
+        bool isNegative;
+        T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, inv_n_);
+        HPBC_CLOCKWORK_ASSERT2(result == 0 ?
+                               isNegative == false : isNegative == true);
+        // We would expect that result == 0 is usually very rare, so going by
+        // the assert above, the next 'if' should be well predicted.
+        if (isNegative)
+            result = static_cast<T>(result + n_);
+        HPBC_CLOCKWORK_ASSERT2(result==hc::REDC_standard(u_hi,u_lo,n_,inv_n_));
 
         HPBC_CLOCKWORK_POSTCONDITION2(result < n_);
         return result;

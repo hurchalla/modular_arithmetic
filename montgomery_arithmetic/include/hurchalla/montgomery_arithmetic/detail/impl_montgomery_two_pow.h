@@ -170,7 +170,7 @@ break_0_1:
         HPBC_CLOCKWORK_ASSERT2(index <= MASK);
         V result = MFE::twoPowLimited(mf, index);
         while (shift >= P2) {
-            if (USE_SLIDING_WINDOW_OPTIMIZATION) {
+            if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
                 while (shift > P2 && (static_cast<size_t>(n>>(shift-1)) & 1u) == 0) {
                     result = mf.square(result);
                     --shift;
