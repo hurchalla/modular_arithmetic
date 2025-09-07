@@ -118,6 +118,10 @@ public:
     MontgomeryValue fusedSquareAdd(MontgomeryValue x, CanonicalValue cv) const
         { return pimpl->template fusedSquareAdd<PTAG>(x, cv); }
 
+    template <class PTAG = LowlatencyTag>
+    CanonicalValue inverse(MontgomeryValue x) const
+        { return pimpl->template inverse<PTAG>(x); }
+
     MontgomeryValue pow(MontgomeryValue base, IntegerType exponent) const
         { return pimpl->pow(base, exponent); }
 

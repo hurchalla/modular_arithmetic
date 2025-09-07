@@ -488,6 +488,7 @@ public:
                 detail::montgomery_array_pow<MontyTag,
                                    MontgomeryForm>::pow(*this, bases, exponent);
         return result[0];
+        //return detail::montgomery_pow<MontgomeryForm>::scalarpow(*this, base, exponent);
     }
 
     // Calculates and returns the modular exponentiation of 2 (converted into a
@@ -498,11 +499,10 @@ public:
     MontgomeryValue two_pow(T exponent) const
     {
         HPBC_CLOCKWORK_API_PRECONDITION(exponent >= 0);
-        MontgomeryValue result =
-                              detail::montgomery_two_pow::call(*this, exponent);
-        HPBC_CLOCKWORK_POSTCONDITION(getCanonicalValue(result) ==
+        MontgomeryValue ret = detail::montgomery_two_pow::call(*this, exponent);
+        HPBC_CLOCKWORK_POSTCONDITION(getCanonicalValue(ret) ==
                                 getCanonicalValue(pow(convertIn(2), exponent)));
-        return result;
+        return ret;
     }
 
     // This is a specially optimized version of the pow() function above.
@@ -533,6 +533,28 @@ public:
         HPBC_CLOCKWORK_API_PRECONDITION(exponent >= 0);
         return detail::montgomery_array_pow<MontyTag,
                                    MontgomeryForm>::pow(*this, bases, exponent);
+    }
+
+
+    // Returns the multiplicative inverse of 'x' in the Montgomery domain if
+    // the inverse exists. If the inverse does not exist, it returns zero (or
+    // more precisely, it returns the value equal to getZeroValue()).
+    // This is a convenience function to stay in the Montgomery domain when you
+    // want to find the multiplicative inverse of a MontgomeryValue.
+    //
+    // Performance note: this function has no performance advantage over
+    // hurchalla::modular_multiplicative_inverse if you need the inverse of a
+    // number in standard integer domain - i.e. don't convert into Montgomery
+    // domain just to call this function. However, when you intend to stay in
+    // the Montgomery domain, this function is the fastest way to get the
+    // multiplicative inverse.
+    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
+    CanonicalValue inverse(MontgomeryValue x) const
+    {
+        CanonicalValue ret = impl.template inverse<PTAG>(x);
+        HPBC_CLOCKWORK_POSTCONDITION(ret == getZeroValue() ||
+                        getCanonicalValue(multiply(x, ret)) == getUnityValue());
+        return ret;
     }
 
 

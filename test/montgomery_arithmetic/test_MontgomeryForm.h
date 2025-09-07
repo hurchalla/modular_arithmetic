@@ -294,6 +294,40 @@ void test_remainder(const M& mf)
 }
 
 template <typename M>
+void test_single_inverse(const M& mf, typename M::IntegerType a)
+{
+    namespace hc = ::hurchalla;
+    using T = typename M::IntegerType;
+    using U = typename hc::extensible_make_unsigned<T>::type;
+
+    U n = static_cast<U>(mf.getModulus());
+    U gcd;  // ignored
+    auto answer = hc::modular_multiplicative_inverse(static_cast<U>(a), n, gcd);
+    U val = static_cast<U>(mf.convertOut(mf.inverse(mf.convertIn(a))));
+    EXPECT_TRUE(val == answer);
+}
+
+template <typename M>
+void test_inverse(const M& mf)
+{
+    using T = typename M::IntegerType;
+    T max = ::hurchalla::ut_numeric_limits<T>::max();
+    T mid = static_cast<T>(max/2);
+    T modulus = mf.getModulus();
+    test_single_inverse(mf, static_cast<T>(0));
+    test_single_inverse(mf, static_cast<T>(1));
+    test_single_inverse(mf, static_cast<T>(2));
+    test_single_inverse(mf, static_cast<T>(max-0));
+    test_single_inverse(mf, static_cast<T>(max-1));
+    test_single_inverse(mf, static_cast<T>(mid-0));
+    test_single_inverse(mf, static_cast<T>(mid-1));
+    test_single_inverse(mf, static_cast<T>(modulus-1));
+    test_single_inverse(mf, static_cast<T>(modulus-2));
+    test_single_inverse(mf, static_cast<T>(modulus/2));
+    test_single_inverse(mf, static_cast<T>((modulus/2) - 1));
+}
+
+template <typename M>
 void test_mf_general_checks(const M& mf, typename M::IntegerType a,
                            typename M::IntegerType b, typename M::IntegerType c)
 {
@@ -739,16 +773,28 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(12), GcdFunctor()) == 3);
     }
 
-    // test remainder()
+    // test remainder() and inverse()
     {
         T max = max_modulus;
         T mid = static_cast<T>(max/2);
         mid = (mid % 2 == 0) ? static_cast<T>(mid + 1) : mid;
-        test_remainder(MFactory::construct(3));    // smallest possible modulus
-        test_remainder(MFactory::construct(max));  // largest possible modulus
-        if (121 <= max)
-            test_remainder(MFactory::construct(121));
-        test_remainder(MFactory::construct(mid));
+        auto mf_3 = MFactory::construct(3);
+        test_remainder(mf_3);    // smallest possible modulus
+        test_inverse(mf_3);
+
+        auto mf_max = MFactory::construct(max);
+        test_remainder(mf_max);  // largest possible modulus
+        test_inverse(mf_max);
+
+        if (121 <= max) {
+            auto mf_121 = MFactory::construct(121);
+            test_remainder(mf_121);
+            test_inverse(mf_121);
+        }
+
+        auto mf_mid = MFactory::construct(mid);
+        test_remainder(mf_mid);
+        test_inverse(mf_mid);
     }
 }
 

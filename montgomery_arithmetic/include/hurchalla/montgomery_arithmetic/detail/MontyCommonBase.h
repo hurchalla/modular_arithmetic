@@ -11,6 +11,8 @@
 
 #include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
 #include "hurchalla/modular_arithmetic/detail/optimization_tag_structs.h"
+#include "hurchalla/modular_arithmetic/modular_multiplication.h"
+#include "hurchalla/modular_arithmetic/modular_multiplicative_inverse.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/get_Rsquared_mod_n.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/get_R_mod_n.h"
 #include "hurchalla/montgomery_arithmetic/low_level_api/inverse_mod_R.h"
@@ -380,6 +382,38 @@ class MontyCommonBase {
         // final_result is valid.  For our purposes this means final_result is
         // equivalent to sum, and thus we can return it instead of sum.
         return final_result;
+    }
+
+
+    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
+    HURCHALLA_FORCE_INLINE C inverse(V x, PTAG) const
+    {
+        // Given x == a*R, we do 2 REDCs to get a*R^(-1), then we call
+        // the standard integer domain inverse() to get a^(-1)*R.
+
+        namespace hc = ::hurchalla;
+        const D* child = static_cast<const D*>(this);
+        HPBC_CLOCKWORK_PRECONDITION2(child->isValid(x));
+        T u_hi = 0;
+        // get a Natural number (i.e. number >= 0) congruent to x (mod n)
+        T u_lo = static_cast<const D*>(this)->getNaturalEquivalence(x);
+        V result = child->montyREDC(u_hi, u_lo, PTAG());
+
+        u_hi = 0;
+        u_lo = static_cast<const D*>(this)->getNaturalEquivalence(result);
+        V result2 = child->montyREDC(u_hi, u_lo, PTAG());
+
+        T result3 = static_cast<const D*>(this)->getNaturalEquivalence(result2);
+        T gcd;  // ignored
+        T inv = hc::modular_multiplicative_inverse(result3, n_, gcd);
+
+        HPBC_CLOCKWORK_POSTCONDITION2(inv < n_);
+        //POSTCONDITION: Return 0 if the inverse does not exist. Otherwise
+        //   return the value of the inverse (which would never be 0, given that
+        //   the modulus n_ > 1).
+        HPBC_CLOCKWORK_POSTCONDITION2(inv == 0 ||
+           hc::modular_multiplication_prereduced_inputs(result3, inv, n_) == 1);
+        return C(inv);
     }
 
 

@@ -600,6 +600,20 @@ private:
         return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
+    virtual C inverse(V x, bool useLowlatencyTag) const override
+    {
+        OpenMFC mfc;
+        if (useLowlatencyTag) {
+            OpenMFC mfc2(mf.template inverse<LowlatencyTag>(OpenMFV(OpenV(x))));
+            mfc = mfc2;
+        } else {
+            OpenMFC mfc2(mf.template inverse<LowuopsTag>(OpenMFV(OpenV(x))));
+            mfc = mfc2;
+        }
+        // note: mfc.get() might be signed or unsigned; OpenC::OT is unsigned
+        return OpenC(static_cast<typename OpenC::OT>(mfc.get()));
+    }
+
 
     // This class (ConcreteMontgomeryForm) only supports calling vectorPow()
     // with a std::vector that has size equal to one of the sizes given by the

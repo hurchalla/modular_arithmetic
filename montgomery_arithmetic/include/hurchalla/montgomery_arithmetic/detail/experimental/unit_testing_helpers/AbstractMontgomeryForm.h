@@ -216,6 +216,9 @@ private:
     virtual MontgomeryValue fusedSquareAdd(MontgomeryValue x, CanonicalValue cv,
         bool useLowlatencyTag) const = 0;
 
+    virtual CanonicalValue inverse(MontgomeryValue x,
+        bool useLowlatencyTag) const = 0;
+
     virtual std::vector<MontgomeryValue> vectorPow(
         const std::vector<MontgomeryValue>& bases, IntegerType exponent) const = 0;
 
@@ -299,6 +302,12 @@ public:
     MontgomeryValue fusedSquareAdd(MontgomeryValue x, CanonicalValue cv) const
     {
         return fusedSquareAdd(x, cv, std::is_same<PTAG, LowlatencyTag>::value);
+    }
+
+    template <class PTAG = LowlatencyTag>
+    CanonicalValue inverse(MontgomeryValue x) const
+    {
+        return inverse(x, std::is_same<PTAG, LowlatencyTag>::value);
     }
 
     template <std::size_t NUM_BASES>

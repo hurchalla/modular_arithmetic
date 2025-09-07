@@ -13,6 +13,7 @@
 #include "hurchalla/montgomery_arithmetic/low_level_api/get_R_mod_n.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyTags.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
+#include "hurchalla/modular_arithmetic/modular_multiplicative_inverse.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/modular_arithmetic/absolute_value_difference.h"
@@ -278,6 +279,22 @@ class MontyWrappedStandardMath final {
         return sv;
     }
 
+    template <class PTAG>   // Performance TAG (see optimization_tag_structs.h)
+    HURCHALLA_FORCE_INLINE C inverse(V x, PTAG) const
+    {
+        namespace hc = ::hurchalla;
+        HPBC_CLOCKWORK_PRECONDITION2(isCanonical(x));
+        T gcd;  // ignored
+        T inv = hc::modular_multiplicative_inverse(x.get(), modulus_, gcd);
+
+        HPBC_CLOCKWORK_POSTCONDITION2(inv < modulus_);
+        //POSTCONDITION: Return 0 if the inverse does not exist. Otherwise
+        //   return the value of the inverse (which would never be 0, given that
+        //   modulus_ > 1).
+        HPBC_CLOCKWORK_POSTCONDITION2(inv == 0 || 1 ==
+            hc::modular_multiplication_prereduced_inputs(inv,x.get(),modulus_));
+        return C(inv);
+    }
 
     // Returns the greatest common divisor of the standard representations
     // (non-montgomery) of both x and the modulus, using the supplied functor.

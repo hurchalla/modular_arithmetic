@@ -228,6 +228,12 @@ public:
         return impl.fusedSquareAdd(x, cv, PTAG());
     }
 
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    CanonicalValue inverse(MontgomeryValue x) const
+    {
+        return impl.inverse(x, PTAG());
+    }
+
     template <class F> HURCHALLA_IMF_MAYBE_FORCE_INLINE
     T gcd_with_modulus(MontgomeryValue x, const F& gcd_functor) const
     {

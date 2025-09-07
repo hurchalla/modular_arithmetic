@@ -168,7 +168,9 @@ struct montgomery_pow {
     }
     while (exponent > static_cast<T>(1)) {
         exponent = static_cast<T>(exponent >> static_cast<T>(1));
+#if 0
         std::array<V, NUM_BASES> tmp;
+
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
             bases[i] = mf.template square<LowuopsTag>(bases[i]);
             tmp[i] = mf.template multiply<LowuopsTag>(result[i], bases[i]);
@@ -176,6 +178,22 @@ struct montgomery_pow {
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
             result[i].cmov(exponent & static_cast<T>(1), tmp[i]);
         });
+#else
+        // see scalarpow)() comments for why this #else section might be
+        // preferable to the #if alternative above.  There's probably little
+        // difference at larger NUM_BASES though, where total uops is the
+        // bottleneck rather than dependency chain length.
+        Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
+            bases[i] = mf.template square<LowuopsTag>(bases[i]);
+        });
+
+        V mont_one = mf.getUnityValue();
+        Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
+            V tmp = mont_one;
+            tmp.cmov(exponent & static_cast<T>(1), bases[i]);
+            result[i] = mf.template multiply<LowlatencyTag>(result[i], tmp);
+        });
+#endif
     }
     return result;
   }
@@ -198,12 +216,24 @@ struct montgomery_pow {
     }
     while (exponent > static_cast<T>(1)) {
         exponent = static_cast<T>(exponent >> 1u);
+#if 0
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
             bases[i] = mf.template square<LowuopsTag>(bases[i]);
             V tmp = mf.template multiply<LowuopsTag>(result[i], bases[i]);
             result[i].template
                       cmov<CSelectMaskedTag>(exponent & static_cast<T>(1), tmp);
         });
+#else
+        // the comments in arraypow_cmov() apply equally in this section
+        V mont_one = mf.getUnityValue();
+        Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
+            bases[i] = mf.template square<LowuopsTag>(bases[i]);
+            V tmp = mont_one;
+            tmp.template
+                 cmov<CSelectMaskedTag>(exponent & static_cast<T>(1), bases[i]);
+            result[i] = mf.template multiply<LowlatencyTag>(result[i], tmp);
+        });
+#endif
     }
     return result;
   }
