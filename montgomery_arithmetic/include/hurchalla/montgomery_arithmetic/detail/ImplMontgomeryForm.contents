@@ -38,6 +38,7 @@ public:
     using MontgomeryValue = typename MontyType::montvalue_type;
     using CanonicalValue = typename MontyType::canonvalue_type;
     using FusingValue = typename MontyType::fusingvalue_type;
+    using SquaringValue = typename MontyType::squaringvalue_type;
 
     explicit ImplMontgomeryForm(T modulus) : impl(static_cast<U>(modulus)) {}
 
@@ -247,6 +248,17 @@ public:
         return impl.convertIn(a, PTAG());
     }
 
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE CanonicalValue getMontvalueR() const
+    {
+        return impl.getMontvalueR();
+    }
+
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue twoPowLimited_times_x(size_t exponent, CanonicalValue x) const
+    {
+        return impl.twoPowLimited_times_x(exponent, x, PTAG());
+    }
+
     HURCHALLA_IMF_MAYBE_FORCE_INLINE U getMagicValue() const
     {
         return impl.getMagicValue();
@@ -267,4 +279,29 @@ public:
     MontgomeryValue RTimesTwoPowLimited(size_t exponent, U magicValue) const
     {
         return impl.RTimesTwoPowLimited(exponent, magicValue, PTAG());
+    }
+
+
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    SquaringValue getSquaringValue(MontgomeryValue x) const
+    {
+        return impl.getSquaringValue(x);
+    }
+
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    SquaringValue squareSV(SquaringValue sv) const
+    {
+        return impl.squareSV(sv);
+    }
+
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue squareToMontgomeryValue(SquaringValue sv) const
+    {
+        return impl.squareToMontgomeryValue(sv);
+    }
+
+    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue getMontgomeryValue(SquaringValue sv) const
+    {
+        return impl.getMontgomeryValue(sv);
     }

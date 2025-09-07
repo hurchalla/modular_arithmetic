@@ -170,6 +170,136 @@ struct RedcIncomplete {
     // return the non-finalized result
     return t_hi;
   }
+
+
+#if (HURCHALLA_COMPILER_HAS_UINT128_T())
+
+# if 0   // disabled for now, since it's not yet well tested, and it's performing worse with non-array pow tests, on mac M2.
+         // its performance is extremely promising for array pow however (on mac M2).
+  static HURCHALLA_FORCE_INLINE __uint128_t call(bool& ovf, __uint128_t u_hi, __uint128_t u_lo, __uint128_t n, __uint128_t inv_n)
+  {
+    using T = __uint128_t;
+    using TH = uint64_t;    // THalf bits
+
+// -----
+
+    HPBC_CLOCKWORK_PRECONDITION2(u_hi < n);
+    HPBC_CLOCKWORK_PRECONDITION2(n * inv_n == 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n % 2 == 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 1);
+
+    constexpr int HALF_BITS = ut_numeric_limits<TH>::digits;
+    TH n_lo = static_cast<TH>(n);
+    TH n_hi = static_cast<TH>(n >> HALF_BITS);
+
+    TH m = static_cast<TH>(u_lo) * static_cast<TH>(inv_n);
+
+    T tmplo = static_cast<T>(m) * n_lo;
+    T tmpmid = static_cast<T>(m) * n_hi;
+    tmpmid = tmpmid + (tmplo >> HALF_BITS);
+    HPBC_CLOCKWORK_ASSERT2(static_cast<TH>(u_lo) == static_cast<TH>(tmplo));
+
+    TH umid_lo = static_cast<TH>(u_lo >> HALF_BITS);
+    TH tmpmid_lo = static_cast<TH>(tmpmid);
+    TH vmid_lo = umid_lo - tmpmid_lo;
+    TH m2 = vmid_lo * static_cast<TH>(inv_n);
+
+    T u_mid = (u_hi << HALF_BITS) | umid_lo;
+    T v_mid = u_mid - tmpmid;
+    TH u_hi_hi = static_cast<TH>(u_hi >> HALF_BITS);
+    TH v_hi_hi = u_hi_hi - (u_mid < tmpmid);
+    T moz = (u_hi_hi < (u_mid < tmpmid)) ? n : 0;
+
+    T v_hi = (static_cast<T>(v_hi_hi) << HALF_BITS) | (v_mid >> HALF_BITS);
+    v_hi = v_hi + moz;
+
+    T tmplo2 = static_cast<T>(m2) * n_lo;
+    T tmpmid2 = static_cast<T>(m2) * n_hi;
+    tmpmid2 = tmpmid2 + (tmplo2 >> HALF_BITS);
+    HPBC_CLOCKWORK_ASSERT2(static_cast<TH>(v_mid) == static_cast<TH>(tmplo2));
+
+    T t_hi = v_hi - tmpmid2;
+    ovf = (v_hi < tmpmid2);
+
+    if (HPBC_CLOCKWORK_POSTCONDITION2_MACRO_IS_ACTIVE) {
+        T finalized_result = (ovf) ? t_hi + n : t_hi;
+        HPBC_CLOCKWORK_POSTCONDITION2(finalized_result < n);
+        bool ovf2;
+        T answer = call<T>(ovf2, u_hi, u_lo, n, inv_n);
+        T finalized_answer = (ovf2) ? answer + n : answer;
+        HPBC_CLOCKWORK_POSTCONDITION2(finalized_result == finalized_answer);
+    }
+    if (HPBC_CLOCKWORK_POSTCONDITION2_MACRO_IS_ACTIVE) {
+        T Rdiv2 = static_cast<T>(1) << (ut_numeric_limits<T>::digits - 1);
+        HPBC_CLOCKWORK_POSTCONDITION2((n < Rdiv2) ? (0 < (t_hi + n)) &&
+                                       ((t_hi + n) < 2*n) : true);
+    }
+    return t_hi;
+  }
+
+  static HURCHALLA_FORCE_INLINE __uint128_t call(__uint128_t u_hi, __uint128_t u_lo, __uint128_t n, __uint128_t inv_n)
+  {
+    using T = __uint128_t;
+    using TH = uint64_t;    // THalf bits
+
+    HPBC_CLOCKWORK_PRECONDITION2(u_hi < n);
+    HPBC_CLOCKWORK_PRECONDITION2(n * inv_n == 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n % 2 == 1);
+    HPBC_CLOCKWORK_PRECONDITION2(n > 1);
+
+    constexpr int HALF_BITS = ut_numeric_limits<TH>::digits;
+    TH n_lo = static_cast<TH>(n);
+    TH n_hi = static_cast<TH>(n >> HALF_BITS);
+
+    TH m = static_cast<TH>(u_lo) * static_cast<TH>(inv_n);
+
+    T tmplo = static_cast<T>(m) * n_lo;
+    T tmpmid = static_cast<T>(m) * n_hi;
+    tmpmid = tmpmid + (tmplo >> HALF_BITS);
+    HPBC_CLOCKWORK_ASSERT2(static_cast<TH>(u_lo) == static_cast<TH>(tmplo));
+
+    TH umid_lo = static_cast<TH>(u_lo >> HALF_BITS);
+    TH tmpmid_lo = static_cast<TH>(tmpmid);
+    TH vmid_lo = umid_lo - tmpmid_lo;
+    TH m2 = vmid_lo * static_cast<TH>(inv_n);
+
+    T u_mid = (u_hi << HALF_BITS) | umid_lo;
+    T v_mid = u_mid - tmpmid;
+    TH u_hi_hi = static_cast<TH>(u_hi >> HALF_BITS);
+    TH v_hi_hi = u_hi_hi - (u_mid < tmpmid);
+
+    T v_hi = (static_cast<T>(v_hi_hi) << HALF_BITS) | (v_mid >> HALF_BITS);
+
+    T tmplo2 = static_cast<T>(m2) * n_lo;
+    T tmpmid2 = static_cast<T>(m2) * n_hi;
+    tmpmid2 = tmpmid2 + (tmplo2 >> HALF_BITS);
+    HPBC_CLOCKWORK_ASSERT2(static_cast<TH>(v_mid) == static_cast<TH>(tmplo2));
+
+    T t_hi = v_hi - tmpmid2;
+
+    if (HPBC_CLOCKWORK_POSTCONDITION2_MACRO_IS_ACTIVE) {
+        bool ovf2;
+        T answer = call<T>(ovf2, u_hi, u_lo, n, inv_n);
+        answer = (ovf2) ? answer + n : answer;
+        HPBC_CLOCKWORK_POSTCONDITION2(t_hi == answer || t_hi + n == answer);
+    }
+    if (HPBC_CLOCKWORK_POSTCONDITION2_MACRO_IS_ACTIVE) {
+        T Rdiv2 = static_cast<T>(1) << (ut_numeric_limits<T>::digits - 1);
+        HPBC_CLOCKWORK_POSTCONDITION2((n < Rdiv2) ? (0 < (t_hi + n)) &&
+                                       ((t_hi + n) < 2*n) : true);
+    }
+    return t_hi;
+  }
+# endif
+#endif
+
+
+  template <typename T>
+  static HURCHALLA_FORCE_INLINE T call(T u_hi, T u_lo, T n, T inv_n)
+  {
+    bool ovf;
+    return call(ovf, u_hi, u_lo, n, inv_n);
+  }
 };
 
 

@@ -19,6 +19,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include "hurchalla/util/compiler_macros.h"
+#include <type_traits>
 
 namespace hurchalla { namespace detail {
 
@@ -66,11 +67,14 @@ class MontyWrappedStandardMath final {
         return (x.get() < modulus_);
     }
 
+    using SV = V;
+
  public:
     using MontyTag = TagMontyWrappedmath;
     using montvalue_type = V;
     using canonvalue_type = C;
     using fusingvalue_type = FV;
+    using squaringvalue_type = SV;
     using uint_type = T;
 
     explicit MontyWrappedStandardMath(T modulus) : modulus_(modulus)
@@ -253,6 +257,28 @@ class MontyWrappedStandardMath final {
     }
 
 
+    HURCHALLA_FORCE_INLINE SV getSquaringValue(V x) const
+    {
+        static_assert(std::is_same<V, SV>::value, "");
+        return x;
+    }
+    HURCHALLA_FORCE_INLINE SV squareSV(SV sv) const
+    {
+        static_assert(std::is_same<V, SV>::value, "");
+        return square(sv, LowlatencyTag());
+    }
+    HURCHALLA_FORCE_INLINE V squareToMontgomeryValue(SV sv) const
+    {
+        static_assert(std::is_same<V, SV>::value, "");
+        return square(sv, LowlatencyTag());
+    }
+    HURCHALLA_FORCE_INLINE V getMontgomeryValue(SV sv) const
+    {
+        static_assert(std::is_same<V, SV>::value, "");
+        return sv;
+    }
+
+
     // Returns the greatest common divisor of the standard representations
     // (non-montgomery) of both x and the modulus, using the supplied functor.
     // The functor must take two integral arguments of the same type and return
@@ -300,6 +326,37 @@ class MontyWrappedStandardMath final {
     }
 
 
+    // returns R mod N
+    HURCHALLA_FORCE_INLINE C getMontvalueR() const
+    {
+        T result = ::hurchalla::get_R_mod_n(modulus_);
+        HPBC_CLOCKWORK_POSTCONDITION2(result < modulus_);
+        return C(result);
+    }
+    template <class PTAG> HURCHALLA_FORCE_INLINE
+    V twoPowLimited_times_x(size_t exponent, C cx, PTAG) const
+    {
+        static constexpr int digitsT = ut_numeric_limits<T>::digits;
+        int power = static_cast<int>(exponent);
+        HPBC_CLOCKWORK_PRECONDITION2(0 <= power && power < digitsT);
+
+        T tmp = cx.get();
+        HPBC_CLOCKWORK_INVARIANT2(tmp < modulus_);
+        T u_lo = static_cast<T>(tmp << power);
+        int rshift = digitsT - power;
+        HPBC_CLOCKWORK_ASSERT2(rshift > 0);
+        T u_hi = (tmp >> 1) >> (rshift - 1);
+        HPBC_CLOCKWORK_ASSERT2(u_hi < modulus_);
+        // It's very strange to use REDC when this class is meant to wrap
+        // standard arithmetic within the monty interface and not actually
+        // use mont arith.  But we need REDC here, due to the extra R factor
+        // that is expected to be in cx whenever this function is called.
+        T inv_modulus = ::hurchalla::inverse_mod_R(modulus_);
+        T result = ::hurchalla::REDC_standard(u_hi, u_lo, modulus_, inv_modulus, PTAG());
+
+        HPBC_CLOCKWORK_POSTCONDITION2(result < modulus_);
+        return V(result);
+    }
     HURCHALLA_FORCE_INLINE T getMagicValue() const
     {
         T result = ::hurchalla::get_R_mod_n(modulus_);

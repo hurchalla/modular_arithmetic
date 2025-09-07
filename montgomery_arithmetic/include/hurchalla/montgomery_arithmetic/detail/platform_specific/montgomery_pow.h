@@ -40,10 +40,12 @@ struct montgomery_pow {
     // This is an optimized version of Algorithm 14.76, from
     // Applied Handbook of Cryptography- http://cacr.uwaterloo.ca/hac/
     // See also: hurchalla/modular_arithmetic/detail/impl_modular_pow.h
-    V result = (exponent & static_cast<T>(1)) ? base : mf.getUnityValue();
+    V mont_one = mf.getUnityValue();
+    V result = (exponent & static_cast<T>(1)) ? base : mont_one;
     while (exponent > static_cast<T>(1)) {
         exponent = static_cast<T>(exponent >> static_cast<T>(1));
-        base = mf.template square<LowuopsTag>(base);
+        base = mf.template square<LowlatencyTag>(base);
+#if 0
         // The square above is a loop carried dependency.  Thus, a second loop
         // carried dependency with the same length can be essentially free due
         // to instruction level parallelism, so long as it does not introduce
@@ -55,8 +57,18 @@ struct montgomery_pow {
         // dependency depends upon both multiply and a conditional move, whereas
         // 'base' above depends only on square (multiply) and thus is tagged for
         // lowuops since it is less likely to be a latency bottleneck.
+
         V tmp = mf.template multiply<LowlatencyTag>(result, base);
         result.cmov(exponent & static_cast<T>(1), tmp);
+#else
+        // This section shortens the dependency chain for 'result'.  Since
+        // 'result' had a longer dependency chain above than 'base' did, this
+        // in theory should run faster.  An in practice it has consistently
+        // benchmarked better - usually ~5% faster, and never slower than above.
+        V tmp = mont_one;
+        tmp.cmov(exponent & static_cast<T>(1), base);
+        result = mf.template multiply<LowlatencyTag>(result, tmp);
+#endif
     }
     return result;
   }

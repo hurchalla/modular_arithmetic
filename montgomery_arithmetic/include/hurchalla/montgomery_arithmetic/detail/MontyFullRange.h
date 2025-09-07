@@ -61,6 +61,21 @@ struct MontyFRValueTypes {
         template <typename> friend class MontyFullRange;
         HURCHALLA_FORCE_INLINE explicit FV(T a) : V(a) {}
     };
+    // squaring value type - used for square() optimizations (fyi, those
+    // optimizations wouldn't help much or at all for monty types other than
+    // MontyFullRange).
+    struct SV {
+        HURCHALLA_FORCE_INLINE SV() = default;
+     protected:
+        template <typename> friend class MontyFullRange;
+        HURCHALLA_FORCE_INLINE T getbits() const { return bits; }
+        HURCHALLA_FORCE_INLINE T get_subtrahend() const { return subtrahend; }
+        HURCHALLA_FORCE_INLINE SV(T bbits, T subt) :
+                                                bits(bbits), subtrahend(subt) {}
+     private:
+        T bits;
+        T subtrahend;
+    };
 };
 
 
@@ -77,12 +92,14 @@ class MontyFullRange final :
     using typename BC::V;
     using typename BC::C;
     using FV = typename MontyFRValueTypes<T>::FV;
+    using SV = typename MontyFRValueTypes<T>::SV;
  public:
     using MontyTag = TagMontyFullrange;
     using uint_type = T;
     using montvalue_type = V;
     using canonvalue_type = C;
     using fusingvalue_type = FV;
+    using squaringvalue_type = SV;
 
     explicit MontyFullRange(T modulus) : BC(modulus) {}
 
@@ -191,6 +208,59 @@ class MontyFullRange final :
     HURCHALLA_FORCE_INLINE C two_times(C x) const
     {
         return add(x, x);
+    }
+
+
+    HURCHALLA_FORCE_INLINE SV getSquaringValue(V x) const
+    {
+        return SV(x.get(), 0);
+    }
+
+    HURCHALLA_FORCE_INLINE SV squareSV(SV sv) const
+    {
+        // see squareToHiLo in MontyFullRangeMasked.h for basic ideas of
+        // proof for why u_hi and u_lo are correct
+        namespace hc = ::hurchalla;
+        T a = sv.getbits();
+        T sqlo;
+        T sqhi = hc::unsigned_multiply_to_hilo_product(sqlo, a, a);
+        T a_or_zero = sv.get_subtrahend();
+        T u_hi = static_cast<T>(sqhi - a_or_zero - a_or_zero);
+        T u_lo = sqlo;
+        HPBC_CLOCKWORK_ASSERT2(u_hi < n_);
+
+        bool isNegative;
+        T res = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
+        T subtrahend = isNegative ? res : static_cast<T>(0);
+        SV result(res, subtrahend);
+        return result;
+    }
+
+    HURCHALLA_FORCE_INLINE V squareToMontgomeryValue(SV sv) const
+    {
+        // see squareToHiLo in MontyFullRangeMasked.h for basic ideas of
+        // proof for why u_hi and u_lo are correct
+        namespace hc = ::hurchalla;
+        T a = sv.getbits();
+        T sqlo;
+        T sqhi = hc::unsigned_multiply_to_hilo_product(sqlo, a, a);
+        T a_or_zero = sv.get_subtrahend();
+        T u_hi = static_cast<T>(sqhi - a_or_zero - a_or_zero);
+        T u_lo = sqlo;
+        HPBC_CLOCKWORK_ASSERT2(u_hi < n_);
+
+        T res = hc::REDC_standard(
+                               u_hi, u_lo, n_, BC::inv_n_, hc::LowlatencyTag());
+        V result(res);
+        return result;
+    }
+
+    // probably I would not want to use this, instead preferring to get a SV
+    // via squareToMontgomeryValue
+    HURCHALLA_FORCE_INLINE V getMontgomeryValue(SV sv) const
+    {
+        T nonneg_value = sv.get_subtrahend() != 0 ? sv.get() + n_ : sv.get();
+        return V(nonneg_value);
     }
 
 private:

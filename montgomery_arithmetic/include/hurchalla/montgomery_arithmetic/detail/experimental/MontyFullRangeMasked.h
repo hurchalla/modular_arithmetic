@@ -112,12 +112,14 @@ class MontyFullRangeMasked final :
     using typename BC::V;
     using typename BC::C;
     using FV = typename MfrmValueTypes<T>::FV;
+    using SV = V;
  public:
     using MontyTag = TagMontyFullrangeMasked;
     using uint_type = T;
     using montvalue_type = V;
     using canonvalue_type = C;
     using fusingvalue_type = FV;
+    using squaringvalue_type = SV;
 
     explicit MontyFullRangeMasked(T modulus) : BC(modulus) {}
 
@@ -266,6 +268,28 @@ class MontyFullRangeMasked final :
     HURCHALLA_FORCE_INLINE C two_times(C cx) const
     {
         return add(cx, cx);
+    }
+
+
+    HURCHALLA_FORCE_INLINE SV getSquaringValue(V x) const
+    {
+        static_assert(std::is_same<V, SV>::value, "");
+        return x;
+    }
+    HURCHALLA_FORCE_INLINE SV squareSV(SV sv) const
+    {
+        static_assert(std::is_same<V, SV>::value, "");
+        return BC::square(sv, LowlatencyTag());
+    }
+    HURCHALLA_FORCE_INLINE V squareToMontgomeryValue(SV sv) const
+    {
+        static_assert(std::is_same<V, SV>::value, "");
+        return BC::square(sv, LowlatencyTag());
+    }
+    HURCHALLA_FORCE_INLINE V getMontgomeryValue(SV sv) const
+    {
+        static_assert(std::is_same<V, SV>::value, "");
+        return sv;
     }
 
 private:

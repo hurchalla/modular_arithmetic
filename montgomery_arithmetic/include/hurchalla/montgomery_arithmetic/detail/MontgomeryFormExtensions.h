@@ -30,12 +30,42 @@ struct MontgomeryFormExtensions final {
     static_assert(ut_numeric_limits<RU>::is_integer, "");
     static_assert(!(ut_numeric_limits<RU>::is_signed), "");
 
+    using CanonicalValue = typename MF::CanonicalValue;
     using MontgomeryValue = typename MF::MontgomeryValue;
+    using SquaringValue = typename MF::SV;
 
     HURCHALLA_FORCE_INLINE
     static MontgomeryValue convertInExtended(const MF& mf, RU a)
     {
         return mf.impl.template convertInExtended<PTAG>(a);
+    }
+
+    // note: montvalueR is the Montgomery representation of R.
+    //       In normal integer form it is literally R squared mod N.
+    HURCHALLA_FORCE_INLINE
+    static CanonicalValue getMontvalueR(const MF& mf)
+    {
+        return mf.impl.getMontvalueR();
+    }
+
+    // this first shifts x by exponent, which is equivalent to
+    // multiplying x by 2^exponent, and then it completes the
+    // mont mul as usual by calling REDC.
+    // -- IMPORTANT NOTE -- because (2^exponent) is an integer domain
+    // value rather than a montgomery domain value, the returned
+    // result viewed as an integer value is
+    // REDC((x_int * R) * (2^exponent)) == (x_int * (2^exponent) * R) * R^(-1)
+    // To counteract the inverse R factor, so that you get what most likely
+    // you wanted, being just plain   (x_int * (2^exponent) * R),
+    // you need to ensure that x has an extra factor of R built into it it,
+    // rather than just the normal single factor of x_int * R.  To build an
+    // extra factor of R into x, you first get  montR = getMontvalueR(mf),
+    // and then you do a normal montgomery multiply of x and montR.
+    HURCHALLA_FORCE_INLINE
+    static MontgomeryValue twoPowLimited_times_x(const MF& mf, size_t exponent, CanonicalValue x)
+    {
+        HPBC_CLOCKWORK_PRECONDITION(exponent < ut_numeric_limits<RU>::digits);
+        return mf.impl.template twoPowLimited_times_x<PTAG>(exponent, x);
     }
 
     // note: magicValue is R cubed mod N  (in normal integer form)
@@ -75,6 +105,32 @@ struct MontgomeryFormExtensions final {
     {
         HPBC_CLOCKWORK_PRECONDITION(exponent < ut_numeric_limits<RU>::digits);
         return mf.impl.template RTimesTwoPowLimited<PTAG>(exponent, magicValue);
+    }
+
+
+    HURCHALLA_FORCE_INLINE
+    static SquaringValue getSquaringValue(const MF& mf, MontgomeryValue x)
+    {
+        return mf.impl.getSquaringValue(x);
+    }
+
+    HURCHALLA_FORCE_INLINE
+    static SquaringValue squareSV(const MF& mf, SquaringValue sv)
+    {
+        return mf.impl.squareSV(sv);
+    }
+
+    HURCHALLA_FORCE_INLINE
+    static MontgomeryValue
+    squareToMontgomeryValue(const MF& mf, SquaringValue sv)
+    {
+        return mf.impl.squareToMontgomeryValue(sv);
+    }
+
+    HURCHALLA_FORCE_INLINE
+    static MontgomeryValue getMontgomeryValue(const MF& mf, SquaringValue sv)
+    {
+        return mf.impl.getMontgomeryValue(sv);
     }
 };
 

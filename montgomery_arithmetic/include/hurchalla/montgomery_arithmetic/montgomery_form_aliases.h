@@ -14,6 +14,7 @@
 #include "hurchalla/montgomery_arithmetic/detail/MontyHalfRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyQuarterRange.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyWrappedStandardMath.h"
+#include "hurchalla/montgomery_arithmetic/detail/experimental/MontyFullRangeMasked.h"
 #include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/sized_uint.h"
@@ -179,6 +180,14 @@ public:
 // MontyFullRange<uint32_t>, when given the same (uint32_t) modulus.  This is
 // reflected above by MontyAliasHelper mapping to MontyQuarterRange if it gets a
 // small enough type T.
+
+
+// experimental alias
+template <typename T, bool InlineAllFunctions =
+                   (ut_numeric_limits<T>::digits <= HURCHALLA_TARGET_BIT_WIDTH)>
+using MontgomeryMasked = MontgomeryForm<T, InlineAllFunctions,
+              typename MontyAliasHelper<T, detail::MontyFullRangeMasked>::type>;
+
 
 
 } // end namespace

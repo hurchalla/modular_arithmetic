@@ -113,12 +113,14 @@ class MontyHalfRange final :
     using typename BC::V;
     using typename BC::C;
     using FV = typename MontyHRValueTypes<T>::FV;
+    using SV = V;
  public:
     using MontyTag = TagMontyHalfrange;
     using uint_type = T;
     using montvalue_type = V;
     using canonvalue_type = C;
     using fusingvalue_type = FV;
+    using squaringvalue_type = SV;
 
     explicit MontyHalfRange(T modulus) : BC(modulus)
     {
@@ -490,6 +492,28 @@ class MontyHalfRange final :
         return C(result);
     }
 
+
+    HURCHALLA_FORCE_INLINE SV getSquaringValue(V x) const
+    {
+        static_assert(std::is_same<V, SV>::value, "");
+        return x;
+    }
+    HURCHALLA_FORCE_INLINE SV squareSV(SV sv) const
+    {
+        static_assert(std::is_same<V, SV>::value, "");
+        return BC::square(sv, LowlatencyTag());
+    }
+    HURCHALLA_FORCE_INLINE V squareToMontgomeryValue(SV sv) const
+    {
+        static_assert(std::is_same<V, SV>::value, "");
+        return BC::square(sv, LowlatencyTag());
+    }
+    HURCHALLA_FORCE_INLINE V getMontgomeryValue(SV sv) const
+    {
+        static_assert(std::is_same<V, SV>::value, "");
+        return sv;
+    }
+
 private:
     // functions called by the 'curiously recurring template pattern' base (BC).
     friend BC;
@@ -500,8 +524,7 @@ private:
     {
         HPBC_CLOCKWORK_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
         namespace hc = ::hurchalla;
-        bool isNegative;  // ignored
-        T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
+        T result = hc::REDC_incomplete(u_hi, u_lo, n_, BC::inv_n_);
         resultIsZero = (result == 0);
         V v = V(static_cast<S>(result));
         HPBC_CLOCKWORK_POSTCONDITION2(isValid(v));

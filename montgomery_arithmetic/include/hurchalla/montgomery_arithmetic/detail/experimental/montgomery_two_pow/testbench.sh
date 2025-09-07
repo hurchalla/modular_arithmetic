@@ -485,6 +485,7 @@ repo_directory=/Users/jeffreyhurchalla/Desktop
 
 if [[ $cppcompiler == "g++" ]]; then
   error_limit=-fmax-errors=3
+  warn_nrvo=-Wnrvo
 else
   error_limit=-ferror-limit=3
 fi
@@ -493,11 +494,13 @@ fi
 # argument $8 (if present), should be -DHURCHALLA_ALLOW_INLINE_ASM_ALL
 
 
+# to debug you can compile with the below also
+# -DHURCHALLA_CLOCKWORK_ENABLE_ASSERTS  -DHURCHALLA_UTIL_ENABLE_ASSERTS
 
-$cppcompiler  \
+$cppcompiler   \
         $error_limit   -$optimization_level \
         $define_mont_type  $define_uint_type  $define_use_asm \
-        -Wall -Wextra -Wpedantic \
+        -Wall -Wextra -Wpedantic $warn_nrvo \
         -std=$cpp_standard \
         -I${repo_directory}/modular_arithmetic/modular_arithmetic/include \
         -I${repo_directory}/modular_arithmetic/montgomery_arithmetic/include \

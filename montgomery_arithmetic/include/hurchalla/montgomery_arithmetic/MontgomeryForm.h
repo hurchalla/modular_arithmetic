@@ -43,6 +43,7 @@ class MontgomeryForm final {
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(ut_numeric_limits<T>::digits <=
                   ut_numeric_limits<typename MontyType::uint_type>::digits, "");
+    using SV = typename MontyType::squaringvalue_type;
     using RU = typename MontyType::uint_type;
 public:
     using IntegerType = T;
@@ -477,6 +478,7 @@ public:
 
     // Calculates and returns the modular exponentiation of the montgomery value
     // 'base' to the power of (the type T variable) 'exponent'.
+    // Performance note: if your base is 2, two_pow() is much more efficient.
     HURCHALLA_FORCE_INLINE
     MontgomeryValue pow(MontgomeryValue base, T exponent) const
     {

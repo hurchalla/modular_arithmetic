@@ -53,6 +53,8 @@ void test_REDC_identity(T a, T n, T inv_n, T Rmod_n)
 
     bool isNegative;
     T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n, inv_n);
+    T result2 = hc::REDC_incomplete(u_hi, u_lo, n, inv_n);
+    EXPECT_TRUE(result == result2);
     EXPECT_TRUE(isNegative ? static_cast<T>(result+n)==amodn : result==amodn);
 }
 
@@ -145,22 +147,30 @@ void test_REDCincomplete_multiply(T a, T b, T n, T inv_n, T Rsqrd_mod_n)
     u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, Rsqrd_mod_n, a);
     bool isNegative;
     T a_md = hc::REDC_incomplete(isNegative, u_hi, u_lo, n, inv_n);
+    T a_md2 = hc::REDC_incomplete(u_hi, u_lo, n, inv_n);
+    EXPECT_TRUE(a_md == a_md2);
     a_md = isNegative ? static_cast<T>(a_md + n) : a_md;
     EXPECT_TRUE(a_md < n);
     u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, Rsqrd_mod_n, b);
     T b_md = hc::REDC_incomplete(isNegative, u_hi, u_lo, n, inv_n);
+    T b_md2 = hc::REDC_incomplete(u_hi, u_lo, n, inv_n);
+    EXPECT_TRUE(b_md == b_md2);
     b_md = isNegative ? static_cast<T>(b_md + n) : b_md;
     EXPECT_TRUE(b_md < n);
 
     // compute the montgomery domain product of a_md and b_md
     u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, a_md, b_md);
     T product_md = hc::REDC_incomplete(isNegative, u_hi, u_lo, n, inv_n);
+    T product_md2 = hc::REDC_incomplete(u_hi, u_lo, n, inv_n);
+    EXPECT_TRUE(product_md == product_md2);
     product_md = isNegative ? static_cast<T>(product_md + n) : product_md;
     EXPECT_TRUE(product_md < n);
 
     // convert product_md out of montgomery domain, and verify it is correct
     u_hi = 0; u_lo = product_md;
     T product = hc::REDC_incomplete(isNegative, u_hi, u_lo, n, inv_n);
+    T product2 = hc::REDC_incomplete(u_hi, u_lo, n, inv_n);
+    EXPECT_TRUE(product == product2);
     product = isNegative ? static_cast<T>(product + n) : product;
     T answer = hc::modular_multiplication_prereduced_inputs(
                                static_cast<T>(a % n), static_cast<T>(b % n), n);

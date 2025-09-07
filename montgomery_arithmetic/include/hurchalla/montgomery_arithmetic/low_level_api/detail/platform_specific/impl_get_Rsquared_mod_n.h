@@ -124,8 +124,7 @@ struct impl_get_Rsquared_mod_n<true, PTAG> {
             T u_hi, u_lo;
             u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, tmp, tmp);
             // use the same logic as MontyQuarterRange's montyREDC():
-            bool isNegative;  // ignored
-            tmp= hc::REDC_incomplete(isNegative, u_hi, u_lo, n, inverse_n_modR);
+            tmp = hc::REDC_incomplete(u_hi, u_lo, n, inverse_n_modR);
             tmp = static_cast<T>(tmp + n);
             HPBC_CLOCKWORK_ASSERT2(0 < tmp && tmp < static_cast<T>(2*n));
         }

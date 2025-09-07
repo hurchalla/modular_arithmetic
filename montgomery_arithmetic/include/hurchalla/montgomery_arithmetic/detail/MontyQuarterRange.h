@@ -96,6 +96,7 @@ class MontyQuarterRange final : public
     using typename BC::V;
     using typename BC::C;
     using FV = typename MontyQRValueTypes<T>::FV;
+    using SV = V;
 
     using S = typename extensible_make_signed<T>::type;
     static_assert(static_cast<S>(-1) == ~(static_cast<S>(0)),
@@ -109,6 +110,7 @@ class MontyQuarterRange final : public
     using montvalue_type = V;
     using canonvalue_type = C;
     using fusingvalue_type = FV;
+    using squaringvalue_type = SV;
 
     explicit MontyQuarterRange(T modulus) : BC(modulus)
     {
@@ -309,6 +311,28 @@ class MontyQuarterRange final : public
         return C(result);
     }
 
+
+    HURCHALLA_FORCE_INLINE SV getSquaringValue(V x) const
+    {
+        static_assert(std::is_same<V, SV>::value, "");
+        return x;
+    }
+    HURCHALLA_FORCE_INLINE SV squareSV(SV sv) const
+    {
+        static_assert(std::is_same<V, SV>::value, "");
+        return BC::square(sv, LowlatencyTag());
+    }
+    HURCHALLA_FORCE_INLINE V squareToMontgomeryValue(SV sv) const
+    {
+        static_assert(std::is_same<V, SV>::value, "");
+        return BC::square(sv, LowlatencyTag());
+    }
+    HURCHALLA_FORCE_INLINE V getMontgomeryValue(SV sv) const
+    {
+        static_assert(std::is_same<V, SV>::value, "");
+        return sv;
+    }
+
 private:
     // functions called by the 'curiously recurring template pattern' base (BC).
     friend BC;
@@ -319,8 +343,7 @@ private:
     {
         HPBC_CLOCKWORK_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
         namespace hc = ::hurchalla;
-        bool isNegative;  // ignored
-        T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
+        T result = hc::REDC_incomplete(u_hi, u_lo, n_, BC::inv_n_);
         resultIsZero = (result == 0);
         T sum = static_cast<T>(result + n_);
         HPBC_CLOCKWORK_POSTCONDITION2(0 < sum && sum < static_cast<T>(2*n_));
@@ -339,12 +362,11 @@ private:
     {
         HPBC_CLOCKWORK_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
         namespace hc = ::hurchalla;
-        bool isNegative;  // ignored
 #if 0
 // Enabling this section would result in the same code as the template version
 // of this function, above.  But we can reduce latency via an optimization
 // compilers don't always find, in the #else section.
-        T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
+        T result = hc::REDC_incomplete(u_hi, u_lo, n_, BC::inv_n_);
         resultIsZero = (result == 0);
         result = static_cast<T>(result + n_);
 #else
@@ -353,7 +375,7 @@ private:
         // result, so it makes no difference for correctness in this function if
         // we move the addition of n_ + u_hi to instead be prior to REDC.  But
         // it will lower latency to do the add before REDC.
-        T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
+        T result = hc::REDC_incomplete(u_hi, u_lo, n_, BC::inv_n_);
         resultIsZero = (result == n_);
 #endif
         HPBC_CLOCKWORK_POSTCONDITION2(0 < result && result < static_cast<T>(2*n_));
@@ -364,16 +386,15 @@ private:
     {
         HPBC_CLOCKWORK_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
         namespace hc = ::hurchalla;
-        bool isNegative;  // ignored
 #if 0
 // This is the obvious code to use, and the #else is an optimization.
 // Compilers in theory should find the optimization (latest clang and gcc both
 // do), but we enable the optimized version to be certain we get it.
-        T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
+        T result = hc::REDC_incomplete(u_hi, u_lo, n_, BC::inv_n_);
         result = static_cast<T>(result + n_);
 #else
         u_hi = static_cast<T>(u_hi + n_);
-        T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
+        T result = hc::REDC_incomplete(u_hi, u_lo, n_, BC::inv_n_);
 #endif
         HPBC_CLOCKWORK_POSTCONDITION2(0 < result && result < static_cast<T>(2*n_));
         return V(result);

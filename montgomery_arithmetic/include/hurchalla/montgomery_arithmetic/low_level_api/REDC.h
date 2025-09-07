@@ -137,6 +137,46 @@ T REDC_incomplete(bool& isNegative, T u_hi, T u_lo, T n, T inv_n)
 }
 
 
+// This version of REDC_incomplete omits the isNegative parameter, which can be
+// useful when either you know ahead of time that the result will be negative or
+// non-negative, or when it doesn't matter whether or not the result will be
+// negative.
+template <typename T> HURCHALLA_FORCE_INLINE
+T REDC_incomplete(T u_hi, T u_lo, T n, T inv_n)
+{
+    static_assert(ut_numeric_limits<T>::is_integer, "");
+    static_assert(!(ut_numeric_limits<T>::is_signed), "");
+    static_assert(ut_numeric_limits<T>::is_modulo, "");
+
+    HPBC_CLOCKWORK_PRECONDITION2(n % 2 == 1);  // REDC requires an odd modulus.
+    HPBC_CLOCKWORK_PRECONDITION2(n > 1);
+    using P = typename safely_promote_unsigned<T>::type;
+    // verify that  n * inv_n ≡ 1 (mod R)
+    HPBC_CLOCKWORK_PRECONDITION2(
+                static_cast<T>(static_cast<P>(n) * static_cast<P>(inv_n)) == 1);
+    HPBC_CLOCKWORK_PRECONDITION2(u_hi < n);  // verify that (u_hi*R + u_lo) < n*R
+
+    T result = detail::RedcIncomplete::call(u_hi, u_lo, n, inv_n);
+
+    if (HPBC_CLOCKWORK_POSTCONDITION2_MACRO_IS_ACTIVE) {
+        bool isNegative;
+        T result2 = detail::RedcIncomplete::call(isNegative, u_hi, u_lo, n, inv_n);
+        HPBC_CLOCKWORK_POSTCONDITION2(result == result2);
+        T finalized_result = (isNegative) ? static_cast<T>(result + n) : result;
+        HPBC_CLOCKWORK_POSTCONDITION2(finalized_result ==
+                              ::hurchalla::REDC_standard(u_hi, u_lo, n, inv_n));
+        HPBC_CLOCKWORK_POSTCONDITION2(0 <= finalized_result && finalized_result < n);
+    }
+    // If  n < R/2,  then  0 < result + n < 2*n
+    if (HPBC_CLOCKWORK_POSTCONDITION2_MACRO_IS_ACTIVE) {
+        T Rdiv2 = static_cast<T>(1) << (ut_numeric_limits<T>::digits - 1);
+        HPBC_CLOCKWORK_POSTCONDITION2((n < Rdiv2) ? (0 < static_cast<T>(result + n)) &&
+                                (static_cast<T>(result + n) < 2*n) : true);
+    }
+    return result;
+}
+
+
 } // end namespace
 
 

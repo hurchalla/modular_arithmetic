@@ -99,10 +99,8 @@ class MontyCommonBase {
         namespace hc = ::hurchalla;
         bool isNegative;
         T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, inv_n_);
-        HPBC_CLOCKWORK_ASSERT2(result == 0 ?
-                               isNegative == false : isNegative == true);
-        // We would expect that result == 0 is usually very rare, so going by
-        // the assert above, the next 'if' should be well predicted.
+        // Because u_hi == 0, we should expect the following 'if' to be very
+        // well predicted.
         if (isNegative)
             result = static_cast<T>(result + n_);
         HPBC_CLOCKWORK_ASSERT2(result==hc::REDC_standard(u_hi,u_lo,n_,inv_n_));
@@ -444,6 +442,32 @@ class MontyCommonBase {
 
 
 
+    // returns (R*R) mod N
+    HURCHALLA_FORCE_INLINE C getMontvalueR() const
+    {
+        HPBC_CLOCKWORK_INVARIANT2(r_squared_mod_n_ < n_);
+        return C(r_squared_mod_n_);
+    }
+    template <class PTAG> HURCHALLA_FORCE_INLINE
+    V twoPowLimited_times_x(size_t exponent, C cx, PTAG) const
+    {
+        static constexpr int digitsT = ut_numeric_limits<T>::digits;
+        int power = static_cast<int>(exponent);
+        HPBC_CLOCKWORK_PRECONDITION2(0 <= power && power < digitsT);
+
+        T tmp = cx.get();
+        HPBC_CLOCKWORK_INVARIANT2(tmp < n_);
+        T u_lo = static_cast<T>(tmp << power);
+        int rshift = digitsT - power;
+        HPBC_CLOCKWORK_ASSERT2(rshift > 0);
+        T u_hi = (tmp >> 1) >> (rshift - 1);
+
+        HPBC_CLOCKWORK_ASSERT2(u_hi < n_);
+        const D* child = static_cast<const D*>(this);
+        V result = child->montyREDC(u_hi, u_lo, PTAG());
+        HPBC_CLOCKWORK_POSTCONDITION2(child->isValid(result));
+        return result;
+    }
     // returns (R*R*R) mod N
     HURCHALLA_FORCE_INLINE T getMagicValue() const
     {
