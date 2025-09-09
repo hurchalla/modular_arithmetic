@@ -122,6 +122,10 @@ public:
     CanonicalValue inverse(MontgomeryValue x) const
         { return pimpl->template inverse<PTAG>(x); }
 
+    template <class PTAG = LowlatencyTag>
+    MontgomeryValue divideBySmallPowerOf2(CanonicalValue cx, int exponent) const
+        { return pimpl->template divideBySmallPowerOf2<PTAG>(cx, exponent); }
+
     MontgomeryValue pow(MontgomeryValue base, IntegerType exponent) const
         { return pimpl->pow(base, exponent); }
 

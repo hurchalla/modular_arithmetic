@@ -219,6 +219,9 @@ private:
     virtual CanonicalValue inverse(MontgomeryValue x,
         bool useLowlatencyTag) const = 0;
 
+    virtual MontgomeryValue divideBySmallPowerOf2(CanonicalValue cx,
+        int exponent, bool useLowlatencyTag) const = 0;
+
     virtual std::vector<MontgomeryValue> vectorPow(
         const std::vector<MontgomeryValue>& bases, IntegerType exponent) const = 0;
 
@@ -308,6 +311,13 @@ public:
     CanonicalValue inverse(MontgomeryValue x) const
     {
         return inverse(x, std::is_same<PTAG, LowlatencyTag>::value);
+    }
+
+    template <class PTAG = LowlatencyTag>
+    MontgomeryValue divideBySmallPowerOf2(CanonicalValue cx, int exponent) const
+    {
+        return divideBySmallPowerOf2(cx, exponent,
+                                     std::is_same<PTAG, LowlatencyTag>::value);
     }
 
     template <std::size_t NUM_BASES>

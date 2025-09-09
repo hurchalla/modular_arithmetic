@@ -26,28 +26,28 @@
 namespace hurchalla {
 
 
-// T must be a signed or unsigned integral type.
+// T must be a signed or unsigned integral type. You should normally set T to
+// the same type as the (integer) modulus that you will use for this class's
+// constructor.
 //
 // For InlineAllFunctions, you should usually accept the default rather than
-// specify an argument.  However if you wish to reduce compilation times you can
+// specify an argument. However if you wish to reduce compilation times you can
 // set it to false, which may help.
 //
 // For MontyType, you should just accept the default (this parameter exists to
 // provide you the alias classes in montgomery_form_aliases.h.)
 template <class T,
-          bool InlineAll = (ut_numeric_limits<T>::digits <= HURCHALLA_TARGET_BIT_WIDTH),
+          bool InlineAllFunctions = (ut_numeric_limits<T>::digits <= HURCHALLA_TARGET_BIT_WIDTH),
           class MontyType = typename detail::MontgomeryDefault<T>::type>
 class MontgomeryForm final {
-    const detail::ImplMontgomeryForm<T, InlineAll, MontyType> impl;
+    const detail::ImplMontgomeryForm<T, InlineAllFunctions, MontyType> impl;
     template <class,class> friend struct detail::MontgomeryFormExtensions;
     static_assert(ut_numeric_limits<T>::is_integer, "");
     static_assert(ut_numeric_limits<T>::digits <=
                   ut_numeric_limits<typename MontyType::uint_type>::digits, "");
-    using SV = typename MontyType::squaringvalue_type;
-    using RU = typename MontyType::uint_type;
 public:
     using IntegerType = T;
-    using MontyTag = typename MontyType::MontyTag;
+    using MontType = MontyType;
 
     // If you need to compare MontgomeryValues for equality or inequality, call
     // getCanonicalValue() and compare the resulting CanonicalValues.
@@ -485,7 +485,7 @@ public:
         HPBC_CLOCKWORK_API_PRECONDITION(exponent >= 0);
         std::array<MontgomeryValue, 1> bases = {{ base }};
         std::array<MontgomeryValue, 1> result =
-                detail::montgomery_array_pow<MontyTag,
+                detail::montgomery_array_pow<typename MontyType::MontyTag,
                                    MontgomeryForm>::pow(*this, bases, exponent);
         return result[0];
         //return detail::montgomery_pow<MontgomeryForm>::scalarpow(*this, base, exponent);
@@ -531,29 +531,67 @@ public:
     pow(const std::array<MontgomeryValue, NUM_BASES>& bases, T exponent) const
     {
         HPBC_CLOCKWORK_API_PRECONDITION(exponent >= 0);
-        return detail::montgomery_array_pow<MontyTag,
+        return detail::montgomery_array_pow<typename MontyType::MontyTag,
                                    MontgomeryForm>::pow(*this, bases, exponent);
     }
 
 
-    // Returns the multiplicative inverse of 'x' in the Montgomery domain if
-    // the inverse exists. If the inverse does not exist, it returns zero (or
-    // more precisely, it returns the value equal to getZeroValue()).
-    // This is a convenience function to stay in the Montgomery domain when you
-    // want to find the multiplicative inverse of a MontgomeryValue.
-    //
-    // Performance note: this function has no performance advantage over
-    // hurchalla::modular_multiplicative_inverse if you need the inverse of a
-    // number in standard integer domain - i.e. don't convert into Montgomery
-    // domain just to call this function. However, when you intend to stay in
-    // the Montgomery domain, this function is the fastest way to get the
-    // multiplicative inverse.
+    // Calculates and returns the multiplicative inverse of 'x' as a canonical
+    // Montgomery value, if the inverse exists. If the inverse does not exist,
+    // this function returns zero (more precisely it returns the value equal to
+    // getZeroValue()).
+    // Performance note: there is no performance advantage to converting into
+    // Montgomery form if all you want is the inverse of a number in standard
+    // integer domain - prefer hurchalla::modular_multiplicative_inverse() for
+    // that case.
     template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
     CanonicalValue inverse(MontgomeryValue x) const
     {
         CanonicalValue ret = impl.template inverse<PTAG>(x);
         HPBC_CLOCKWORK_POSTCONDITION(ret == getZeroValue() ||
                         getCanonicalValue(multiply(x, ret)) == getUnityValue());
+        return ret;
+    }
+
+
+    // Returns the Montgomery division of x by a small power of two (requires
+    // 0 <= power <= 7, which translates to Montgomery division by 1,2,4,8,16,
+    // 32,64, or 128). This function always produces an exact correct result.
+    // Note that Montgomery division is modular division, which is different
+    // from normal and non modular division - modular division performs modular
+    // multiplication by the modular multiplicative inverse of the divisor. So,
+    // this function calculates and returns the product of x times the modular
+    // multiplicative inverse of 2^power (^ denotes exponentiation), in
+    // Montgomery form. Due to the requirement that every Montgomery modulus
+    // must be odd, the inverse of all powers of two exist in Montgomery form,
+    // and so multiplication by the inverse of 2^power is always valid. And
+    // since all calculation is modular, the division result is exactly correct
+    // - i.e. x is congruent to the return value times 2^power.
+    //
+    // In the common case that you wish to divide a MontgomeryValue x instead of
+    // a CanonicalValue, use getCanonicalValue(x) as your first argument to this
+    // function.
+    //
+    // If you wish to divide by some large power of 2, you can use the following
+    // sequence of calls:
+    //   // Assume "mf" is a MontgomeryForm instance that you have constructed
+    //   // ...for example via...    auto mf = MontgomeryForm(modulus);
+    //   // and assume that the large power is   some_large_exponent.
+    //   auto inv_two = mf.divideBySmallPowerOf2(mf.getUnityValue(), 1);
+    //   auto full_inv = mf.pow(inv_two, some_large_exponent);
+    //   auto desired_result = mf.multiply(full_inv, x);
+    //
+    // Performance note: this function is very efficient. It should ordinarily
+    // be faster than even a single call of multiply().
+    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
+    MontgomeryValue divideBySmallPowerOf2(CanonicalValue x, int power) const
+    {
+        HPBC_CLOCKWORK_API_PRECONDITION(0 <= power && power < 8);
+
+        MontgomeryValue ret= impl.template divideBySmallPowerOf2<PTAG>(x,power);
+
+        HPBC_CLOCKWORK_POSTCONDITION(x ==
+              getCanonicalValue(multiply(ret, two_pow(static_cast<T>(power)))));
         return ret;
     }
 

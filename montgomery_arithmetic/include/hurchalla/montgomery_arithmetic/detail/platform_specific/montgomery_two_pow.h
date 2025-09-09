@@ -151,7 +151,7 @@ struct montgomery_two_pow {
     using U = typename extensible_make_unsigned<T>::type;
     U n = static_cast<U>(nt);
 
-    using MontyTag = typename MF::MontyTag;
+    using MontyTag = typename MF::MontType::MontyTag;
     using RU = typename MontgomeryFormExtensions<MF, LowlatencyTag>::RU;
     constexpr bool isBigPow = ut_numeric_limits<RU>::digits >
                               HURCHALLA_TARGET_BIT_WIDTH;
@@ -176,7 +176,7 @@ struct montgomery_two_pow {
     static_assert(hurchalla::ut_numeric_limits<U>::is_integer, "");
     static_assert(!hurchalla::ut_numeric_limits<U>::is_signed, "");
 
-    using MontyTag = typename MF::MontyTag;
+    using MontyTag = typename MF::MontType::MontyTag;
     using RU = typename MontgomeryFormExtensions<MF, LowlatencyTag>::RU;
     constexpr bool isBigPow = ut_numeric_limits<RU>::digits >
                               HURCHALLA_TARGET_BIT_WIDTH;

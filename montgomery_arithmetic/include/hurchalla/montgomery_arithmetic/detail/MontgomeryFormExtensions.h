@@ -25,14 +25,14 @@ namespace hurchalla { namespace detail {
 template <class MF, class PTAG>
 struct MontgomeryFormExtensions final {
 
-    using RU = typename MF::RU;
+    using RU = typename MF::MontType::uint_type;
     // conceptually, R = 1 << (ut_numeric_limits<RU>::digits)
     static_assert(ut_numeric_limits<RU>::is_integer, "");
     static_assert(!(ut_numeric_limits<RU>::is_signed), "");
 
     using CanonicalValue = typename MF::CanonicalValue;
     using MontgomeryValue = typename MF::MontgomeryValue;
-    using SquaringValue = typename MF::SV;
+    using SquaringValue = typename MF::MontType::squaringvalue_type;
 
     HURCHALLA_FORCE_INLINE
     static MontgomeryValue convertInExtended(const MF& mf, RU a)

@@ -328,6 +328,52 @@ void test_inverse(const M& mf)
 }
 
 template <typename M>
+void test_divideBySmallPowerOf2_for_dividend(const M& mf,
+                                                typename M::IntegerType a)
+{
+    namespace hc = ::hurchalla;
+    using T = typename M::IntegerType;
+    using U = typename hc::extensible_make_unsigned<T>::type;
+    using V = typename M::MontgomeryValue;
+    using C = typename M::CanonicalValue;
+
+    U n = static_cast<U>(mf.getModulus());
+    ASSERT_TRUE(n % 2 == 1);
+    U gcd;  // ignored
+    U inv2 = hc::modular_multiplicative_inverse(static_cast<U>(2), n, gcd);
+    ASSERT_TRUE(inv2 != 0);
+    V mont_inv2 = mf.convertIn(static_cast<T>(inv2));
+
+    C cx = mf.getCanonicalValue(mf.convertIn(a));
+    C answer = cx;
+    for (int i=0; i<8; ++i) {
+        C val = mf.getCanonicalValue(mf.divideBySmallPowerOf2(cx, i));
+        EXPECT_TRUE(val == answer);
+        answer = mf.getCanonicalValue(mf.multiply(answer, mont_inv2));
+    }
+}
+
+template <typename M>
+void test_divideBySmallPowerOf2(const M& mf)
+{
+    using T = typename M::IntegerType;
+    T max = ::hurchalla::ut_numeric_limits<T>::max();
+    T mid = static_cast<T>(max/2);
+    T modulus = mf.getModulus();
+    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(0));
+    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(1));
+    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(2));
+    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(max-0));
+    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(max-1));
+    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(mid-0));
+    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(mid-1));
+    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(modulus-1));
+    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(modulus-2));
+    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(modulus/2));
+    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>((modulus/2)-1));
+}
+
+template <typename M>
 void test_mf_general_checks(const M& mf, typename M::IntegerType a,
                            typename M::IntegerType b, typename M::IntegerType c)
 {
@@ -773,7 +819,7 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(12), GcdFunctor()) == 3);
     }
 
-    // test remainder() and inverse()
+    // test remainder() and inverse() and divideBySmallPowerOf2()
     {
         T max = max_modulus;
         T mid = static_cast<T>(max/2);
@@ -781,20 +827,24 @@ void test_MontgomeryForm()
         auto mf_3 = MFactory::construct(3);
         test_remainder(mf_3);    // smallest possible modulus
         test_inverse(mf_3);
+        test_divideBySmallPowerOf2(mf_3);
 
         auto mf_max = MFactory::construct(max);
         test_remainder(mf_max);  // largest possible modulus
         test_inverse(mf_max);
+        test_divideBySmallPowerOf2(mf_max);
 
         if (121 <= max) {
             auto mf_121 = MFactory::construct(121);
             test_remainder(mf_121);
             test_inverse(mf_121);
+            test_divideBySmallPowerOf2(mf_121);
         }
 
         auto mf_mid = MFactory::construct(mid);
         test_remainder(mf_mid);
         test_inverse(mf_mid);
+        test_divideBySmallPowerOf2(mf_mid);
     }
 }
 

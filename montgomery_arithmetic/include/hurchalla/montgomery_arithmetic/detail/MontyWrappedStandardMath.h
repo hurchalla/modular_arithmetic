@@ -296,6 +296,20 @@ class MontyWrappedStandardMath final {
         return C(inv);
     }
 
+    template <class PTAG> HURCHALLA_FORCE_INLINE
+    V divideBySmallPowerOf2(C cx, int exponent, PTAG) const
+    {
+        V pow_of_two = twoPowLimited(static_cast<size_t>(exponent), PTAG());
+        C inv_pow_of_two = inverse(pow_of_two, PTAG());
+        C zero = getZeroValue();
+        HPBC_CLOCKWORK_ASSERT2(inv_pow_of_two != zero);
+        bool isZero;
+        V product = multiply(inv_pow_of_two, cx, isZero, PTAG());
+        HPBC_CLOCKWORK_ASSERT2((cx == zero) == isZero);
+        C result = getCanonicalValue(product);
+        return result;
+    }
+
     // Returns the greatest common divisor of the standard representations
     // (non-montgomery) of both x and the modulus, using the supplied functor.
     // The functor must take two integral arguments of the same type and return

@@ -249,6 +249,13 @@ public:
 
 
     template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue divideBySmallPowerOf2(CanonicalValue x, int power) const
+    {
+        return impl.divideBySmallPowerOf2(x, power, PTAG());
+    }
+
+
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
     MontgomeryValue convertInExtended(U a) const
     {
         return impl.convertIn(a, PTAG());

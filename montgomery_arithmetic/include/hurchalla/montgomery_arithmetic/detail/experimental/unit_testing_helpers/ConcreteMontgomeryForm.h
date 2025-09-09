@@ -467,7 +467,7 @@ private:
             mfv = mfv2;
         } else {
             OpenMFV mfv2(mf.template multiply<LowuopsTag>(OpenMFV(OpenV(x)), OpenMFV(OpenV(y))));
-            mfv = mfv2;            
+            mfv = mfv2;
         }
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
         return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
@@ -484,7 +484,7 @@ private:
         } else {
             OpenMFV mfv2(mf.template multiply<LowuopsTag>(OpenMFV(OpenV(x)),
                 OpenMFV(OpenV(y)), resultIsZero));
-            mfv = mfv2;            
+            mfv = mfv2;
         }
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
         return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
@@ -500,7 +500,7 @@ private:
         } else {
             OpenMFV mfv2(mf.template fmsub<LowuopsTag>(OpenMFV(OpenV(x)),
                 OpenMFV(OpenV(y)), OpenMFC(OpenC(z))));
-            mfv = mfv2;            
+            mfv = mfv2;
         }
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
         return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
@@ -516,7 +516,7 @@ private:
         } else {
             OpenMFV mfv2(mf.template fmsub<LowuopsTag>(OpenMFV(OpenV(x)),
                 OpenMFV(OpenV(y)), OpenMFFV(OpenFV(z))));
-            mfv = mfv2;            
+            mfv = mfv2;
         }
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
         return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
@@ -532,7 +532,7 @@ private:
         } else {
             OpenMFV mfv2(mf.template fmadd<LowuopsTag>(OpenMFV(OpenV(x)),
                 OpenMFV(OpenV(y)), OpenMFC(OpenC(z))));
-            mfv = mfv2;            
+            mfv = mfv2;
         }
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
         return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
@@ -548,7 +548,7 @@ private:
         } else {
             OpenMFV mfv2(mf.template fmadd<LowuopsTag>(OpenMFV(OpenV(x)),
                 OpenMFV(OpenV(y)), OpenMFFV(OpenFV(z))));
-            mfv = mfv2;            
+            mfv = mfv2;
         }
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
         return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
@@ -562,7 +562,7 @@ private:
             mfv = mfv2;
         } else {
             OpenMFV mfv2(mf.template square<LowuopsTag>(OpenMFV(OpenV(x))));
-            mfv = mfv2;            
+            mfv = mfv2;
         }
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
         return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
@@ -578,7 +578,7 @@ private:
         } else {
             OpenMFV mfv2(mf.template fusedSquareSub<LowuopsTag>(OpenMFV(OpenV(x)),
                 OpenMFC(OpenC(cv))));
-            mfv = mfv2;            
+            mfv = mfv2;
         }
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
         return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
@@ -594,7 +594,7 @@ private:
         } else {
             OpenMFV mfv2(mf.template fusedSquareAdd<LowuopsTag>(OpenMFV(OpenV(x)),
                 OpenMFC(OpenC(cv))));
-            mfv = mfv2;            
+            mfv = mfv2;
         }
         // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
         return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
@@ -614,6 +614,22 @@ private:
         return OpenC(static_cast<typename OpenC::OT>(mfc.get()));
     }
 
+    virtual V divideBySmallPowerOf2(C cx, int exponent, bool useLowlatencyTag)
+        const override
+    {
+        OpenMFV mfv;
+        if (useLowlatencyTag) {
+            OpenMFV mfv2(mf.template divideBySmallPowerOf2<LowlatencyTag>(
+                                                 OpenMFC(OpenC(cx)), exponent));
+            mfv = mfv2;
+        } else {
+            OpenMFV mfv2(mf.template divideBySmallPowerOf2<LowuopsTag>(
+                                                 OpenMFC(OpenC(cx)), exponent));
+            mfv = mfv2;
+        }
+        // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
+    }
 
     // This class (ConcreteMontgomeryForm) only supports calling vectorPow()
     // with a std::vector that has size equal to one of the sizes given by the
