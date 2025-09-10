@@ -271,6 +271,11 @@ public:
     {
         return impl.twoPowLimited_times_x(exponent, x, PTAG());
     }
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    MontgomeryValue twoPowLimited_times_x_v2(size_t exponent, CanonicalValue x) const
+    {
+        return impl.twoPowLimited_times_x_v2(exponent, x, PTAG());
+    }
 
     HURCHALLA_IMF_MAYBE_FORCE_INLINE U getMagicValue() const
     {

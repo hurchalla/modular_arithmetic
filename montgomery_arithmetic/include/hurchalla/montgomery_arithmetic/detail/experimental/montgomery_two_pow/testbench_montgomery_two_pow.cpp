@@ -391,7 +391,7 @@ bench_array_two_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_red
       else
          std::cout << ", USE_SQUARING_VALUE_OPTIMIZATION == false";
       std::cout << ", ARRAY_SIZE == " << ARRAY_SIZE;
-      using MontTag = typename MontType::MontyTag;
+      using MontTag = typename MontType::MontType::MontyTag;
       if (std::is_same<MontTag, ::hurchalla::detail::TagMontyFullrangeMasked>::value)
          std::cout << ", MontTag == TagMontyFullrangeMasked";
       else if (std::is_same<MontTag, ::hurchalla::detail::TagMontyFullrange>::value)
@@ -566,7 +566,7 @@ bench_array_two_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_red
          for (size_t j=0; j < ARRAY_SIZE; ++j)
             totalU += mfarr[j].convertOut(result[j]);
 #else
-         if constexpr (std::is_same<typename MontType::MontyTag,
+         if constexpr (std::is_same<typename MontType::MontType::MontyTag,
                                     ::hurchalla::detail::TagMontyFullrangeMasked>::value) {
             struct OpenV : public V {
                HURCHALLA_FORCE_INLINE OpenV(V x) : V(x) {}
@@ -641,7 +641,7 @@ bench_range(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST 
          std::cout << ", USE_SQUARING_VALUE_OPTIMIZATION == true";
       else
          std::cout << ", USE_SQUARING_VALUE_OPTIMIZATION == false";
-      using MontTag = typename MontType::MontyTag;
+      using MontTag = typename MontType::MontType::MontyTag;
       if (std::is_same<MontTag, ::hurchalla::detail::TagMontyFullrangeMasked>::value)
          std::cout << ", MontTag == TagMontyFullrangeMasked";
       else if (std::is_same<MontTag, ::hurchalla::detail::TagMontyFullrange>::value)
@@ -788,7 +788,7 @@ bench_range(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST 
 #if 0
          totalU += mf.convertOut(val);
 #else
-         if constexpr (std::is_same<typename MontType::MontyTag,
+         if constexpr (std::is_same<typename MontType::MontType::MontyTag,
                                     ::hurchalla::detail::TagMontyFullrangeMasked>::value) {
             using V = typename MontType::MontgomeryValue;
             struct OpenV : public V {
@@ -923,7 +923,7 @@ using namespace hurchalla;
 //   constexpr size_t CODE_SECTION = 0; // 1; // 0; // 1;
 
    std::cout << std::fixed;
-   std::cout.precision(5);
+   std::cout.precision(4);
 
    auto seed = randomization_seed;
 
@@ -948,7 +948,51 @@ using namespace hurchalla;
    for (size_t i=0; i<4; ++i) {
      for (size_t j=0; j<timingA[i].size(); ++j) {
 
-# if 1
+#if 1
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 27, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 28, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 27, 4, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 28, 4, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 4, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 27, 5, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 28, 5, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 5, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 27, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 28, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 27, 7, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 28, 7, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 7, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 27, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 28, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+
+
       timingA[i][j].push_back(
          bench_array_two_pow<0, 0, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(
@@ -1107,7 +1151,8 @@ using namespace hurchalla;
          bench_array_two_pow<6, 8, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 
 
-   if constexpr (std::is_same<typename MontType::MontyTag,
+
+   if constexpr (std::is_same<typename MontType::MontType::MontyTag,
                                     ::hurchalla::detail::TagMontyFullrange>::value) {
       timingA[i][j].push_back(
          bench_array_two_pow<0, 0, 3, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
@@ -1298,7 +1343,7 @@ using namespace hurchalla;
          bench_array_two_pow<6, 8, 2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 
 
-   if constexpr (std::is_same<typename MontType::MontyTag,
+   if constexpr (std::is_same<typename MontType::MontType::MontyTag,
                                     ::hurchalla::detail::TagMontyFullrange>::value) {
       timingA[i][j].push_back(
          bench_array_two_pow<0, 0, 1, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
@@ -1483,7 +1528,7 @@ using namespace hurchalla;
          bench_array_two_pow<7, 8, 5, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 
 
-   if constexpr (std::is_same<typename MontType::MontyTag,
+   if constexpr (std::is_same<typename MontType::MontType::MontyTag,
                                     ::hurchalla::detail::TagMontyFullrange>::value) {
       timingA[i][j].push_back(
          bench_array_two_pow<0, 0, 9, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
@@ -1627,7 +1672,10 @@ using namespace hurchalla;
    for (size_t j=0; j < best_timingA[0].size(); ++j) {
       for (size_t i=0; i<4; ++i) {
          const auto& t = best_timingA[i][j];
-         std::cout << t.time << "  " << t.table_bits << " " << t.code_section;
+         std::cout << 10.0 * t.time << "  " << t.table_bits << " ";
+         if (t.code_section < 10)
+            std::cout << "0";
+         std::cout << t.code_section;
          if (t.uses_squaring_values)
             std::cout <<  " t";
          else
@@ -1665,6 +1713,27 @@ using namespace hurchalla;
 //         bench_range<0, true , 0, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 #if 1
       timings[i][j].push_back(
+         bench_range<0, false, 27, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false,  2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false, 28, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false, 29, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+   if constexpr (std::is_same<typename MontType::MontType::MontyTag,
+                                    ::hurchalla::detail::TagMontyFullrange>::value) {
+      timings[i][j].push_back(
+         bench_range<0, false, 27, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false,  2, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false, 28, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false, 29, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+   }
+#endif
+#if 0
+      timings[i][j].push_back(
          bench_range<0, true , 17, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timings[i][j].push_back(
          bench_range<0, false, 17, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
@@ -1693,6 +1762,11 @@ using namespace hurchalla;
          bench_range<0, true , 26, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timings[i][j].push_back(
          bench_range<0, false, 26, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+      timings[i][j].push_back(
+         bench_range<0, true , 27, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false, 27, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 
       timings[i][j].push_back(
          bench_range<0, true , 19, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
@@ -1768,7 +1842,7 @@ using namespace hurchalla;
       timings[i][j].push_back(
          bench_range<0, true , 16, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 
-   if constexpr (std::is_same<typename MontType::MontyTag,
+   if constexpr (std::is_same<typename MontType::MontType::MontyTag,
                                     ::hurchalla::detail::TagMontyFullrange>::value) {
       timings[i][j].push_back(
          bench_range<0, true , 17, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
@@ -1799,6 +1873,11 @@ using namespace hurchalla;
          bench_range<0, true , 26, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timings[i][j].push_back(
          bench_range<0, false, 26, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+      timings[i][j].push_back(
+         bench_range<0, true , 27, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false, 27, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 
       timings[i][j].push_back(
          bench_range<0, true , 19, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
@@ -1990,7 +2069,7 @@ using namespace hurchalla;
          bench_range<8, false, 0, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 
 
-   if constexpr (std::is_same<typename MontType::MontyTag,
+   if constexpr (std::is_same<typename MontType::MontType::MontyTag,
                                     ::hurchalla::detail::TagMontyFullrange>::value) {
       timings[i][j].push_back(
          bench_range<1, true , 0, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
@@ -2119,7 +2198,7 @@ using namespace hurchalla;
    for (size_t j=0; j < best_timings[0].size(); ++j) {
       for (size_t i=0; i<4; ++i) {
          const auto& t = best_timings[i][j];
-         std::cout << t.time;
+         std::cout << 10.0 * t.time;
          if (t.uses_sliding_window)
             std::cout <<  "  t";
          else

@@ -388,6 +388,32 @@ class MontyWrappedStandardMath final {
         HPBC_CLOCKWORK_POSTCONDITION2(result < modulus_);
         return V(result);
     }
+    template <class PTAG> HURCHALLA_FORCE_INLINE
+    V twoPowLimited_times_x_v2(size_t exponent, C cx, PTAG) const
+    {
+        static constexpr int digitsT = ut_numeric_limits<T>::digits;
+        int power = static_cast<int>(exponent);
+        HPBC_CLOCKWORK_PRECONDITION2(0 < power && power <= digitsT);
+
+        T tmp = cx.get();
+        HPBC_CLOCKWORK_INVARIANT2(tmp < modulus_);
+        T u_lo = static_cast<T>((tmp << 1) << (power - 1));
+        int rshift = digitsT - power;
+        HPBC_CLOCKWORK_ASSERT2(0 <= rshift && rshift < digitsT);
+        T u_hi = static_cast<T>(tmp >> rshift);
+
+        HPBC_CLOCKWORK_ASSERT2(u_hi < modulus_);
+        // It's very strange to use REDC when this class is meant to wrap
+        // standard arithmetic within the monty interface and not actually
+        // use mont arith.  But we need REDC here, due to the extra R factor
+        // that is expected to be in cx whenever this function is called.
+        T inv_modulus = ::hurchalla::inverse_mod_R(modulus_);
+        T result = ::hurchalla::REDC_standard(u_hi, u_lo, modulus_, inv_modulus, PTAG());
+
+        HPBC_CLOCKWORK_POSTCONDITION2(result < modulus_);
+        return V(result);
+    }
+
     HURCHALLA_FORCE_INLINE T getMagicValue() const
     {
         T result = ::hurchalla::get_R_mod_n(modulus_);

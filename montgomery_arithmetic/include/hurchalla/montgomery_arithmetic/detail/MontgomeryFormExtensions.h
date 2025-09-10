@@ -67,6 +67,12 @@ struct MontgomeryFormExtensions final {
         HPBC_CLOCKWORK_PRECONDITION(exponent < ut_numeric_limits<RU>::digits);
         return mf.impl.template twoPowLimited_times_x<PTAG>(exponent, x);
     }
+    HURCHALLA_FORCE_INLINE
+    static MontgomeryValue twoPowLimited_times_x_v2(const MF& mf, size_t exponent, CanonicalValue x)
+    {
+        HPBC_CLOCKWORK_PRECONDITION(0 < exponent && exponent <= ut_numeric_limits<RU>::digits);
+        return mf.impl.template twoPowLimited_times_x_v2<PTAG>(exponent, x);
+    }
 
     // note: magicValue is R cubed mod N  (in normal integer form)
     HURCHALLA_FORCE_INLINE
