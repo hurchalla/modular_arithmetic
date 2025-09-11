@@ -1469,9 +1469,8 @@ break_0_18:
             result = mf.square(result);
         result = mf.multiply(result, tableVal);
         return result;
-} else {
+} else if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 29) {
 // This is a further optimized version of CODE_SECTION 28 for low uops.
-        static_assert(CODE_SECTION == 29, "");
 
         int shift = 0;
         if (n > MASK) {
@@ -1517,6 +1516,12 @@ break_0_18:
             result = mf.square(result);
         result = mf.multiply(result, tableVal);
         return result;
+} else {
+    static_assert(CODE_SECTION == 30, "");
+    // for comparison purposes, this is the current MontgomeryForm pow.
+    // the static cast may lose bits, so this might not be an exact benchmark
+    C mont_two = mf.two_times(mf.getUnityValue());
+    return mf.pow(mont_two, static_cast<typename MF::IntegerType>(n));
 }
     }
     else if HURCHALLA_CPP17_CONSTEXPR (TABLESIZE == 2) {

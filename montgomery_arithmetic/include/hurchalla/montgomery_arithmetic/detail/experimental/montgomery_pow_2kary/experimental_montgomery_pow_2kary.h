@@ -5,8 +5,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#ifndef HURCHALLA_MONTGOMERY_ARITHMETIC_IMPL_MONTGOMERY_POW_2KARY_H_INCLUDED
-#define HURCHALLA_MONTGOMERY_ARITHMETIC_IMPL_MONTGOMERY_POW_2KARY_H_INCLUDED
+#ifndef HURCHALLA_MONTGOMERY_ARITHMETIC_EXPERIMENTAL_MONTGOMERY_POW_2KARY_H_INCLUDED
+#define HURCHALLA_MONTGOMERY_ARITHMETIC_EXPERIMENTAL_MONTGOMERY_POW_2KARY_H_INCLUDED
 
 
 #include "hurchalla/modular_arithmetic/detail/optimization_tag_structs.h"
@@ -19,7 +19,7 @@
 #include <cstddef>
 #include <array>
 
-namespace hurchalla { namespace detail {
+namespace hurchalla { namespace experimental {
 
 
 
@@ -32,7 +32,7 @@ namespace hurchalla { namespace detail {
 //
 // We use a struct with static member functions to disallow ADL.
 
-struct impl_montgomery_pow_2kary {
+struct experimental_montgomery_pow_2kary {
 
 
   // This function calculates pow(x, nexp), modulo the modulus of mf, and
@@ -45,14 +45,16 @@ struct impl_montgomery_pow_2kary {
   // nexp is the exponent (it can be any unsigned integer type U).
   //
   template <class MF, typename U,
-            bool USE_SLIDING_WINDOW_OPTIMIZATION = true,
-            size_t TABLE_BITS = 4>
+            bool USE_SLIDING_WINDOW_OPTIMIZATION = false,
+            size_t TABLE_BITS = 4,
+            size_t CODE_SECTION = 0,
+            bool USE_SQUARING_VALUE_OPTIMIZATION = false>
   static typename MF::MontgomeryValue
   call(const MF& mf, typename MF::MontgomeryValue x, U nexp)
   {
     static_assert(ut_numeric_limits<U>::is_integer, "");
     static_assert(!ut_numeric_limits<U>::is_signed, "");
-    static_assert(0 < TABLE_BITS && TABLE_BITS < 10, "FYI you almost certainly "
+    static_assert(0 <= TABLE_BITS && TABLE_BITS < 10, "FYI you almost certainly "
         "want 2 <= TABLE_BITS <= 5.  TABLE_BITS > 0 is required.  Anything "
         "above 9 is probably a very bad idea even if it works (9+ would cause "
         "the beginning of this function to calculate 1024+ table entries!)");
@@ -63,12 +65,20 @@ struct impl_montgomery_pow_2kary {
     using std::size_t;
     U n = static_cast<U>(nexp);
 
+
+if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
+    // For comparison purposes, this is the current MontgomeryForm pow.
+    // the static cast may lose bits, so this might not be an exact benchmark
+    return mf.pow(x, static_cast<typename MF::IntegerType>(nexp));
+
+} else {
     constexpr int P = static_cast<int>(TABLE_BITS);
 
     // initialize the precalculation table for 2^k-ary pow algorithm
     static_assert(P > 0, "");
     constexpr size_t TABLESIZE = 1u << P;
     static_assert(TABLESIZE >= 2 && TABLESIZE % 2 == 0, "");
+
     V table[TABLESIZE];
     table[0] = mf.getUnityValue();   // montgomery one
     table[1] = x;
@@ -193,6 +203,7 @@ struct impl_montgomery_pow_2kary {
     index = static_cast<size_t>(n) & tmpmask;
     result = mf.multiply(result, table[index]);
     return result;
+}
   }
 
 
@@ -211,7 +222,9 @@ struct impl_montgomery_pow_2kary {
   //
   template <class MF, typename U,
             size_t ARRAY_SIZE,
-            size_t TABLE_BITS = 4>
+            size_t TABLE_BITS = 4,
+            size_t CODE_SECTION = 0,
+            bool USE_SQUARING_VALUE_OPTIMIZATION = false>
   static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
   call(const std::array<MF, ARRAY_SIZE>& mf,
        const std::array<typename MF::MontgomeryValue, ARRAY_SIZE>& x,
@@ -219,7 +232,7 @@ struct impl_montgomery_pow_2kary {
   {
     static_assert(ut_numeric_limits<U>::is_integer, "");
     static_assert(!ut_numeric_limits<U>::is_signed, "");
-    static_assert(0 < TABLE_BITS && TABLE_BITS < 10, "FYI you almost certainly "
+    static_assert(0 <= TABLE_BITS && TABLE_BITS < 10, "FYI you almost certainly "
         "want 2 <= TABLE_BITS <= 5.  TABLE_BITS > 0 is required.  Anything "
         "above 9 is probably a very bad idea even if it works (9+ would cause "
         "the beginning of this function to calculate 1024+ table entries!)");
@@ -336,8 +349,10 @@ struct impl_montgomery_pow_2kary {
   // function contained within it.
   template <class MF, typename U,
             size_t ARRAY_SIZE,
-            bool USE_SLIDING_WINDOW_OPTIMIZATION = true,
-            size_t TABLE_BITS = 4>
+            bool USE_SLIDING_WINDOW_OPTIMIZATION = false,
+            size_t TABLE_BITS = 4,
+            size_t CODE_SECTION = 0,
+            bool USE_SQUARING_VALUE_OPTIMIZATION = false>
   static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
   call(const MF& mf,
        const std::array<typename MF::MontgomeryValue, ARRAY_SIZE>& x,
@@ -345,7 +360,7 @@ struct impl_montgomery_pow_2kary {
   {
     static_assert(ut_numeric_limits<U>::is_integer, "");
     static_assert(!ut_numeric_limits<U>::is_signed, "");
-    static_assert(0 < TABLE_BITS && TABLE_BITS < 10, "FYI you almost certainly "
+    static_assert(0 <= TABLE_BITS && TABLE_BITS < 10, "FYI you almost certainly "
         "want 2 <= TABLE_BITS <= 5.  TABLE_BITS > 0 is required.  Anything "
         "above 9 is probably a very bad idea even if it works (9+ would cause "
         "the beginning of this function to calculate 1024+ table entries!)");
@@ -354,6 +369,13 @@ struct impl_montgomery_pow_2kary {
     using std::size_t;
     U n = nexp;
 
+
+if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
+    // For comparison purposes, this is the current MontgomeryForm pow.
+    // the static cast may lose bits, so this might not be an exact benchmark
+    return mf.pow(x, static_cast<typename MF::IntegerType>(nexp));
+
+} else {
     constexpr int P = static_cast<int>(TABLE_BITS);
 
     // initialize the precalculation table for 2^k-ary pow algorithm
@@ -444,6 +466,7 @@ struct impl_montgomery_pow_2kary {
         result[j] = mf.template multiply<LowuopsTag>(result[j], table[index][j]);
     }
     return result;
+}
   }
 
 

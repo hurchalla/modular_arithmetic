@@ -825,7 +825,7 @@ bench_range(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST 
 int main(int argc, char** argv)
 {
    namespace hc = hurchalla;
-   std::cout << "---Running Example Program---\n\n";
+   std::cout << "---Running Program---\n";
 
 
    unsigned int randomization_seed = 1;
@@ -934,13 +934,15 @@ using namespace hurchalla;
                                  (std::is_same<MontType, MontgomeryHalf<U>>::value) ? 1 : 0;
    std::array<unsigned int, 4> ebr = { default_ebr, default_ebr, exponent_bits_reduce, exponent_bits_reduce };
 
-
-
-#if 1
-   bench_array_two_pow<5, 8, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, max_modulus_bits_reduce, seed, exponent_bits_reduce);
-   std::cout << "warm-up (ignore " << uint_to_string(dummy) <<  ")\n";
-
    std::cout << "\nbegin benchmarks\n";
+
+
+
+
+#if 0
+   // warm up call
+   bench_array_two_pow<5, 8, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, max_modulus_bits_reduce, seed, exponent_bits_reduce);
+
       // format is bench_array_two_pow<TABLE_BITS, CODE_SECTION, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION>(...)
 
    std::array<std::array<std::vector<TimingA>, 5>, 4> timingA;
@@ -1694,13 +1696,12 @@ using namespace hurchalla;
 
 
 
-#if 0
 
-//   std::cout << "Boost/throttle reference (we want timing to be approx the same as final test)\n";
+
+#if 1
+
+   //  warm up to get cpu boost (or throttle) going
    bench_range<8, false, 0, MontType, false>(static_cast<U>(maxU - range), range, dummy, max_modulus_bits_reduce, seed, exponent_bits_reduce);
-   std::cout << "warm-up (ignore " << uint_to_string(dummy) <<  ")\n";
-
-   std::cout << "\nbegin benchmarks\n";
 
 //   std::array<std::vector<Timing>, 4> timings;
 
@@ -1712,6 +1713,9 @@ using namespace hurchalla;
 //      timings[i][j].push_back(
 //         bench_range<0, true , 0, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 #if 1
+      timings[i][j].push_back(
+         bench_range<0, false, 30, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
       timings[i][j].push_back(
          bench_range<0, false, 27, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timings[i][j].push_back(
