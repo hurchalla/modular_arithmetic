@@ -882,7 +882,7 @@ break_0_17:
         result = mf.multiply(result, val1);
         return result;
 } else if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 18) {
-        // This extends CODE_SECTION 18 to use 2 extra bits instead of 1
+        // This extends CODE_SECTION 17 to use 2 extra bits instead of 1
 
         constexpr int NUMBITS_EXTRA = 2;
 
@@ -1281,7 +1281,7 @@ break_0_18:
 
                 int P_extra = P3 + i * NUMBITS_TABLE_HIGH_SIZE;
                 size_t index_extra = (tmp >> P_extra) & (TABLE_HIGH_SIZE - 1);
-                result = mf.template multiply<LowuopsTag>(result, tables_extra[i][index_extra]);
+                result = mf.template multiply<LowuopsTag>(tables_extra[i][index_extra], result);
             }
         }
 
@@ -2549,6 +2549,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
     } else if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 1) {
         // an array version of scalar two_pow TABLE_BITS 0, CODE_SECTION 17
+        // (CODE_SECTION 17 is an updated version of CODE_SECTION 3)
 
         constexpr int NUMBITS_MASKBIG = P2 + 1;
         constexpr size_t MASKBIG = (1u << NUMBITS_MASKBIG) - 1u;
