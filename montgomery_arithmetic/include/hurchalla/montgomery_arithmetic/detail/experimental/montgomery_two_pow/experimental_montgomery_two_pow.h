@@ -435,7 +435,7 @@ break_0_3:
         while (n > 0) {
             tmp[1] = base;
             result = mf.multiply(result, tmp[(static_cast<size_t>(n) & 1u)]);
-            base = mf.template square<LowuopsTag>(base);
+            base = mf.square(base);
             n = static_cast<U>(n >> 1u);
         }
    } else if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 8) {
@@ -2567,7 +2567,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
         std::array<C, ARRAY_SIZE> cR2;
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-            cR2[j] = mf[j].getCanonicalValue(mf[j].template square<LowlatencyTag>(cR1[j]));
+            cR2[j] = mf[j].getCanonicalValue(mf[j].template square<LowuopsTag>(cR1[j]));
 
         HPBC_CLOCKWORK_ASSERT2(n_max > 0);
         int leading_zeros = count_leading_zeros(n_max);

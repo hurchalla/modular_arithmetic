@@ -1161,7 +1161,7 @@ using namespace hurchalla;
 
 
 
-#if 0
+#if 1
    // warm up call before benchmarking
    bench_partial_array_pow<4, 1, 4, MontType, false, false>(static_cast<U>(maxU - range), range, dummy,
                                                             max_modulus_bits_reduce, seed, exponent_bits_reduce);
@@ -1176,6 +1176,28 @@ using namespace hurchalla;
 
       timingPA[i][j].push_back(bench_partial_array_pow
          <4, 0, 8, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <4, 2, 3, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <4, 2, 4, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <4, 2, 5, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <4, 2, 6, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <4, 2, 7, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <4, 2, 8, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <4, 2, 10, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <4, 2, 12, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <4, 2, 14, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <4, 2, 16, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
 
       timingPA[i][j].push_back(bench_partial_array_pow
          <4, 1, 3, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
@@ -1214,9 +1236,32 @@ using namespace hurchalla;
          <3, 1, 10, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingPA[i][j].push_back(bench_partial_array_pow
          <3, 1, 12, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <3, 1, 14, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <3, 1, 16, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 
       timingPA[i][j].push_back(bench_partial_array_pow
          <4, 1, 8, MontType, false, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <4, 1, 10, MontType, false, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <4, 1, 12, MontType, false, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <4, 1, 14, MontType, false, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <4, 1, 16, MontType, false, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <4, 2, 8, MontType, false, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <4, 2, 10, MontType, false, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <4, 2, 12, MontType, false, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <4, 2, 14, MontType, false, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <4, 2, 16, MontType, false, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 
 
    if constexpr (std::is_same<typename MontType::MontType::MontyTag,
@@ -1363,7 +1408,7 @@ using namespace hurchalla;
 
 
 
-#if 0
+#if 1
    // warm up call before benchmarking
    bench_range<2, false, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, max_modulus_bits_reduce, seed, exponent_bits_reduce);
 

@@ -93,25 +93,29 @@ class MontyCommonBase {
         return result;
     }
 
-    HURCHALLA_FORCE_INLINE T convertOut(V x) const
+    template <class PTAG> HURCHALLA_FORCE_INLINE
+    T convertOut(V x, PTAG) const
     {
         T u_hi = 0;
         // get a Natural number (i.e. number >= 0) congruent to x (mod n)
         T u_lo = static_cast<const D*>(this)->getNaturalEquivalence(x);
         namespace hc = ::hurchalla;
-        bool isNegative;
-        T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, inv_n_);
+
+        T minuend, subtrahend;
+        hc::REDC_incomplete(minuend, subtrahend, u_hi, u_lo, n_, inv_n_, PTAG());
+        T result = static_cast<T>(minuend - subtrahend);
         // Because u_hi == 0, we should expect the following 'if' to be very
         // well predicted.
-        if (isNegative)
+        if (minuend < subtrahend)
             result = static_cast<T>(result + n_);
-        HPBC_CLOCKWORK_ASSERT2(result==hc::REDC_standard(u_hi,u_lo,n_,inv_n_));
+        HPBC_CLOCKWORK_ASSERT2(result == hc::REDC_standard(u_hi, u_lo, n_, inv_n_, PTAG()));
 
         HPBC_CLOCKWORK_POSTCONDITION2(result < n_);
         return result;
     }
 
-    HURCHALLA_FORCE_INLINE T remainder(T a) const
+    template <class PTAG> HURCHALLA_FORCE_INLINE
+    T remainder(T a, PTAG) const
     {
         HPBC_CLOCKWORK_INVARIANT2(r_mod_n_ < n_);
         namespace hc = ::hurchalla;
@@ -120,7 +124,7 @@ class MontyCommonBase {
         // Since a is type T, 0 <= a < R.  And since r_mod_n is type T and
         // r_mod_n < n, we know  0 <= r_mod_n < n.  Therefore,
         // 0 <= u == a * r_mod_n < R*n,  which will satisfy REDC's precondition.
-        T result = hc::REDC_standard(u_hi, u_lo, n_, inv_n_, LowlatencyTag());
+        T result = hc::REDC_standard(u_hi, u_lo, n_, inv_n_, PTAG());
 
         HPBC_CLOCKWORK_POSTCONDITION2(result < n_);
         return result;
@@ -548,7 +552,8 @@ class MontyCommonBase {
     }
 
     // returns (R*R*R) mod N
-    HURCHALLA_FORCE_INLINE T getMagicValue() const
+    template <class PTAG> HURCHALLA_FORCE_INLINE
+    T getMagicValue(PTAG) const
     {
         HPBC_CLOCKWORK_INVARIANT2(r_squared_mod_n_ < n_);
         namespace hc = ::hurchalla;
@@ -556,7 +561,7 @@ class MontyCommonBase {
         T u_hi = hc::unsigned_multiply_to_hilo_product(u_lo,
                                             r_squared_mod_n_, r_squared_mod_n_);
         HPBC_CLOCKWORK_ASSERT2(u_hi < n_);  // verify that (u_hi*R + u_lo) < n*R
-        T result = hc::REDC_standard(u_hi, u_lo, n_, inv_n_, LowlatencyTag());
+        T result = hc::REDC_standard(u_hi, u_lo, n_, inv_n_, PTAG());
         HPBC_CLOCKWORK_POSTCONDITION2(result < n_);
         return result;
     }
@@ -566,7 +571,7 @@ class MontyCommonBase {
     V convertInExtended_aTimesR(T a, T magicValue, PTAG) const
     {
         // see convertIn() comments for explanation
-        HPBC_CLOCKWORK_PRECONDITION2(magicValue == getMagicValue());
+        HPBC_CLOCKWORK_PRECONDITION2(magicValue == getMagicValue(PTAG()));
         HPBC_CLOCKWORK_ASSERT2(magicValue < n_);
         namespace hc = ::hurchalla;
         T u_lo;
@@ -602,7 +607,7 @@ class MontyCommonBase {
     template <class PTAG> HURCHALLA_FORCE_INLINE
     V RTimesTwoPowLimited(size_t exponent, T magicValue, PTAG) const
     {
-        HPBC_CLOCKWORK_PRECONDITION2(magicValue == getMagicValue());
+        HPBC_CLOCKWORK_PRECONDITION2(magicValue == getMagicValue(PTAG()));
         HPBC_CLOCKWORK_ASSERT2(magicValue < n_);
         static constexpr int digitsT = ut_numeric_limits<T>::digits;
         int power = static_cast<int>(exponent);

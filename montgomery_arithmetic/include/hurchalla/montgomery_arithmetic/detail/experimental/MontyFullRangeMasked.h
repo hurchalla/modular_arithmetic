@@ -276,15 +276,17 @@ class MontyFullRangeMasked final :
         static_assert(std::is_same<V, SV>::value, "");
         return x;
     }
-    HURCHALLA_FORCE_INLINE SV squareSV(SV sv) const
+    template <class PTAG> HURCHALLA_FORCE_INLINE
+    SV squareSV(SV sv) const
     {
         static_assert(std::is_same<V, SV>::value, "");
-        return BC::square(sv, LowlatencyTag());
+        return BC::square(sv, PTAG());
     }
-    HURCHALLA_FORCE_INLINE V squareToMontgomeryValue(SV sv) const
+    template <class PTAG> HURCHALLA_FORCE_INLINE
+    V squareToMontgomeryValue(SV sv) const
     {
         static_assert(std::is_same<V, SV>::value, "");
-        return BC::square(sv, LowlatencyTag());
+        return BC::square(sv, PTAG());
     }
     HURCHALLA_FORCE_INLINE V getMontgomeryValue(SV sv) const
     {
@@ -300,10 +302,11 @@ private:
     V montyREDC(bool& resultIsZero, T u_hi, T u_lo, PTAG) const
     {
         HPBC_CLOCKWORK_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
-        bool isNegative;
-        T resultval = ::hurchalla::REDC_incomplete(
-                                        isNegative, u_hi, u_lo, n_, BC::inv_n_);
-        T result_smask = static_cast<T>(0 - static_cast<T>(isNegative));
+        namespace hc = ::hurchalla;
+        T minuend, subtrahend;
+        hc::REDC_incomplete(minuend, subtrahend, u_hi, u_lo, n_, BC::inv_n_, PTAG());
+        T resultval = static_cast<T>(minuend - subtrahend);
+        T result_smask = static_cast<T>(0 - static_cast<T>(minuend < subtrahend));
         resultIsZero = (resultval == 0);
         V result = V(resultval, result_smask);
         HPBC_CLOCKWORK_POSTCONDITION2(isValid(result));

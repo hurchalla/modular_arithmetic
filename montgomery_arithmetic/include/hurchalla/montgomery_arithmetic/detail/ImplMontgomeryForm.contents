@@ -45,16 +45,16 @@ public:
     HURCHALLA_IMF_MAYBE_FORCE_INLINE
     T getModulus() const { return static_cast<T>(impl.getModulus()); }
 
-    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
     MontgomeryValue convertIn(T a) const
     {
-        return impl.convertIn(static_cast<U>(a), LowlatencyTag());
+        return impl.convertIn(static_cast<U>(a), PTAG());
     }
 
-    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
     T convertOut(MontgomeryValue x) const
     {
-        return static_cast<T>(impl.convertOut(x));
+        return static_cast<T>(impl.convertOut(x, PTAG()));
     }
 
     HURCHALLA_IMF_MAYBE_FORCE_INLINE
@@ -240,11 +240,11 @@ public:
         return static_cast<T>(impl.gcd_with_modulus(x, gcd_functor));
     }
 
-    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
     T remainder(T a) const
     {
         HPBC_CLOCKWORK_PRECONDITION(a >= 0);
-        return static_cast<T>(impl.remainder(static_cast<U>(a)));
+        return static_cast<T>(impl.remainder(static_cast<U>(a), PTAG()));
     }
 
 
@@ -277,9 +277,10 @@ public:
         return impl.twoPowLimited_times_x_v2(exponent, x, PTAG());
     }
 
-    HURCHALLA_IMF_MAYBE_FORCE_INLINE U getMagicValue() const
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    U getMagicValue() const
     {
-        return impl.getMagicValue();
+        return impl.getMagicValue(PTAG());
     }
 
     template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
@@ -306,16 +307,16 @@ public:
         return impl.getSquaringValue(x);
     }
 
-    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
     SquaringValue squareSV(SquaringValue sv) const
     {
-        return impl.squareSV(sv);
+        return impl.squareSV(sv, PTAG());
     }
 
-    HURCHALLA_IMF_MAYBE_FORCE_INLINE
+    template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
     MontgomeryValue squareToMontgomeryValue(SquaringValue sv) const
     {
-        return impl.squareToMontgomeryValue(sv);
+        return impl.squareToMontgomeryValue(sv, PTAG());
     }
 
     HURCHALLA_IMF_MAYBE_FORCE_INLINE

@@ -93,9 +93,9 @@ struct montgomery_pow {
   // practice, given that even having NUM_BASES > 1 could be considered a
   // special case for pow).  The best reason to use this version is likely to be
   // to avoid code bloat - when it has very little performance justification.
-  template <std::size_t NUM_BASES>
+  template <std::size_t NUM_BASES, class PTAG>
   static HURCHALLA_FORCE_INLINE std::array<V, NUM_BASES>
-  arraypow_cond_branch(const MF& mf, std::array<V, NUM_BASES> bases, T exponent)
+  arraypow_cond_branch(const MF& mf, std::array<V, NUM_BASES> bases, T exponent, PTAG)
   {
     HPBC_CLOCKWORK_PRECONDITION(exponent >= 0);
     std::array<V, NUM_BASES> result;
@@ -110,19 +110,19 @@ struct montgomery_pow {
     while (exponent > static_cast<T>(1)) {
         exponent = static_cast<T>(exponent >> static_cast<T>(1));
         for (std::size_t i=0; i<NUM_BASES; ++i)
-            bases[i] = mf.template square<LowuopsTag>(bases[i]);
+            bases[i] = mf.template square<PTAG>(bases[i]);
         if (exponent & static_cast<T>(1)) {
             for (std::size_t i=0; i<NUM_BASES; ++i)
-                result[i]= mf.template multiply<LowuopsTag>(result[i],bases[i]);
+                result[i]= mf.template multiply<PTAG>(result[i],bases[i]);
         }
     }
     return result;
   }
 
-  template <std::size_t NUM_BASES>
+  template <std::size_t NUM_BASES, class PTAG>
   static HURCHALLA_FORCE_INLINE std::array<V, NUM_BASES>
   arraypow_cond_branch_unrolled(const MF& mf, std::array<V, NUM_BASES> bases,
-                                                                     T exponent)
+                                                               T exponent, PTAG)
   {
     HPBC_CLOCKWORK_PRECONDITION(exponent >= 0);
     std::array<V, NUM_BASES> result;
@@ -139,20 +139,20 @@ struct montgomery_pow {
     while (exponent > static_cast<T>(1)) {
         exponent = static_cast<T>(exponent >> static_cast<T>(1));
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
-            bases[i] = mf.template square<LowuopsTag>(bases[i]);
+            bases[i] = mf.template square<PTAG>(bases[i]);
         });
         if (exponent & static_cast<T>(1)) {
             Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
-                result[i]= mf.template multiply<LowuopsTag>(result[i],bases[i]);
+                result[i] = mf.template multiply<PTAG>(result[i], bases[i]);
             });
         }
     }
     return result;
   }
 
-  template <std::size_t NUM_BASES>
+  template <std::size_t NUM_BASES, class PTAG>
   static HURCHALLA_FORCE_INLINE std::array<V, NUM_BASES>
-  arraypow_cmov(const MF& mf, std::array<V, NUM_BASES> bases, T exponent)
+  arraypow_cmov(const MF& mf, std::array<V, NUM_BASES> bases, T exponent, PTAG)
   {
     HPBC_CLOCKWORK_PRECONDITION(exponent >= 0);
     std::array<V, NUM_BASES> result;
@@ -172,8 +172,8 @@ struct montgomery_pow {
         std::array<V, NUM_BASES> tmp;
 
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
-            bases[i] = mf.template square<LowuopsTag>(bases[i]);
-            tmp[i] = mf.template multiply<LowuopsTag>(result[i], bases[i]);
+            bases[i] = mf.template square<PTAG>(bases[i]);
+            tmp[i] = mf.template multiply<PTAG>(result[i], bases[i]);
         });
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
             result[i].cmov(exponent & static_cast<T>(1), tmp[i]);
@@ -184,23 +184,23 @@ struct montgomery_pow {
         // difference at larger NUM_BASES though, where total uops is the
         // bottleneck rather than dependency chain length.
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
-            bases[i] = mf.template square<LowuopsTag>(bases[i]);
+            bases[i] = mf.template square<PTAG>(bases[i]);
         });
 
         V mont_one = mf.getUnityValue();
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
             V tmp = mont_one;
             tmp.cmov(exponent & static_cast<T>(1), bases[i]);
-            result[i] = mf.template multiply<LowlatencyTag>(result[i], tmp);
+            result[i] = mf.template multiply<PTAG>(result[i], tmp);
         });
 #endif
     }
     return result;
   }
 
-  template <std::size_t NUM_BASES>
-  static HURCHALLA_FORCE_INLINE std::array<V, NUM_BASES>
-  arraypow_masked(const MF& mf, std::array<V, NUM_BASES> bases, T exponent)
+  template <std::size_t NUM_BASES, class PTAG>
+  static HURCHALLA_FORCE_INLINE std::array<V,NUM_BASES>
+  arraypow_masked(const MF& mf, std::array<V,NUM_BASES> bases, T exponent, PTAG)
   {
     HPBC_CLOCKWORK_PRECONDITION(exponent >= 0);
     std::array<V, NUM_BASES> result;
@@ -218,8 +218,8 @@ struct montgomery_pow {
         exponent = static_cast<T>(exponent >> 1u);
 #if 0
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
-            bases[i] = mf.template square<LowuopsTag>(bases[i]);
-            V tmp = mf.template multiply<LowuopsTag>(result[i], bases[i]);
+            bases[i] = mf.template square<PTAG>(bases[i]);
+            V tmp = mf.template multiply<PTAG>(result[i], bases[i]);
             result[i].template
                       cmov<CSelectMaskedTag>(exponent & static_cast<T>(1), tmp);
         });
@@ -227,11 +227,11 @@ struct montgomery_pow {
         // the comments in arraypow_cmov() apply equally in this section
         V mont_one = mf.getUnityValue();
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
-            bases[i] = mf.template square<LowuopsTag>(bases[i]);
+            bases[i] = mf.template square<PTAG>(bases[i]);
             V tmp = mont_one;
             tmp.template
                  cmov<CSelectMaskedTag>(exponent & static_cast<T>(1), bases[i]);
-            result[i] = mf.template multiply<LowlatencyTag>(result[i], tmp);
+            result[i] = mf.template multiply<PTAG>(result[i], tmp);
         });
 #endif
     }
@@ -250,15 +250,15 @@ template<class MontyTag, class MF>
 struct montgomery_array_pow_small {
     using V = typename MF::MontgomeryValue;
 
-    template <std::size_t NUM_BASES>
+    template <std::size_t NUM_BASES, class PTAG>
     static HURCHALLA_FORCE_INLINE
     std::array<V, NUM_BASES> pow(const MF& mf,
                                  const std::array<V, NUM_BASES>& bases,
-                                 typename MF::IntegerType exponent)
+                                 typename MF::IntegerType exponent,
+                                 PTAG)
     {
         static_assert(0 < NUM_BASES && NUM_BASES <= 3, "");
-        return montgomery_pow<MF>::arraypow_cond_branch_unrolled(
-                                                           mf, bases, exponent);
+        return montgomery_pow<MF>::arraypow_cond_branch_unrolled(mf, bases, exponent, PTAG());
     }
 };
 
@@ -280,19 +280,19 @@ template<class MF>
 struct montgomery_array_pow_small<TagMontyHalfrange, MF> {
     using V = typename MF::MontgomeryValue;
 
-    template <std::size_t NUM_BASES>
+    template <std::size_t NUM_BASES, class PTAG>
     static HURCHALLA_FORCE_INLINE
     std::array<V, NUM_BASES> pow(const MF& mf,
                                  const std::array<V, NUM_BASES>& bases,
-                                 typename MF::IntegerType exponent)
+                                 typename MF::IntegerType exponent,
+                                 PTAG)
     {
         static_assert(0 < NUM_BASES && NUM_BASES <= 3, "");
 #if !defined(HURCHALLA_AVOID_CSELECT) && \
     (!defined(__GNUC__) || defined(__clang__))
-        return montgomery_pow<MF>::arraypow_cmov(mf, bases, exponent);
+        return montgomery_pow<MF>::arraypow_cmov(mf, bases, exponent, PTAG());
 #else
-        return montgomery_pow<MF>::arraypow_cond_branch_unrolled(mf, bases,
-                                                                      exponent);
+        return montgomery_pow<MF>::arraypow_cond_branch_unrolled(mf, bases, exponent, PTAG());
 #endif
     }
 };
@@ -300,19 +300,19 @@ template<class MF>
 struct montgomery_array_pow_small<TagMontyQuarterrange, MF> {
     using V = typename MF::MontgomeryValue;
 
-    template <std::size_t NUM_BASES>
+    template <std::size_t NUM_BASES, class PTAG>
     static HURCHALLA_FORCE_INLINE
     std::array<V, NUM_BASES> pow(const MF& mf,
                                  const std::array<V, NUM_BASES>& bases,
-                                 typename MF::IntegerType exponent)
+                                 typename MF::IntegerType exponent,
+                                 PTAG)
     {
         static_assert(0 < NUM_BASES && NUM_BASES <= 3, "");
 #if !defined(HURCHALLA_AVOID_CSELECT) && \
     (!defined(__GNUC__) || defined(__clang__))
-        return montgomery_pow<MF>::arraypow_cmov(mf, bases, exponent);
+        return montgomery_pow<MF>::arraypow_cmov(mf, bases, exponent, PTAG());
 #else
-        return montgomery_pow<MF>::arraypow_cond_branch_unrolled(mf, bases,
-                                                                      exponent);
+        return montgomery_pow<MF>::arraypow_cond_branch_unrolled(mf, bases, exponent, PTAG());
 #endif
     }
 };
@@ -336,8 +336,8 @@ struct montgomery_array_pow {
     pow(const MF& mf, const std::array<V, NUM_BASES>& bases, T exponent)
     {
         static_assert(NUM_BASES > 0, "");
-        return montgomery_array_pow_small<MontyTag, MF>::pow(mf, bases,
-                                                                      exponent);
+        using PTAG = typename std::conditional<(NUM_BASES < 2), LowlatencyTag, LowuopsTag>::type;
+        return montgomery_array_pow_small<MontyTag, MF>::pow(mf, bases, exponent, PTAG());
     }
 
     // When we have a lot of bases we prefer to use arraypow_cond_branch()
@@ -361,8 +361,7 @@ struct montgomery_array_pow {
                              std::array<V, NUM_BASES>>::type
     pow(const MF& mf, const std::array<V, NUM_BASES>& bases, T exponent)
     {
-        return montgomery_pow<MF>::arraypow_cond_branch_unrolled(mf, bases,
-                                                                      exponent);
+        return montgomery_pow<MF>::arraypow_cond_branch_unrolled(mf, bases, exponent, LowuopsTag());
     }
 
     template <std::size_t NUM_BASES>
@@ -370,7 +369,7 @@ struct montgomery_array_pow {
     typename std::enable_if<(NUM_BASES > 5), std::array<V, NUM_BASES>>::type
     pow(const MF& mf, const std::array<V, NUM_BASES>& bases, T exponent)
     {
-        return montgomery_pow<MF>::arraypow_cond_branch(mf, bases, exponent);
+        return montgomery_pow<MF>::arraypow_cond_branch(mf, bases, exponent, LowuopsTag());
     }
 };
 
@@ -393,7 +392,8 @@ struct montgomery_array_pow<MontyTag, MF, typename std::enable_if<
         // needed for arithmetic on T will likely expose some instruction level
         // parallelism, and so we might expect arraypow_cond_branch() to be
         // more favorable here than it would be with small T.
-        return montgomery_pow<MF>::arraypow_cond_branch(mf, bases, exponent);
+        using PTAG = typename std::conditional<(NUM_BASES < 2), LowlatencyTag, LowuopsTag>::type;
+        return montgomery_pow<MF>::arraypow_cond_branch(mf, bases, exponent, PTAG());
     }
 };
 

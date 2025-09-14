@@ -71,7 +71,7 @@ T get_Rsquared_mod_n(T n, T inverse_n_modR, T Rmod_n)
 // version, when you need multiple calculations of different Rsquared mod Ns.
 template <typename T, std::size_t ARRAY_SIZE,
           bool nIsGuaranteedLessThanRdiv4 = false,
-          class PTAG = LowlatencyTag>
+          class PTAG> // = LowuopsTag
 std::array<T, ARRAY_SIZE>
 get_Rsquared_mod_n(const std::array<T, ARRAY_SIZE>& n,
                    const std::array<T, ARRAY_SIZE>& inverse_n_modR,

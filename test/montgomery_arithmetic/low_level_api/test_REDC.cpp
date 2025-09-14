@@ -45,17 +45,24 @@ void test_REDC_identity(T a, T n, T inv_n, T Rmod_n)
     T amodn = static_cast<T>(a % n);
     static_assert(hc::ut_numeric_limits<T>::digits >= 2, "");
 
-    EXPECT_TRUE(hc::REDC_standard(u_hi, u_lo, n, inv_n) == amodn);
     EXPECT_TRUE(hc::REDC_standard(u_hi, u_lo, n, inv_n, hc::LowlatencyTag())
                 == amodn);
     EXPECT_TRUE(hc::REDC_standard(u_hi, u_lo, n, inv_n, hc::LowuopsTag())
                 == amodn);
 
-    bool isNegative;
-    T result = hc::REDC_incomplete(isNegative, u_hi, u_lo, n, inv_n);
-    T result2 = hc::REDC_incomplete(u_hi, u_lo, n, inv_n);
-    EXPECT_TRUE(result == result2);
-    EXPECT_TRUE(isNegative ? static_cast<T>(result+n)==amodn : result==amodn);
+    T minuend, subtrahend, result;
+    hc::REDC_incomplete(minuend, subtrahend, u_hi, u_lo, n, inv_n, hc::LowlatencyTag());
+    result = static_cast<T>(minuend - subtrahend);
+    EXPECT_TRUE((minuend < subtrahend) ? static_cast<T>(result+n)==amodn : result==amodn);
+
+    hc::REDC_incomplete(minuend, subtrahend, u_hi, u_lo, n, inv_n, hc::LowuopsTag());
+    result = static_cast<T>(minuend - subtrahend);
+    EXPECT_TRUE((minuend < subtrahend) ? static_cast<T>(result+n)==amodn : result==amodn);
+
+    T result3 = hc::REDC_incomplete(u_hi, u_lo, n, inv_n, hc::LowlatencyTag());
+    EXPECT_TRUE(static_cast<T>(result3+n) == amodn || result3 == amodn);
+    T result4 = hc::REDC_incomplete(u_hi, u_lo, n, inv_n, hc::LowuopsTag());
+    EXPECT_TRUE(static_cast<T>(result4+n) == amodn || result4 == amodn);
 }
 
 
@@ -134,7 +141,7 @@ void test_REDCstandard_multiply(T a, T b, T n, T inv_n, T Rsqrd_mod_n)
     EXPECT_TRUE(product == answer);
 }
 
-template <typename T>
+template <typename T, class PTAG>
 void test_REDCincomplete_multiply(T a, T b, T n, T inv_n, T Rsqrd_mod_n)
 {
     static_assert(hc::ut_numeric_limits<T>::is_integer, "");
@@ -142,36 +149,43 @@ void test_REDCincomplete_multiply(T a, T b, T n, T inv_n, T Rsqrd_mod_n)
     HPBC_CLOCKWORK_PRECONDITION2(n % 2 == 1);
     HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
-    T u_hi, u_lo;
+    T u_hi, u_lo, minuend, subtrahend;
+
     // convert a and b into montgomery domain
     u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, Rsqrd_mod_n, a);
-    bool isNegative;
-    T a_md = hc::REDC_incomplete(isNegative, u_hi, u_lo, n, inv_n);
-    T a_md2 = hc::REDC_incomplete(u_hi, u_lo, n, inv_n);
-    EXPECT_TRUE(a_md == a_md2);
-    a_md = isNegative ? static_cast<T>(a_md + n) : a_md;
+    hc::REDC_incomplete(minuend, subtrahend, u_hi, u_lo, n, inv_n, PTAG());
+    T a_md = static_cast<T>(minuend - subtrahend);
+    a_md = (minuend < subtrahend) ? static_cast<T>(a_md + n) : a_md;
     EXPECT_TRUE(a_md < n);
+    T a_md2 = hc::REDC_incomplete(u_hi, u_lo, n, inv_n, PTAG());
+    EXPECT_TRUE(a_md == a_md2 || a_md == static_cast<T>(a_md2 + n));
+
     u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, Rsqrd_mod_n, b);
-    T b_md = hc::REDC_incomplete(isNegative, u_hi, u_lo, n, inv_n);
-    T b_md2 = hc::REDC_incomplete(u_hi, u_lo, n, inv_n);
-    EXPECT_TRUE(b_md == b_md2);
-    b_md = isNegative ? static_cast<T>(b_md + n) : b_md;
+    hc::REDC_incomplete(minuend, subtrahend, u_hi, u_lo, n, inv_n, PTAG());
+    T b_md = static_cast<T>(minuend - subtrahend);
+    b_md = (minuend < subtrahend) ? static_cast<T>(b_md + n) : b_md;
     EXPECT_TRUE(b_md < n);
+    T b_md2 = hc::REDC_incomplete(u_hi, u_lo, n, inv_n, PTAG());
+    EXPECT_TRUE(b_md == b_md2 || b_md == static_cast<T>(b_md2 + n));
 
     // compute the montgomery domain product of a_md and b_md
     u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, a_md, b_md);
-    T product_md = hc::REDC_incomplete(isNegative, u_hi, u_lo, n, inv_n);
-    T product_md2 = hc::REDC_incomplete(u_hi, u_lo, n, inv_n);
-    EXPECT_TRUE(product_md == product_md2);
-    product_md = isNegative ? static_cast<T>(product_md + n) : product_md;
+    hc::REDC_incomplete(minuend, subtrahend, u_hi, u_lo, n, inv_n, PTAG());
+    T product_md = static_cast<T>(minuend - subtrahend);
+    product_md = (minuend < subtrahend) ? static_cast<T>(product_md + n) : product_md;
     EXPECT_TRUE(product_md < n);
+    T product_md2 = hc::REDC_incomplete(u_hi, u_lo, n, inv_n, PTAG());
+    EXPECT_TRUE(product_md == product_md2 || product_md == static_cast<T>(product_md2 + n));
 
     // convert product_md out of montgomery domain, and verify it is correct
     u_hi = 0; u_lo = product_md;
-    T product = hc::REDC_incomplete(isNegative, u_hi, u_lo, n, inv_n);
-    T product2 = hc::REDC_incomplete(u_hi, u_lo, n, inv_n);
-    EXPECT_TRUE(product == product2);
-    product = isNegative ? static_cast<T>(product + n) : product;
+    hc::REDC_incomplete(minuend, subtrahend, u_hi, u_lo, n, inv_n, PTAG());
+    T product = static_cast<T>(minuend - subtrahend);
+    product = (minuend < subtrahend) ? static_cast<T>(product + n) : product;
+    EXPECT_TRUE(product < n);
+    T product2 = hc::REDC_incomplete(u_hi, u_lo, n, inv_n, PTAG());
+    EXPECT_TRUE(product == product2 || product == static_cast<T>(product2 + n));
+
     T answer = hc::modular_multiplication_prereduced_inputs(
                                static_cast<T>(a % n), static_cast<T>(b % n), n);
     EXPECT_TRUE(product == answer);
@@ -184,7 +198,9 @@ void test_REDC_multiplies(T a, T b, T n, T inv_n, T Rsqrd_mod_n)
     test_REDCstandard_multiply<T, hc::LowlatencyTag>(a, b, n, inv_n,
                                                      Rsqrd_mod_n);
     test_REDCstandard_multiply<T, hc::LowuopsTag>(a, b, n, inv_n, Rsqrd_mod_n);
-    test_REDCincomplete_multiply(a, b, n, inv_n, Rsqrd_mod_n);
+    test_REDCincomplete_multiply<T, hc::LowlatencyTag>(a, b, n, inv_n,
+                                                       Rsqrd_mod_n);
+    test_REDCincomplete_multiply<T,hc::LowuopsTag>(a, b, n, inv_n, Rsqrd_mod_n);
 }
 
 
@@ -293,16 +309,17 @@ TEST(MontgomeryArithmetic, REDC64) {
 
 #if !defined(__GNUC__) || __GNUC__ >= 11 || defined(__INTEL_COMPILER) || \
                                             defined(__clang__)
-// GCC has a compiler bug that causes an incorrect value of n to be produced and
-// thus results in one of my google test assertions failing.  See
+// Older versions of GCC (most of them prior to v11) have a compiler bug that
+// causes an incorrect value of n to be produced and thus results in one of my
+// google test assertions failing. See
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98474 .  The bug appears to have
 // been introduced as a regression to gcc in v5.1.  It exists up to the latest
 // released version (v10.2) of gcc at the time of this writing.  It's unclear
 // at the moment whether __uint128_t is safe to use with any version of gcc
 // between 5.1 and 10.2.  The patch appears to fix the bug, and it is scheduled
 // to be in the gcc 11 release.
-// For now, the #if above disables the following tests on gcc, since they will
-// fail on gcc at optimization level -O1 or higher due to the compiler bug.
+// The #if above disables the following tests on gcc prior to gcc v11, since
+// they will fail at optimization level -O1 or higher due to the compiler bug.
 # if HURCHALLA_COMPILER_HAS_UINT128_T()
 TEST(MontgomeryArithmetic, REDC128) {
     __uint128_t zero = 0;

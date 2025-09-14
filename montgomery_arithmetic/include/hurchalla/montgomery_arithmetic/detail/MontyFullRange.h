@@ -216,7 +216,8 @@ class MontyFullRange final :
         return SV(x.get(), 0);
     }
 
-    HURCHALLA_FORCE_INLINE SV squareSV(SV sv) const
+    template <class PTAG> HURCHALLA_FORCE_INLINE
+    SV squareSV(SV sv, PTAG) const
     {
         // see squareToHiLo in MontyFullRangeMasked.h for basic ideas of
         // proof for why u_hi and u_lo are correct
@@ -229,14 +230,16 @@ class MontyFullRange final :
         T u_lo = sqlo;
         HPBC_CLOCKWORK_ASSERT2(u_hi < n_);
 
-        bool isNegative;
-        T res = hc::REDC_incomplete(isNegative, u_hi, u_lo, n_, BC::inv_n_);
-        T subtrahend = isNegative ? res : static_cast<T>(0);
+        T minu, subt;
+        hc::REDC_incomplete(minu, subt, u_hi, u_lo, n_, BC::inv_n_, PTAG());
+        T res = static_cast<T>(minu - subt);
+        T subtrahend = (minu < subt) ? res : static_cast<T>(0);
         SV result(res, subtrahend);
         return result;
     }
 
-    HURCHALLA_FORCE_INLINE V squareToMontgomeryValue(SV sv) const
+    template <class PTAG> HURCHALLA_FORCE_INLINE
+    V squareToMontgomeryValue(SV sv, PTAG) const
     {
         // see squareToHiLo in MontyFullRangeMasked.h for basic ideas of
         // proof for why u_hi and u_lo are correct
@@ -249,8 +252,7 @@ class MontyFullRange final :
         T u_lo = sqlo;
         HPBC_CLOCKWORK_ASSERT2(u_hi < n_);
 
-        T res = hc::REDC_standard(
-                               u_hi, u_lo, n_, BC::inv_n_, hc::LowlatencyTag());
+        T res = hc::REDC_standard(u_hi, u_lo, n_, BC::inv_n_, PTAG());
         V result(res);
         return result;
     }

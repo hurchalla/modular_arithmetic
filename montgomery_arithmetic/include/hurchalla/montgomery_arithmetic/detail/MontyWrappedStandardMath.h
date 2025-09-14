@@ -102,7 +102,8 @@ class MontyWrappedStandardMath final {
         else
             return V(static_cast<T>(a % modulus_));
     }
-    HURCHALLA_FORCE_INLINE T convertOut(V x) const
+    template <class PTAG>   // PTAG is ignored by this class
+    HURCHALLA_FORCE_INLINE T convertOut(V x, PTAG) const
     {
         HPBC_CLOCKWORK_PRECONDITION2(isCanonical(x));
         T ret = x.get();
@@ -110,7 +111,8 @@ class MontyWrappedStandardMath final {
         return ret;
     }
 
-    HURCHALLA_FORCE_INLINE T remainder(T a) const
+    template <class PTAG>   // PTAG is ignored by this class
+    HURCHALLA_FORCE_INLINE T remainder(T a, PTAG) const
     {
         return static_cast<T>(a % modulus_);
     }
@@ -263,15 +265,17 @@ class MontyWrappedStandardMath final {
         static_assert(std::is_same<V, SV>::value, "");
         return x;
     }
-    HURCHALLA_FORCE_INLINE SV squareSV(SV sv) const
+    template <class PTAG>   // Performance TAG (ignored by this class)
+    HURCHALLA_FORCE_INLINE SV squareSV(SV sv, PTAG) const
     {
         static_assert(std::is_same<V, SV>::value, "");
-        return square(sv, LowlatencyTag());
+        return square(sv, PTAG());
     }
-    HURCHALLA_FORCE_INLINE V squareToMontgomeryValue(SV sv) const
+    template <class PTAG>   // Performance TAG (ignored by this class)
+    HURCHALLA_FORCE_INLINE V squareToMontgomeryValue(SV sv, PTAG) const
     {
         static_assert(std::is_same<V, SV>::value, "");
-        return square(sv, LowlatencyTag());
+        return square(sv, PTAG());
     }
     HURCHALLA_FORCE_INLINE V getMontgomeryValue(SV sv) const
     {
@@ -414,7 +418,8 @@ class MontyWrappedStandardMath final {
         return V(result);
     }
 
-    HURCHALLA_FORCE_INLINE T getMagicValue() const
+    template <class PTAG>   // Performance TAG (ignored by this class)
+    HURCHALLA_FORCE_INLINE T getMagicValue(PTAG) const
     {
         T result = ::hurchalla::get_R_mod_n(modulus_);
         HPBC_CLOCKWORK_POSTCONDITION2(result < modulus_);
@@ -423,7 +428,7 @@ class MontyWrappedStandardMath final {
     template <class PTAG>   // Performance TAG (ignored by this class)
     HURCHALLA_FORCE_INLINE V convertInExtended_aTimesR(T a, T RmodN, PTAG) const
     {
-        HPBC_CLOCKWORK_PRECONDITION2(RmodN == getMagicValue());
+        HPBC_CLOCKWORK_PRECONDITION2(RmodN == getMagicValue(PTAG()));
         T tmp = a;
         if (tmp >= modulus_)
             tmp = static_cast<T>(tmp % modulus_);
@@ -451,7 +456,7 @@ class MontyWrappedStandardMath final {
     template <class PTAG> HURCHALLA_FORCE_INLINE
     V RTimesTwoPowLimited(size_t exponent, T RmodN, PTAG) const
     {
-        HPBC_CLOCKWORK_PRECONDITION2(RmodN == getMagicValue());
+        HPBC_CLOCKWORK_PRECONDITION2(RmodN == getMagicValue(PTAG()));
         static constexpr int digitsT = ut_numeric_limits<T>::digits;
         int power = static_cast<int>(exponent);
         HPBC_CLOCKWORK_PRECONDITION2(0 <= power && power < digitsT);

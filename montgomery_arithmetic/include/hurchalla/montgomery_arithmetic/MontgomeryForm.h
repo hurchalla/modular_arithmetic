@@ -111,19 +111,25 @@ public:
 
     // Returns the converted value of the standard number 'a' into monty form.
     // Requires a >= 0.  (Note there is no restriction on how large 'a' can be.)
-    HURCHALLA_FORCE_INLINE
+    // Normally you don't want to specify PTAG (just accept the default).
+    // For advanced use: PTAG can be either LowlatencyTag or LowuopsTag, which
+    // will optimize this function for either low latency or a low uop count.
+    template <class PTAG = LowuopsTag> HURCHALLA_FORCE_INLINE
     MontgomeryValue convertIn(T a) const
     {
         HPBC_CLOCKWORK_API_PRECONDITION(a >= 0);
-        return impl.convertIn(a);
+        return impl.template convertIn<PTAG>(a);
     }
 
     // Converts (montgomery value) x into a "normal" number; returns the result.
     // Guarantees 0 <= result < modulus.
-    HURCHALLA_FORCE_INLINE
+    // Normally you don't want to specify PTAG (just accept the default).
+    // For advanced use: PTAG can be either LowlatencyTag or LowuopsTag, which
+    // will optimize this function for either low latency or a low uop count.
+    template <class PTAG = LowuopsTag> HURCHALLA_FORCE_INLINE
     T convertOut(MontgomeryValue x) const
     {
-        T a = impl.convertOut(x);
+        T a = impl.template convertOut<PTAG>(x);
         HPBC_CLOCKWORK_POSTCONDITION(0 <= a && a < getModulus());
         return a;
     }
@@ -556,7 +562,7 @@ public:
 
     // Returns the Montgomery division of x by a small power of two (requires
     // 0 <= power <= 7, which translates to Montgomery division by 1,2,4,8,16,
-    // 32,64, or 128). This function always produces an exact correct result.
+    // 32,64, or 128). This function always produces an exactly correct result.
     // Note that Montgomery division is modular division, which is different
     // from normal and non modular division - modular division performs modular
     // multiplication by the modular multiplicative inverse of the divisor. So,
@@ -617,10 +623,11 @@ public:
     // If you have already instantiated this MontgomeryForm, then calling
     // remainder() should be faster than directly computing  a % modulus,
     // even if your CPU has extremely fast division (like many new CPUs).
-    HURCHALLA_FORCE_INLINE T remainder(T a) const
+    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
+    T remainder(T a) const
     {
         HPBC_CLOCKWORK_API_PRECONDITION(a >= 0);
-        return impl.remainder(a);
+        return impl.template remainder<PTAG>(a);
     }
 
 };

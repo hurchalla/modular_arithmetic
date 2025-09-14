@@ -128,10 +128,6 @@ public:
 
     virtual IntegerType getModulus() const = 0;
 
-    virtual MontgomeryValue convertIn(IntegerType a) const = 0;
-
-    virtual IntegerType convertOut(MontgomeryValue x) const = 0;
-
     virtual CanonicalValue getCanonicalValue(MontgomeryValue x) const = 0;
 
     virtual FusingValue getFusingValue(MontgomeryValue x) const = 0;
@@ -173,10 +169,13 @@ public:
 
     virtual MontgomeryValue two_pow(IntegerType exponent) const = 0;
 
-    virtual IntegerType remainder(IntegerType a) const = 0;
-
-
 private:
+    virtual MontgomeryValue convertIn(IntegerType a,
+        bool useLowlatencyTag) const = 0;
+
+    virtual IntegerType convertOut(MontgomeryValue x,
+        bool useLowlatencyTag) const = 0;
+
     virtual MontgomeryValue subtract(MontgomeryValue x, MontgomeryValue y,
         bool useLowlatencyTag) const = 0;
 
@@ -216,6 +215,9 @@ private:
     virtual MontgomeryValue fusedSquareAdd(MontgomeryValue x, CanonicalValue cv,
         bool useLowlatencyTag) const = 0;
 
+    virtual IntegerType remainder(IntegerType a,
+        bool useLowlatencyTag) const = 0;
+
     virtual CanonicalValue inverse(MontgomeryValue x,
         bool useLowlatencyTag) const = 0;
 
@@ -231,6 +233,18 @@ private:
 public:
 // adapters for functions that have template params; we wrap the virtual funcs
 // since virtual funcs can't be templated.
+
+    template <class PTAG = LowuopsTag>
+    MontgomeryValue convertIn(IntegerType a) const
+    {
+        return convertIn(a, std::is_same<PTAG, LowlatencyTag>::value);
+    }
+
+    template <class PTAG = LowuopsTag>
+    IntegerType convertOut(MontgomeryValue x) const
+    {
+        return convertOut(x, std::is_same<PTAG, LowlatencyTag>::value);
+    }
 
     template <class PTAG = LowuopsTag>
     MontgomeryValue subtract(MontgomeryValue x, MontgomeryValue y) const
@@ -311,6 +325,12 @@ public:
     CanonicalValue inverse(MontgomeryValue x) const
     {
         return inverse(x, std::is_same<PTAG, LowlatencyTag>::value);
+    }
+
+    template <class PTAG = LowlatencyTag>
+    IntegerType remainder(IntegerType a) const
+    {
+        return remainder(a, std::is_same<PTAG, LowlatencyTag>::value);
     }
 
     template <class PTAG = LowlatencyTag>

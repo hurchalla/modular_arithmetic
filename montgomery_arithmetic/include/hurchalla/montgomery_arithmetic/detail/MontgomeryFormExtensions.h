@@ -78,7 +78,7 @@ struct MontgomeryFormExtensions final {
     HURCHALLA_FORCE_INLINE
     static RU getMagicValue(const MF& mf)
     {
-        return mf.impl.getMagicValue();
+        return mf.impl.template getMagicValue<PTAG>();
     }
 
     HURCHALLA_FORCE_INLINE
@@ -123,14 +123,14 @@ struct MontgomeryFormExtensions final {
     HURCHALLA_FORCE_INLINE
     static SquaringValue squareSV(const MF& mf, SquaringValue sv)
     {
-        return mf.impl.squareSV(sv);
+        return mf.impl.template squareSV<PTAG>(sv);
     }
 
     HURCHALLA_FORCE_INLINE
     static MontgomeryValue
     squareToMontgomeryValue(const MF& mf, SquaringValue sv)
     {
-        return mf.impl.squareToMontgomeryValue(sv);
+        return mf.impl.template squareToMontgomeryValue<PTAG>(sv);
     }
 
     HURCHALLA_FORCE_INLINE

@@ -152,7 +152,7 @@ struct impl_array_get_Rsquared_mod_n<true, PTAG> {
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
                 u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, tmp[j], tmp[j]);
                 // use the same logic as MontyQuarterRange's montyREDC():
-                tmp[j] = hc::REDC_incomplete(u_hi, u_lo, n[j], inverse_n_modR[j]);
+                tmp[j] = hc::REDC_incomplete(u_hi, u_lo, n[j], inverse_n_modR[j], PTAG());
                 tmp[j] = static_cast<T>(tmp[j] + n[j]);
                 HPBC_CLOCKWORK_ASSERT2(0 < tmp[j] && tmp[j] < static_cast<T>(2*n[j]));
             }

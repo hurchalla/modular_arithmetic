@@ -498,15 +498,17 @@ class MontyHalfRange final :
         static_assert(std::is_same<V, SV>::value, "");
         return x;
     }
-    HURCHALLA_FORCE_INLINE SV squareSV(SV sv) const
+    template <class PTAG> HURCHALLA_FORCE_INLINE
+    SV squareSV(SV sv, PTAG) const
     {
         static_assert(std::is_same<V, SV>::value, "");
-        return BC::square(sv, LowlatencyTag());
+        return BC::square(sv, PTAG());
     }
-    HURCHALLA_FORCE_INLINE V squareToMontgomeryValue(SV sv) const
+    template <class PTAG> HURCHALLA_FORCE_INLINE
+    V squareToMontgomeryValue(SV sv, PTAG) const
     {
         static_assert(std::is_same<V, SV>::value, "");
-        return BC::square(sv, LowlatencyTag());
+        return BC::square(sv, PTAG());
     }
     HURCHALLA_FORCE_INLINE V getMontgomeryValue(SV sv) const
     {
@@ -524,7 +526,7 @@ private:
     {
         HPBC_CLOCKWORK_PRECONDITION2(u_hi < n_);  // verifies that (u_hi*R + u_lo) < n*R
         namespace hc = ::hurchalla;
-        T result = hc::REDC_incomplete(u_hi, u_lo, n_, BC::inv_n_);
+        T result = hc::REDC_incomplete(u_hi, u_lo, n_, BC::inv_n_, PTAG());
         resultIsZero = (result == 0);
         V v = V(static_cast<S>(result));
         HPBC_CLOCKWORK_POSTCONDITION2(isValid(v));
