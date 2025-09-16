@@ -939,7 +939,7 @@ using namespace hurchalla;
 
 
 
-#if 0
+#if 1
    // warm up call
    bench_array_two_pow<5, 8, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, max_modulus_bits_reduce, seed, exponent_bits_reduce);
 

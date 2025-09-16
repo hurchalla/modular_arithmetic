@@ -14,6 +14,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/count_leading_zeros.h"
 #include "hurchalla/util/compiler_macros.h"
+#include "hurchalla/util/branchless_shift_right.h"
 #include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include <type_traits>
@@ -208,7 +209,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         HPBC_CLOCKWORK_ASSERT(numbits > P);
 
         int shift = numbits - P;
-        U tmp = n >> shift;
+        U tmp = branchless_shift_right(n, shift);
         HPBC_CLOCKWORK_ASSERT(tmp <= MASK);
         // normally we'd use (tmp & MASK), but it's redundant with tmp <= MASK
         size_t index = static_cast<size_t>(tmp);
@@ -216,7 +217,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
         while (shift >= P) {
             if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
-                while (shift > P && (static_cast<size_t>(n >> (shift-1)) & 1u) == 0) {
+                while (shift > P && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
                     result = mf.square(result);
                     --shift;
                 }
@@ -236,7 +237,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
             }
 
             shift -= P;
-            index = static_cast<size_t>(n >> shift) & MASK;
+            index = static_cast<size_t>(branchless_shift_right(n, shift)) & MASK;
             result = mf.multiply(result, table[index]);
         }
 
@@ -314,7 +315,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         int shift = numbits - NUMBITS_MASKBIG;
 
         HPBC_CLOCKWORK_ASSERT2(shift > 0);
-        size_t tmp = static_cast<size_t>(n >> shift);
+        size_t tmp = static_cast<size_t>(branchless_shift_right(n, shift));
         HPBC_CLOCKWORK_ASSERT2(tmp <= MASKBIG);
         size_t loindex = tmp & MASK;
         size_t hiindex = tmp >> TABLE_BITS;
@@ -323,7 +324,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
         while (shift >= NUMBITS_MASKBIG) {
             if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
-                while (shift > NUMBITS_MASKBIG && (static_cast<size_t>(n>>(shift-1)) & 1u) == 0) {
+                while (shift > NUMBITS_MASKBIG && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
                     result = mf.square(result);
                     --shift;
                 }
@@ -331,7 +332,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
             HPBC_CLOCKWORK_ASSERT2(shift >= NUMBITS_MASKBIG);
 
             shift -= NUMBITS_MASKBIG;
-            tmp = static_cast<size_t>(n >> shift);
+            tmp = static_cast<size_t>(branchless_shift_right(n, shift));
             loindex = tmp & MASK;
             hiindex = (tmp >> TABLE_BITS) & MASK;
 
@@ -388,7 +389,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
             shift = numbits - NUMBITS_MASKBIG;
         }
         HPBC_CLOCKWORK_ASSERT2(shift >= 0);
-        size_t tmp = static_cast<size_t>(n >> shift);
+        size_t tmp = static_cast<size_t>(branchless_shift_right(n, shift));
         HPBC_CLOCKWORK_ASSERT2(tmp <= MASKBIG);
 
         size_t index1 = tmp & MASK;
@@ -457,7 +458,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
         while (shift >= NUMBITS_MASKBIG) {
             if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
-                while (shift > NUMBITS_MASKBIG && (static_cast<size_t>(n>>(shift-1)) & 1u) == 0) {
+                while (shift > NUMBITS_MASKBIG && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
                     result = mf.square(result);
                     --shift;
                 }
@@ -465,7 +466,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
             HPBC_CLOCKWORK_ASSERT2(shift >= NUMBITS_MASKBIG);
 
             shift -= NUMBITS_MASKBIG;
-            tmp = static_cast<size_t>(n >> shift);
+            tmp = static_cast<size_t>(branchless_shift_right(n, shift));
 
             index1 = tmp & MASK;
             index2 = (tmp >> TABLE_BITS) & MASK;
@@ -564,7 +565,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         }
         HPBC_CLOCKWORK_ASSERT2(shift >= 0);
 
-        size_t tmp = static_cast<size_t>(n >> shift);
+        size_t tmp = static_cast<size_t>(branchless_shift_right(n, shift));
         HPBC_CLOCKWORK_ASSERT2(tmp <= MASKBIG);
         V result = table[0][tmp & MASK];
 
@@ -596,7 +597,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
         while (shift >= NUMBITS_MASKBIG) {
             if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
-                while (shift > NUMBITS_MASKBIG && (static_cast<size_t>(n>>(shift-1)) & 1u) == 0) {
+                while (shift > NUMBITS_MASKBIG && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
                     result = mf.square(result);
                     --shift;
                 }
@@ -604,7 +605,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
             HPBC_CLOCKWORK_ASSERT2(shift >= NUMBITS_MASKBIG);
 
             shift -= NUMBITS_MASKBIG;
-            tmp = static_cast<size_t>(n >> shift);
+            tmp = static_cast<size_t>(branchless_shift_right(n, shift));
             V val1 = table[0][tmp & MASK];
 
             if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
@@ -755,9 +756,9 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
     int shift = numbits - P;
     HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-        HPBC_CLOCKWORK_ASSERT(static_cast<U>(n[j] >> shift) <= MASK);
-        // We don't need to 'and' with MASK, because (n[j] >> shift) <= MASK.
-        size_t index = static_cast<size_t>(n[j] >> shift);
+        HPBC_CLOCKWORK_ASSERT(static_cast<U>(branchless_shift_right(n[j], shift)) <= MASK);
+        // We don't need to 'and' with MASK, because (branchless_shift_right(n[j], shift)) <= MASK.
+        size_t index = static_cast<size_t>(branchless_shift_right(n[j], shift));
         result[j] = table[index][j];
     }
 
@@ -784,7 +785,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         }
 
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-            size_t index = static_cast<size_t>(n[j] >> shift) & MASK;
+            size_t index = static_cast<size_t>(branchless_shift_right(n[j], shift)) & MASK;
             result[j] = mf[j].template multiply<LowuopsTag>(
                                                     result[j], table[index][j]);
         }
@@ -888,7 +889,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
     HPBC_CLOCKWORK_ASSERT(numbits > P);
 
     int shift = numbits - P;
-    size_t index = static_cast<size_t>(n >> shift);
+    size_t index = static_cast<size_t>(branchless_shift_right(n, shift));
     HPBC_CLOCKWORK_ASSERT(index <= MASK);
     HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
         // normally we'd use (index & MASK), but it's redundant with index <= MASK
@@ -898,7 +899,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
     while (shift >= P) {
         if (USE_SLIDING_WINDOW_OPTIMIZATION) {
-            while (shift > P && (static_cast<size_t>(n >> (shift-1)) & 1u) == 0) {
+            while (shift > P && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
                 HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
                     result[j] = mf.template square<LowuopsTag>(result[j]);
                 --shift;
@@ -924,7 +925,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         }
 
         shift -= P;
-        index = static_cast<size_t>(n >> shift) & MASK;
+        index = static_cast<size_t>(branchless_shift_right(n, shift)) & MASK;
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
             result[j] = mf.template multiply<LowuopsTag>(result[j], table[index][j]);
         }
@@ -1009,9 +1010,9 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
     int shift = numbits - P;
     HPBC_CLOCKWORK_ASSERT(shift >= 0);
-    HPBC_CLOCKWORK_ASSERT((n >> shift) <= MASK);
+    HPBC_CLOCKWORK_ASSERT((branchless_shift_right(n, shift)) <= MASK);
     // due to above assert, we don't need to 'and' with MASK
-    size_t index = static_cast<size_t>(n >> shift);
+    size_t index = static_cast<size_t>(branchless_shift_right(n, shift));
 
     // because the highest set bit of n is by definition a 1, we know
     HPBC_CLOCKWORK_ASSERT((index >> (P-1)) == 1u);  // and thus
@@ -1027,7 +1028,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
     while (shift >= P) {
         if (USE_SLIDING_WINDOW_OPTIMIZATION) {
-            while (shift > P && (static_cast<size_t>(n >> (shift-1)) & 1u) == 0) {
+            while (shift > P && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
                 HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
                     result[j] = mf.template square<LowuopsTag>(result[j]);
                 --shift;
@@ -1055,7 +1056,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         }
 
         shift -= P;
-        index = static_cast<size_t>(n >> shift) & MASK;
+        index = static_cast<size_t>(branchless_shift_right(n, shift)) & MASK;
 
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
             V tmp = (index % 2 == 0) ? table[index/2][j] : result[j];

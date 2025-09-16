@@ -21,6 +21,10 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
 #include "hurchalla/util/compiler_macros.h"
+#include "hurchalla/util/branchless_shift_left.h"
+#include "hurchalla/util/branchless_shift_right.h"
+#include "hurchalla/util/branchless_large_shift_left.h"
+#include "hurchalla/util/branchless_small_shift_right.h"
 #include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <type_traits>
 
@@ -486,15 +490,24 @@ class MontyCommonBase {
     {
         static constexpr int digitsT = ut_numeric_limits<T>::digits;
         HPBC_CLOCKWORK_PRECONDITION2(0 <= exponent && exponent < digitsT);
+        HPBC_CLOCKWORK_PRECONDITION2(exponent < HURCHALLA_TARGET_BIT_WIDTH);
         int power = digitsT - exponent;
         HPBC_CLOCKWORK_ASSERT2(0 < power && power <= digitsT);
 
         T tmp = cx.get();
         HPBC_CLOCKWORK_INVARIANT2(tmp < n_);
-        T u_lo = static_cast<T>((tmp << 1) << (power - 1));
-        int rshift = digitsT - power;
+
+        HPBC_CLOCKWORK_ASSERT2(0 <= power - 1 && power - 1 < digitsT);
+        // we know by asserttion that  exponent < HURCHALLA_TARGET_BIT_WIDTH
+        // thus,  digitsT - HURCHALLA_TARGET_BIT_WIDTH < digitsT - exponent == power
+        // and so,  digitsT - HURCHALLA_TARGET_BIT_WIDTH <= power - 1
+        HPBC_CLOCKWORK_ASSERT2(digitsT - static_cast<int>(HURCHALLA_TARGET_BIT_WIDTH) <= power - 1);
+        T u_lo = static_cast<T>(branchless_large_shift_left(static_cast<T>(tmp << 1), power - 1));
+
+        int rshift = exponent;
         HPBC_CLOCKWORK_ASSERT2(0 <= rshift && rshift < digitsT);
-        T u_hi = static_cast<T>(tmp >> rshift);
+        HPBC_CLOCKWORK_ASSERT2(rshift < HURCHALLA_TARGET_BIT_WIDTH);
+        T u_hi = static_cast<T>(branchless_small_shift_right(tmp, rshift));
 
         HPBC_CLOCKWORK_ASSERT2(u_hi < n_);
         const D* child = static_cast<const D*>(this);
@@ -519,10 +532,10 @@ class MontyCommonBase {
 
         T tmp = cx.get();
         HPBC_CLOCKWORK_INVARIANT2(tmp < n_);
-        T u_lo = static_cast<T>(tmp << power);
+        T u_lo = branchless_shift_left(tmp, power);
         int rshift = digitsT - power;
         HPBC_CLOCKWORK_ASSERT2(rshift > 0);
-        T u_hi = (tmp >> 1) >> (rshift - 1);
+        T u_hi = static_cast<T>(branchless_shift_right(tmp, rshift - 1) >> 1);
 
         HPBC_CLOCKWORK_ASSERT2(u_hi < n_);
         const D* child = static_cast<const D*>(this);
@@ -539,10 +552,10 @@ class MontyCommonBase {
 
         T tmp = cx.get();
         HPBC_CLOCKWORK_INVARIANT2(tmp < n_);
-        T u_lo = static_cast<T>((tmp << 1) << (power - 1));
+        T u_lo = branchless_shift_left(static_cast<T>(tmp << 1), power - 1);
         int rshift = digitsT - power;
         HPBC_CLOCKWORK_ASSERT2(0 <= rshift && rshift < digitsT);
-        T u_hi = static_cast<T>(tmp >> rshift);
+        T u_hi = branchless_shift_right(tmp, rshift);
 
         HPBC_CLOCKWORK_ASSERT2(u_hi < n_);
         const D* child = static_cast<const D*>(this);
@@ -593,10 +606,10 @@ class MontyCommonBase {
         int power = static_cast<int>(exponent);
         HPBC_CLOCKWORK_PRECONDITION2(0 <= power && power < digitsT);
 
-        T u_lo = static_cast<T>(r_squared_mod_n_ << power);
+        T u_lo = branchless_shift_left(r_squared_mod_n_, power);
         int rshift = digitsT - power;
         HPBC_CLOCKWORK_ASSERT2(rshift > 0);
-        T u_hi = (r_squared_mod_n_ >> 1) >> (rshift - 1);
+        T u_hi = branchless_shift_right(static_cast<T>(r_squared_mod_n_ >> 1), rshift - 1);
 
         HPBC_CLOCKWORK_ASSERT2(u_hi < n_);
         const D* child = static_cast<const D*>(this);
@@ -613,10 +626,10 @@ class MontyCommonBase {
         int power = static_cast<int>(exponent);
         HPBC_CLOCKWORK_PRECONDITION2(0 <= power && power < digitsT);
 
-        T u_lo = static_cast<T>(magicValue << power);
+        T u_lo = branchless_shift_left(magicValue, power);
         int rshift = digitsT - power;
         HPBC_CLOCKWORK_ASSERT2(rshift > 0);
-        T u_hi = (magicValue >> 1) >> (rshift - 1);
+        T u_hi = branchless_shift_right(static_cast<T>(magicValue >> 1), rshift - 1);
 
         HPBC_CLOCKWORK_ASSERT2(u_hi < n_);
         const D* child = static_cast<const D*>(this);

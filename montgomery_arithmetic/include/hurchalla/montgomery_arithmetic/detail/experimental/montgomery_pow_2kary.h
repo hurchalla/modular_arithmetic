@@ -13,6 +13,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/count_leading_zeros.h"
 #include "hurchalla/util/compiler_macros.h"
+#include "hurchalla/util/branchless_shift_right.h"
 #include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include <type_traits>
@@ -158,7 +159,7 @@ struct impl_montgomery_pow_2kary {
     HPBC_CLOCKWORK_ASSERT(numbits > P);
 
     int shift = numbits - P;
-    U tmp = n >> shift;
+    U tmp = branchless_shift_right(n, shift);
     HPBC_CLOCKWORK_ASSERT(tmp <= MASK);
     // normally we'd use (tmp & MASK), but it's redundant with tmp <= MASK
     size_t index = static_cast<size_t>(tmp);
@@ -167,7 +168,7 @@ struct impl_montgomery_pow_2kary {
 
     while (shift >= P) {
         if (USE_SLIDING_WINDOW_OPTIMIZATION) {
-            while (shift > P && (static_cast<size_t>(n >> (shift-1)) & 1) == 0) {
+            while (shift > P && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1) == 0) {
                 result = mf.square(result);
                 --shift;
             }
@@ -178,7 +179,7 @@ struct impl_montgomery_pow_2kary {
             result = mf.square(result);
 
         shift -= P;
-        index = static_cast<size_t>(n >> shift) & MASK;
+        index = static_cast<size_t>(branchless_shift_right(n, shift)) & MASK;
         result = mf.multiply(result, table[index]);
     }
 
@@ -287,9 +288,9 @@ struct impl_montgomery_pow_2kary {
     std::array<V, ARRAY_SIZE> result;
     std::array<size_t, ARRAY_SIZE> index;
     HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-        HPBC_CLOCKWORK_ASSERT(static_cast<U>(n[j] >> shift) <= MASK);
-        // We don't need to 'and' with MASK, because (n[j] >> shift) <= MASK.
-        index[j] = static_cast<size_t>(n[j] >> shift);
+        HPBC_CLOCKWORK_ASSERT(static_cast<U>(branchless_shift_right(n[j], shift)) <= MASK);
+        // We don't need to 'and' with MASK, because (branchless_shift_right(n[j], shift)) <= MASK.
+        index[j] = static_cast<size_t>(branchless_shift_right(n[j], shift));
         result[j] = table[index[j]][j];
     }
 
@@ -301,7 +302,7 @@ struct impl_montgomery_pow_2kary {
         }
         shift -= P;
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-            index[j] = static_cast<size_t>(n[j] >> shift) & MASK;
+            index[j] = static_cast<size_t>(branchless_shift_right(n[j], shift)) & MASK;
             result[j] = mf[j].template multiply<LowuopsTag>(
                                                  result[j], table[index[j]][j]);
         }
@@ -402,7 +403,7 @@ struct impl_montgomery_pow_2kary {
 
     int shift = numbits - P;
     std::array<V, ARRAY_SIZE> result;
-    size_t tmp = static_cast<size_t>(n >> shift);
+    size_t tmp = static_cast<size_t>(branchless_shift_right(n, shift));
     HPBC_CLOCKWORK_ASSERT(tmp <= MASK);
     HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
         // normally we'd use (tmp & MASK), but it's redundant with tmp <= MASK
@@ -412,7 +413,7 @@ struct impl_montgomery_pow_2kary {
 
     while (shift >= P) {
         if (USE_SLIDING_WINDOW_OPTIMIZATION) {
-            while (shift > P && (static_cast<size_t>(n >> (shift-1)) & 1) == 0) {
+            while (shift > P && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1) == 0) {
                 HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
                     result[j] = mf.template square<LowuopsTag>(result[j]);
                 --shift;
@@ -423,7 +424,7 @@ struct impl_montgomery_pow_2kary {
                 result[j] = mf.template square<LowuopsTag>(result[j]);
         }
         shift -= P;
-        size_t index = static_cast<size_t>(n >> shift) & MASK;
+        size_t index = static_cast<size_t>(branchless_shift_right(n, shift)) & MASK;
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
             result[j] = mf.template multiply<LowuopsTag>(result[j], table[index][j]);
         }

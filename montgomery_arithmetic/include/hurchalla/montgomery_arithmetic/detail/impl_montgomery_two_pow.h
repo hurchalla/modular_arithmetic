@@ -14,6 +14,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/count_leading_zeros.h"
 #include "hurchalla/util/compiler_macros.h"
+#include "hurchalla/util/branchless_shift_right.h"
 #include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <type_traits>
 #include <cstddef>
@@ -91,7 +92,7 @@ struct impl_montgomery_two_pow {
 
         int shift = numbits - (P2 + 1);
         HPBC_CLOCKWORK_ASSERT2(shift >= 0);
-        size_t tmp = static_cast<size_t>(n >> shift);
+        size_t tmp = static_cast<size_t>(branchless_shift_right(n, shift));
         HPBC_CLOCKWORK_ASSERT2(tmp <= 2u*MASK + 1u);
         // Bit P2 of tmp was the leading bit, so it should always be set.
         HPBC_CLOCKWORK_ASSERT2(((tmp >> P2) & 1u) == 1u);
@@ -101,7 +102,7 @@ struct impl_montgomery_two_pow {
 
         while (shift >= (P2 + 1)) {
             if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
-                while ((static_cast<size_t>(n>>(shift-1)) & 1u) == 0) {
+                while ((static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
                     result = mf.square(result);
                     --shift;
                     if (shift < (P2 + 1))
@@ -110,7 +111,7 @@ struct impl_montgomery_two_pow {
                 HPBC_CLOCKWORK_ASSERT2(shift >= (P2 + 1));
 
                 shift -= (P2 + 1);
-                tmp = static_cast<size_t>(n >> shift);
+                tmp = static_cast<size_t>(branchless_shift_right(n, shift));
                 loindex = tmp & MASK;
                 num = static_cast<RU>(static_cast<RU>(1) << loindex);
                 V val1 = MFE::convertInExtended_aTimesR(mf, num, magicValue);
@@ -125,7 +126,7 @@ struct impl_montgomery_two_pow {
             }
             else {
                 shift -= (P2 + 1);
-                tmp = static_cast<size_t>(n >> shift);
+                tmp = static_cast<size_t>(branchless_shift_right(n, shift));
                 loindex = tmp & MASK;
                 num = static_cast<RU>(static_cast<RU>(1) << loindex);
                 V val1 = MFE::convertInExtended_aTimesR(mf, num, magicValue);
@@ -166,18 +167,18 @@ break_0_1:
         HPBC_CLOCKWORK_ASSERT2(numbits > P2);
 
         int shift = numbits - P2;
-        size_t index = static_cast<size_t>(n >> shift);
+        size_t index = static_cast<size_t>(branchless_shift_right(n, shift));
         HPBC_CLOCKWORK_ASSERT2(index <= MASK);
         V result = MFE::twoPowLimited(mf, index);
         while (shift >= P2) {
             if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
-                while (shift > P2 && (static_cast<size_t>(n>>(shift-1)) & 1u) == 0) {
+                while (shift > P2 && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
                     result = mf.square(result);
                     --shift;
                 }
             }
             shift -= P2;
-            index = static_cast<size_t>(n >> shift) & MASK;
+            index = static_cast<size_t>(branchless_shift_right(n, shift)) & MASK;
             V tableVal = MFE::twoPowLimited(mf, index);
             HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i<P2; ++i)
                 result = mf.square(result);
@@ -208,7 +209,7 @@ break_0_1:
 
         int shift = numbits - (P2 + 1);
         HPBC_CLOCKWORK_ASSERT2(shift >= 0);
-        size_t tmp = static_cast<size_t>(n >> shift);
+        size_t tmp = static_cast<size_t>(branchless_shift_right(n, shift));
         HPBC_CLOCKWORK_ASSERT2(tmp <= 2u*MASK + 1u);
         // Bit P2 of tmp was the leading bit, so it should always be set.
         HPBC_CLOCKWORK_ASSERT2(((tmp >> P2) & 1u) == 1u);
@@ -217,7 +218,7 @@ break_0_1:
 
         while (shift >= (P2 + 1)) {
             if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
-                while ((static_cast<size_t>(n>>(shift-1)) & 1u) == 0) {
+                while ((static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
                     result = mf.square(result);
                     --shift;
                     if (shift < (P2 + 1))
@@ -226,7 +227,7 @@ break_0_1:
                 HPBC_CLOCKWORK_ASSERT2(shift >= (P2 + 1));
 
                 shift -= (P2 + 1);
-                tmp = static_cast<size_t>(n >> shift);
+                tmp = static_cast<size_t>(branchless_shift_right(n, shift));
                 loindex = tmp & MASK;
                 V val1 = MFE::RTimesTwoPowLimited(mf, loindex, magicValue);
                 HPBC_CLOCKWORK_ASSERT2(((tmp >> P2) & 1u) == 1u);
@@ -240,7 +241,7 @@ break_0_1:
             }
             else {
                 shift -= (P2 + 1);
-                tmp = static_cast<size_t>(n >> shift);
+                tmp = static_cast<size_t>(branchless_shift_right(n, shift));
                 loindex = tmp & MASK;
                 V val1 = MFE::RTimesTwoPowLimited(mf, loindex, magicValue);
                 V val2 = MFE::twoPowLimited(mf, loindex);
@@ -337,7 +338,7 @@ break_0_3:
         std::array<V, ARRAY_SIZE> result;
         std::array<size_t, ARRAY_SIZE> tmp;
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-            tmp[j] = static_cast<size_t>(n[j] >> shift);
+            tmp[j] = static_cast<size_t>(branchless_shift_right(n[j], shift));
             HPBC_CLOCKWORK_ASSERT2(tmp[j] <= MASK);
             // normally we use (tmp & MASK), but it's redundant with tmp <= MASK
             result[j] = MFE::twoPowLimited(mf[j], tmp[j]);
@@ -348,7 +349,7 @@ break_0_3:
             std::array<size_t, ARRAY_SIZE> index;
             std::array<V, ARRAY_SIZE> tableVal;
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-                tmp[j] = static_cast<size_t>(n[j] >> shift);
+                tmp[j] = static_cast<size_t>(branchless_shift_right(n[j], shift));
                 index[j] = tmp[j] & MASK;
                 tableVal[j] = MFE::twoPowLimited(mf[j], index[j]);
             }
@@ -407,7 +408,7 @@ break_0_3:
 
         std::array<V, ARRAY_SIZE> result;
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-            size_t index = static_cast<size_t>(n[j] >> shift);
+            size_t index = static_cast<size_t>(branchless_shift_right(n[j], shift));
             HPBC_CLOCKWORK_ASSERT2(index <= MASK);
             result[j] = table[index][j];
         }
@@ -417,8 +418,8 @@ break_0_3:
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
                 result[j] = mf[j].template square<hc::LowuopsTag>(result[j]);
                 V vtmp = mf[j].two_times(result[j]);
-                   // result[j] = ((n[j] >> shift) & 1u) ? vtmp : result[j];
-                result[j].cmov(static_cast<size_t>(n[j] >> shift) & 1u, vtmp);
+                   // result[j] = ((branchless_shift_right(n[j], shift)) & 1u) ? vtmp : result[j];
+                result[j].cmov(static_cast<size_t>(branchless_shift_right(n[j], shift)) & 1u, vtmp);
             }
         }
         return result;
