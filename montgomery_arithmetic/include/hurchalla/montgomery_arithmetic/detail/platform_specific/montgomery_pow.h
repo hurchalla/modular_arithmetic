@@ -41,7 +41,8 @@ struct montgomery_pow {
     // Applied Handbook of Cryptography- http://cacr.uwaterloo.ca/hac/
     // See also: hurchalla/modular_arithmetic/detail/impl_modular_pow.h
     V mont_one = mf.getUnityValue();
-    V result = (exponent & static_cast<T>(1)) ? base : mont_one;
+    V result = mont_one;
+    result.cmov((exponent & static_cast<T>(1)), base);
     while (exponent > static_cast<T>(1)) {
         exponent = static_cast<T>(exponent >> static_cast<T>(1));
         base = mf.template square<LowlatencyTag>(base);

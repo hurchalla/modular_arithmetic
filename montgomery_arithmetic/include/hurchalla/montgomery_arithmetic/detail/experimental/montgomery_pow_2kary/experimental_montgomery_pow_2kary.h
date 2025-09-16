@@ -1059,12 +1059,14 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         index = static_cast<size_t>(branchless_shift_right(n, shift)) & MASK;
 
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-            V tmp = (index % 2 == 0) ? table[index/2][j] : result[j];
+            V tmp = result[j];
+            tmp.cmov((index % 2 == 0), table[index/2][j]);
             result[j] = mf.template multiply<LowuopsTag>(tmp, result[j]);
         }
 
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-            V tmp = (index % 2 == 0) ? result[j] : table[index][j];
+            V tmp = table[index][j];
+            tmp.cmov((index % 2 == 0), result[j]);
             result[j] = mf.template multiply<LowuopsTag>(tmp, result[j]);
         }
     }

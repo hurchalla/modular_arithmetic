@@ -18,6 +18,7 @@
 #include "hurchalla/modular_arithmetic/absolute_value_difference.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
+#include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <type_traits>
@@ -233,7 +234,8 @@ class MontyFullRange final :
         T minu, subt;
         hc::REDC_incomplete(minu, subt, u_hi, u_lo, n_, BC::inv_n_, PTAG());
         T res = static_cast<T>(minu - subt);
-        T subtrahend = (minu < subt) ? res : static_cast<T>(0);
+          // T subtrahend = (minu < subt) ? res : static_cast<T>(0);
+        T subtrahend = hc::conditional_select((minu < subt), res, static_cast<T>(0));
         SV result(res, subtrahend);
         return result;
     }
@@ -261,7 +263,9 @@ class MontyFullRange final :
     // via squareToMontgomeryValue
     HURCHALLA_FORCE_INLINE V getMontgomeryValue(SV sv) const
     {
-        T nonneg_value = sv.get_subtrahend() != 0 ? sv.get() + n_ : sv.get();
+         //T nonneg_value = sv.get_subtrahend() != 0 ? sv.get() + n_ : sv.get();
+        T nonneg_value = ::hurchalla::conditional_select(
+                           (sv.get_subtrahend() != 0), sv.get() + n_, sv.get());
         return V(nonneg_value);
     }
 

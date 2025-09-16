@@ -2465,8 +2465,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
     U n_max = n[0];
     HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=1; j<ARRAY_SIZE; ++j) {
-        if (n_max < n[j])
-            n_max = n[j];
+        n_max = (n_max < n[j]) ? n[j] : n_max;
     }
 
 

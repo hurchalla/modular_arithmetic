@@ -289,7 +289,8 @@ struct RedcIncomplete {
     T v_mid = u_mid - mn_mid;
     TH u_hi_hi = static_cast<TH>(u_hi >> HALF_BITS);
     TH v_hi_hi = u_hi_hi - (u_mid < mn_mid);
-    T moz = (u_hi_hi < (u_mid < mn_mid)) ? n : 0;
+        // T moz = (u_hi_hi < (u_mid < mn_mid)) ? n : 0;
+    T moz = ::hurchalla::conditional_select((u_hi_hi < (u_mid < mn_mid)), n, 0);
 
     T v_hi = (static_cast<T>(v_hi_hi) << HALF_BITS) | (v_mid >> HALF_BITS);
     v_hi = v_hi + moz;
@@ -807,7 +808,8 @@ struct RedcStandard
     // By RedcIncomplete::call()'s Postcondition #1, we would have:
     T difference = static_cast<T>(minuend - subtrahend);
     bool ovf = (minuend < subtrahend);
-    T result = (ovf) ? static_cast<T>(difference + n) : difference;
+        // T result = (ovf) ? static_cast<T>(difference + n) : difference;
+    T result = hc::conditional_select((ovf), static_cast<T>(difference + n), difference);
 #else
     // The #if section above is just a modular subtraction...
     // The most efficient way to compute it is to call our dedicated function:
