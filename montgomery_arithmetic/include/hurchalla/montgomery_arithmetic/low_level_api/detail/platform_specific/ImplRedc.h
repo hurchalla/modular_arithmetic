@@ -54,9 +54,9 @@ namespace hurchalla { namespace detail {
 // no relation to "T" in the algorithm description.
 // We also use "n" instead of "N", and "inv_n" instead of "N^(-1)" (N with the
 // superscript -1).  The constant "R" remains the same, and represents the value
-// R = 1<<(ut::ut_numeric_limits<T>::digits).  As an example, if T is uint64_t,
-// then R = 1<<64.
-
+// R = (UP)1 << ut::ut_numeric_limits<T>::digits, where UP is a conceptually
+// unlimited precision unsigned integer type.  As an example, if T is uint64_t,
+// then R = (UP)1 << 64.
 
 
 struct RedcIncomplete {

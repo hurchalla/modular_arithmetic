@@ -18,8 +18,11 @@
 namespace hurchalla {
 
 
-// For discussion purposes, let the unlimited precision constant R equal
-// 1<<(ut_numeric_limits<T>::digits). For example when T is uint64_t, R = 1<<64.
+// For discussion purposes, let type UP be a conceptually unlimited precision
+// unsigned integer type, and let the unlimited precision constant R represent
+// R = (UP)1 << ut_numeric_limits<T>::digits.  Equivalently,
+// R = (UP)ut_numeric_limits<T>::max + 1.  For example, if T is uint64_t, we
+// would have R = (UP)1 << 64.
 
 // Returns the integer x satisfying  x*a ≡ 1 (mod R)
 // This function is constexpr when compiling for std=c++14 or higher

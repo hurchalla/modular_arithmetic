@@ -80,7 +80,8 @@ struct MontyFRValueTypes {
 };
 
 
-// Let the theoretical constant R = 1<<(ut_numeric_limits<T>::digits).
+// Let the theoretical constant R = (UP)1 << ut_numeric_limits<T>::digits, where
+// UP is conceptually an unlimited precision unsigned integer type.
 template <typename T>
 class MontyFullRange final :
                   public MontyCommonBase<MontyFullRange, MontyFRValueTypes, T> {

@@ -26,7 +26,8 @@ template <class MF, class PTAG>
 struct MontgomeryFormExtensions final {
 
     using RU = typename MF::MontType::uint_type;
-    // conceptually, R = 1 << (ut_numeric_limits<RU>::digits)
+    // conceptually, R = (UP)1 << ut_numeric_limits<RU>::digits, with UP as an
+    // unlimited precision unsigned integer type.
     static_assert(ut_numeric_limits<RU>::is_integer, "");
     static_assert(!(ut_numeric_limits<RU>::is_signed), "");
 

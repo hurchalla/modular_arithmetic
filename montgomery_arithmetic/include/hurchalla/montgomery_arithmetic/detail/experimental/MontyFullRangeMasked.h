@@ -99,7 +99,8 @@ struct MfrmValueTypes {
 };
 
 
-// Let the theoretical constant R = 1<<(ut_numeric_limits<T>::digits).
+// Let the theoretical constant R = (UP)1 << (ut_numeric_limits<T>::digits),
+// where UP is a conceptual unlimited precision integer type.
 template <typename T>
 class MontyFullRangeMasked final :
            public MontyCommonBase<MontyFullRangeMasked, MfrmValueTypes, T> {

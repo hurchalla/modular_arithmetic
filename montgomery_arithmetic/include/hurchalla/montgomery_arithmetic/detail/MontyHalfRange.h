@@ -29,9 +29,13 @@
 namespace hurchalla { namespace detail {
 
 
-// The name "Halfrange" signifies that the modulus must be less than R/2, where
-// R = 1<<(ut_numeric_limits<T>::digits).  For example, if T is uint64_t then
-// R = 1<<64 and R/2 == 1<<63, and thus it would require  modulus < (1<<63).
+// For discussion purposes, let type UP be a conceptually unlimited precision
+// unsigned integer type, and let the unlimited precision constant R represent
+// R = (UP)1 << ut_numeric_limits<T>::digits.  Equivalently,
+// R = (UP)ut_numeric_limits<T>::max + 1.  For example, if T is uint64_t, we
+// would have R = (UP)1 << 64.
+
+// The name "Halfrange" signifies that the modulus must be less than R/2.
 
 
 // struct used internally by MontyHalfRange
@@ -86,7 +90,6 @@ struct MontyHRValueTypes {
 };
 
 
-// Let the theoretical constant R = 1<<(ut_numeric_limits<T>::digits).
 template <typename T>
 class MontyHalfRange final :
                   public MontyCommonBase<MontyHalfRange, MontyHRValueTypes, T> {

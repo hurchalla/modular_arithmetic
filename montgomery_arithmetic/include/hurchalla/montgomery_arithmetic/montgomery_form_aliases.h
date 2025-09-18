@@ -37,14 +37,15 @@ namespace hurchalla {
 // limit for the modulus that you are allowed to use to construct a
 // MontgomeryQuarter object: you may use the smallest quarter of the range of
 // all possible (odd) values of the unsigned version of type T, for the modulus.
-// More specifically, if we let U = extensible_make_unsigned<T>::type, and we
-// let R = (1 << ut_numeric_limits<U>::digits), then MontgomeryQuarter<T> allows
-// any odd positive modulus < R/4.  For example, MontgomeryQuarter<uint64_t>
-// allows any odd modulus satisfying 0 < modulus < (1 << 64)/4.  And likewise,
+// More specifically, let U = extensible_make_unsigned<T>::type  and let U2 be
+// a theoretical unlimited precision integer type.  We let the theoretical value
+// R = (U2)1 << ut_numeric_limits<U>::digits.  MontgomeryQuarter<T> allows any
+// odd positive modulus < R/4.  For example, MontgomeryQuarter<uint64_t> allows
+// any odd modulus satisfying 0 < modulus < ((U2)1 << 64)/4.  And likewise,
 // MontgomeryQuarter<int64_t> also allows any odd modulus satisfying
-// 0 < modulus < (1 << 64)/4.  It is undefined behavior to use a modulus that is
-// not within the allowed range.  The modulus you use must be odd, which is
-// always required for montgomery arithmetic.
+// 0 < modulus < ((U2)1 << 64)/4.  It is undefined behavior to use a modulus
+// that is not within the allowed range.  The modulus you use must be odd, which
+// is always required for montgomery arithmetic.
 // In contrast, the default class MontgomeryForm<T> has no restriction on its
 // modulus size, though it still requires that its modulus must be a positive
 // odd number.
@@ -55,11 +56,12 @@ namespace hurchalla {
 // for the modulus that you are allowed to use to construct a MontgomeryHalf
 // object: you may use the smallest half of the range of all possible (odd)
 // values of the unsigned version of type T, for the modulus.  More
-// specifically, if we let U = extensible_make_unsigned<T>::type, and we let
-// R = (1 << ut_numeric_limits<U>::digits), then MontgomeryHalf<T> allows any
-// odd positive modulus < R/2.  For example, MontgomeryHalf<uint64_t> allows any
-// odd modulus satisfying 0 < modulus < (1 << 64)/2.  MontgomeryHalf<int64_t>
-// also allows any odd modulus satisfying 0 < modulus < (1 << 64)/2.  We can
+// specifically, let U = extensible_make_unsigned<T>::type  and let U2 be a
+// theoretical unlimited precision integer type.  We let the theoretical value
+// R = (U2)1 << ut_numeric_limits<U>::digits.  MontgomeryHalf<T> allows any odd
+// positive modulus < R/2.  For example, MontgomeryHalf<uint64_t> allows any odd
+// modulus satisfying 0 < modulus < ((U2)1 << 64)/2.  MontgomeryHalf<int64_t>
+// also allows any odd modulus satisfying 0 < modulus < ((U2)1 << 64)/2.  We can
 // note that for any signed integer type T, this therefore permits all positive
 // (and odd) values of T to be used for the modulus.  It is undefined behavior
 // to use a modulus that is not within the allowed range.  The modulus you use
@@ -67,18 +69,21 @@ namespace hurchalla {
 // In contrast, the default class MontgomeryForm<T> has no restriction on its
 // modulus size, though it still requires that its modulus must be a positive
 // odd number.
+// You can expect MontgomeryHalf<T> to perform worse than MontgomeryQuarter<T>,
+// but usually better than MontgomeryForm<T>, if you use the same modulus for
+// all these Montgomery types.
 // For a type T that is the same size as the CPU integer registers (e.g.
-// uin64_t on a 64 bit computer) or a type T that is smaller than the register
+// uint64_t on a 64 bit computer) or a type T that is smaller than the register
 // size, you can expect that MontgomeryHalf<T> will perform better (very often)
 // or at worst the same as MontgomeryForm<T>, if both are given the same
 // modulus.  It is possible that plain add() and subtract() may perform slightly
 // worse, but if so, this would ordinarily be overcome by the improved
 // performance of the multiply, square, fused-multiply/square-add/sub functions.
-// However, for a type T that is larger than the CPU integer register size, we
-// may expect MontgomeryHalf<T> to perform worse overall than MontgomeryForm<T>.
-// Instead of using MontgomeryHalf<T>, if your modulus is small enough to allow
-// use of MontgomeryQuarter<T>, you can usually expect MontgomeryQuarter<T> to
-// perform better than MontgomeryHalf<T>.
+// However, for a type T that is larger than the CPU integer register size, it
+// is not unusual for MontgomeryHalf<T> to perform worse overall than
+// MontgomeryForm<T>.
+// In general, if your modulus is small enough to allow MontgomeryQuarter<T>,
+// you should prefer to use it instead of MontgomeryHalf<T>.
 //
 // The suffix "Full" in the alias name MontgomeryFull indicates that any
 // positive odd-valued modulus is permissable to use to construct a
@@ -182,7 +187,7 @@ public:
 // small enough type T.
 
 
-// experimental alias
+// experimental alias - you should not use this
 template <typename T, bool InlineAllFunctions =
                    (ut_numeric_limits<T>::digits <= HURCHALLA_TARGET_BIT_WIDTH)>
 using MontgomeryMasked = MontgomeryForm<T, InlineAllFunctions,

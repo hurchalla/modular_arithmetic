@@ -27,10 +27,13 @@
 
 namespace hurchalla { namespace detail {
 
+// For discussion purposes, let type UP be a conceptually unlimited precision
+// unsigned integer type, and let the unlimited precision constant R represent
+// R = (UP)1 << ut_numeric_limits<T>::digits.  Equivalently,
+// R = (UP)ut_numeric_limits<T>::max + 1.  For example, if T is uint64_t, we
+// would have R = (UP)1 << 64.
 
-// The name "Quarterrange" signifies that the modulus must be less than R/4,
-// where  R = 1<<(ut_numeric_limits<T>::digits).  For example, if T is uint64_t
-// then R = 1<<64 and R/4 == 1<<62, and thus it would require  modulus < 1<<62.
+// The name "Quarterrange" signifies that the modulus must be less than R/4.
 
 // The MontyQuarterRange class functions require/allow an unusual input range:
 // for an input x, they allow  0 <= x < 2*n, where n is the modulus.  Similarly,
@@ -82,7 +85,6 @@ struct MontyQRValueTypes {
 };
 
 
-// Let the theoretical constant R = 1<<(ut_numeric_limits<T>::digits).
 template <typename T>
 class MontyQuarterRange final : public
                       MontyCommonBase<MontyQuarterRange, MontyQRValueTypes, T> {

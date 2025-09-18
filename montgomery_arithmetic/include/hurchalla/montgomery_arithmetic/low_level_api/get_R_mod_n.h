@@ -15,9 +15,11 @@
 namespace hurchalla {
 
 
-// For discussion purposes, let the unlimited precision constant R represent
-// R = 1<<(ut_numeric_limits<T>::digits).  For example, if T is uint64_t, then
-// R = 1<<64.
+// For discussion purposes, let type UP be a conceptually unlimited precision
+// unsigned integer type, and let the unlimited precision constant R represent
+// R = (UP)1 << ut_numeric_limits<T>::digits.  Equivalently,
+// R = (UP)ut_numeric_limits<T>::max + 1.  For example, if T is uint64_t, we
+// would have R = (UP)1 << 64.
 
 // Compute R % n
 template <typename T>
@@ -33,11 +35,12 @@ T get_R_mod_n(T n)
     // expression, in order to avoid a negative value (and a wrong answer)
     // in cases where 'n' would be promoted to type 'int'.
     T tmp = static_cast<T>(static_cast<T>(0) - n);
-    // Compute R%n.  For example, if R==1<<64, arithmetic wraparound behavior
-    // of the unsigned integral type T results in (0 - n) representing
-    // ((1<<64)-n).  Thus, rModN = R%n == (1<<64)%n == ((1<<64)-n)%n == (0-n)%n
+    // Compute R % n.  Arithmetic wraparound behavior of the unsigned integral
+    // type T results in (0 - n) equaling (R - n).  Thus
+    // rModN = R % n == (R - n) % n == (0 - n) % n
     T rModN = static_cast<T>(tmp % n);
-    // Since n is odd and > 1, n does not divide R==1<<x.  Thus, rModN != 0.
+    // Since n is odd and > 1, and R is a power of 2,  n can not divide R.
+    // Thus, rModN != 0.
 
     HPBC_CLOCKWORK_POSTCONDITION2(0 < rModN && rModN < n);
     return rModN;

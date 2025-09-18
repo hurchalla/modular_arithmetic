@@ -31,9 +31,11 @@
 namespace hurchalla { namespace detail {
 
 
-// For discussion purposes throughout this file, given an unsigned integral type
-// T, let R = 1<<(ut_numeric_limits<T>::digits).  For example: if T is uint64_t
-// then R = 1<<64.  The name 'R' is based on the wikipedia presentation
+// For discussion purposes throughout this file, let the unlimited precision
+// constant R represent R = (UP)1 << ut_numeric_limits<T>::digits, where UP is
+// an imaginary unlimited precision unsigned integer type.  Equivalently,
+// R = (UP)ut_numeric_limits<T>::max + 1.  As an example if T us uint64_t, then
+// R = (UP)1 << 64.  The name 'R' is based on the wikipedia presentation
 // https://en.wikipedia.org/wiki/Montgomery_modular_multiplication
 //
 // This base class uses the CRTP idiom

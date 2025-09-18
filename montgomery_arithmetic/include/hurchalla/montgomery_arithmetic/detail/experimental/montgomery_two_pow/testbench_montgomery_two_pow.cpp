@@ -487,7 +487,7 @@ bench_array_two_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_red
             U val = generate_random_value<U>(gen, distrib64);
             uint64_t ranval2 = generate_random_value<uint64_t>(gen, distrib64);
             int extra_reduce = ranval2 & 7;
-            U exponentmask = (static_cast<U>(0) - static_cast<U>(1)) >> (exponentreduction + extra_reduce); 
+            U exponentmask = static_cast<U>(static_cast<U>(0) - static_cast<U>(1)) >> (exponentreduction + extra_reduce);
             val = val & exponentmask;
             if (val < exponentmask/2)
                val += exponentmask/2;
@@ -742,7 +742,7 @@ bench_range(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST 
             U val = generate_random_value<U>(gen, distrib64);
             uint64_t ranval2 = generate_random_value<uint64_t>(gen, distrib64);
             int extra_reduce = ranval2 & 7;
-            U exponentmask = (static_cast<U>(0) - static_cast<U>(1)) >> (exponentreduction + extra_reduce); 
+            U exponentmask = static_cast<U>(static_cast<U>(0) - static_cast<U>(1)) >> (exponentreduction + extra_reduce);
             val = val & exponentmask;
             if (val < exponentmask/2)
                val += exponentmask/2;
@@ -851,6 +851,8 @@ using namespace hurchalla;
 #else
    using U = DEF_UINT_TYPE;
 #endif
+    static_assert(ut_numeric_limits<U>::is_integer, "");
+    static_assert(!(ut_numeric_limits<U>::is_signed), "");
 
 //#define XSTR(x) STR(x)
 //#define STR(x) #x

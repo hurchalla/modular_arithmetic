@@ -26,9 +26,11 @@
 namespace hurchalla {
 
 
-// For discussion purposes, let the unlimited precision constant R represent
-// R = 1<<(ut_numeric_limits<T>::digits).  For example, if T is uint64_t, then
-// R = 1<<64.
+// For discussion purposes, let type UP be a conceptually unlimited precision
+// unsigned integer type, and let the unlimited precision constant R represent
+// R = (UP)1 << ut_numeric_limits<T>::digits.  Equivalently,
+// R = (UP)ut_numeric_limits<T>::max + 1.  For example, if T is uint64_t, we
+// would have R = (UP)1 << 64.
 
 // get_Rsquared_mod_n() computes and returns (R*R) % n.
 // You can get the argument inverse_n_modR by calling inverse_mod_r().  You can

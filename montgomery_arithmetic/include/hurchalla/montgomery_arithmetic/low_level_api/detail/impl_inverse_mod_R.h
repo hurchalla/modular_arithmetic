@@ -19,8 +19,11 @@
 namespace hurchalla { namespace detail {
 
 
-// For discussion purposes, let the unlimited precision constant R equal
-// 1<<(ut_numeric_limits<T>::digits). For example when T is uint64_t, R = 1<<64.
+// For discussion purposes, let type UP be a conceptually unlimited precision
+// unsigned integer type, and let the unlimited precision constant R represent
+// R = (UP)1 << ut_numeric_limits<T>::digits.  Equivalently,
+// R = (UP)ut_numeric_limits<T>::max + 1.  For example, if T is uint64_t, we
+// would have R = (UP)1 << 64.
 
 // minor note: we use static member functions to disallow ADL.
 
@@ -50,6 +53,9 @@ public:
     typename std::enable_if<(bits <= HURCHALLA_TARGET_BIT_WIDTH), T>::type
     call(T a)
     {
+        static_assert(ut_numeric_limits<T>::is_integer, "");
+        static_assert(!(ut_numeric_limits<T>::is_signed), "");
+
         static_assert(bits == ut_numeric_limits<T>::digits, "");
         static_assert(std::is_unsigned<T>::value, ""); //native unsigned integer
         HPBC_CLOCKWORK_CONSTEXPR_PRECONDITION(a % 2 == 1);

@@ -380,7 +380,7 @@ class MontyWrappedStandardMath final {
         T u_lo = static_cast<T>(tmp << power);
         int rshift = digitsT - power;
         HPBC_CLOCKWORK_ASSERT2(rshift > 0);
-        T u_hi = (tmp >> 1) >> (rshift - 1);
+        T u_hi = static_cast<T>(tmp >> 1) >> (rshift - 1);
         HPBC_CLOCKWORK_ASSERT2(u_hi < modulus_);
         // It's very strange to use REDC when this class is meant to wrap
         // standard arithmetic within the monty interface and not actually
@@ -401,7 +401,7 @@ class MontyWrappedStandardMath final {
 
         T tmp = cx.get();
         HPBC_CLOCKWORK_INVARIANT2(tmp < modulus_);
-        T u_lo = static_cast<T>((tmp << 1) << (power - 1));
+        T u_lo = static_cast<T>(static_cast<T>(tmp << 1) << (power - 1));
         int rshift = digitsT - power;
         HPBC_CLOCKWORK_ASSERT2(0 <= rshift && rshift < digitsT);
         T u_hi = static_cast<T>(tmp >> rshift);
