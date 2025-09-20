@@ -259,6 +259,26 @@ class MontyWrappedStandardMath final {
         return add(cx, cx);
     }
 
+    HURCHALLA_FORCE_INLINE V halve(V x) const
+    {
+        C chalf = halve(getCanonicalValue(x));
+        return V(chalf);
+    }
+    HURCHALLA_FORCE_INLINE C halve(C cx) const
+    {
+        T val = cx.get();
+        T halfval = val >> 1;
+        HPBC_CLOCKWORK_INVARIANT2(modulus_ % 2 == 1);
+        T halfn_ceiling = 1 + (modulus_ >> 1);
+
+        T oddsum = halfval + halfn_ceiling;
+          // T retval = ((val & 1u) == 0) ? halfval : oddsum;
+        T retval = conditional_select(((val & 1u) == 0), halfval, oddsum);
+
+        HPBC_CLOCKWORK_POSTCONDITION2(retval < modulus_);
+        return C(retval);
+    }
+
 
     HURCHALLA_FORCE_INLINE SV getSquaringValue(V x) const
     {
@@ -298,20 +318,6 @@ class MontyWrappedStandardMath final {
         HPBC_CLOCKWORK_POSTCONDITION2(inv == 0 || 1 ==
             hc::modular_multiplication_prereduced_inputs(inv,x.get(),modulus_));
         return C(inv);
-    }
-
-    template <class PTAG> HURCHALLA_FORCE_INLINE
-    V divideBySmallPowerOf2(C cx, int exponent, PTAG) const
-    {
-        V pow_of_two = twoPowLimited(static_cast<size_t>(exponent), PTAG());
-        C inv_pow_of_two = inverse(pow_of_two, PTAG());
-        C zero = getZeroValue();
-        HPBC_CLOCKWORK_ASSERT2(inv_pow_of_two != zero);
-        bool isZero;
-        V product = multiply(inv_pow_of_two, cx, isZero, PTAG());
-        HPBC_CLOCKWORK_ASSERT2((cx == zero) == isZero);
-        C result = getCanonicalValue(product);
-        return result;
     }
 
     // Returns the greatest common divisor of the standard representations

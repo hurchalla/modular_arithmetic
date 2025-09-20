@@ -125,20 +125,18 @@ template <typename, template <typename> class> class MontyAliasHelper;
 
 // For the template parameter InlineAllFunctions, you should usually accept the
 // default rather than specify an argument.  However if you wish to reduce
-// compilation times you can set it to false, which may help.
+// compilation times or potentially reduce your executable's size, you can set
+// it to false, which may help.
 
-template <typename T, bool InlineAllFunctions =
-                   (ut_numeric_limits<T>::digits <= HURCHALLA_TARGET_BIT_WIDTH)>
+template <typename T, bool InlineAllFunctions = true>
 using MontgomeryQuarter = MontgomeryForm<T, InlineAllFunctions,
          detail::MontyQuarterRange<typename extensible_make_unsigned<T>::type>>;
 
-template <typename T, bool InlineAllFunctions =
-                   (ut_numeric_limits<T>::digits <= HURCHALLA_TARGET_BIT_WIDTH)>
+template <typename T, bool InlineAllFunctions = true>
 using MontgomeryHalf = MontgomeryForm<T, InlineAllFunctions,
               typename MontyAliasHelper<T, detail::MontyHalfRange>::type>;
 
-template <typename T, bool InlineAllFunctions =
-                   (ut_numeric_limits<T>::digits <= HURCHALLA_TARGET_BIT_WIDTH)>
+template <typename T, bool InlineAllFunctions = true>
 using MontgomeryFull = MontgomeryForm<T, InlineAllFunctions,
               typename MontyAliasHelper<T, detail::MontyFullRange>::type>;
 
@@ -157,8 +155,7 @@ using MontgomeryFull = MontgomeryForm<T, InlineAllFunctions,
 // to use.  However, CPU architectures vary and evolve, and what is true today
 // may not be true tomorrow - you will need to measure and compare performance
 // on your system to know for certain.
-template <typename T, bool InlineAllFunctions =
-                   (ut_numeric_limits<T>::digits <= HURCHALLA_TARGET_BIT_WIDTH)>
+template <typename T, bool InlineAllFunctions = true>
 using MontgomeryStandardMathWrapper = MontgomeryForm<T, InlineAllFunctions,
   detail::MontyWrappedStandardMath<typename extensible_make_unsigned<T>::type>>;
 
@@ -188,8 +185,7 @@ public:
 
 
 // experimental alias - you should not use this
-template <typename T, bool InlineAllFunctions =
-                   (ut_numeric_limits<T>::digits <= HURCHALLA_TARGET_BIT_WIDTH)>
+template <typename T, bool InlineAllFunctions = true>
 using MontgomeryMasked = MontgomeryForm<T, InlineAllFunctions,
               typename MontyAliasHelper<T, detail::MontyFullRangeMasked>::type>;
 

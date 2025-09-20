@@ -328,52 +328,6 @@ void test_inverse(const M& mf)
 }
 
 template <typename M>
-void test_divideBySmallPowerOf2_for_dividend(const M& mf,
-                                                typename M::IntegerType a)
-{
-    namespace hc = ::hurchalla;
-    using T = typename M::IntegerType;
-    using U = typename hc::extensible_make_unsigned<T>::type;
-    using V = typename M::MontgomeryValue;
-    using C = typename M::CanonicalValue;
-
-    U n = static_cast<U>(mf.getModulus());
-    ASSERT_TRUE(n % 2 == 1);
-    U gcd;  // ignored
-    U inv2 = hc::modular_multiplicative_inverse(static_cast<U>(2), n, gcd);
-    ASSERT_TRUE(inv2 != 0);
-    V mont_inv2 = mf.convertIn(static_cast<T>(inv2));
-
-    C cx = mf.getCanonicalValue(mf.convertIn(a));
-    C answer = cx;
-    for (int i=0; i<8; ++i) {
-        C val = mf.getCanonicalValue(mf.divideBySmallPowerOf2(cx, i));
-        EXPECT_TRUE(val == answer);
-        answer = mf.getCanonicalValue(mf.multiply(answer, mont_inv2));
-    }
-}
-
-template <typename M>
-void test_divideBySmallPowerOf2(const M& mf)
-{
-    using T = typename M::IntegerType;
-    T max = ::hurchalla::ut_numeric_limits<T>::max();
-    T mid = static_cast<T>(max/2);
-    T modulus = mf.getModulus();
-    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(0));
-    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(1));
-    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(2));
-    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(max-0));
-    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(max-1));
-    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(mid-0));
-    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(mid-1));
-    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(modulus-1));
-    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(modulus-2));
-    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>(modulus/2));
-    test_divideBySmallPowerOf2_for_dividend(mf, static_cast<T>((modulus/2)-1));
-}
-
-template <typename M>
 void test_mf_general_checks(const M& mf, typename M::IntegerType a,
                            typename M::IntegerType b, typename M::IntegerType c)
 {
@@ -426,6 +380,11 @@ void test_mf_general_checks(const M& mf, typename M::IntegerType a,
                            mf.getCanonicalValue(mf.convertIn(reference_two_a)));
     EXPECT_TRUE(mf.getCanonicalValue(mf.two_times(xc)) ==
                            mf.getCanonicalValue(mf.convertIn(reference_two_a)));
+
+    EXPECT_TRUE(mf.add(mf.halve(xc), mf.halve(xc)) == xc);
+    EXPECT_TRUE(mf.add(mf.halve(yc), mf.halve(yc)) == yc);
+    EXPECT_TRUE(mf.getCanonicalValue(mf.add(mf.halve(x), mf.halve(x))) == xc);
+    EXPECT_TRUE(mf.getCanonicalValue(mf.add(mf.halve(y), mf.halve(y))) == yc);
 
     T diff1 = tma::modsub(b, a, modulus);
     test_subtract_variants(mf, y, x, diff1);
@@ -566,6 +525,10 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.two_times(xc)) == 12);
         EXPECT_TRUE(mf.convertOut(mf.two_times(y)) == 9);
         EXPECT_TRUE(mf.convertOut(mf.two_times(yc)) == 9);
+        EXPECT_TRUE(mf.convertOut(mf.halve(x)) == 3);
+        EXPECT_TRUE(mf.convertOut(mf.halve(xc)) == 3);
+        EXPECT_TRUE(mf.convertOut(mf.halve(y)) == 12);
+        EXPECT_TRUE(mf.convertOut(mf.halve(yc)) == 12);
         test_subtract_variants(mf, y, x, 5);
         test_subtract_variants(mf, x, y, 8);
         T us = mf.convertOut(mf.unorderedSubtract(x,y));
@@ -578,8 +541,10 @@ void test_MontgomeryForm()
                                          mf.getCanonicalValue(mf.convertIn(4)));
         EXPECT_TRUE(mf.getCanonicalValue(mf.two_times(y)) ==
                                          mf.getCanonicalValue(mf.convertIn(9)));
-        EXPECT_TRUE(mf.getCanonicalValue(mf.two_times(yc)) ==
-                                         mf.getCanonicalValue(mf.convertIn(9)));
+        EXPECT_TRUE(mf.two_times(yc) == mf.getCanonicalValue(mf.convertIn(9)));
+        EXPECT_TRUE(mf.getCanonicalValue(mf.halve(y)) ==
+                                        mf.getCanonicalValue(mf.convertIn(12)));
+        EXPECT_TRUE(mf.halve(yc) == mf.getCanonicalValue(mf.convertIn(12)));
         EXPECT_TRUE(mf.getUnityValue()== mf.getCanonicalValue(mf.convertIn(1)));
         EXPECT_TRUE(mf.getZeroValue() == mf.getCanonicalValue(mf.convertIn(0)));
         EXPECT_TRUE(modulus > 0);
@@ -641,6 +606,10 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.two_times(xc)) == 2);
         EXPECT_TRUE(mf.convertOut(mf.two_times(y)) == 1);
         EXPECT_TRUE(mf.convertOut(mf.two_times(yc)) == 1);
+        EXPECT_TRUE(mf.convertOut(mf.halve(x)) == 2);
+        EXPECT_TRUE(mf.convertOut(mf.halve(xc)) == 2);
+        EXPECT_TRUE(mf.convertOut(mf.halve(y)) == 1);
+        EXPECT_TRUE(mf.convertOut(mf.halve(yc)) == 1);
         test_subtract_variants(mf, y, x, 1);
         test_subtract_variants(mf, x, y, 2);
         EXPECT_TRUE(mf.getCanonicalValue(mf.subtract(x,y)) ==
@@ -707,6 +676,18 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.convertOut(mf.two_times(yc)) == 4);
         EXPECT_TRUE(mf.two_times(xc) ==
                  mf.getCanonicalValue(mf.convertIn(static_cast<T>(modulus-2))));
+
+        ASSERT_TRUE(static_cast<T>(modulus-1) % 2 == 0);
+        EXPECT_TRUE(mf.convertOut(mf.halve(x)) == static_cast<T>((modulus-1)/2));
+        EXPECT_TRUE(mf.convertOut(mf.halve(xc)) == static_cast<T>((modulus-1)/2));
+        EXPECT_TRUE(mf.convertOut(mf.halve(y)) == 1);
+        EXPECT_TRUE(mf.convertOut(mf.halve(yc)) == 1);
+        EXPECT_TRUE(mf.halve(xc) ==
+             mf.getCanonicalValue(mf.convertIn(static_cast<T>((modulus-1)/2))));
+        EXPECT_TRUE(mf.halve(mf.getZeroValue()) == mf.getZeroValue());
+        EXPECT_TRUE(mf.convertOut(mf.halve(mf.getUnityValue())) ==
+                                             static_cast<T>(1 + (modulus-1)/2));
+
         test_subtract_variants(mf, y, x, 3);
         test_subtract_variants(mf, x, y, modulus - 3);
         EXPECT_TRUE(mf.getCanonicalValue(mf.add(x,y)) ==
@@ -819,7 +800,7 @@ void test_MontgomeryForm()
         EXPECT_TRUE(mf.gcd_with_modulus(mf.convertIn(12), GcdFunctor()) == 3);
     }
 
-    // test remainder() and inverse() and divideBySmallPowerOf2()
+    // test remainder() and inverse()
     {
         T max = max_modulus;
         T mid = static_cast<T>(max/2);
@@ -827,24 +808,20 @@ void test_MontgomeryForm()
         auto mf_3 = MFactory::construct(3);
         test_remainder(mf_3);    // smallest possible modulus
         test_inverse(mf_3);
-        test_divideBySmallPowerOf2(mf_3);
 
         auto mf_max = MFactory::construct(max);
         test_remainder(mf_max);  // largest possible modulus
         test_inverse(mf_max);
-        test_divideBySmallPowerOf2(mf_max);
 
         if (121 <= max) {
             auto mf_121 = MFactory::construct(121);
             test_remainder(mf_121);
             test_inverse(mf_121);
-            test_divideBySmallPowerOf2(mf_121);
         }
 
         auto mf_mid = MFactory::construct(mid);
         test_remainder(mf_mid);
         test_inverse(mf_mid);
-        test_divideBySmallPowerOf2(mf_mid);
     }
 }
 

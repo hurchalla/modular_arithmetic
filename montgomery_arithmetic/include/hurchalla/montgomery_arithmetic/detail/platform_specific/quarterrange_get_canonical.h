@@ -47,7 +47,9 @@ struct default_quarterrange_get_canonical {
 #endif
 
 #if 0
-   // this should be correct, but the #else is preferred for performance
+    // This should be correct, but the #else is preferred for performance -
+    // for some reason clang generates worse asm from this, and to a lesser
+    // extent gcc too.
     T result = static_cast<T>(x - n);
        // set  result = (x<n) ? x : result
     result = ::hurchalla::conditional_select(x<n, x, result);

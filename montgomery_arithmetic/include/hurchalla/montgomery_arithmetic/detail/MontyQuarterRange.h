@@ -314,6 +314,60 @@ class MontyQuarterRange final : public
     }
 
 
+    HURCHALLA_FORCE_INLINE V halve(V x) const
+    {
+        constexpr T Rdiv4 = static_cast<T>(static_cast<T>(1) <<
+                                            (ut_numeric_limits<T>::digits - 2));
+        HPBC_CLOCKWORK_INVARIANT2(0 <= n_ && n_ < Rdiv4);
+
+        T val = x.get();
+        HPBC_CLOCKWORK_ASSERT2(0 <= val && val < 2*n_);
+
+        T evenhalf = val >> 1;
+        HPBC_CLOCKWORK_ASSERT2(n_ % 2 == 1);
+        // Since val < 2*n  and  n < Rdiv4,  (val + n) < 3*n < R.
+        // So we know the addition won't overflow.
+        T oddhalf = static_cast<T>(val + n_) >> 1;
+        // since val < 2*n,  (val + n)/2 <= (3*n - 1)/2 == (4*n - n - 1)/2 < 2*n
+        HPBC_CLOCKWORK_ASSERT2(oddhalf < 2*n_);
+        // if val is odd and < n, then oddhalf works fine of course.
+        // if val is odd and n <= val < 2*n,
+        //   then we could subtract n, which would be congruent to val, and then
+        //   halve that.  val2 = (val - n)/2.  This would work since (val - n)
+        //   for our case here is even.
+        //   Let val3 = (val - n)/2 + n == (val - n + 2*n)/2 == (val + n)/2,
+        //   which is oddhalf.
+        //   So oddhalf is congruent mod n to our desired answer val2.
+        //   And we know by the assertion above that oddhalf fits in V.
+
+          // T retval = ((val & 1u) == 0) ? evenhalf : oddhalf;
+        T retval = conditional_select(((val & 1u) == 0), evenhalf, oddhalf);
+
+        HPBC_CLOCKWORK_POSTCONDITION2(retval < 2*n_);
+        return V(retval);
+    }
+    HURCHALLA_FORCE_INLINE C halve(C cx) const
+    {
+        constexpr T Rdiv4 = static_cast<T>(static_cast<T>(1) <<
+                                            (ut_numeric_limits<T>::digits - 2));
+        HPBC_CLOCKWORK_INVARIANT2(0 <= n_ && n_ < Rdiv4);
+
+        T val = cx.get();
+        HPBC_CLOCKWORK_ASSERT2(0 <= val && val < n_);
+        T evenhalf = val >> 1;
+        HPBC_CLOCKWORK_ASSERT2(n_ % 2 == 1);
+        // since val < n  and  n < Rdiv4,  val + n < R,
+        //   so the sum (val + n) won't overflow.
+        // since val < n,  (val + n)/2 < n.
+        T oddhalf = static_cast<T>(val + n_) >> 1;
+          // T retval = ((val & 1u) == 0) ? evenhalf : oddhalf;
+        T retval = conditional_select(((val & 1u) == 0), evenhalf, oddhalf);
+
+        HPBC_CLOCKWORK_POSTCONDITION2(retval < n_);
+        return C(retval);
+    }
+
+
     HURCHALLA_FORCE_INLINE SV getSquaringValue(V x) const
     {
         static_assert(std::is_same<V, SV>::value, "");

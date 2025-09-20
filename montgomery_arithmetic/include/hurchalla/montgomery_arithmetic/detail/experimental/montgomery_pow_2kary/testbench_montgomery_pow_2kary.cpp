@@ -1160,6 +1160,7 @@ using namespace hurchalla;
 
    std::cout << "\nbegin benchmarks\n";
 
+   constexpr int NUM_TEST_REPETITIONS = 2;
 
 
 
@@ -1171,7 +1172,7 @@ using namespace hurchalla;
    // format is  bench_partial_array_pow<TABLE_BITS, CODE_SECTION, ARRAY_SIZE, MontType,
    //                                    USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(...)
 
-   std::array<std::array<std::vector<TimingPA>, 5>, 4> timingPA;
+   std::array<std::array<std::vector<TimingPA>, NUM_TEST_REPETITIONS>, 4> timingPA;
 
    for (size_t i=0; i<4; ++i) {
      for (size_t j=0; j<timingPA[i].size(); ++j) {
@@ -1272,7 +1273,7 @@ using namespace hurchalla;
          <4, 1, 4, MontType, true, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
    }
 
-#if 0
+#if 1
       timingPA[i][j].push_back(bench_partial_array_pow
          <5, 1, 3, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingPA[i][j].push_back(bench_partial_array_pow
@@ -1344,7 +1345,7 @@ using namespace hurchalla;
 
       // format is bench_array_pow<TABLE_BITS, CODE_SECTION, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION>(...)
 
-   std::array<std::array<std::vector<TimingA>, 5>, 4> timingA;
+   std::array<std::array<std::vector<TimingA>, NUM_TEST_REPETITIONS>, 4> timingA;
 
    for (size_t i=0; i<4; ++i) {
      for (size_t j=0; j<timingA[i].size(); ++j) {
@@ -1416,21 +1417,10 @@ using namespace hurchalla;
 
    // format is bench_range<TABLE_BITS, USE_SLIDING_WINDOW_OPTIMIZATION, CODE_SECTION, MontType, USE_SQUARING_VALUE_OPTIMIZATION>
 
-   std::array<std::array<std::vector<Timing>, 5>, 4> timings;
+   std::array<std::array<std::vector<Timing>, NUM_TEST_REPETITIONS>, 4> timings;
 
    for (size_t i=0; i<4; ++i) {
      for (size_t j=0; j<timings[i].size(); ++j) {
-#if 0
-      timings[i][j].push_back(
-         bench_range<4, false, 5, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<4,  true, 5, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<4, false, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<4,  true, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-#endif
 #if 1
       timings[i][j].push_back(
          bench_range<0, false, 0, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));

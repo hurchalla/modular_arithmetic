@@ -151,7 +151,7 @@ void test_two_pow(typename M::IntegerType modulus, U exponent)
     test_two_pow_array<M,11>(modulus, exponent);
     test_two_pow_array<M,12>(modulus, exponent);
     test_two_pow_array<M,13>(modulus, exponent);
-    test_two_pow_array<M,29>(modulus, exponent);
+    test_two_pow_array<M,19>(modulus, exponent);
     //test_two_pow_array<M,61>(modulus, exponent);
     //test_two_pow_array<M,120>(modulus, exponent);
 #endif
@@ -319,14 +319,10 @@ void run_pow_tests()
 
 
 // For unit testing, we want fast compile times, so it helps to use the version
-// of MontgomeryForm that generally doesn't do force inlining.
+// of MontgomeryForm that doesn't do force inlining.
 #if 1
 constexpr bool forceInlineAllFunctions = false;
 #else
-// note: even the default template arg for MontgomeryForm wouldn't have force
-// inlined everything for uint128_t or int128_t (we would expect the functions
-// to have too many instructions for it to be a good idea).  So for some T we
-// get more inlining than the default, when this #else is enabled.
 constexpr bool forceInlineAllFunctions = true;
 #endif
 

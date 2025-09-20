@@ -315,6 +315,20 @@ public:
         return OpenC(static_cast<typename OpenC::OT>(mfc.get()));
     }
 
+    virtual V halve(V x) const override
+    {
+        OpenMFV mfv(mf.halve(OpenMFV(OpenV(x))));
+        // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
+        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
+    }
+
+    virtual C halve(C x) const override
+    {
+        OpenMFC mfc(mf.halve(OpenMFC(OpenC(x))));
+        // note: mfc.get() might be signed or unsigned; OpenC::OT is unsigned
+        return OpenC(static_cast<typename OpenC::OT>(mfc.get()));
+    }
+
     virtual V two_pow(T exponent) const override
     {
         HPBC_CLOCKWORK_PRECONDITION2(0 <= exponent);
@@ -625,23 +639,6 @@ private:
         else
             result = mf.template remainder<LowuopsTag>(static_cast<MFT>(a));
         return result;
-    }
-
-    virtual V divideBySmallPowerOf2(C cx, int exponent, bool useLowlatencyTag)
-        const override
-    {
-        OpenMFV mfv;
-        if (useLowlatencyTag) {
-            OpenMFV mfv2(mf.template divideBySmallPowerOf2<LowlatencyTag>(
-                                                 OpenMFC(OpenC(cx)), exponent));
-            mfv = mfv2;
-        } else {
-            OpenMFV mfv2(mf.template divideBySmallPowerOf2<LowuopsTag>(
-                                                 OpenMFC(OpenC(cx)), exponent));
-            mfv = mfv2;
-        }
-        // note: mfv.get() might be signed or unsigned; OpenV::OT is unsigned
-        return OpenV(static_cast<typename OpenV::OT>(mfv.get()));
     }
 
     // This class (ConcreteMontgomeryForm) only supports calling vectorPow()

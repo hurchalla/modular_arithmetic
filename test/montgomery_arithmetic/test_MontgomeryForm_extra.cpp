@@ -23,10 +23,6 @@ namespace {
 #if 1
 constexpr bool forceInlineAllFunctions = false;
 #else
-// note: even the default template arg for MontgomeryForm wouldn't have force
-// inlined everything for uint128_t or int128_t (we would expect the functions
-// to have too many instructions for it to be a good idea).  So for some T we
-// get more inlining than the default, when this #else is enabled.
 constexpr bool forceInlineAllFunctions = true;
 #endif
 

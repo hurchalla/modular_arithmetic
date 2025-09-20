@@ -485,39 +485,6 @@ class MontyCommonBase {
     }
 
 
-    // this is close to being a copy/paste of twoPowLimited_times_x, but it's
-    // adjusted for the different meaning of exponent.
-    template <class PTAG> HURCHALLA_FORCE_INLINE
-    V divideBySmallPowerOf2(C cx, int exponent, PTAG) const
-    {
-        static constexpr int digitsT = ut_numeric_limits<T>::digits;
-        HPBC_CLOCKWORK_PRECONDITION2(0 <= exponent && exponent < digitsT);
-        HPBC_CLOCKWORK_PRECONDITION2(exponent < HURCHALLA_TARGET_BIT_WIDTH);
-        int power = digitsT - exponent;
-        HPBC_CLOCKWORK_ASSERT2(0 < power && power <= digitsT);
-
-        T tmp = cx.get();
-        HPBC_CLOCKWORK_INVARIANT2(tmp < n_);
-
-        HPBC_CLOCKWORK_ASSERT2(0 <= power - 1 && power - 1 < digitsT);
-        // we know by asserttion that  exponent < HURCHALLA_TARGET_BIT_WIDTH
-        // thus,  digitsT - HURCHALLA_TARGET_BIT_WIDTH < digitsT - exponent == power
-        // and so,  digitsT - HURCHALLA_TARGET_BIT_WIDTH <= power - 1
-        HPBC_CLOCKWORK_ASSERT2(digitsT - static_cast<int>(HURCHALLA_TARGET_BIT_WIDTH) <= power - 1);
-        T u_lo = static_cast<T>(branchless_large_shift_left(static_cast<T>(tmp << 1), power - 1));
-
-        int rshift = exponent;
-        HPBC_CLOCKWORK_ASSERT2(0 <= rshift && rshift < digitsT);
-        HPBC_CLOCKWORK_ASSERT2(rshift < HURCHALLA_TARGET_BIT_WIDTH);
-        T u_hi = static_cast<T>(branchless_small_shift_right(tmp, rshift));
-
-        HPBC_CLOCKWORK_ASSERT2(u_hi < n_);
-        const D* child = static_cast<const D*>(this);
-        V result = child->montyREDC(u_hi, u_lo, PTAG());
-        HPBC_CLOCKWORK_POSTCONDITION2(child->isValid(result));
-        return result;
-    }
-
 
     // returns (R*R) mod N
     HURCHALLA_FORCE_INLINE C getMontvalueR() const

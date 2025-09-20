@@ -496,6 +496,87 @@ class MontyHalfRange final :
     }
 
 
+    HURCHALLA_FORCE_INLINE V halve(V x) const
+    {
+        constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
+                                            (ut_numeric_limits<T>::digits - 1));
+        HPBC_CLOCKWORK_INVARIANT2(0 <= n_ && n_ < Rdiv2);
+
+        S val = x.get();
+        HPBC_CLOCKWORK_ASSERT2(-static_cast<S>(n_) <= val &&
+                               val < static_cast<S>(n_));
+
+        static_assert((static_cast<S>(-1) >> 1) == static_cast<S>(-1),
+                          "Arithmetic right shift is required but unavailable");
+        S halfval = val >> 1;
+        HPBC_CLOCKWORK_INVARIANT2(n_ % 2 == 1);
+        T halfn_ceiling = 1 + (n_ >> 1);
+        S oddsum = halfval + static_cast<S>(halfn_ceiling);
+        // we do need to show overflow can't happen when halfval > 0:
+        //   val < n, so halfval <= n/2.  And halfn_ceiling == n/2 + 1.
+        //   So oddsum <= n/2 + n/2 + 1.
+        //   Because n is odd, (n/2 + n/2) == n - 1
+        //   So oddsum <= n < Rdiv2.  Thus the sum can not overflow.
+        // (when halfval <= 0, the sum can't overflow because halfn_ceiling > 0)
+
+          // S retval = (val % 2 == 0) ? halfval : oddsum;
+        static_assert(static_cast<S>(-1) == ~(static_cast<S>(0)),
+                                  "S must use two's complement representation");
+        S retval = conditional_select(((static_cast<T>(val) & 1u) == 0), halfval, oddsum);
+
+        // It's fairly straightforward why retval works when val >= 0
+        //   it's basically the same situation as halve() in MontyFullRange,
+        //   so we won't discuss it.
+
+        // Here's the analysis for case val < 0:
+        // First, consider val even and < 0:
+        //   Then halfval + halfval == val, and so using halfval satisfies
+        //   halve()'s postcondition.  And retval == halfval when val is even.
+        // Second, consider val odd and < 0:
+        //   For an odd signed int y, y>>1 is the integer below float(y)/2.
+        //   So  halfval + 1 + halfval == val.
+        //   2 * halfval + 1 + n == val + n  [≡ val (mod n)]
+        //      (val + n) is even since n and val are both odd.
+        //      and (1 + n) is even since n is odd.
+        //   halfval + ((1 + n) >> 1) == (val + n) >> 1
+        //   (val + n) >> 1  is our desired answer, because it satisfies
+        //      ((val + n) >> 1) + ((val + n) >> 1) == val + n   ≡ val (mod n),
+        //   Thus answer == halfval + ((1 + n) >> 1) == (val + n) >> 1
+        //   And since halfn_ceiling == ((1 + n) >> 1),
+        //   answer == halfval + halfn_ceiling, which is oddsum
+        //   We know 0 < halfn_ceiling <= n, and for this case -n <= val < 0,
+        //      so -n <= halfval < 0, and thus
+        //      -n + 1 <= halfval + halfn_ceiling <= n - 1
+        //      -n + 1 <= oddsum <= n - 1
+        //      So for this case, our answer is oddsum, with
+        //   -n < odddsum < n, which fits in V.
+        HPBC_CLOCKWORK_POSTCONDITION2(-static_cast<S>(n_) <= retval &&
+                                      retval < static_cast<S>(n_));
+        return V(retval);
+    }
+    HURCHALLA_FORCE_INLINE C halve(C cx) const
+    {
+        constexpr T Rdiv2 = static_cast<T>(static_cast<T>(1) <<
+                                            (ut_numeric_limits<T>::digits - 1));
+        HPBC_CLOCKWORK_INVARIANT2(0 <= n_ && n_ < Rdiv2);
+
+        static_assert(std::is_same<decltype(cx.get()), T>::value, "");
+        T val = cx.get();
+        HPBC_CLOCKWORK_ASSERT2(0 <= val && val < n_);
+        T evenhalf = val >> 1;
+        HPBC_CLOCKWORK_ASSERT2(n_ % 2 == 1);
+        // since val < n  and  n < Rdiv2,  val + n < R.
+        // since val < n,  (val + n)/2 < n.
+        T oddhalf = static_cast<T>(val + n_) >> 1;
+        HPBC_CLOCKWORK_ASSERT2(oddhalf < n_);
+          // T retval = ((val & 1u) == 0) ? evenhalf : oddhalf;
+        T retval = conditional_select(((val & 1u) == 0), evenhalf, oddhalf);
+
+        HPBC_CLOCKWORK_POSTCONDITION2(0 <= retval && retval < n_);
+        return C(retval);
+    }
+
+
     HURCHALLA_FORCE_INLINE SV getSquaringValue(V x) const
     {
         static_assert(std::is_same<V, SV>::value, "");

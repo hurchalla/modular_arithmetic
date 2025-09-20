@@ -31,13 +31,14 @@ namespace hurchalla {
 // constructor.
 //
 // For InlineAllFunctions, you should usually accept the default rather than
-// specify an argument. However if you wish to reduce compilation times you can
-// set it to false, which may help.
+// specify an argument. However if you wish to reduce compilation times or
+// potentially reduce your executable's size, you can set it to false, which
+// may help.
 //
 // For MontyType, you should just accept the default (this parameter exists to
 // provide you the alias classes in montgomery_form_aliases.h.)
 template <class T,
-          bool InlineAllFunctions = (ut_numeric_limits<T>::digits <= HURCHALLA_TARGET_BIT_WIDTH),
+          bool InlineAllFunctions = true,
           class MontyType = typename detail::MontgomeryDefault<T>::type>
 class MontgomeryForm final {
     const detail::ImplMontgomeryForm<T, InlineAllFunctions, MontyType> impl;
@@ -333,6 +334,27 @@ public:
         return ret;
     }
 
+    // Returns the Montgomery division of x by 2, which is a modular division.
+    // The returned quotient times two is congruent to x.  Division by two can
+    // be defined as multiplication by the modular multiplicative inverse of 2,
+    // which is always valid in Montgomery form because the inverse of 2 always
+    // exists in Montgomery form (due to the Montgomery modulus being odd).
+    HURCHALLA_FORCE_INLINE
+    MontgomeryValue halve(MontgomeryValue x) const
+    {
+        MontgomeryValue ret = impl.halve(x);
+        HPBC_CLOCKWORK_POSTCONDITION(getCanonicalValue(add(ret,ret)) ==
+                                     getCanonicalValue(x));
+        return ret;
+    }
+    HURCHALLA_FORCE_INLINE
+    CanonicalValue halve(CanonicalValue x) const
+    {
+        CanonicalValue ret = impl.halve(x);
+        HPBC_CLOCKWORK_POSTCONDITION(add(ret,ret) == x);
+        return ret;
+    }
+
 
     // Returns the modular product of (the montgomery values) x and y.
     // Performance note: when calling this function and deciding which variable
@@ -556,48 +578,6 @@ public:
         CanonicalValue ret = impl.template inverse<PTAG>(x);
         HPBC_CLOCKWORK_POSTCONDITION(ret == getZeroValue() ||
                         getCanonicalValue(multiply(x, ret)) == getUnityValue());
-        return ret;
-    }
-
-
-    // Returns the Montgomery division of x by a small power of two (requires
-    // 0 <= power <= 7, which translates to Montgomery division by 1,2,4,8,16,
-    // 32,64, or 128). This function always produces an exactly correct result.
-    // Note that Montgomery division is modular division, which is different
-    // from normal and non modular division - modular division performs modular
-    // multiplication by the modular multiplicative inverse of the divisor. So,
-    // this function calculates and returns the product of x times the modular
-    // multiplicative inverse of 2^power (^ denotes exponentiation), in
-    // Montgomery form. Due to the requirement that every Montgomery modulus
-    // must be odd, the inverse of all powers of two exist in Montgomery form,
-    // and so multiplication by the inverse of 2^power is always valid. And
-    // since all calculation is modular, the division result is exactly correct
-    // - i.e. x is congruent to the return value times 2^power.
-    //
-    // In the common case that you wish to divide a MontgomeryValue x instead of
-    // a CanonicalValue, use getCanonicalValue(x) as your first argument to this
-    // function.
-    //
-    // If you wish to divide by some large power of 2, you can use the following
-    // sequence of calls:
-    //   // Assume "mf" is a MontgomeryForm instance that you have constructed
-    //   // ...for example via...    auto mf = MontgomeryForm(modulus);
-    //   // and assume that the large power is   some_large_exponent.
-    //   auto inv_two = mf.divideBySmallPowerOf2(mf.getUnityValue(), 1);
-    //   auto full_inv = mf.pow(inv_two, some_large_exponent);
-    //   auto desired_result = mf.multiply(full_inv, x);
-    //
-    // Performance note: this function is very efficient. It should ordinarily
-    // be faster than even a single call of multiply().
-    template <class PTAG = LowlatencyTag> HURCHALLA_FORCE_INLINE
-    MontgomeryValue divideBySmallPowerOf2(CanonicalValue x, int power) const
-    {
-        HPBC_CLOCKWORK_API_PRECONDITION(0 <= power && power < 8);
-
-        MontgomeryValue ret= impl.template divideBySmallPowerOf2<PTAG>(x,power);
-
-        HPBC_CLOCKWORK_POSTCONDITION(x ==
-              getCanonicalValue(multiply(ret, two_pow(static_cast<T>(power)))));
         return ret;
     }
 

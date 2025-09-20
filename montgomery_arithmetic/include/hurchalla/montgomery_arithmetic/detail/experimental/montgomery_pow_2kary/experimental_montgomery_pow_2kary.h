@@ -216,22 +216,30 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         result = table[index];
 
         while (shift >= P) {
-            if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
-                while (shift > P && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
-                    result = mf.square(result);
-                    --shift;
-                }
-            }
-            HPBC_CLOCKWORK_ASSERT2(shift >= P);
-
             if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
-                static_assert(P >= 1, "");
                 SV sv = MFE::getSquaringValue(mf, result);
+                if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
+                    while (shift > P && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
+                        sv = MFE::squareSV(mf, sv);
+                        --shift;
+                    }
+                }
+                HPBC_CLOCKWORK_ASSERT2(shift >= P);
+
+                static_assert(P >= 1, "");
                 HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i<P-1; ++i)
                     sv = MFE::squareSV(mf, sv);
                 result = MFE::squareToMontgomeryValue(mf, sv);
             }
             else {
+                if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
+                    while (shift > P && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
+                        result = mf.square(result);
+                        --shift;
+                    }
+                }
+                HPBC_CLOCKWORK_ASSERT2(shift >= P);
+
                 HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i<P; ++i)
                     result = mf.square(result);
             }
@@ -323,34 +331,51 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         result = mf.multiply(table2[hiindex], table1[loindex]);
 
         while (shift >= NUMBITS_MASKBIG) {
-            if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
-                while (shift > NUMBITS_MASKBIG && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
-                    result = mf.square(result);
-                    --shift;
-                }
-            }
-            HPBC_CLOCKWORK_ASSERT2(shift >= NUMBITS_MASKBIG);
-
-            shift -= NUMBITS_MASKBIG;
-            tmp = static_cast<size_t>(branchless_shift_right(n, shift));
-            loindex = tmp & MASK;
-            hiindex = (tmp >> TABLE_BITS) & MASK;
-
-            V val1 = mf.template multiply<LowuopsTag>(table2[hiindex], table1[loindex]);
-
             if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
-                static_assert(NUMBITS_MASKBIG >= 1, "");
                 SV sv = MFE::getSquaringValue(mf, result);
+                if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
+                    while (shift > NUMBITS_MASKBIG && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
+                        sv = MFE::squareSV(mf, sv);
+                        --shift;
+                    }
+                }
+                HPBC_CLOCKWORK_ASSERT2(shift >= NUMBITS_MASKBIG);
+
+                shift -= NUMBITS_MASKBIG;
+                tmp = static_cast<size_t>(branchless_shift_right(n, shift));
+                loindex = tmp & MASK;
+                hiindex = (tmp >> TABLE_BITS) & MASK;
+
+                V val1 = mf.template multiply<LowuopsTag>(table2[hiindex], table1[loindex]);
+
+                static_assert(NUMBITS_MASKBIG >= 1, "");
                 HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i<NUMBITS_MASKBIG - 1; ++i)
                     sv = MFE::squareSV(mf, sv);
                 result = MFE::squareToMontgomeryValue(mf, sv);
+
+                result = mf.multiply(result, val1);
             }
             else {
+                if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
+                    while (shift > NUMBITS_MASKBIG && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
+                        result = mf.square(result);
+                        --shift;
+                    }
+                }
+                HPBC_CLOCKWORK_ASSERT2(shift >= NUMBITS_MASKBIG);
+
+                shift -= NUMBITS_MASKBIG;
+                tmp = static_cast<size_t>(branchless_shift_right(n, shift));
+                loindex = tmp & MASK;
+                hiindex = (tmp >> TABLE_BITS) & MASK;
+
+                V val1 = mf.template multiply<LowuopsTag>(table2[hiindex], table1[loindex]);
+
                 HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i<NUMBITS_MASKBIG; ++i)
                     result = mf.square(result);
-            }
 
-            result = mf.multiply(result, val1);
+                result = mf.multiply(result, val1);
+            }
         }
         if (shift == 0)
             return result;
@@ -457,24 +482,24 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         V result = mf.multiply(table3[index3], val1);
 
         while (shift >= NUMBITS_MASKBIG) {
-            if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
-                while (shift > NUMBITS_MASKBIG && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
-                    result = mf.square(result);
-                    --shift;
-                }
-            }
-            HPBC_CLOCKWORK_ASSERT2(shift >= NUMBITS_MASKBIG);
-
-            shift -= NUMBITS_MASKBIG;
-            tmp = static_cast<size_t>(branchless_shift_right(n, shift));
-
-            index1 = tmp & MASK;
-            index2 = (tmp >> TABLE_BITS) & MASK;
-            val1 = mf.template multiply<LowuopsTag>(table2[index2], table1[index1]);
-
             if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
-                static_assert(NUMBITS_MASKBIG >= 3, "");
                 SV sv = MFE::getSquaringValue(mf, result);
+                if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
+                    while (shift > NUMBITS_MASKBIG && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
+                        MFE::squareSV(mf, sv);
+                        --shift;
+                    }
+                }
+                HPBC_CLOCKWORK_ASSERT2(shift >= NUMBITS_MASKBIG);
+
+                shift -= NUMBITS_MASKBIG;
+                tmp = static_cast<size_t>(branchless_shift_right(n, shift));
+
+                index1 = tmp & MASK;
+                index2 = (tmp >> TABLE_BITS) & MASK;
+                val1 = mf.template multiply<LowuopsTag>(table2[index2], table1[index1]);
+
+                static_assert(NUMBITS_MASKBIG >= 3, "");
                 sv = MFE::squareSV(mf, sv);
                 sv = MFE::squareSV(mf, sv);
 
@@ -488,6 +513,21 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
                 result = mf.multiply(result, val2);
             }
             else {
+                if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
+                    while (shift > NUMBITS_MASKBIG && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
+                        result = mf.square(result);
+                        --shift;
+                    }
+                }
+                HPBC_CLOCKWORK_ASSERT2(shift >= NUMBITS_MASKBIG);
+
+                shift -= NUMBITS_MASKBIG;
+                tmp = static_cast<size_t>(branchless_shift_right(n, shift));
+
+                index1 = tmp & MASK;
+                index2 = (tmp >> TABLE_BITS) & MASK;
+                val1 = mf.template multiply<LowuopsTag>(table2[index2], table1[index1]);
+
                 static_assert(NUMBITS_MASKBIG >= 2, "");
                 result = mf.square(result);
                 result = mf.square(result);
@@ -596,20 +636,20 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
 
         while (shift >= NUMBITS_MASKBIG) {
-            if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
-                while (shift > NUMBITS_MASKBIG && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
-                    result = mf.square(result);
-                    --shift;
-                }
-            }
-            HPBC_CLOCKWORK_ASSERT2(shift >= NUMBITS_MASKBIG);
-
-            shift -= NUMBITS_MASKBIG;
-            tmp = static_cast<size_t>(branchless_shift_right(n, shift));
-            V val1 = table[0][tmp & MASK];
-
             if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
                 SV sv = MFE::getSquaringValue(mf, result);
+                if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
+                    while (shift > NUMBITS_MASKBIG && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
+                        sv = MFE::squareSV(mf, sv);
+                        --shift;
+                    }
+                }
+                HPBC_CLOCKWORK_ASSERT2(shift >= NUMBITS_MASKBIG);
+
+                shift -= NUMBITS_MASKBIG;
+                tmp = static_cast<size_t>(branchless_shift_right(n, shift));
+                V val1 = table[0][tmp & MASK];
+
                 static_assert(TABLE_BITS >= 1, "");
                 HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i<TABLE_BITS - 1; ++i)
                     sv = MFE::squareSV(mf, sv);
@@ -622,8 +662,22 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
                         sv = MFE::squareSV(mf, sv);
                 }
                 result = MFE::squareToMontgomeryValue(mf, sv);
+
+                result = mf.multiply(result, val1);
             }
             else {
+                if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
+                    while (shift > NUMBITS_MASKBIG && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
+                        result = mf.square(result);
+                        --shift;
+                    }
+                }
+                HPBC_CLOCKWORK_ASSERT2(shift >= NUMBITS_MASKBIG);
+
+                shift -= NUMBITS_MASKBIG;
+                tmp = static_cast<size_t>(branchless_shift_right(n, shift));
+                V val1 = table[0][tmp & MASK];
+
                 HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i<TABLE_BITS; ++i)
                     result = mf.square(result);
 
@@ -634,9 +688,9 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
                     HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i<TABLE_BITS; ++i)
                         result = mf.square(result);
                 }
-            }
 
-            result = mf.multiply(result, val1);
+                result = mf.multiply(result, val1);
+            }
         }
         if (shift == 0)
             return result;
@@ -648,24 +702,38 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
         V val1 = table[0][tmp & MASK];
 
-        if HURCHALLA_CPP17_CONSTEXPR (NUM_TABLES == 1) {
-            for (int i=0; i<shift; ++i)
-                result = mf.square(result);
-        }
-        else {
-            static_assert(NUM_TABLES > 1, "");
-            size_t index = (tmp >> TABLE_BITS) & MASK;
-            val1 = mf.template multiply<LowuopsTag>(val1, table[1][index]);
-
-            result = mf.square(result);
-
-            HURCHALLA_REQUEST_UNROLL_LOOP for (int k=2; k<NUM_TABLES; ++k) {
-                index = (tmp >> (k * TABLE_BITS)) & MASK;
+        if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
+            HURCHALLA_REQUEST_UNROLL_LOOP for (int k=1; k<NUM_TABLES; ++k) {
+                size_t index = (tmp >> (k * TABLE_BITS)) & MASK;
                 val1 = mf.template multiply<LowuopsTag>(val1, table[k][index]);
             }
 
-            for (int i=1; i<shift; ++i)
+            SV sv = MFE::getSquaringValue(mf, result);
+            HPBC_CLOCKWORK_ASSERT2(shift >= 1);
+            for (int i=0; i<shift-1; ++i)
+                sv = MFE::squareSV(mf, sv);
+            result = MFE::squareToMontgomeryValue(mf, sv);
+        }
+        else {
+            if HURCHALLA_CPP17_CONSTEXPR (NUM_TABLES == 1) {
+                for (int i=0; i<shift; ++i)
+                    result = mf.square(result);
+            }
+            else {
+                static_assert(NUM_TABLES > 1, "");
+                size_t index = (tmp >> TABLE_BITS) & MASK;
+                val1 = mf.template multiply<LowuopsTag>(val1, table[1][index]);
+
                 result = mf.square(result);
+
+                HURCHALLA_REQUEST_UNROLL_LOOP for (int k=2; k<NUM_TABLES; ++k) {
+                    index = (tmp >> (k * TABLE_BITS)) & MASK;
+                    val1 = mf.template multiply<LowuopsTag>(val1, table[k][index]);
+                }
+
+                for (int i=1; i<shift; ++i)
+                    result = mf.square(result);
+            }
         }
 
         result = mf.multiply(result, val1);
@@ -898,18 +966,19 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
 
     while (shift >= P) {
-        if (USE_SLIDING_WINDOW_OPTIMIZATION) {
-            while (shift > P && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-                    result[j] = mf.template square<LowuopsTag>(result[j]);
-                --shift;
-            }
-        }
-
         if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
             std::array<SV, ARRAY_SIZE> sv;
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
                 sv[j] = MFE_LU::getSquaringValue(mf, result[j]);
+
+            if (USE_SLIDING_WINDOW_OPTIMIZATION) {
+                while (shift > P && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
+                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                        sv[j] = MFE_LU::squareSV(mf, sv[j]);
+                    --shift;
+                }
+            }
+
             static_assert(P > 0, "");
             for (int i=0; i<P - 1; ++i) {
                 HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
@@ -917,7 +986,16 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
             }
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
                 result[j] = MFE_LU::squareToMontgomeryValue(mf, sv[j]);
-        } else {
+        }
+        else {
+            if (USE_SLIDING_WINDOW_OPTIMIZATION) {
+                while (shift > P && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
+                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                        result[j] = mf.template square<LowuopsTag>(result[j]);
+                    --shift;
+                }
+            }
+
             for (int i=0; i<P; ++i) {
                 HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
                     result[j] = mf.template square<LowuopsTag>(result[j]);
@@ -1027,19 +1105,20 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
 
     while (shift >= P) {
-        if (USE_SLIDING_WINDOW_OPTIMIZATION) {
-            while (shift > P && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-                    result[j] = mf.template square<LowuopsTag>(result[j]);
-                --shift;
-            }
-        }
-
-        // we do P-1 squarings instead of P squarings
         if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
             std::array<SV, ARRAY_SIZE> sv;
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
                 sv[j] = MFE_LU::getSquaringValue(mf, result[j]);
+
+            if (USE_SLIDING_WINDOW_OPTIMIZATION) {
+                while (shift > P && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
+                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                        sv[j] = MFE_LU::squareSV(mf, sv[j]);
+                    --shift;
+                }
+            }
+
+            // we do P-1 squarings instead of P squarings
             static_assert(P > 1, "");
             for (int i=0; i<P - 2; ++i) {
                 HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
@@ -1047,7 +1126,17 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
             }
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
                 result[j] = MFE_LU::squareToMontgomeryValue(mf, sv[j]);
-        } else {
+        }
+        else {
+            if (USE_SLIDING_WINDOW_OPTIMIZATION) {
+                while (shift > P && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
+                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                        result[j] = mf.template square<LowuopsTag>(result[j]);
+                    --shift;
+                }
+            }
+
+            // we do P-1 squarings instead of P squarings
             static_assert(P > 0, "");
             for (int i=0; i<P - 1; ++i) {
                 HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)

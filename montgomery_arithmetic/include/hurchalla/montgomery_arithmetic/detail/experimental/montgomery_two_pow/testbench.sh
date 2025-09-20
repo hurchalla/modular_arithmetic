@@ -497,6 +497,8 @@ fi
 # to debug you can compile with the below also
 # -DHURCHALLA_CLOCKWORK_ENABLE_ASSERTS  -DHURCHALLA_UTIL_ENABLE_ASSERTS
 
+# we could also use  -g  to get debug symbols (for lldb/gdb, and objdump)
+
 $cppcompiler   \
         $error_limit   -$optimization_level \
         $define_mont_type  $define_uint_type  $define_use_asm \

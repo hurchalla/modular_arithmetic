@@ -87,6 +87,11 @@ public:
     CanonicalValue two_times(CanonicalValue x) const
         { return pimpl->two_times(x); }
 
+    MontgomeryValue halve(MontgomeryValue x) const
+        { return pimpl->halve(x); }
+    CanonicalValue halve(CanonicalValue x) const
+        { return pimpl->halve(x); }
+
     template <class PTAG = LowlatencyTag>
     MontgomeryValue multiply(MontgomeryValue x, MontgomeryValue y) const
         { return pimpl->template multiply<PTAG>(x, y); }
@@ -126,10 +131,6 @@ public:
     template <class PTAG = LowlatencyTag>
     CanonicalValue inverse(MontgomeryValue x) const
         { return pimpl->template inverse<PTAG>(x); }
-
-    template <class PTAG = LowlatencyTag>
-    MontgomeryValue divideBySmallPowerOf2(CanonicalValue cx, int exponent) const
-        { return pimpl->template divideBySmallPowerOf2<PTAG>(cx, exponent); }
 
     MontgomeryValue pow(MontgomeryValue base, IntegerType exponent) const
         { return pimpl->pow(base, exponent); }

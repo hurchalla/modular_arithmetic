@@ -272,6 +272,28 @@ class MontyFullRangeMasked final :
     }
 
 
+    HURCHALLA_FORCE_INLINE V halve(V x) const
+    {
+        C chalf = halve(getCanonicalValue(x));
+        return V(chalf);
+    }
+    HURCHALLA_FORCE_INLINE C halve(C cx) const
+    {
+        // this is mostly a copy of MontyFullRange's halve()
+        T val = cx.get();
+        T halfval = val >> 1;
+        HPBC_CLOCKWORK_INVARIANT2(n_ % 2 == 1);
+        T halfn_ceiling = 1 + (n_ >> 1);
+
+        T oddsum = halfval + halfn_ceiling;
+          // T retval = ((val & 1u) == 0) ? halfval : oddsum;
+        T retval = conditional_select(((val & 1u) == 0), halfval, oddsum);
+
+        HPBC_CLOCKWORK_POSTCONDITION2(retval < n_);
+        return C(retval);
+    }
+
+
     HURCHALLA_FORCE_INLINE SV getSquaringValue(V x) const
     {
         static_assert(std::is_same<V, SV>::value, "");

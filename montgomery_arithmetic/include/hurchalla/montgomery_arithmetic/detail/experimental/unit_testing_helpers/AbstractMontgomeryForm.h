@@ -164,6 +164,10 @@ public:
 
     virtual CanonicalValue two_times(CanonicalValue x) const = 0;
 
+    virtual MontgomeryValue halve(MontgomeryValue x) const = 0;
+
+    virtual CanonicalValue halve(CanonicalValue x) const = 0;
+
     virtual MontgomeryValue pow(MontgomeryValue base, IntegerType exponent)
         const = 0;
 
@@ -220,9 +224,6 @@ private:
 
     virtual CanonicalValue inverse(MontgomeryValue x,
         bool useLowlatencyTag) const = 0;
-
-    virtual MontgomeryValue divideBySmallPowerOf2(CanonicalValue cx,
-        int exponent, bool useLowlatencyTag) const = 0;
 
     virtual std::vector<MontgomeryValue> vectorPow(
         const std::vector<MontgomeryValue>& bases, IntegerType exponent) const = 0;
@@ -331,13 +332,6 @@ public:
     IntegerType remainder(IntegerType a) const
     {
         return remainder(a, std::is_same<PTAG, LowlatencyTag>::value);
-    }
-
-    template <class PTAG = LowlatencyTag>
-    MontgomeryValue divideBySmallPowerOf2(CanonicalValue cx, int exponent) const
-    {
-        return divideBySmallPowerOf2(cx, exponent,
-                                     std::is_same<PTAG, LowlatencyTag>::value);
     }
 
     template <std::size_t NUM_BASES>

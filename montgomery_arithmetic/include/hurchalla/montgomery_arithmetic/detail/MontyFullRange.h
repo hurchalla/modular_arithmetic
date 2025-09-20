@@ -207,9 +207,31 @@ class MontyFullRange final :
     {
         return add(x, x);
     }
-    HURCHALLA_FORCE_INLINE C two_times(C x) const
+    HURCHALLA_FORCE_INLINE C two_times(C cx) const
     {
-        return add(x, x);
+        return add(cx, cx);
+    }
+
+
+    HURCHALLA_FORCE_INLINE V halve(V x) const
+    {
+        T val = x.get();
+        T halfval = val >> 1;
+        HPBC_CLOCKWORK_INVARIANT2(n_ % 2 == 1);
+        T halfn_ceiling = 1 + (n_ >> 1);
+
+        T oddsum = halfval + halfn_ceiling;
+          // T retval = ((val & 1u) == 0) ? halfval : oddsum;
+        T retval = conditional_select(((val & 1u) == 0), halfval, oddsum);
+
+        HPBC_CLOCKWORK_POSTCONDITION2(retval < n_);
+        return V(retval);
+    }
+    HURCHALLA_FORCE_INLINE C halve(C cx) const
+    {
+        V half = halve(static_cast<V>(cx));
+        HPBC_CLOCKWORK_POSTCONDITION2(isCanonical(half));
+        return C(half.get());
     }
 
 
@@ -234,9 +256,27 @@ class MontyFullRange final :
 
         T minu, subt;
         hc::REDC_incomplete(minu, subt, u_hi, u_lo, n_, BC::inv_n_, PTAG());
+#if 1
         T res = static_cast<T>(minu - subt);
           // T subtrahend = (minu < subt) ? res : static_cast<T>(0);
         T subtrahend = hc::conditional_select((minu < subt), res, static_cast<T>(0));
+#else
+        uint64_t minu_lo = static_cast<uint64_t>(minu);
+        uint64_t minu_hi = static_cast<uint64_t>(minu >> 64);
+        uint64_t subt_lo = static_cast<uint64_t>(subt);
+        uint64_t subt_hi = static_cast<uint64_t>(subt >> 64);
+        uint64_t reslo, reshi;
+        uint64_t subtrahend_lo, subtrahend_hi;
+        __asm__ ("subs %[reslo], %[minu_lo], %[subt_lo] \n\t"      /* res = minu - subt */
+                 "sbcs %[reshi], %[minu_hi], %[subt_hi] \n\t"
+                 "csel %[subtrahend_lo], %[reslo], xzr, lo \n\t"   /* res = (minu < subt) ? res : 0 */
+                 "csel %[subtrahend_hi], %[reshi], xzr, lo \n\t"
+                 : [reslo]"=&r"(reslo), [reshi]"=r"(reshi), [subtrahend_lo]"=r"(subtrahend_lo), [subtrahend_hi]"=r"(subtrahend_hi)
+                 : [minu_lo]"r"(minu_lo), [minu_hi]"r"(minu_hi), [subt_lo]"r"(subt_lo), [subt_hi]"r"(subt_hi)
+                 : "cc");
+        __uint128_t res = (static_cast<__uint128_t>(reshi) << 64) | reslo;
+        __uint128_t subtrahend = (static_cast<__uint128_t>(subtrahend_hi) << 64) | subtrahend_lo;
+#endif
         SV result(res, subtrahend);
         return result;
     }
