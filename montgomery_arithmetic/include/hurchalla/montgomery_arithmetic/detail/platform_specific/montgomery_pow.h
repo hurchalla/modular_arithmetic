@@ -64,10 +64,18 @@ struct montgomery_pow {
 #else
         // This section shortens the dependency chain for 'result'.  Since
         // 'result' had a longer dependency chain above than 'base' did, this
-        // in theory should run faster.  An in practice it has consistently
+        // in theory should run faster.  And in practice it has consistently
         // benchmarked better - usually ~5% faster, and never slower than above.
+
+# if 1
         V tmp = mont_one;
         tmp.cmov(exponent & static_cast<T>(1), base);
+# else
+        // this timed a little faster for MontyFull and MontyMasked, and a
+        // little slower (or a lot slower- gcc MontyHalf) for the rest.
+        V tmp = V::template cselect_on_bit_ne0<0>(static_cast<uint64_t>(exponent), base, mont_one);
+# endif
+
         result = mf.template multiply<LowlatencyTag>(result, tmp);
 #endif
     }

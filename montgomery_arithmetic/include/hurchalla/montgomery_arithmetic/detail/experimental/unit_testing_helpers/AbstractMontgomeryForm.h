@@ -20,11 +20,14 @@
 #include "hurchalla/util/traits/is_equality_comparable.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/traits/extensible_make_unsigned.h"
+#include "hurchalla/util/conditional_select.h"
+#include "hurchalla/util/cselect_on_bit.h"
 #include "hurchalla/util/compiler_macros.h"
 #include <type_traits>
 #include <array>
 #include <vector>
 #include <cstddef>
+#include <cstdint>
 
 namespace hurchalla {
 
@@ -51,6 +54,20 @@ struct AMFValueTypes {
             using PerfTag = CSelectDefaultTag;
               // value = cond ? v.value : value
             value = ::hurchalla::conditional_select<U, PerfTag>(cond,v.value,value);
+        }
+        template <int BITNUM>
+        HURCHALLA_FORCE_INLINE static
+        V cselect_on_bit_ne0(uint64_t num, V v1, V v2)
+        {
+            U sel = ::hurchalla::cselect_on_bit<BITNUM>::ne_0(num, v1.get(), v2.get());
+            return V(sel);
+        }
+        template <int BITNUM>
+        HURCHALLA_FORCE_INLINE static
+        V cselect_on_bit_eq0(uint64_t num, V v1, V v2)
+        {
+            U sel = ::hurchalla::cselect_on_bit<BITNUM>::eq_0(num, v1.get(), v2.get());
+            return V(sel);
         }
     };
     // canonical montgomery value type

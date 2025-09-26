@@ -129,7 +129,7 @@ U string_to_uint(const std::string& str)
       if (ch < '0' || ch > '9')
          throw STUException("string_to_uint() called with invalid argument:"
                " non-digit character found in 'str'");
-      U digit = ch - '0';
+      U digit = static_cast<U>(ch - '0');
       if (number > (maxU - digit) / 10)
          throw STUException("string_to_uint() called with invalid argument:"
                " the contents of 'str' would convert to a value that is too"
@@ -411,7 +411,7 @@ template <size_t TABLE_BITS, size_t CODE_SECTION, size_t ARRAY_SIZE,
           class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION, bool USE_SLIDING_WINDOW_OPTIMIZATION,
           typename U, typename ST>
 TimingPA
-bench_partial_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST seed, int exponent_bits_reduce)
+bench_partial_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST seed, unsigned int exponent_bits_reduce)
 {
    HPBC_CLOCKWORK_PRECONDITION2(max_modulus_bits_reduce <
                      hurchalla::ut_numeric_limits<decltype(MontType::max_modulus())>::digits);
@@ -461,7 +461,7 @@ bench_partial_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits
    constexpr auto max_modulus = MontType::max_modulus();
 
    constexpr bool randomizeModuli = true;
-   int exponentreduction = exponent_bits_reduce;
+   unsigned int exponentreduction = exponent_bits_reduce;
    range *= 2;
    range = range / ARRAY_SIZE;
 
@@ -537,7 +537,7 @@ bench_partial_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits
       for (U x = max; x > min; x = x-2) {
          U val = generate_random_value<U>(gen, distrib64);
          uint64_t ranval2 = generate_random_value<uint64_t>(gen, distrib64);
-         int extra_reduce = ranval2 & 7;
+         unsigned int extra_reduce = ranval2 & 7;
          U exponentmask = static_cast<U>(static_cast<U>(0) - static_cast<U>(1)) >> (exponentreduction + extra_reduce);
          val = val & exponentmask;
          if (val < exponentmask/2)
@@ -601,7 +601,7 @@ bench_partial_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits
                HURCHALLA_FORCE_INLINE auto get() -> decltype(V::get()) { return V::get(); }
             };
             for (size_t j=0; j < ARRAY_SIZE; ++j)
-               totalU += OpenV(result[j]).get();
+               totalU += static_cast<U>(OpenV(result[j]).get());
          }
 #endif
       }
@@ -635,7 +635,7 @@ template <size_t TABLE_BITS, size_t CODE_SECTION, size_t ARRAY_SIZE,
           class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION,
           typename U, typename ST>
 TimingA
-bench_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST seed, int exponent_bits_reduce)
+bench_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST seed, unsigned int exponent_bits_reduce)
 {
    HPBC_CLOCKWORK_PRECONDITION2(max_modulus_bits_reduce <
                      hurchalla::ut_numeric_limits<decltype(MontType::max_modulus())>::digits);
@@ -680,7 +680,7 @@ bench_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce,
    constexpr auto max_modulus = MontType::max_modulus();
 
    constexpr bool randomizeModuli = true;
-   int exponentreduction = exponent_bits_reduce;
+   unsigned int exponentreduction = exponent_bits_reduce;
    range *= 2;
 
 #if 1
@@ -754,7 +754,7 @@ bench_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce,
       for (U x = max; x > min; x = x-2) {
          U val = generate_random_value<U>(gen, distrib64);
          uint64_t ranval2 = generate_random_value<uint64_t>(gen, distrib64);
-         int extra_reduce = ranval2 & 7;
+         unsigned int extra_reduce = ranval2 & 7;
          U exponentmask = static_cast<U>(static_cast<U>(0) - static_cast<U>(1)) >> (exponentreduction + extra_reduce);
          val = val & exponentmask;
          if (val < exponentmask/2)
@@ -848,7 +848,7 @@ bench_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce,
                HURCHALLA_FORCE_INLINE auto get() -> decltype(V::get()) { return V::get(); }
             };
             for (size_t j=0; j < ARRAY_SIZE; ++j)
-               totalU += OpenV(result[j]).get();
+               totalU += static_cast<U>(OpenV(result[j]).get());
          }
 #endif
       }
@@ -882,11 +882,11 @@ template <size_t TABLE_BITS, bool USE_SLIDING_WINDOW_OPTIMIZATION,
           size_t CODE_SECTION, class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION,
           typename U, typename ST>
 Timing
-bench_range(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST seed, int exponent_bits_reduce)
+bench_range(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST seed, unsigned int exponent_bits_reduce)
 {
    HPBC_CLOCKWORK_PRECONDITION2(max_modulus_bits_reduce <
                      hurchalla::ut_numeric_limits<decltype(MontType::max_modulus())>::digits);
-
+#if 0
    // run very short tests to hopefully catch a bugged experimental impl
    int tcp_result = test_correctness_pow<TABLE_BITS,
                                              USE_SLIDING_WINDOW_OPTIMIZATION,
@@ -921,14 +921,14 @@ bench_range(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST 
 
       exit(1);
    }
-
+#endif
    using namespace std::chrono;
    using dsec = duration<double>;
 
    constexpr auto max_modulus = MontType::max_modulus();
 
    constexpr bool randomizeModuli = true;
-   int exponentreduction = exponent_bits_reduce;
+   unsigned int exponentreduction = exponent_bits_reduce;
    range *= 2;
 
 #if 1
@@ -1009,7 +1009,7 @@ bench_range(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST 
          for (U x = max; x > min; x = x-2) {
             U val = generate_random_value<U>(gen, distrib64);
             uint64_t ranval2 = generate_random_value<uint64_t>(gen, distrib64);
-            int extra_reduce = ranval2 & 7;
+            unsigned int extra_reduce = ranval2 & 7;
             U exponentmask = static_cast<U>(static_cast<U>(0) - static_cast<U>(1)) >> (exponentreduction + extra_reduce);
             val = val & exponentmask;
             if (val < exponentmask/2)
@@ -1070,7 +1070,7 @@ bench_range(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST 
                HURCHALLA_FORCE_INLINE OpenV(V x) : V(x) {}
                HURCHALLA_FORCE_INLINE auto get() -> decltype(V::get()) { return V::get(); }
             };
-            totalU += OpenV(val).get();
+            totalU += static_cast<U>(OpenV(val).get());
          }
 #endif
       }
@@ -1158,13 +1158,13 @@ using namespace hurchalla;
                                  (std::is_same<MontType, MontgomeryHalf<U>>::value) ? 1 : 0;
    std::array<unsigned int, 4> ebr = { default_ebr, default_ebr, exponent_bits_reduce, exponent_bits_reduce };
 
-   std::cout << "\nbegin benchmarks\n";
 
    constexpr int NUM_TEST_REPETITIONS = 2;
 
 
+#if 0
+   std::cout << "\nbegin benchmarks - partial array pow\n";
 
-#if 1
    // warm up call before benchmarking
    bench_partial_array_pow<4, 1, 4, MontType, false, false>(static_cast<U>(maxU - range), range, dummy,
                                                             max_modulus_bits_reduce, seed, exponent_bits_reduce);
@@ -1339,7 +1339,9 @@ using namespace hurchalla;
 
 
 
-#if 1
+#if 0
+   std::cout << "\nbegin benchmarks - array pow\n";
+
    // warm up call before benchmarking
    bench_array_pow<4, 0, 4, MontType, false>(static_cast<U>(maxU - range), range, dummy, max_modulus_bits_reduce, seed, exponent_bits_reduce);
 
@@ -1412,8 +1414,10 @@ using namespace hurchalla;
 
 
 #if 1
+   std::cout << "\nbegin benchmarks - scalar pow\n";
+
    // warm up call before benchmarking
-   bench_range<2, false, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, max_modulus_bits_reduce, seed, exponent_bits_reduce);
+//   bench_range<2, false, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, max_modulus_bits_reduce, seed, exponent_bits_reduce);
 
    // format is bench_range<TABLE_BITS, USE_SLIDING_WINDOW_OPTIMIZATION, CODE_SECTION, MontType, USE_SQUARING_VALUE_OPTIMIZATION>
 
@@ -1421,7 +1425,9 @@ using namespace hurchalla;
 
    for (size_t i=0; i<4; ++i) {
      for (size_t j=0; j<timings[i].size(); ++j) {
-#if 1
+      timings[i][j].push_back(
+         bench_range<0, false, 0, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+#if 0
       timings[i][j].push_back(
          bench_range<0, false, 0, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timings[i][j].push_back(

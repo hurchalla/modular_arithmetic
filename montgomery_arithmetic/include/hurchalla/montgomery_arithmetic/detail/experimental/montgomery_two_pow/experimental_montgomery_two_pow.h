@@ -1505,7 +1505,7 @@ break_0_18:
     using MFE_LU = hc::detail::MontgomeryFormExtensions<MF, hc::LowuopsTag>;
     {
         constexpr int NUMBITS_TABLE_HIGH_SIZE = 2;
-        constexpr int NUM_EXTRA_TABLES = 2 * (CODE_SECTION - 21);
+        constexpr size_t NUM_EXTRA_TABLES = 2 * (CODE_SECTION - 21);
 
         constexpr size_t TABLE_HIGH_SIZE = 1u << NUMBITS_TABLE_HIGH_SIZE;
         constexpr int P3 = P2 + NUMBITS_TABLE_HIGH_SIZE;
@@ -1545,7 +1545,7 @@ break_0_18:
             result = MFE_LU::twoPowLimited_times_x(mf, loindex, table_mid[midindex]);
 
             V next = r4;              // R^4
-            HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i < NUM_EXTRA_TABLES; ++i) {
+            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i < NUM_EXTRA_TABLES; ++i) {
                 tables_extra[i][0] = mf.getUnityValue();   // R^0
                 tables_extra[i][1] = next;
                 V nextSq = mf.square(next);
@@ -1554,7 +1554,7 @@ break_0_18:
                 tables_extra[i][3] = mf.template multiply<LowuopsTag>(nextSq, next);
                 next = nexttmp;
 
-                int P_extra = P3 + i * NUMBITS_TABLE_HIGH_SIZE;
+                int P_extra = P3 + static_cast<int>(i * NUMBITS_TABLE_HIGH_SIZE);
                 size_t index_extra = (tmp >> P_extra) & (TABLE_HIGH_SIZE - 1);
                 result = mf.template multiply<LowuopsTag>(tables_extra[i][index_extra], result);
             }
@@ -1581,8 +1581,8 @@ break_0_18:
                 HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i<P3-1; ++i)
                     sv = MFE::squareSV(mf, sv);
 
-                HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i < NUM_EXTRA_TABLES; ++i) {
-                    int P_extra = P3 + i * NUMBITS_TABLE_HIGH_SIZE;
+                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i < NUM_EXTRA_TABLES; ++i) {
+                    int P_extra = P3 + static_cast<int>(i * NUMBITS_TABLE_HIGH_SIZE);
                     size_t index_extra = (tmp >> P_extra) & (TABLE_HIGH_SIZE - 1);
                     val1 = mf.template multiply<LowuopsTag>(val1, tables_extra[i][index_extra]);
 
@@ -1612,8 +1612,8 @@ break_0_18:
                 HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i<P3; ++i)
                     result = mf.square(result);
 
-                HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i < NUM_EXTRA_TABLES; ++i) {
-                    int P_extra = P3 + i * NUMBITS_TABLE_HIGH_SIZE;
+                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i < NUM_EXTRA_TABLES; ++i) {
+                    int P_extra = P3 + static_cast<int>(i * NUMBITS_TABLE_HIGH_SIZE);
                     size_t index_extra = (tmp >> P_extra) & (TABLE_HIGH_SIZE - 1);
                     val1 = mf.template multiply<LowuopsTag>(val1, tables_extra[i][index_extra]);
 
@@ -1640,8 +1640,8 @@ break_0_18:
             // could use:
             //for (int i=0; i < NUM_EXTRA_TABLES && (2*i + P3 < shift); ++i)
 
-            HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i < NUM_EXTRA_TABLES; ++i) {
-                int P_extra = P3 + i * NUMBITS_TABLE_HIGH_SIZE;
+            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i < NUM_EXTRA_TABLES; ++i) {
+                int P_extra = P3 + static_cast<int>(i * NUMBITS_TABLE_HIGH_SIZE);
                 size_t index_extra = (tmp >> P_extra) & (TABLE_HIGH_SIZE - 1);
                 val1 = mf.multiply(val1, tables_extra[i][index_extra]);
             }
@@ -1658,8 +1658,8 @@ break_0_18:
             // could use:
             //for (int i=0; i < NUM_EXTRA_TABLES && (2*i + P3 < shift); ++i)
 
-            HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i < NUM_EXTRA_TABLES; ++i) {
-                int P_extra = P3 + i * NUMBITS_TABLE_HIGH_SIZE;
+            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i < NUM_EXTRA_TABLES; ++i) {
+                int P_extra = P3 + static_cast<int>(i * NUMBITS_TABLE_HIGH_SIZE);
                 size_t index_extra = (tmp >> P_extra) & (TABLE_HIGH_SIZE - 1);
                 val1 = mf.multiply(val1, tables_extra[i][index_extra]);
             }
@@ -2684,8 +2684,19 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         if (n <= MASKBIG) {
             size_t loindex = static_cast<size_t>(n);
             HPBC_CLOCKWORK_ASSERT2(loindex < ut_numeric_limits<RU>::digits);
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wnrvo"
+#endif
+// gcc (v15.1) is warning that the next return value is not elided, when using
+// MontyMasked (I'm not sure why it wouldn't be elided).
+// There's probably little harm in ignoring the warning, especially since
+// this is experimental and might never be used.
             result = MFE::twoPowLimited(mf, loindex);
             return result;
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
         }
 
         // count_leading_zeros returns the number of leading 0-bits in n, starting

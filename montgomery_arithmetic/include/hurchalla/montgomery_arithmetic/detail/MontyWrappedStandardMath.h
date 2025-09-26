@@ -19,6 +19,7 @@
 #include "hurchalla/modular_arithmetic/absolute_value_difference.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
+#include "hurchalla/util/cselect_on_bit.h"
 #include "hurchalla/util/compiler_macros.h"
 #include <type_traits>
 
@@ -39,6 +40,19 @@ class MontyWrappedStandardMath final {
 
     struct V : public BaseMontgomeryValue<T> {  // regular montgomery value type
         HURCHALLA_FORCE_INLINE V() = default;
+
+        template <int BITNUM> HURCHALLA_FORCE_INLINE
+        static V cselect_on_bit_ne0(uint64_t num, V v1, V v2)
+        {
+            T sel = ::hurchalla::cselect_on_bit<BITNUM>::ne_0(num, v1.get(), v2.get());
+            return V(sel);
+        }
+        template <int BITNUM> HURCHALLA_FORCE_INLINE
+        static V cselect_on_bit_eq0(uint64_t num, V v1, V v2)
+        {
+            T sel = ::hurchalla::cselect_on_bit<BITNUM>::eq_0(num, v1.get(), v2.get());
+            return V(sel);
+        }
      protected:
         friend MontyWrappedStandardMath;
         HURCHALLA_FORCE_INLINE explicit V(T a) : BaseMontgomeryValue<T>(a) {}

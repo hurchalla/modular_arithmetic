@@ -491,18 +491,18 @@ else
 fi
 
 
-# argument $8 (if present), should be -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-
-
-# to debug you can compile with the below also
+# You can use arguments $8 and $9 and ${10} etc to define macros such as
+# -DHURCHALLA_ALLOW_INLINE_ASM_ALL
+# for debugging, defining the following macros may be useful
 # -DHURCHALLA_CLOCKWORK_ENABLE_ASSERTS  -DHURCHALLA_UTIL_ENABLE_ASSERTS
+
 
 # we could also use  -g  to get debug symbols (for lldb/gdb, and objdump)
 
 $cppcompiler   \
         $error_limit   -$optimization_level \
-        $define_mont_type  $define_uint_type  $define_use_asm \
-        -Wall -Wextra -Wpedantic $warn_nrvo \
+        $define_mont_type  $define_uint_type  $8 $9 ${10} ${11} ${12} ${13} ${14} \
+        -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion $warn_nrvo \
         -std=$cpp_standard \
         -I${repo_directory}/modular_arithmetic/modular_arithmetic/include \
         -I${repo_directory}/modular_arithmetic/montgomery_arithmetic/include \

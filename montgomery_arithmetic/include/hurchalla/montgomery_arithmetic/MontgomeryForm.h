@@ -511,12 +511,15 @@ public:
     MontgomeryValue pow(MontgomeryValue base, T exponent) const
     {
         HPBC_CLOCKWORK_API_PRECONDITION(exponent >= 0);
+#if 1
         std::array<MontgomeryValue, 1> bases = {{ base }};
         std::array<MontgomeryValue, 1> result =
                 detail::montgomery_array_pow<typename MontyType::MontyTag,
                                    MontgomeryForm>::pow(*this, bases, exponent);
         return result[0];
-        //return detail::montgomery_pow<MontgomeryForm>::scalarpow(*this, base, exponent);
+#else
+        return detail::montgomery_pow<MontgomeryForm>::scalarpow(*this, base, exponent);
+#endif
     }
 
     // Calculates and returns the modular exponentiation of 2 (converted into a

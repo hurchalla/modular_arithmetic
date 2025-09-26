@@ -573,7 +573,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         static_assert(TABLESIZE >= 2 && TABLESIZE % 2 == 0, "");
         constexpr size_t MASK = TABLESIZE - 1;
 
-        constexpr int NUM_TABLES = CODE_SECTION - 7;
+        constexpr size_t NUM_TABLES = CODE_SECTION - 7;
         static_assert(NUM_TABLES > 0, "");
         constexpr int NUMBITS_MASKBIG = NUM_TABLES * TABLE_BITS;
         static_assert(std::numeric_limits<size_t>::digits > NUMBITS_MASKBIG, "");
@@ -610,7 +610,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         V result = table[0][tmp & MASK];
 
 
-        HURCHALLA_REQUEST_UNROLL_LOOP for (int k=1; k < NUM_TABLES; ++k) {
+        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t k=1; k < NUM_TABLES; ++k) {
             table[k][0] = mf.getUnityValue();
             table[k][1] = mf.square(table[k - 1][TABLESIZE / 2]);
             if HURCHALLA_CPP17_CONSTEXPR (TABLESIZE >= 4) {
@@ -654,7 +654,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
                 HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i<TABLE_BITS - 1; ++i)
                     sv = MFE::squareSV(mf, sv);
 
-                HURCHALLA_REQUEST_UNROLL_LOOP for (int k=1; k<NUM_TABLES; ++k) {
+                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t k=1; k<NUM_TABLES; ++k) {
                     size_t index = (tmp >> (k * TABLE_BITS)) & MASK;
                     val1 = mf.template multiply<LowuopsTag>(val1, table[k][index]);
 
@@ -681,7 +681,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
                 HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i<TABLE_BITS; ++i)
                     result = mf.square(result);
 
-                HURCHALLA_REQUEST_UNROLL_LOOP for (int k=1; k<NUM_TABLES; ++k) {
+                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t k=1; k<NUM_TABLES; ++k) {
                     size_t index = (tmp >> (k * TABLE_BITS)) & MASK;
                     val1 = mf.template multiply<LowuopsTag>(val1, table[k][index]);
 
@@ -703,7 +703,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         V val1 = table[0][tmp & MASK];
 
         if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
-            HURCHALLA_REQUEST_UNROLL_LOOP for (int k=1; k<NUM_TABLES; ++k) {
+            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t k=1; k<NUM_TABLES; ++k) {
                 size_t index = (tmp >> (k * TABLE_BITS)) & MASK;
                 val1 = mf.template multiply<LowuopsTag>(val1, table[k][index]);
             }
@@ -726,7 +726,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
                 result = mf.square(result);
 
-                HURCHALLA_REQUEST_UNROLL_LOOP for (int k=2; k<NUM_TABLES; ++k) {
+                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t k=2; k<NUM_TABLES; ++k) {
                     index = (tmp >> (k * TABLE_BITS)) & MASK;
                     val1 = mf.template multiply<LowuopsTag>(val1, table[k][index]);
                 }
