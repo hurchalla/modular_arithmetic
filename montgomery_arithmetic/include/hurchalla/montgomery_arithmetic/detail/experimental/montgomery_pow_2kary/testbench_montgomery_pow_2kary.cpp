@@ -886,7 +886,7 @@ bench_range(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST 
 {
    HPBC_CLOCKWORK_PRECONDITION2(max_modulus_bits_reduce <
                      hurchalla::ut_numeric_limits<decltype(MontType::max_modulus())>::digits);
-#if 0
+#if 1
    // run very short tests to hopefully catch a bugged experimental impl
    int tcp_result = test_correctness_pow<TABLE_BITS,
                                              USE_SLIDING_WINDOW_OPTIMIZATION,
@@ -1417,7 +1417,7 @@ using namespace hurchalla;
    std::cout << "\nbegin benchmarks - scalar pow\n";
 
    // warm up call before benchmarking
-//   bench_range<2, false, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, max_modulus_bits_reduce, seed, exponent_bits_reduce);
+   bench_range<2, false, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, max_modulus_bits_reduce, seed, exponent_bits_reduce);
 
    // format is bench_range<TABLE_BITS, USE_SLIDING_WINDOW_OPTIMIZATION, CODE_SECTION, MontType, USE_SQUARING_VALUE_OPTIMIZATION>
 
