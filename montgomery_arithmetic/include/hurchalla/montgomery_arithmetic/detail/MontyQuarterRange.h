@@ -355,7 +355,8 @@ class MontyQuarterRange final : public
         //   And we know by the assertion above that oddhalf fits in V.
 
           // T retval = ((val & 1u) == 0) ? evenhalf : oddhalf;
-        T retval = conditional_select(((val & 1u) == 0), evenhalf, oddhalf);
+        T retval = ::hurchalla::cselect_on_bit<0>::eq_0(
+                                 static_cast<uint64_t>(val), evenhalf, oddhalf);
 
         HPBC_CLOCKWORK_POSTCONDITION2(retval < 2*n_);
         return V(retval);
@@ -375,7 +376,8 @@ class MontyQuarterRange final : public
         // since val < n,  (val + n)/2 < n.
         T oddhalf = static_cast<T>(val + n_) >> 1;
           // T retval = ((val & 1u) == 0) ? evenhalf : oddhalf;
-        T retval = conditional_select(((val & 1u) == 0), evenhalf, oddhalf);
+        T retval = ::hurchalla::cselect_on_bit<0>::eq_0(
+                                 static_cast<uint64_t>(val), evenhalf, oddhalf);
 
         HPBC_CLOCKWORK_POSTCONDITION2(retval < n_);
         return C(retval);

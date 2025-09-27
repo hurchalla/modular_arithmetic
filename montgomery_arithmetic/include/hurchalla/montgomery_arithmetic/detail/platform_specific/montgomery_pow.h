@@ -24,6 +24,9 @@
 namespace hurchalla { namespace detail {
 
 
+//#define HURCHALLA_MONTGOMERY_POW_USE_CSELECT_ON_BIT 1
+
+
 // This file is intended to implement the class MontgomeryForm's member
 // functions pow() and array_pow().
 
@@ -41,8 +44,14 @@ struct montgomery_pow {
     // Applied Handbook of Cryptography- http://cacr.uwaterloo.ca/hac/
     // See also: hurchalla/modular_arithmetic/detail/impl_modular_pow.h
     V mont_one = mf.getUnityValue();
+#ifndef HURCHALLA_MONTGOMERY_POW_USE_CSELECT_ON_BIT
+ // see comments for the cmov #ifndef section further below in this function
     V result = mont_one;
     result.cmov((exponent & static_cast<T>(1)), base);
+#else
+    V result = V::template cselect_on_bit_ne0<0>(static_cast<uint64_t>(exponent), base, mont_one);
+#endif
+
     while (exponent > static_cast<T>(1)) {
         exponent = static_cast<T>(exponent >> static_cast<T>(1));
         base = mf.template square<LowlatencyTag>(base);
@@ -67,11 +76,12 @@ struct montgomery_pow {
         // in theory should run faster.  And in practice it has consistently
         // benchmarked better - usually ~5% faster, and never slower than above.
 
-# if 1
+# ifndef HURCHALLA_MONTGOMERY_POW_USE_CSELECT_ON_BIT
         V tmp = mont_one;
         tmp.cmov(exponent & static_cast<T>(1), base);
 # else
-        // this timed a little faster for MontyFull and MontyMasked, and a
+        // with HURCHALLA_ALLOW_INLINE_ASM_CSELECT_ON_BIT defined, this timed a
+        // little faster than the above for MontyFull and MontyMasked, and a
         // little slower (or a lot slower- gcc MontyHalf) for the rest.
         V tmp = V::template cselect_on_bit_ne0<0>(static_cast<uint64_t>(exponent), base, mont_one);
 # endif
@@ -198,8 +208,13 @@ struct montgomery_pow {
 
         V mont_one = mf.getUnityValue();
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
+# ifndef HURCHALLA_MONTGOMERY_POW_USE_CSELECT_ON_BIT
             V tmp = mont_one;
             tmp.cmov(exponent & static_cast<T>(1), bases[i]);
+# else
+            V tmp = V::template cselect_on_bit_ne0<0>(
+                           static_cast<uint64_t>(exponent), bases[i], mont_one);
+# endif
             result[i] = mf.template multiply<PTAG>(result[i], tmp);
         });
 #endif
@@ -238,6 +253,8 @@ struct montgomery_pow {
         Unroll<NUM_BASES>::call([&](std::size_t i) HURCHALLA_INLINE_LAMBDA {
             bases[i] = mf.template square<PTAG>(bases[i]);
             V tmp = mont_one;
+            // note: since we are doing masked selections, we definitely don't
+            // want to use cselect_on_bit here
             tmp.template
                  cmov<CSelectMaskedTag>(exponent & static_cast<T>(1), bases[i]);
             result[i] = mf.template multiply<PTAG>(result[i], tmp);

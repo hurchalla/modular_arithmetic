@@ -11,7 +11,7 @@
 
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
-#include "hurchalla/util/conditional_select.h"
+#include "hurchalla/util/cselect_on_bit.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 
@@ -49,8 +49,9 @@ struct impl_modular_pow {
     }
 */
     // slightly optimized version
-       // result = (exponent & 1u) ? base : 1;
-    T result = hc::conditional_select((exponent & 1u), base, static_cast<T>(1));
+       // T result = (exponent & 1u) ? base : 1;
+    T result = ::hurchalla::cselect_on_bit<0>::ne_0(
+                      static_cast<uint64_t>(exponent), base, static_cast<T>(1));
     while (exponent > 1)
     {
        exponent = static_cast<U>(exponent >> 1);

@@ -536,7 +536,8 @@ class MontyHalfRange final :
           // S retval = (val % 2 == 0) ? halfval : oddsum;
         static_assert(static_cast<S>(-1) == ~(static_cast<S>(0)),
                                   "S must use two's complement representation");
-        S retval = conditional_select(((static_cast<T>(val) & 1u) == 0), halfval, oddsum);
+        S retval = ::hurchalla::cselect_on_bit<0>::eq_0(
+                                   static_cast<uint64_t>(val), halfval, oddsum);
 
         // It's fairly straightforward why retval works when val >= 0
         //   it's basically the same situation as halve() in MontyFullRange,
@@ -584,7 +585,8 @@ class MontyHalfRange final :
         T oddhalf = static_cast<T>(val + n_) >> 1;
         HPBC_CLOCKWORK_ASSERT2(oddhalf < n_);
           // T retval = ((val & 1u) == 0) ? evenhalf : oddhalf;
-        T retval = conditional_select(((val & 1u) == 0), evenhalf, oddhalf);
+        T retval = ::hurchalla::cselect_on_bit<0>::eq_0(
+                                 static_cast<uint64_t>(val), evenhalf, oddhalf);
 
         HPBC_CLOCKWORK_POSTCONDITION2(0 <= retval && retval < n_);
         return C(retval);

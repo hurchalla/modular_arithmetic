@@ -13,7 +13,7 @@
 #include "hurchalla/modular_arithmetic/detail/optimization_tag_structs.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
-#include "hurchalla/util/conditional_select.h"
+#include "hurchalla/util/cselect_on_bit.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <cstdint>
@@ -70,7 +70,8 @@ struct slow_modular_multiplication {
         namespace hc = ::hurchalla;
         T tmp = hc::modular_addition_prereduced_inputs(a, result, modulus);
           // result = (b&1) ? tmp : result
-        result = hc::conditional_select((b & 1u), tmp, result);
+        result = ::hurchalla::cselect_on_bit<0>::ne_0(
+                                         static_cast<uint64_t>(b), tmp, result);
         a = hc::modular_addition_prereduced_inputs(a, a, modulus);
         b = static_cast<T>(b >> 1);
     }

@@ -287,7 +287,8 @@ class MontyWrappedStandardMath final {
 
         T oddsum = halfval + halfn_ceiling;
           // T retval = ((val & 1u) == 0) ? halfval : oddsum;
-        T retval = conditional_select(((val & 1u) == 0), halfval, oddsum);
+        T retval = ::hurchalla::cselect_on_bit<0>::eq_0(
+                                   static_cast<uint64_t>(val), halfval, oddsum);
 
         HPBC_CLOCKWORK_POSTCONDITION2(retval < modulus_);
         return C(retval);
