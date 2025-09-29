@@ -146,6 +146,19 @@ struct MfrmValueTypes {
             { return x.get() == y.get(); }
         HURCHALLA_FORCE_INLINE friend bool operator!=(const C& x, const C& y)
             { return !(x == y); }
+
+        template <int BITNUM>
+        HURCHALLA_FORCE_INLINE static C cselect_on_bit_ne0(uint64_t num, C c1, C c2)
+        {
+            T sel = ::hurchalla::cselect_on_bit<BITNUM>::ne_0(num, c1.get(), c2.get());
+            return C(sel);
+        }
+        template <int BITNUM>
+        HURCHALLA_FORCE_INLINE static C cselect_on_bit_eq0(uint64_t num, C c1, C c2)
+        {
+            T sel = ::hurchalla::cselect_on_bit<BITNUM>::eq_0(num, c1.get(), c2.get());
+            return C(sel);
+        }
      protected:
         template <typename> friend class MontyFullRangeMasked;
         template <template<class> class, template<class> class, typename>
@@ -417,7 +430,7 @@ private:
         T umlo;
         T umhi = ::hurchalla::unsigned_multiply_to_hilo_product(umlo, a, a);
         T masked_a = static_cast<T>(x.getmask() & a);
-        T result_hi = static_cast<T>(umhi - static_cast<T>(2) * masked_a);
+        T result_hi = static_cast<T>(umhi - masked_a - masked_a);
         u_lo = umlo;
         // Complete details are in the proof below, but roughly what we do here
         // is get a*a as a two-word product (umhi, umlo).  We let s == 1 if x is

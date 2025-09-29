@@ -41,14 +41,14 @@ class MontyWrappedStandardMath final {
     struct V : public BaseMontgomeryValue<T> {  // regular montgomery value type
         HURCHALLA_FORCE_INLINE V() = default;
 
-        template <int BITNUM> HURCHALLA_FORCE_INLINE
-        static V cselect_on_bit_ne0(uint64_t num, V v1, V v2)
+        template <int BITNUM>
+        HURCHALLA_FORCE_INLINE static V cselect_on_bit_ne0(uint64_t num, V v1, V v2)
         {
             T sel = ::hurchalla::cselect_on_bit<BITNUM>::ne_0(num, v1.get(), v2.get());
             return V(sel);
         }
-        template <int BITNUM> HURCHALLA_FORCE_INLINE
-        static V cselect_on_bit_eq0(uint64_t num, V v1, V v2)
+        template <int BITNUM>
+        HURCHALLA_FORCE_INLINE static V cselect_on_bit_eq0(uint64_t num, V v1, V v2)
         {
             T sel = ::hurchalla::cselect_on_bit<BITNUM>::eq_0(num, v1.get(), v2.get());
             return V(sel);
@@ -63,6 +63,19 @@ class MontyWrappedStandardMath final {
             { return x.get() == y.get(); }
         HURCHALLA_FORCE_INLINE friend bool operator!=(const C& x, const C& y)
             { return !(x == y); }
+
+        template <int BITNUM>
+        HURCHALLA_FORCE_INLINE static C cselect_on_bit_ne0(uint64_t num, C c1, C c2)
+        {
+            T sel = ::hurchalla::cselect_on_bit<BITNUM>::ne_0(num, c1.get(), c2.get());
+            return C(sel);
+        }
+        template <int BITNUM>
+        HURCHALLA_FORCE_INLINE static C cselect_on_bit_eq0(uint64_t num, C c1, C c2)
+        {
+            T sel = ::hurchalla::cselect_on_bit<BITNUM>::eq_0(num, c1.get(), c2.get());
+            return C(sel);
+        }
      protected:
         friend MontyWrappedStandardMath;
         HURCHALLA_FORCE_INLINE explicit C(T a) : V(a) {}

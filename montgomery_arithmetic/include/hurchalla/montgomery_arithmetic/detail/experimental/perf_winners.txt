@@ -1,0 +1,42 @@
+Two pow array  (macbook m2)
+  fullrange
+    clang
+      all asm   30 x 4,  or 30 x 5 for 1-2% speedup
+          0.3689  0 30 x 05    0.3694  0 30 x 05    0.2514  0 30 x 06    0.2505  0 30 x 06
+      no asm    31 x 4,  or 31 x 5 for 1-2% speedup
+          (code section 31 is consistently faster than 30, by ~0.5-1.0%)
+          0.3868  0 31 x 05    0.3861  0 31 x 10    0.2613  0 31 x 05    0.2615  0 31 x 05
+    gcc
+      all asm   30 x 4 -  or 30 t 4 for ~1% speedup
+          0.3926  0 30 t 04    0.3939  0 30 t 04    0.2694  0 30 x 04    0.2656  0 31 x 12
+      no asm    31 t 4  - or if you want x (which is 1% faster to 7.5% slower), then 30 x 4
+          0.6179  0 30 t 04    0.3888  0 31 x 04    0.4204  0 31 t 03    0.2656  0 30 x 05
+  masked
+    clang
+      all asm  code sections 27-31 dominate,  30 roughly the best
+          0.3975  0 30 x 04    0.3964  0 30 x 04    0.2746  0 30 x 05    0.2711  0 28 x 05
+    gcc
+      all asm  code sections 27-31 dominate
+          0.6389  0 31 x 03    0.4111  0 30 x 05    0.4376  0 30 x 05    0.2797  0 31 x 04
+  half      gcc and clang,  code sections 27-31 dominate
+    clang
+      all asm   30 slightly best, 31 quite close
+          0.3349  0 30 x 06    0.3344  0 30 x 06    0.2287  0 31 x 05    0.2288  0 30 x 06
+      no asm    31 winner, 30 is close
+          0.3353  0 31 x 05    0.3349  0 31 x 05    0.2291  0 31 x 05    0.2288  0 31 x 05
+    gcc
+      all asm  30 or 31,  30 preferable since it wins at the smaller array sizes.
+          0.3800  0 30 x 05    0.3801  0 30 x 05    0.2601  0 30 x 05    0.2610  0 31 x 07
+      no asm   31 wins, then 29 or 30.  array size 4 is within 1-2% of best sizing
+          0.3772  0 31 x 06    0.3725  0 31 x 06    0.2590  0 31 x 06    0.2578  0 31 x 06
+  quarter   gcc and clang,  code sections 27-31 dominate
+    clang
+      all asm   30 x 4 probably best compromise, at 1% slower than best  (you can go to 12 for max perf)
+          0.3154  0 31 x 12    0.3158  0 30 x 12    0.2197  0 31 x 12    0.2198  0 30 x 12
+      no asm     28 wins by ~0.33%.  otherwise go 30.  array size 4 min (4 is ~1% slowdown from size 10-12)
+          0.3183  0 28 x 12    0.3181  0 29 x 10    0.2213  0 28 x 06    0.2212  0 28 x 10
+    gcc
+      all asm   31 tiny bit winner, otherwise 30 very close.  array size 4 min (4 is ~2.5% slower than best size)
+          0.3485  0 30 x 08    0.3493  0 31 x 10    0.2426  0 31 x 07    0.2442  0 30 x 08
+      no asm    31 wins.  30 semi-close
+          0.3509  0 31 x 12    0.3515  0 31 x 12    0.2465  0 31 x 12    0.2480  0 30 x 06

@@ -98,15 +98,23 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         U exponent = n;
 
         V mont_one = mf.getUnityValue();
+#ifndef HURCHALLA_MONTGOMERY_POW_2KARY_USE_CSELECT_ON_BIT
         V result = mont_one;
         result.cmov(static_cast<size_t>(exponent) & 1u, base);
+#else
+        V result = V::template cselect_on_bit_ne0<0>(static_cast<uint64_t>(exponent), base, mont_one);
+#endif
         exponent = static_cast<U>(exponent >> 1);
 
         while (exponent > 0u) {
             base = mf.square(base);
 
+#ifndef HURCHALLA_MONTGOMERY_POW_2KARY_USE_CSELECT_ON_BIT
             V tmp = mont_one;
             tmp.cmov(static_cast<size_t>(exponent) & 1u, base);
+#else
+            V tmp = V::template cselect_on_bit_ne0<0>(static_cast<uint64_t>(exponent), base, mont_one);
+#endif
             result = mf.multiply(result, tmp);
 
             exponent = static_cast<U>(exponent >> 1);
@@ -1148,14 +1156,22 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         index = static_cast<size_t>(branchless_shift_right(n, shift)) & MASK;
 
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
+#ifndef HURCHALLA_MONTGOMERY_POW_2KARY_USE_CSELECT_ON_BIT
             V tmp = result[j];
             tmp.cmov((index % 2 == 0), table[index/2][j]);
+#else
+            V tmp = V::template cselect_on_bit_eq0<0>(static_cast<uint64_t>(index), table[index/2][j], result[j]);
+#endif
             result[j] = mf.template multiply<LowuopsTag>(tmp, result[j]);
         }
 
         HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
+#ifndef HURCHALLA_MONTGOMERY_POW_2KARY_USE_CSELECT_ON_BIT
             V tmp = table[index][j];
             tmp.cmov((index % 2 == 0), result[j]);
+#else
+            V tmp = V::template cselect_on_bit_eq0<0>(static_cast<uint64_t>(index), result[j], table[index][j]);
+#endif
             result[j] = mf.template multiply<LowuopsTag>(tmp, result[j]);
         }
     }

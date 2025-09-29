@@ -56,15 +56,13 @@ struct AMFValueTypes {
             value = ::hurchalla::conditional_select<U, PerfTag>(cond,v.value,value);
         }
         template <int BITNUM>
-        HURCHALLA_FORCE_INLINE static
-        V cselect_on_bit_ne0(uint64_t num, V v1, V v2)
+        static V cselect_on_bit_ne0(uint64_t num, V v1, V v2)
         {
             U sel = ::hurchalla::cselect_on_bit<BITNUM>::ne_0(num, v1.get(), v2.get());
             return V(sel);
         }
         template <int BITNUM>
-        HURCHALLA_FORCE_INLINE static
-        V cselect_on_bit_eq0(uint64_t num, V v1, V v2)
+        static V cselect_on_bit_eq0(uint64_t num, V v1, V v2)
         {
             U sel = ::hurchalla::cselect_on_bit<BITNUM>::eq_0(num, v1.get(), v2.get());
             return V(sel);
@@ -77,6 +75,19 @@ struct AMFValueTypes {
             { return x.get() == y.get(); }
         friend bool operator!=(const C& x, const C& y)
             { return !(x == y); }
+
+        template <int BITNUM>
+        static C cselect_on_bit_ne0(uint64_t num, C c1, C c2)
+        {
+            U sel = ::hurchalla::cselect_on_bit<BITNUM>::ne_0(num, c1.get(), c2.get());
+            return C(sel);
+        }
+        template <int BITNUM>
+        static C cselect_on_bit_eq0(uint64_t num, C c1, C c2)
+        {
+            U sel = ::hurchalla::cselect_on_bit<BITNUM>::eq_0(num, c1.get(), c2.get());
+            return C(sel);
+        }
      protected:
         template<bool> friend class AbstractMontgomeryForm;
         explicit C(U a) : V(a) {}

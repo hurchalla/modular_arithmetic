@@ -13,6 +13,7 @@
 #include "hurchalla/montgomery_arithmetic/low_level_api/REDC.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyCommonBase.h"
 #include "hurchalla/montgomery_arithmetic/detail/MontyTags.h"
+#include "hurchalla/montgomery_arithmetic/detail/platform_specific/subtract_returning_difference_or_zero.h"
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/modular_arithmetic/absolute_value_difference.h"
@@ -40,14 +41,14 @@ struct MontyFRValueTypes {
     struct V : public BaseMontgomeryValue<T> {
         HURCHALLA_FORCE_INLINE V() = default;
 
-        template <int BITNUM> HURCHALLA_FORCE_INLINE
-        static V cselect_on_bit_ne0(uint64_t num, V v1, V v2)
+        template <int BITNUM>
+        HURCHALLA_FORCE_INLINE static V cselect_on_bit_ne0(uint64_t num, V v1, V v2)
         {
             T sel = ::hurchalla::cselect_on_bit<BITNUM>::ne_0(num, v1.get(), v2.get());
             return V(sel);
         }
-        template <int BITNUM> HURCHALLA_FORCE_INLINE
-        static V cselect_on_bit_eq0(uint64_t num, V v1, V v2)
+        template <int BITNUM>
+        HURCHALLA_FORCE_INLINE static V cselect_on_bit_eq0(uint64_t num, V v1, V v2)
         {
             T sel = ::hurchalla::cselect_on_bit<BITNUM>::eq_0(num, v1.get(), v2.get());
             return V(sel);
@@ -63,6 +64,19 @@ struct MontyFRValueTypes {
             { return x.get() == y.get(); }
         HURCHALLA_FORCE_INLINE friend bool operator!=(const C& x, const C& y)
             { return !(x == y); }
+
+        template <int BITNUM>
+        HURCHALLA_FORCE_INLINE static C cselect_on_bit_ne0(uint64_t num, C c1, C c2)
+        {
+            T sel = ::hurchalla::cselect_on_bit<BITNUM>::ne_0(num, c1.get(), c2.get());
+            return C(sel);
+        }
+        template <int BITNUM>
+        HURCHALLA_FORCE_INLINE static C cselect_on_bit_eq0(uint64_t num, C c1, C c2)
+        {
+            T sel = ::hurchalla::cselect_on_bit<BITNUM>::eq_0(num, c1.get(), c2.get());
+            return C(sel);
+        }
      protected:
         template <template<class> class, template<class> class, typename>
           friend class MontyCommonBase;
@@ -271,28 +285,15 @@ class MontyFullRange final :
 
         T minu, subt;
         hc::REDC_incomplete(minu, subt, u_hi, u_lo, n_, BC::inv_n_, PTAG());
-#if 1
-        T res = static_cast<T>(minu - subt);
-          // T subtrahend = (minu < subt) ? res : static_cast<T>(0);
-        T subtrahend = hc::conditional_select((minu < subt), res, static_cast<T>(0));
+#if 0
+        T diff = static_cast<T>(minu - subt);
+          // T subtrahend = (minu < subt) ? diff : static_cast<T>(0);
+        T subtrahend = hc::conditional_select((minu < subt), diff, static_cast<T>(0));
 #else
-        uint64_t minu_lo = static_cast<uint64_t>(minu);
-        uint64_t minu_hi = static_cast<uint64_t>(minu >> 64);
-        uint64_t subt_lo = static_cast<uint64_t>(subt);
-        uint64_t subt_hi = static_cast<uint64_t>(subt >> 64);
-        uint64_t reslo, reshi;
-        uint64_t subtrahend_lo, subtrahend_hi;
-        __asm__ ("subs %[reslo], %[minu_lo], %[subt_lo] \n\t"      /* res = minu - subt */
-                 "sbcs %[reshi], %[minu_hi], %[subt_hi] \n\t"
-                 "csel %[subtrahend_lo], %[reslo], xzr, lo \n\t"   /* res = (minu < subt) ? res : 0 */
-                 "csel %[subtrahend_hi], %[reshi], xzr, lo \n\t"
-                 : [reslo]"=&r"(reslo), [reshi]"=r"(reshi), [subtrahend_lo]"=r"(subtrahend_lo), [subtrahend_hi]"=r"(subtrahend_hi)
-                 : [minu_lo]"r"(minu_lo), [minu_hi]"r"(minu_hi), [subt_lo]"r"(subt_lo), [subt_hi]"r"(subt_hi)
-                 : "cc");
-        __uint128_t res = (static_cast<__uint128_t>(reshi) << 64) | reslo;
-        __uint128_t subtrahend = (static_cast<__uint128_t>(subtrahend_hi) << 64) | subtrahend_lo;
+        T diff;
+        T subtrahend = subtract_returning_difference_or_zero(diff, minu, subt);
 #endif
-        SV result(res, subtrahend);
+        SV result(diff, subtrahend);
         return result;
     }
 
