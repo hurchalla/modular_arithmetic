@@ -1,0 +1,315 @@
+__uint128_t array two pow  (macbook m2)
+  fullrange
+    clang
+      all asm   30 x 4,  or 30 x 5 for 1-2% speedup
+          0.3689  0 30 x 05    0.3694  0 30 x 05    0.2514  0 30 x 06    0.2505  0 30 x 06
+      no asm    31 x 4,  or 31 x 5 for 1-2% speedup
+          (code section 31 is consistently faster than 30, by ~0.5-1.0%)
+          0.3868  0 31 x 05    0.3861  0 31 x 10    0.2613  0 31 x 05    0.2615  0 31 x 05
+    gcc
+      all asm   30 x 4 -  or 30 t 4 for ~1% speedup
+          0.3926  0 30 t 04    0.3939  0 30 t 04    0.2694  0 30 x 04    0.2656  0 31 x 12
+      no asm    31 t 4  - or if you want x (which is 1% faster to 7.5% slower), then 30 x 4
+          0.6179  0 30 t 04    0.3888  0 31 x 04    0.4204  0 31 t 03    0.2656  0 30 x 05
+  masked
+    clang
+      all asm  code sections 27-31 dominate,  30 roughly the best
+          0.3975  0 30 x 04    0.3964  0 30 x 04    0.2746  0 30 x 05    0.2711  0 28 x 05
+    gcc
+      all asm  code sections 27-31 dominate
+          0.6389  0 31 x 03    0.4111  0 30 x 05    0.4376  0 30 x 05    0.2797  0 31 x 04
+  half      gcc and clang,  code sections 27-31 dominate
+    clang
+      all asm   30 slightly best, 31 quite close
+          0.3349  0 30 x 06    0.3344  0 30 x 06    0.2287  0 31 x 05    0.2288  0 30 x 06
+      no asm    31 winner, 30 is close
+          0.3353  0 31 x 05    0.3349  0 31 x 05    0.2291  0 31 x 05    0.2288  0 31 x 05
+    gcc
+      all asm  30 or 31,  30 preferable since it wins at the smaller array sizes.
+          0.3800  0 30 x 05    0.3801  0 30 x 05    0.2601  0 30 x 05    0.2610  0 31 x 07
+      no asm   31 wins, then 29 or 30.  array size 4 is within 1-2% of best sizing
+          0.3772  0 31 x 06    0.3725  0 31 x 06    0.2590  0 31 x 06    0.2578  0 31 x 06
+  quarter   gcc and clang,  code sections 27-31 dominate
+    clang
+      all asm   30 x 4 probably best compromise, at 1% slower than best  (you can go to 12 for max perf)
+          0.3154  0 31 x 12    0.3158  0 30 x 12    0.2197  0 31 x 12    0.2198  0 30 x 12
+      no asm     28 wins by ~0.33%.  otherwise go 30.  array size 4 min (4 is ~1% slowdown from size 10-12)
+          0.3183  0 28 x 12    0.3181  0 29 x 10    0.2213  0 28 x 06    0.2212  0 28 x 10
+    gcc
+      all asm   31 tiny bit winner, otherwise 30 very close.  array size 4 min (4 is ~2.5% slower than best size)
+          0.3485  0 30 x 08    0.3493  0 31 x 10    0.2426  0 31 x 07    0.2442  0 30 x 08
+      no asm    31 wins.  30 semi-close
+          0.3509  0 31 x 12    0.3515  0 31 x 12    0.2465  0 31 x 12    0.2480  0 30 x 06
+
+(macbook m2:)
+
+For __uint128_t array two pow, MontyMasked loses to MontyFull.
+
+For __uint128_t scalar two pow, MontyMasked beats MontyFull by 1-3% using clang.  It loses slightly with gcc.
+    I don't think it's worth the trouble of using MontyMasked, unless a need arises for ultimate perf for Full range
+    when using scalar pow - but I don't think scalar pow is likely to be where perf is needed - for perf you
+    want to use array pow if possible.
+
+For __uint128_t scalar two pow, with gcc MontyHalf loses to MontyFull.  It wins with clang.
+
+For __uint128_t scalar two pow, with MontyFull, use squaring values wins overwhelmingly, except with gcc with no asm - which is a mixed bag wins some loses some - but regardless MontyFull gcc with no asm has perf problems generally.
+    As a guideline it always makes sense to use since it's never problematic (even with gcc no asm where it's mixed if it helps or hurts).
+    It seems to be a tiny bit better in general not to use sliding window, which I tend to favor for consistent results.
+
+
+For MontyFull scalar 128, these are the code sections to try (always use table bits 0):
+   22 20 21 3 1 23 18 16 11 15 12 24 17 29 19 2 10 13 14 28 25  and (the new) 31 to 37
+
+
+MontyQuarter scalar 128
+   g++ no-asm:    23 22 21 24 20 25 3 (1) 15 18 19 16 14 17 11 12 26  plus: 1-3!!!
+   g++ asm:       22 23 20 24 21 19 15 1 18 16 25 17 3 14 12 11 26    plus: 1-3
+   clang asm:     23 22 18 3 24 17 12 11 1 25 10 2 13 0 15 26 16 21   (no non-zero tablebits)
+   clang no-asm:  22 23 18 3 24 12 17 11 1 10 13 2 25 0 26 15 16 21   (no non-zero tablebits)
+
+lits of tests to use for Quarterange scalar, from the best of the above
+23 22 21 20 18 24 3 17 12 25 19 15 1 11 16 10 1-3(tablebits 1, section 3)
+
+
+
+
+
+
+__uint128_t two pow scalar  (macbook m2)
+  fullrange
+    clang
+      all asm
+        2.4913  t t 0 33   2.4937  x t 0 34   2.4947  x t 0 21   2.4981  x t 0 20   2.4986  x t 0 32
+        2.4988  x t 0 33   2.5040  x t 0 22   2.5334  x t 0 35   2.5379  x t 0 23   2.5393  x t 0 31
+          0.7456  t t 0 33    0.7458  x t 0 33    0.4978  t t 0 32    0.4995  x t 0 32
+      no asm     x t 0 34 clearly wins
+        2.4528  t t 0 34   2.4627  x t 0 34   2.4719  x t 0 22   2.5457  x t 0 35   2.5481  x t 0 39
+        2.5485  x t 0 23   2.5515  x t 0 18   2.6361  x t 0 24   2.6448  x t 0 36   2.6478  x t 0 32
+          0.7345  x t 0 34    0.7338  t t 0 34    0.4911  t t 0 34    0.4908  t t 0 34
+    gcc
+      all asm
+        2.4745  x t 0 33   2.5005  x t 0 32   2.4984  x t 0 34   2.5050  x t 0 21   2.5069  x t 0 20
+        2.5225  x t 0 35   2.5302  x t 0 23   2.5305  x t 0 22   2.5454  x t 0 39   2.5458  x t 0 19
+          0.7386  x t 0 33    0.7400  x t 0 33    0.4999  t t 0 32    0.4992  t t 0 18
+      no asm - PERF IS VERY BAD HERE!!!
+        2.6913  x t 0 39   2.7284  x t 0 32   2.7392  x t 0 34   2.7470  x t 0 20   2.7517  x t 0 22
+        2.7564  x t 0 21   2.7603  x t 0 18   2.7740  x t 0 33   2.7794  x t 0 31   2.7837  x t 0 19
+          0.8705  x t 0 29    0.7390  x x 0 23    0.5748  x t 0 29    0.4940  x x 0 22
+          0.8909  x t 0 12    0.7393  x x 0 20    0.5879  x t 0 28    0.4941  x x 0 20
+  quarterrange
+    clang
+      all asm
+        2.3270  x x 0 22   2.3442  x x 0 34   2.3458  x x 0 23   2.3522  x x 0 35   2.3710  x x 0 24
+          0.6880  t x 0 34    0.6883  t x 0 34    0.4668  t x 0 34    0.4672  t x 0 34
+      no asm
+        2.3294  x x 0 22   2.3430  x x 0 34   2.3446  x x 0 23   2.3496  x x 0 35   2.3765  x x 0 24
+          0.6888  t x 0 34    0.6889  t x 0 34    0.4685  t x 0 34    0.4678  t x 0 34
+    gcc
+      all asm
+        2.5089  x x 0 22   2.5120  x x 0 34   2.5140  x x 0 21   2.5165  x x 0 33   2.5209  x x 0 35
+          0.7427  t x 0 35    0.7466  t x 0 33    0.5050  t x 0 35    0.5031  t x 0 35
+      no asm
+        2.5148  x x 0 34   2.5194  x x 0 22   2.5230  x x 0 32   2.5231  x x 0 35   2.5244  x x 0 33
+          0.7442  t x 0 35    0.7293  t x 1 3     0.5028  t x 0 34    0.4936  t x 1 3
+  halfrange
+    clang
+      all asm
+        2.3828  t x 0 34   2.4102  x x 0 39   2.4113  x x 0 22   2.4124  x x 0 18   2.4176  x x 0 34
+        2.4365  x x 0 35   2.4551  x x 0 3    2.4573  x x 0 17   2.4677  x x 0 23   2.4696  x x 0 1 
+          0.7119  t x 0 34    0.7123  t x 0 34    0.4790  t x 0 34    0.4792  t x 0 22
+          0.7129  t x 0 22    0.7133  t x 0 22    0.4811  t x 0 22    0.4796  t x 0 34
+      no asm
+        2.3737  t x 0 34   2.3975  x x 0 34   2.4054  x x 0 18   2.4068  x x 0 22   2.4073  x x 0 39
+        2.4260  x x 0 35   2.4567  x x 0 3    2.4587  x x 0 23   2.4598  x x 0 36
+          0.7078  t x 0 34    0.7095  t x 0 22    0.4775  t x 0 34    0.4782  t x 0 34
+          0.7126  t x 0 22    0.7101  t x 0 34    0.4801  t x 0 22    0.4793  t x 0 22
+    gcc
+      all asm
+        2.5272  t x 0 34   2.5561  x x 0 33   2.5585  x x 0 39   2.5631  x x 0 20   2.5638  x x 0 32
+        2.5646  x x 0 21   2.5648  x x 0 34   2.5688  x x 0 22   2.5736  x x 0 18   2.5781  x x 0 15
+          0.7555  t x 0 34    0.7547  t x 0 34    0.5063  t x 0 17    0.5057  t x 0 39
+          0.7576  x x 0 33    0.7576  t x 0 39    0.5087  t x 0 39    0.5081  t x 0 17
+      no asm
+        2.5547  t x 0 39   2.5559  x x 0 18   2.5808  x x 0 17   2.5900  x x 0 39   2.6065  x x 0 22
+        2.6140  x x 0 1    2.6228  x x 0 32   2.6268  x x 0 33   2.6285  x x 0 15   2.6311  x x 0 34
+          0.7697  x x 0 18    0.7597  t x 0 39    0.5165  t x 0 39    0.5084  x x 0 18
+          0.7700  t x 0 39    0.7606  x x 0 18    0.5172  x x 0 18    0.5085  t x 0 39
+
+
+WINNERS FOR ARM64 (M2) __uint128_t scalar two_pow
+-------------------------------------------------
+fullrange
+  clang  x t 0 34   x t 0 22  is 0.4% slower
+  gcc    x t 0 33   x t 0 34  is almost 0.95% slower
+halfrange
+  clang  x x 0 22   x x 0 34 is a close second (0.25% behind on all asm, and 0.3% ahead on no asm)
+  gcc    x x 0 33   x x 0 20 (and x x 0 22) close second  (both 0.3% behind)
+quarterrange
+  clang  x x 0 22   x x 0 34 is second at  0.7% slower
+  gcc    x x 0 22  or  x x 0 34   22 slightly preferred since it was 0.12% faster on full asm (which is fastest)
+                                  34 about 0.18% faster on non-asm
+
+WINNERS FOR ARM64 (M2) __uint128_t array two_pow
+------------------------------------------------
+fullrange
+  clang  30 x 4
+  gcc    30 x 4
+halfrange    (sections 27-31 dominate)
+  clang  31 x    30 x  is a close second
+  gcc    31 x    30 x  also close second
+quarter      (sections 27-31 dominate)
+  clang  30 x
+  gcc    31 x
+
+
+
+
+--------------------------------------------------------------------------------------------
+
+
+
+WINNERS FOR ARM64 (M2) uint64_t scalar two_pow
+-------------------------------------------------
+Quarter
+  clang  x x 0 24
+  gcc    x x 0 24
+Half   !! Half is faster than Quarter for clang!
+  clang  x x 0 24
+  gcc    x x 0 24
+Full
+  clang  [x t 0 21]   almost as good is  x t 0 33,   also fine is  x t 0 23
+  gcc    x t 0 23   or also fine is  x t 0 35
+
+
+WINNERS FOR ARM64 (M2) uint64_t array two_pow
+---------------------------------------------
+Quarter
+  clang  0 31 x
+  gcc    0 29 x   but timings aren't very consistent between asm and no-asm
+
+Half   !! Half is faster than Quarter!!  - across the board - clang/gcc asm/non
+  clang  0 29 x   0 31 x   equally good
+  gcc    0 28 x   0 30 x second place  (~1 % slower)
+
+Full
+  clang  0 31 x
+  gcc    0 31 x
+
+
+
+Scalar uint64_t:
+
+Quarter
+  clang
+    no asm   x x 0 24  wins
+      0.1413  t x 0 24    0.1413  t x 0 24    0.0715  t x 0 34    0.0715  t x 0 22
+      0.1413  t x 0 36    0.1414  x x 0 23    0.0715  t x 0 22    0.0716  t x 0 34
+        0.4263  t x 0 24   0.4263  t x 0 36   0.4281  t x 0 22   0.4285  t x 0 34   0.4299  x x 0 24
+    all asm   x x 0 24  wins
+      0.1412  t x 0 24    0.1412  t x 0 24    0.0715  t x 0 34    0.0715  t x 0 34
+      0.1413  x x 0 23    0.1413  x x 0 23    0.0715  t x 0 22    0.0715  t x 0 22
+        0.4261  t x 0 24   0.4270  t x 0 36   0.4280  t x 0 22   0.4284  t x 0 34   0.4294  x x 0 24
+  gcc
+    no asm   x x 0 24  wins
+      0.1349  t x 0 36    0.1350  t x 0 36    0.0657  x x 0 24    0.0657  x x 0 24
+      0.1352  t x 0 24    0.1351  t x 0 24    0.0658  t x 0 36    0.0658  t x 0 24
+        0.4016  t x 0 36   0.4020  t x 0 24   0.4049  x x 0 24   0.4054  x x 0 36   0.4128  x x 0 37
+    all asm   x x 0 24  wins
+      0.1349  t x 0 36    0.1350  t x 0 36    0.0655  x x 0 24    0.0655  x x 0 24
+      0.1351  t x 0 24    0.1351  t x 0 24    0.0655  x x 0 36    0.0656  x x 0 36
+        0.4010  t x 0 36   0.4013  t x 0 24   0.4043  x x 0 24   0.4045  x x 0 36   0.4110  x x 0 37
+Half
+  clang
+    no asm     x x 0 24  best compromise
+      0.1407  t x 0 36    0.1406  t x 0 24    0.0676  t x 0 24    0.0676  x x 0 24
+      0.1407  t x 0 24    0.1407  t x 0 36    0.0676  x x 0 24    0.0676  t x 0 24
+        0.4165  t x 0 24   0.4168  t x 0 36   0.4206  x x 0 24   0.4208  x x 0 36   0.4270  x x 0 33
+    all asm    x x 0 24  best compromise
+      0.1402  x x 0 25    0.1402  x x 0 25    0.0676  x x 0 24    0.0676  x x 0 24
+      0.1404  x x 0 37    0.1404  x x 0 37    0.0676  t x 0 24    0.0676  t x 0 24
+        0.4165  t x 0 24   0.4169  t x 0 36   0.4205  x x 0 24   0.4207  x x 0 36   0.4233  x x 0 25
+  gcc
+    no asm     x x 0 24  best compromise
+      0.1386  x x 0 37    0.1386  x x 0 25    0.0660  x x 0 36    0.0660  x x 0 36
+      0.1386  x x 0 25    0.1386  x x 0 37    0.0661  t x 0 24    0.0661  t x 0 24
+        0.4106  t x 0 36   0.4112  t x 0 24   0.4148  x x 0 36   0.4148  x x 0 24   0.4174  x x 0 25
+    all asm    x x 0 24  best compromise
+      0.1387  x x 0 25    0.1387  x x 0 25    0.0663  x x 0 36    0.0663  x x 0 36
+      0.1389  x x 0 37    0.1389  x x 0 37    0.0664  t x 0 36    0.0663  t x 0 36
+        0.4109  t x 0 36   0.4117  t x 0 24   0.4152  x x 0 24   0.4153  x x 0 36   0.4191  x x 0 25
+Full
+  clang
+    no asm
+      0.1544  x t 0 23    0.1543  x t 0 23    0.0752  t t 0 18    0.0752  t t 0 18
+      0.1546  x t 0 35    0.1546  x t 0 35    0.0753  t t 0 39    0.0753  t t 0 39
+        0.4639  t t 0 22   0.4640  t t 0 20   0.4647  t t 0 32   0.4649  t t 0 34   0.4654  t t 0 19
+    all asm
+      0.1496  x t 0 23    0.1496  x t 0 23    0.0730  x t 0 24    0.0731  x t 0 24
+      0.1497  t t 0 33    0.1497  t t 0 33    0.0732  t t 0 39    0.0732  t t 0 20
+        0.4475  t t 0 33   0.4482  t t 0 21   0.4486  t t 0 24   0.4493  t t 0 36   0.4494  t t 0 32
+  gcc
+    no asm
+      0.1642  x x 0 37    0.1524  x t 0 23    0.0788  t x 0 24    0.0748  t t 0 32
+      0.1644  x x 0 25    0.1526  x t 0 35    0.0789  x x 0 24    0.0748  x t 0 24
+        0.4898  t t 0 21   0.4899  t t 0 20   0.4906  x t 0 20   0.4911  x t 0 32   0.4916  t x 0 24
+    all asm
+      0.1482  x t 0 23    0.1482  x t 0 23    0.0710  x t 0 24    0.0711  x t 0 24
+      0.1484  x t 0 35    0.1484  x t 0 35    0.0714  t t 0 24    0.0714  t t 0 24
+        0.4431  t t 0 24   0.4440  t t 0 36   0.4448  t t 0 32   0.4457  x t 0 24   0.4461  x t 0 23
+
+
+Array uint64_t:
+
+Quarter
+  clang
+    no asm   0 31 x  wins
+      0.0397  0 29 x 12    0.0397  0 29 x 12    0.0246  0 31 x 12    0.0246  0 31 x 12
+        0.1286  0 29 x 12   0.1290  0 31 x 12
+    all asm   0 31 x  wins
+      0.0399  0 29 x 12    0.0399  0 31 x 12    0.0245  0 31 x 12    0.0245  0 31 x 12
+         0.1288  0 31 x 12   0.1291  0 29 x 12
+  gcc
+    no asm   30 x   then 31 x   then 28 or 29
+      0.0409  0 29 x 10    0.0410  0 29 x 10    0.0250  0 30 x 08    0.0248  0 03 x 12
+        0.1322  0 30 x 08   0.1322  0 29 x 10   0.1322  0 31 x 08   0.1327  0 28 x 08   0.1329  0 28 x 10
+    all asm   0 29 x  wins   or 0 28 x
+      0.0412  0 28 x 08    0.0412  0 28 x 08    0.0248  0 28 x 08    0.0250  0 28 x 08
+        0.1323  0 28 x 08   0.1326  0 29 x 08   0.1332  0 28 x 07   0.1344  0 30 x 10   0.1348  0 31 x 12
+Half
+  clang
+    no asm      0 29 x   0 31 x   equally good
+      0.0397  0 29 x 12    0.0397  0 29 x 12    0.0240  0 29 x 12    0.0240  0 29 x 12
+      0.0399  0 31 x 12    0.0399  0 31 x 12    0.0242  0 31 x 12    0.0242  0 31 x 12
+        0.1274  0 29 x 12   0.1282  0 31 x 12   0.1287  0 31 x 10   0.1288  0 28 x 12   0.1293  0 30 x 12
+    all asm     0 29 x   0 31 x   equally good
+      0.0397  0 29 x 12    0.0398  0 29 x 12    0.0241  0 29 x 12    0.0241  0 29 x 12
+      0.0399  0 31 x 12    0.0399  0 31 x 12    0.0242  0 31 x 12    0.0242  0 31 x 12
+        0.1277  0 29 x 12   0.1281  0 31 x 12   0.1292  0 31 x 10   0.1292  0 28 x 12   0.1297  0 30 x 12
+  gcc
+    no asm   0 28 x  wins    0 30 x second place
+      0.0407  0 28 x 08    0.0407  0 28 x 08    0.0244  0 28 x 08    0.0244  0 28 x 07
+        0.1303  0 28 x 08   0.1309  0 28 x 07   0.1317  0 30 x 07   0.1321  0 31 x 08   0.1322  0 30 x 08
+    all asm   0 28 x  wins   0 30 x second place
+      0.0401  0 28 x 07    0.0401  0 28 x 07    0.0239  0 28 x 07    0.0239  0 28 x 07
+      0.0403  0 30 x 08    0.0404  0 30 x 08    0.0241  0 28 x 08    0.0241  0 28 x 08
+        0.1281  0 28 x 07   0.1289  0 30 x 08   0.1292  0 28 x 08   0.1303  0 31 x 08   0.1321  0 29 x 10
+Full
+  clang
+    no asm     0 31 x  wins
+      0.0412  0 31 x 12    0.0412  0 31 x 12    0.0246  0 31 x 12    0.0246  0 31 x 12
+      0.0412  0 29 x 12    0.0412  0 29 x 12    0.0247  0 29 x 12    0.0247  0 29 x 12
+        0.1315  0 31 x 12   0.1318  0 29 x 12   0.1320  0 31 x 10   0.1322  0 28 x 12   0.1326  0 30 x 12
+    all asm    0 31 x  wins
+      0.0412  0 31 x 12    0.0412  0 31 x 12    0.0247  0 31 x 12    0.0246  0 31 x 12
+      0.0414  0 29 x 12    0.0414  0 29 x 12    0.0248  0 29 x 12    0.0248  0 29 x 12
+        0.1317  0 31 x 12   0.1323  0 29 x 12   0.1327  0 28 x 12   0.1330  0 30 x 12   0.1330  0 31 x 10
+  gcc
+    no asm     0 31 x  wins
+      0.0432  0 31 x 12    0.0431  0 31 x 12    0.0256  0 29 x 10    0.0255  0 31 x 12
+      0.0434  0 30 x 12    0.0432  0 30 x 12    0.0256  0 31 x 12    0.0255  0 29 x 10
+        0.1374  0 31 x 12   0.1379  0 29 x 10   0.1381  0 30 x 12   0.1384  0 30 x 10   0.1390  0 31 x 10
+    all asm   0 31 x  wins
+      0.0422  0 31 x 12    0.0422  0 31 x 12    0.0250  0 29 x 08    0.0250  0 29 x 08
+      0.0424  0 29 x 12    0.0424  0 29 x 12    0.0251  0 31 x 12    0.0251  0 31 x 12
+        0.1347  0 31 x 12   0.1352  0 29 x 08   0.1352  0 29 x 12   0.1356  0 30 x 12   0.1358  0 28 x 12
+

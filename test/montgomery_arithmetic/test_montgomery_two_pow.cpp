@@ -22,10 +22,25 @@
 #endif
 
 
+// Likewise we'll define some macros from the util library and enable
+// postcondition checking within the associated functions
+//
+#undef HURCHALLA_ALLOW_INLINE_ASM_BRANCHLESS_SHIFTS
+#define HURCHALLA_ALLOW_INLINE_ASM_BRANCHLESS_SHIFTS
+// this one isn't used by two_pow at the time of this writing, but won't hurt
+#undef HURCHALLA_ALLOW_INLINE_ASM_CSELECT_ON_BIT
+#define HURCHALLA_ALLOW_INLINE_ASM_CSELECT_ON_BIT
+
+#ifndef HURCHALLA_UTIL_ENABLE_ASSERTS
+#  define HURCHALLA_UTIL_ENABLE_ASSERTS
+#endif
+
+
 #include "hurchalla/modular_arithmetic/modular_pow.h"
 #include "hurchalla/montgomery_arithmetic/MontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/montgomery_form_aliases.h"
 #include "hurchalla/montgomery_arithmetic/detail/impl_montgomery_two_pow.h"
+#include "hurchalla/montgomery_arithmetic/detail/MontyTags.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/traits/extensible_make_unsigned.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
@@ -99,20 +114,54 @@ void test_two_pow_array(typename MF::IntegerType starting_modulus,
     }
     std::array<MF, ARRAY_SIZE> mfs = vector_to_stdarray<ARRAY_SIZE>(mf_vec);
 
-    std::array<V,ARRAY_SIZE> results;
-
-    results = two_pow::call<0,0,MF,U,ARRAY_SIZE>(mfs, exponents);
+    std::array<T,ARRAY_SIZE> answers;
     for (std::size_t i=0; i<ARRAY_SIZE; ++i) {
-        EXPECT_TRUE(mfs[i].convertOut(results[i]) ==
-                      hc::modular_pow<T>(2, exponents[i], mfs[i].getModulus()));
+        answers[i] = hc::modular_pow<T>(2, exponents[i], mfs[i].getModulus());
     }
-    results = two_pow::call<0,2,MF,U,ARRAY_SIZE>(mfs, exponents);
+
+    std::array<V,ARRAY_SIZE> results;
+    results = two_pow::call<MF,U,ARRAY_SIZE,0,28,false>(mfs, exponents);
     for (std::size_t i=0; i<ARRAY_SIZE; ++i) {
-        EXPECT_TRUE(mfs[i].convertOut(results[i]) ==
-                      hc::modular_pow<T>(2, exponents[i], mfs[i].getModulus()));
+        EXPECT_TRUE(mfs[i].convertOut(results[i]) == answers[i]);
+    }
+    results = two_pow::call<MF,U,ARRAY_SIZE,0,29,false>(mfs, exponents);
+    for (std::size_t i=0; i<ARRAY_SIZE; ++i) {
+        EXPECT_TRUE(mfs[i].convertOut(results[i]) == answers[i]);
+    }
+    results = two_pow::call<MF,U,ARRAY_SIZE,0,30,false>(mfs, exponents);
+    for (std::size_t i=0; i<ARRAY_SIZE; ++i) {
+        EXPECT_TRUE(mfs[i].convertOut(results[i]) == answers[i]);
+    }
+    results = two_pow::call<MF,U,ARRAY_SIZE,0,31,false>(mfs, exponents);
+    for (std::size_t i=0; i<ARRAY_SIZE; ++i) {
+        EXPECT_TRUE(mfs[i].convertOut(results[i]) == answers[i]);
+    }
+
+    using MontyTag = typename MF::MontType::MontyTag;
+    // We optimize testing to skip the next section of Squaring Value
+    // tests when the monty type isn't MontgomeryFull.  Other monty
+    // types basically do nothing different with Squaring Values than
+    // their normal operation - so we save testing time by not testing
+    // them redundantly.
+    if (std::is_same<MontyTag, hc::detail::TagMontyFullrange>::value) {
+        results = two_pow::call<MF,U,ARRAY_SIZE,0,28,true>(mfs, exponents);
+        for (std::size_t i=0; i<ARRAY_SIZE; ++i) {
+            EXPECT_TRUE(mfs[i].convertOut(results[i]) == answers[i]);
+        }
+        results = two_pow::call<MF,U,ARRAY_SIZE,0,29,true>(mfs, exponents);
+        for (std::size_t i=0; i<ARRAY_SIZE; ++i) {
+            EXPECT_TRUE(mfs[i].convertOut(results[i]) == answers[i]);
+        }
+        results = two_pow::call<MF,U,ARRAY_SIZE,0,30,true>(mfs, exponents);
+        for (std::size_t i=0; i<ARRAY_SIZE; ++i) {
+            EXPECT_TRUE(mfs[i].convertOut(results[i]) == answers[i]);
+        }
+        results = two_pow::call<MF,U,ARRAY_SIZE,0,31,true>(mfs, exponents);
+        for (std::size_t i=0; i<ARRAY_SIZE; ++i) {
+            EXPECT_TRUE(mfs[i].convertOut(results[i]) == answers[i]);
+        }
     }
 }
-
 
 
 template <typename M, typename U>
@@ -125,15 +174,59 @@ void test_two_pow(typename M::IntegerType modulus, U exponent)
     // first test the non-array two_pow
     M mf(modulus);
     T answer = hc::modular_pow<T>(2, exponent, modulus);
+
     T result;
-    result = mf.convertOut(two_pow::call<true,0,2,M,U>(mf,exponent));
+    result = mf.convertOut(two_pow::call<M,U,true,0,22,false>(mf,exponent));
     EXPECT_TRUE(result == answer);
-    result = mf.convertOut(two_pow::call<true,0,3,M,U>(mf,exponent));
+    result = mf.convertOut(two_pow::call<M,U,true,0,23,false>(mf,exponent));
     EXPECT_TRUE(result == answer);
-    result = mf.convertOut(two_pow::call<false,0,2,M,U>(mf,exponent));
+    result = mf.convertOut(two_pow::call<M,U,true,0,24,false>(mf,exponent));
     EXPECT_TRUE(result == answer);
-    result = mf.convertOut(two_pow::call<false,0,3,M,U>(mf,exponent));
+    result = mf.convertOut(two_pow::call<M,U,true,0,33,false>(mf,exponent));
     EXPECT_TRUE(result == answer);
+    result = mf.convertOut(two_pow::call<M,U,true,0,34,false>(mf,exponent));
+    EXPECT_TRUE(result == answer);
+
+    result = mf.convertOut(two_pow::call<M,U,false,0,22,false>(mf,exponent));
+    EXPECT_TRUE(result == answer);
+    result = mf.convertOut(two_pow::call<M,U,false,0,23,false>(mf,exponent));
+    EXPECT_TRUE(result == answer);
+    result = mf.convertOut(two_pow::call<M,U,false,0,24,false>(mf,exponent));
+    EXPECT_TRUE(result == answer);
+    result = mf.convertOut(two_pow::call<M,U,false,0,33,false>(mf,exponent));
+    EXPECT_TRUE(result == answer);
+    result = mf.convertOut(two_pow::call<M,U,false,0,34,false>(mf,exponent));
+    EXPECT_TRUE(result == answer);
+
+    using MontyTag = typename M::MontType::MontyTag;
+    // We optimize testing to skip the next section of Squaring Value
+    // tests when the monty type isn't MontgomeryFull.  Other monty
+    // types basically do nothing different with Squaring Values than
+    // their normal operation - so we save testing time by not testing
+    // them redundantly.
+    if (std::is_same<MontyTag, hc::detail::TagMontyFullrange>::value) {
+        result = mf.convertOut(two_pow::call<M,U,true,0,22,true>(mf,exponent));
+        EXPECT_TRUE(result == answer);
+        result = mf.convertOut(two_pow::call<M,U,true,0,23,true>(mf,exponent));
+        EXPECT_TRUE(result == answer);
+        result = mf.convertOut(two_pow::call<M,U,true,0,24,true>(mf,exponent));
+        EXPECT_TRUE(result == answer);
+        result = mf.convertOut(two_pow::call<M,U,true,0,33,true>(mf,exponent));
+        EXPECT_TRUE(result == answer);
+        result = mf.convertOut(two_pow::call<M,U,true,0,34,true>(mf,exponent));
+        EXPECT_TRUE(result == answer);
+
+        result = mf.convertOut(two_pow::call<M,U,false,0,22,true>(mf,exponent));
+        EXPECT_TRUE(result == answer);
+        result = mf.convertOut(two_pow::call<M,U,false,0,23,true>(mf,exponent));
+        EXPECT_TRUE(result == answer);
+        result = mf.convertOut(two_pow::call<M,U,false,0,24,true>(mf,exponent));
+        EXPECT_TRUE(result == answer);
+        result = mf.convertOut(two_pow::call<M,U,false,0,33,true>(mf,exponent));
+        EXPECT_TRUE(result == answer);
+        result = mf.convertOut(two_pow::call<M,U,false,0,34,true>(mf,exponent));
+        EXPECT_TRUE(result == answer);
+    }
 
     // test the array version of two_pow with different array sizes
     test_two_pow_array<M,1>(modulus, exponent);

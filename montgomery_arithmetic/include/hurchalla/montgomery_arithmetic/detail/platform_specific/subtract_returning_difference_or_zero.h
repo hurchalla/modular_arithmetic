@@ -21,7 +21,7 @@ namespace hurchalla { namespace detail {
 // MontyFullRange.h's squareSV() function without branches (assuming macros
 // are defined to allow assembly here).
 // It's unlikely it would be useful for other purposes, but it would be okay
-// to do so if it happens to be useful.
+// to use if desired.
 
 
 // Calculates a - b, placing the subtraction result in 'difference'.
@@ -74,7 +74,7 @@ subtract_returning_difference_or_zero(__uint128_t& difference, __uint128_t a, __
     __uint128_t ret = (static_cast<__uint128_t>(ret_hi) << 64) | ret_lo;
 
     HPBC_CLOCKWORK_POSTCONDITION2(difference == a - b);
-    HPBC_CLOCKWORK_POSTCONDITION2(ret == (a < b) ? difference : 0);
+    HPBC_CLOCKWORK_POSTCONDITION2(ret == ((a < b) ? difference : 0));
     return ret;
 }
 # endif
@@ -96,7 +96,7 @@ subtract_returning_difference_or_zero(uint64_t& difference, uint64_t a, uint64_t
     difference = diff;
 
     HPBC_CLOCKWORK_POSTCONDITION2(difference == a - b);
-    HPBC_CLOCKWORK_POSTCONDITION2(ret == (a < b) ? difference : 0);
+    HPBC_CLOCKWORK_POSTCONDITION2(ret == ((a < b) ? difference : 0));
     return ret;
 }
 
@@ -117,7 +117,7 @@ subtract_returning_difference_or_zero(uint32_t& difference, uint32_t a, uint32_t
     difference = diff;
 
     HPBC_CLOCKWORK_POSTCONDITION2(difference == a - b);
-    HPBC_CLOCKWORK_POSTCONDITION2(ret == (a < b) ? difference : 0);
+    HPBC_CLOCKWORK_POSTCONDITION2(ret == ((a < b) ? difference : 0));
     return ret;
 }
 
@@ -153,7 +153,7 @@ subtract_returning_difference_or_zero(__uint128_t& difference, __uint128_t a, __
     __uint128_t ret = (static_cast<__uint128_t>(ret_hi) << 64) | ret_lo;
 
     HPBC_CLOCKWORK_POSTCONDITION2(difference == a - b);
-    HPBC_CLOCKWORK_POSTCONDITION2(ret == (a < b) ? difference : 0);
+    HPBC_CLOCKWORK_POSTCONDITION2(ret == ((a < b) ? difference : 0));
     return ret;
 }
 # endif
@@ -170,7 +170,7 @@ subtract_returning_difference_or_zero(uint64_t& difference, uint64_t a, uint64_t
     difference = diff;
 
     HPBC_CLOCKWORK_POSTCONDITION2(difference == a - b);
-    HPBC_CLOCKWORK_POSTCONDITION2(ret == (a < b) ? difference : 0);
+    HPBC_CLOCKWORK_POSTCONDITION2(ret == ((a < b) ? difference : 0));
     return ret;
 }
 
@@ -185,7 +185,7 @@ subtract_returning_difference_or_zero(uint32_t& difference, uint32_t a, uint32_t
     uint32_t ret = static_cast<uint32_t>(ret64);
 
     HPBC_CLOCKWORK_POSTCONDITION2(difference == a - b);
-    HPBC_CLOCKWORK_POSTCONDITION2(ret == (a < b) ? difference : 0);
+    HPBC_CLOCKWORK_POSTCONDITION2(ret == ((a < b) ? difference : 0));
     return ret;
 }
 
