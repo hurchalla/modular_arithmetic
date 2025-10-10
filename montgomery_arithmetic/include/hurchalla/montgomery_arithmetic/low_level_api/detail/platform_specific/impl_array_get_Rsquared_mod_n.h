@@ -14,7 +14,7 @@
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
-#include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
+#include "hurchalla/util/unsigned_square_to_hilo_product.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <array>
@@ -77,7 +77,7 @@ struct impl_array_get_Rsquared_mod_n {
             // use montgomery multiplication to square tmp on each iteration
             T u_hi, u_lo;
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-                u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, tmp[j], tmp[j]);
+                u_hi = hc::unsigned_square_to_hilo_product(u_lo, tmp[j]);
                 tmp[j] = hc::REDC_standard(u_hi, u_lo, n[j], inverse_n_modR[j], PTAG());
             }
         }
@@ -152,7 +152,7 @@ struct impl_array_get_Rsquared_mod_n<true, PTAG> {
             // use montgomery multiplication to square tmp on each iteration
             T u_hi, u_lo;
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-                u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, tmp[j], tmp[j]);
+                u_hi = hc::unsigned_square_to_hilo_product(u_lo, tmp[j]);
                 // use the same logic as MontyQuarterRange's montyREDC():
                 tmp[j] = hc::REDC_incomplete(u_hi, u_lo, n[j], inverse_n_modR[j], PTAG());
                 tmp[j] = static_cast<T>(tmp[j] + n[j]);
@@ -165,7 +165,7 @@ struct impl_array_get_Rsquared_mod_n<true, PTAG> {
             // use standard REDC, which will end with tmp in the range [0, n).
             T u_hi, u_lo;
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-                u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, tmp[j], tmp[j]);
+                u_hi = hc::unsigned_square_to_hilo_product(u_lo, tmp[j]);
                 tmp[j] = hc::REDC_standard(u_hi, u_lo, n[j], inverse_n_modR[j], PTAG());
             }
         }

@@ -8,6 +8,7 @@
 #include "hurchalla/montgomery_arithmetic/low_level_api/detail/platform_specific/impl_array_get_Rsquared_mod_n.h"
 #include "hurchalla/montgomery_arithmetic/MontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/montgomery_form_aliases.h"
+#include "hurchalla/util/unsigned_square_to_hilo_product.h"
 #include "hurchalla/util/count_leading_zeros.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
@@ -796,7 +797,7 @@ bench_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce,
          for (size_t j=0; j < ARRAY_SIZE; ++j) {
             U modulus = tmpvec[i+j];
             U u_lo;
-            U u_hi = hurchalla::unsigned_multiply_to_hilo_product(u_lo, r_mod_n[j], r_mod_n[j]);
+            U u_hi = hurchalla::unsigned_square_to_hilo_product(u_lo, r_mod_n[j]);
             U remainder;
             //U quotient = div_2U_by_1U(u_hi, u_lo, modulus, remainder);
             div_2U_by_1U(u_hi, u_lo, modulus, remainder);

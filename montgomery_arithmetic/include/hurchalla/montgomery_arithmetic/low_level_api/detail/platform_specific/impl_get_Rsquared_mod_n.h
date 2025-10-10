@@ -14,7 +14,7 @@
 #include "hurchalla/modular_arithmetic/modular_addition.h"
 #include "hurchalla/modular_arithmetic/modular_multiplication.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
-#include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
+#include "hurchalla/util/unsigned_square_to_hilo_product.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 
@@ -65,7 +65,7 @@ struct impl_get_Rsquared_mod_n {
         for (; i<bitsT; i*=2) {
             // use montgomery multiplication to square tmp on each iteration
             T u_hi, u_lo;
-            u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, tmp, tmp);
+            u_hi = hc::unsigned_square_to_hilo_product(u_lo, tmp);
             tmp = hc::REDC_standard(u_hi, u_lo, n, inverse_n_modR, PTAG());
         }
         HPBC_CLOCKWORK_ASSERT2(i == bitsT);
@@ -124,7 +124,7 @@ struct impl_get_Rsquared_mod_n<true, PTAG> {
         for (; i<bitsT/2; i*=2) {
             // use montgomery multiplication to square tmp on each iteration
             T u_hi, u_lo;
-            u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, tmp, tmp);
+            u_hi = hc::unsigned_square_to_hilo_product(u_lo, tmp);
             // use the same logic as MontyQuarterRange's montyREDC():
             tmp = hc::REDC_incomplete(u_hi, u_lo, n, inverse_n_modR, PTAG());
             tmp = static_cast<T>(tmp + n);
@@ -135,7 +135,7 @@ struct impl_get_Rsquared_mod_n<true, PTAG> {
             // This final iteration was unrolled from the loop above so we can
             // use standard REDC, which will end with tmp in the range [0, n).
             T u_hi, u_lo;
-            u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, tmp, tmp);
+            u_hi = hc::unsigned_square_to_hilo_product(u_lo, tmp);
             tmp = hc::REDC_standard(u_hi, u_lo, n, inverse_n_modR, PTAG());
         }
 

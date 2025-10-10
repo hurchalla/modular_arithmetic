@@ -20,6 +20,7 @@
 #include "hurchalla/montgomery_arithmetic/detail/MontyTags.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
+#include "hurchalla/util/unsigned_square_to_hilo_product.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/util/branchless_shift_left.h"
 #include "hurchalla/util/branchless_shift_right.h"
@@ -540,8 +541,7 @@ class MontyCommonBase {
         HPBC_CLOCKWORK_INVARIANT2(r_squared_mod_n_ < n_);
         namespace hc = ::hurchalla;
         T u_lo;
-        T u_hi = hc::unsigned_multiply_to_hilo_product(u_lo,
-                                            r_squared_mod_n_, r_squared_mod_n_);
+        T u_hi = hc::unsigned_square_to_hilo_product(u_lo, r_squared_mod_n_);
         HPBC_CLOCKWORK_ASSERT2(u_hi < n_);  // verify that (u_hi*R + u_lo) < n*R
         T result = hc::REDC_standard(u_hi, u_lo, n_, inv_n_, PTAG());
         HPBC_CLOCKWORK_POSTCONDITION2(result < n_);

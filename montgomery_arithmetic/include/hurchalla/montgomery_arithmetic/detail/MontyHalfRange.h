@@ -20,6 +20,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/traits/extensible_make_signed.h"
 #include "hurchalla/util/signed_multiply_to_hilo_product.h"
+#include "hurchalla/util/signed_square_to_hilo_product.h"
 #include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/cselect_on_bit.h"
 #include "hurchalla/util/compiler_macros.h"
@@ -703,7 +704,7 @@ private:
     {
         HPBC_CLOCKWORK_PRECONDITION2(isValid(x));
         namespace hc = ::hurchalla;
-        S tmp_hi = hc::signed_multiply_to_hilo_product(u_lo, x.get(), x.get());
+        S tmp_hi = hc::signed_square_to_hilo_product(u_lo, x.get());
         // The same logic as given in multiplyToHiLo shows that
         // -(n+1)/2 <= tmp_hi <= (n-1)/2.  But additionally, since the square
         // of an integer is always >= 0, we therefore know

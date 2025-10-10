@@ -19,6 +19,7 @@
 #include "hurchalla/modular_arithmetic/absolute_value_difference.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
+#include "hurchalla/util/unsigned_square_to_hilo_product.h"
 #include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/cselect_on_bit.h"
 #include "hurchalla/util/compiler_macros.h"
@@ -277,7 +278,7 @@ class MontyFullRange final :
         namespace hc = ::hurchalla;
         T a = sv.getbits();
         T sqlo;
-        T sqhi = hc::unsigned_multiply_to_hilo_product(sqlo, a, a);
+        T sqhi = hc::unsigned_square_to_hilo_product(sqlo, a);
         T a_or_zero = sv.get_subtrahend();
         T u_hi = static_cast<T>(sqhi - a_or_zero - a_or_zero);
         T u_lo = sqlo;
@@ -305,7 +306,7 @@ class MontyFullRange final :
         namespace hc = ::hurchalla;
         T a = sv.getbits();
         T sqlo;
-        T sqhi = hc::unsigned_multiply_to_hilo_product(sqlo, a, a);
+        T sqhi = hc::unsigned_square_to_hilo_product(sqlo, a);
         T a_or_zero = sv.get_subtrahend();
         T u_hi = static_cast<T>(sqhi - a_or_zero - a_or_zero);
         T u_lo = sqlo;
@@ -357,7 +358,7 @@ private:
     HURCHALLA_FORCE_INLINE T squareToHiLo(T& u_lo, V x) const
     {
         namespace hc = ::hurchalla;
-        return hc::unsigned_multiply_to_hilo_product(u_lo, x.get(), x.get());
+        return hc::unsigned_square_to_hilo_product(u_lo, x.get());
     }
     HURCHALLA_FORCE_INLINE bool isValid(V x) const
     {

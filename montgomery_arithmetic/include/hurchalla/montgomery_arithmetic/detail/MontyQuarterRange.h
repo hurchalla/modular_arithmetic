@@ -21,6 +21,7 @@
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/traits/extensible_make_signed.h"
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
+#include "hurchalla/util/unsigned_square_to_hilo_product.h"
 #include "hurchalla/util/cselect_on_bit.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
@@ -498,7 +499,7 @@ private:
     HURCHALLA_FORCE_INLINE T squareToHiLo(T& u_lo, V x) const
     {
         namespace hc = ::hurchalla;
-        return hc::unsigned_multiply_to_hilo_product(u_lo, x.get(), x.get());
+        return hc::unsigned_square_to_hilo_product(u_lo, x.get());
     }
     HURCHALLA_FORCE_INLINE bool isValid(V x) const
     {

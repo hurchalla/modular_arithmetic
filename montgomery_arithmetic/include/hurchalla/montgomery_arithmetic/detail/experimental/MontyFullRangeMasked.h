@@ -20,6 +20,7 @@
 #include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/cselect_on_bit.h"
 #include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
+#include "hurchalla/util/unsigned_square_to_hilo_product.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
 #include <type_traits>
@@ -428,7 +429,7 @@ private:
         HPBC_CLOCKWORK_PRECONDITION2(isValid(x));
         T a = x.getbits();
         T umlo;
-        T umhi = ::hurchalla::unsigned_multiply_to_hilo_product(umlo, a, a);
+        T umhi = ::hurchalla::unsigned_square_to_hilo_product(umlo, a);
         T masked_a = static_cast<T>(x.getmask() & a);
         T result_hi = static_cast<T>(umhi - masked_a - masked_a);
         u_lo = umlo;
@@ -511,9 +512,9 @@ private:
         // Recall that asqrHi and asqrLo are simply any values that satisfy
         // asqrHi*R + asqrLo == a*a, with 0 <= asqrHi < R  and  0 <= asqrLo < R.
         // When we compute
-        // T umlo; T umhi = unsigned_multiply_to_hilo_product(umlo, a, a);
+        // T umlo; T umhi = unsigned_square_to_hilo_product(umlo, a);
         // umhi and umlo satisfy these requirements, since all type T variables
-        // have bounds [0, R), and unsigned_multiply_to_hilo_product() computes
+        // have bounds [0, R), and unsigned_square_to_hilo_product() computes
         // the full two-word product of a*a.
         // Therefore, since
         // x*x == (asqrHi + s*(R-2*a))*R + asqrLo,  we can substitute and get
@@ -565,7 +566,7 @@ private:
         // We can express all of this in code via
         // T a = x.getbits();
         // T umlo;
-        // T umhi = ::hurchalla::unsigned_multiply_to_hilo_product(umlo, a, a);
+        // T umhi = ::hurchalla::unsigned_square_to_hilo_product(umlo, a);
         // T neg2a = static_cast<T>(-2) * a;
         // T result_hi = umhi + (x.getmask() & neg2a);
         // u_lo = umlo;

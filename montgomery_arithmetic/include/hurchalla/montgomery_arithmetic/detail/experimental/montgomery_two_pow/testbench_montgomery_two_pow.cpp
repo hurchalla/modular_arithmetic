@@ -8,6 +8,7 @@
 #include "hurchalla/montgomery_arithmetic/low_level_api/detail/platform_specific/impl_array_get_Rsquared_mod_n.h"
 #include "hurchalla/montgomery_arithmetic/MontgomeryForm.h"
 #include "hurchalla/montgomery_arithmetic/montgomery_form_aliases.h"
+#include "hurchalla/util/unsigned_square_to_hilo_product.h"
 #include "hurchalla/util/count_leading_zeros.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
@@ -532,7 +533,7 @@ bench_array_two_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_red
          for (size_t j=0; j < ARRAY_SIZE; ++j) {
             U modulus = tmpvec[i+j];
             U u_lo;
-            U u_hi = hurchalla::unsigned_multiply_to_hilo_product(u_lo, r_mod_n[j], r_mod_n[j]);
+            U u_hi = hurchalla::unsigned_square_to_hilo_product(u_lo, r_mod_n[j]);
             U remainder;
             //U quotient = div_2U_by_1U(u_hi, u_lo, modulus, remainder);
             div_2U_by_1U(u_hi, u_lo, modulus, remainder);
@@ -953,7 +954,21 @@ using namespace hurchalla;
    for (size_t i=0; i<4; ++i) {
      for (size_t j=0; j<timingA[i].size(); ++j) {
 
-#if 1
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 31, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 31, 4, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 31, 5, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 31, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 31, 7, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 31, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+
+#if 0
       timingA[i][j].push_back(
          bench_array_two_pow<0, 27, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(
@@ -1134,7 +1149,7 @@ using namespace hurchalla;
    }
 #endif
 
-#if 1
+#if 0
       timingA[i][j].push_back(
          bench_array_two_pow<0, 0, 10, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(
@@ -1719,6 +1734,24 @@ using namespace hurchalla;
 
    std::cout << "(ignore)" << uint_to_string(dummy) << "\n\n";
 
+std::cout << "OVERALL BEST:\n";
+   for (size_t j=0; j < overall_bestA.size(); ++j) {
+         const auto& t = overall_bestA[j];
+         std::cout << 10.0 * t.time << "  " << t.table_bits << " ";
+         if (t.code_section < 10)
+            std::cout << "0";
+         std::cout << t.code_section;
+         if (t.uses_squaring_values)
+            std::cout <<  " t";
+         else
+            std::cout <<  " x";
+         if (t.array_size < 10)
+            std::cout <<  " 0" << t.array_size;
+         else
+            std::cout <<  " " << t.array_size;
+      std::cout << "\n";
+   }
+std::cout << "Timings By Test Type:\n";
    for (size_t j=0; j < best_timingA[0].size(); ++j) {
       for (size_t i=0; i<4; ++i) {
          const auto& t = best_timingA[i][j];
@@ -1739,23 +1772,6 @@ using namespace hurchalla;
       }
       std::cout << "\n";
    }
-std::cout << "OVERALL BEST:\n";
-   for (size_t j=0; j < overall_bestA.size(); ++j) {
-         const auto& t = overall_bestA[j];
-         std::cout << 10.0 * t.time << "  " << t.table_bits << " ";
-         if (t.code_section < 10)
-            std::cout << "0";
-         std::cout << t.code_section;
-         if (t.uses_squaring_values)
-            std::cout <<  " t";
-         else
-            std::cout <<  " x";
-         if (t.array_size < 10)
-            std::cout <<  " 0" << t.array_size;
-         else
-            std::cout <<  " " << t.array_size;
-      std::cout << "\n";
-   }
 #endif
 
 
@@ -1767,7 +1783,7 @@ std::cout << "OVERALL BEST:\n";
    std::cout << "\nbegin benchmarks - scalar two_pow\n";
 
    //  warm up to get cpu boost (or throttle) going
-   for (size_t i=0; i<4; ++i)
+   for (size_t i=0; i<2; ++i)
       bench_range<0, true , 0, MontType, false>(static_cast<U>(maxU - range), range, dummy, max_modulus_bits_reduce, seed, exponent_bits_reduce);
 
 //   std::array<std::vector<Timing>, 4> timings;
@@ -1779,6 +1795,8 @@ std::cout << "OVERALL BEST:\n";
 
        // format is bench_range<TABLE_BITS, USE_SLIDING_WINDOW_OPTIMIZATION, CODE_SECTION,
        //                       MontType, USE_SQUARING_VALUE_OPTIMIZATION>
+      timings[i][j].push_back(
+         bench_range<0, false, 22, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 
 #if 0
 // This is a copy/paste of the "best of best" code sections from further below (nothing is new here).
@@ -1999,7 +2017,7 @@ std::cout << "OVERALL BEST:\n";
 
 
 
-#if 1
+#if 0
       timings[i][j].push_back(
          bench_range<0, true , 17, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timings[i][j].push_back(
@@ -2309,7 +2327,7 @@ std::cout << "OVERALL BEST:\n";
          bench_range<4, true , 1, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 #endif
 
-#if 1
+#if 0
       timings[i][j].push_back(
          bench_range<4, true , 0, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timings[i][j].push_back(
@@ -2572,6 +2590,24 @@ std::cout << "OVERALL BEST:\n";
 
    std::cout << "(ignore)" << uint_to_string(dummy) << "\n\n";
 
+std::cout << "OVERALL BEST:\n";
+   for (size_t j=0; j < overall_best.size(); ++j) {
+         const auto& t = overall_best[j];
+         std::cout << 10.0 * t.time;
+         if (t.uses_sliding_window)
+            std::cout <<  "  t";
+         else
+            std::cout <<  "  x";
+         if (t.uses_squaring_values)
+            std::cout <<  " t ";
+         else
+            std::cout <<  " x ";
+         std::cout << t.table_bits << " " << t.code_section;
+         if (t.code_section < 10)
+            std::cout <<  " ";
+      std::cout << "\n";
+   }
+std::cout << "Timings By Test Type:\n";
    for (size_t j=0; j < best_timings[0].size(); ++j) {
       for (size_t i=0; i<4; ++i) {
          const auto& t = best_timings[i][j];
@@ -2590,23 +2626,6 @@ std::cout << "OVERALL BEST:\n";
          if (i != 3)
             std:: cout << "    ";
       }
-      std::cout << "\n";
-   }
-std::cout << "OVERALL BEST:\n";
-   for (size_t j=0; j < overall_best.size(); ++j) {
-         const auto& t = overall_best[j];
-         std::cout << 10.0 * t.time;
-         if (t.uses_sliding_window)
-            std::cout <<  "  t";
-         else
-            std::cout <<  "  x";
-         if (t.uses_squaring_values)
-            std::cout <<  " t ";
-         else
-            std::cout <<  " x ";
-         std::cout << t.table_bits << " " << t.code_section;
-         if (t.code_section < 10)
-            std::cout <<  " ";
       std::cout << "\n";
    }
 #endif
