@@ -700,7 +700,7 @@ private:
         HPBC_CLOCKWORK_POSTCONDITION2(0 <= u_hi && u_hi < n_);
         return u_hi;
     }
-    HURCHALLA_FORCE_INLINE T squareToHiLo(T& u_lo, V x) const
+    HURCHALLA_FORCE_INLINE T squareToHiLo(T& HURCHALLA_RESTRICT u_lo, V x) const
     {
         HPBC_CLOCKWORK_PRECONDITION2(isValid(x));
         namespace hc = ::hurchalla;

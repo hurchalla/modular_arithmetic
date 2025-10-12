@@ -13,7 +13,7 @@
 #include "hurchalla/modular_arithmetic/modular_subtraction.h"
 #include "hurchalla/util/traits/ut_numeric_limits.h"
 #include "hurchalla/util/traits/safely_promote_unsigned.h"
-#include "hurchalla/util/unsigned_multiply_to_hilo_product.h"
+#include "hurchalla/util/unsigned_multiply_to_hi_product.h"
 #include "hurchalla/util/conditional_select.h"
 #include "hurchalla/util/compiler_macros.h"
 #include "hurchalla/modular_arithmetic/detail/clockwork_programming_by_contract.h"
@@ -105,8 +105,13 @@ struct RedcIncomplete {
     // compute  m = (u * inv_n) % R
     T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
 
-    T mn_lo;
-    T mn_hi = ::hurchalla::unsigned_multiply_to_hilo_product(mn_lo, m, n);
+    //T mn_lo;
+    // since we now skip calculating mn_lo (it's not used anyway), by calling
+    // unsigned_multiply_to_hi_product(), mn_lo can be considered to be an
+    // implied variable for explanation purposes, rather than a programming
+    // variable.
+    //T mn_hi = ::hurchalla::unsigned_multiply_to_hilo_product(mn_lo, m, n);
+    T mn_hi = ::hurchalla::unsigned_multiply_to_hi_product(m, n);
 
     // mn = m*n.  Since m = (u_lo*inv_n)%R, we know m < R, and thus  mn < R*n.
     // Therefore mn == mn_hi*R + mn_lo < R*n, and mn_hi*R < R*n - mn_lo <= R*n,
@@ -139,7 +144,9 @@ struct RedcIncomplete {
     // We simply disregard the low words of the minuend and subtrahend, since
     // they are equal to each other.
         // *** Assertion #2 ***
-    HPBC_CLOCKWORK_ASSERT2(u_lo == mn_lo);
+    // since we skip calculting the unused variable mn_lo, we can't actually
+    // call this assert anymore, even though it would be true.
+    //HPBC_CLOCKWORK_ASSERT2(u_lo == mn_lo);
 
     // Since u_hi and u_lo are type T (which is unsigned) variables, both
     // u_hi >= 0 and u_lo >= 0, and thus  u = u_hi*R + u_lo >= 0.  Along with
@@ -511,8 +518,7 @@ struct RedcStandard<__uint128_t>
     HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
-    T mn_lo;
-    T mn_hi = ::hurchalla::unsigned_multiply_to_hilo_product(mn_lo, m, n);
+    T mn_hi = ::hurchalla::unsigned_multiply_to_hi_product(m, n);
     HPBC_CLOCKWORK_ASSERT2(mn_hi < n);
     T reg = u_hi + n;
 
@@ -574,8 +580,7 @@ struct RedcStandard<std::uint64_t>
     HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
-    T mn_lo;
-    T mn_hi = ::hurchalla::unsigned_multiply_to_hilo_product(mn_lo, m, n);
+    T mn_hi = ::hurchalla::unsigned_multiply_to_hi_product(m, n);
     HPBC_CLOCKWORK_ASSERT2(mn_hi < n);
     T reg = u_hi + n;
     T uhi = u_hi;
@@ -624,8 +629,7 @@ struct RedcStandard<std::uint32_t>
     HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
-    T mn_lo;
-    T mn_hi = ::hurchalla::unsigned_multiply_to_hilo_product(mn_lo, m, n);
+    T mn_hi = ::hurchalla::unsigned_multiply_to_hi_product(m, n);
     HPBC_CLOCKWORK_ASSERT2(mn_hi < n);
     T reg = u_hi + n;
     T uhi = u_hi;
@@ -683,8 +687,7 @@ struct RedcStandard<__uint128_t>
     HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
-    T mn_lo;
-    T mn_hi = ::hurchalla::unsigned_multiply_to_hilo_product(mn_lo, m, n);
+    T mn_hi = ::hurchalla::unsigned_multiply_to_hi_product(m, n);
     HPBC_CLOCKWORK_ASSERT2(mn_hi < n);
     T reg = u_hi + n;
 
@@ -746,8 +749,7 @@ struct RedcStandard<std::uint64_t>
     HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     T m = static_cast<T>(static_cast<P>(u_lo) * static_cast<P>(inv_n));
-    T mn_lo;
-    T mn_hi = ::hurchalla::unsigned_multiply_to_hilo_product(mn_lo, m, n);
+    T mn_hi = ::hurchalla::unsigned_multiply_to_hi_product(m, n);
     HPBC_CLOCKWORK_ASSERT2(mn_hi < n);
     T reg = u_hi + n;
 

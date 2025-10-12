@@ -424,7 +424,7 @@ private:
 
     // This function computes the full two-word product of x*x.  It returns the
     // high word of x*x, and writes the low word of x*x to u_lo.
-    HURCHALLA_FORCE_INLINE T squareToHiLo(T& u_lo, V x) const
+    HURCHALLA_FORCE_INLINE T squareToHiLo(T& HURCHALLA_RESTRICT u_lo, V x) const
     {
         HPBC_CLOCKWORK_PRECONDITION2(isValid(x));
         T a = x.getbits();

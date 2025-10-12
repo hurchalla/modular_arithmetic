@@ -350,12 +350,12 @@ private:
 
     // return the high word of the product, and write the low word of the
     // product to u_lo.
-    HURCHALLA_FORCE_INLINE T multiplyToHiLo(T& u_lo, V x, V y) const
+    HURCHALLA_FORCE_INLINE T multiplyToHiLo(T& HURCHALLA_RESTRICT u_lo, V x, V y) const
     {
         namespace hc = ::hurchalla;
         return hc::unsigned_multiply_to_hilo_product(u_lo, x.get(), y.get());
     }
-    HURCHALLA_FORCE_INLINE T squareToHiLo(T& u_lo, V x) const
+    HURCHALLA_FORCE_INLINE T squareToHiLo(T& HURCHALLA_RESTRICT u_lo, V x) const
     {
         namespace hc = ::hurchalla;
         return hc::unsigned_square_to_hilo_product(u_lo, x.get());
