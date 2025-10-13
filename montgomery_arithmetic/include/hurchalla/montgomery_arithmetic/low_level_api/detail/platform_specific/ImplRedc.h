@@ -262,11 +262,6 @@ struct RedcIncomplete {
      defined(HURCHALLA_ALLOW_INLINE_ASM_REDC)) && \
     defined(HURCHALLA_TARGET_ISA_ARM_64) && !defined(_MSC_VER)
 
-    TH u2 = static_cast<TH>(u_hi);
-    TH u3 = static_cast<TH>(u_hi >> HALF_BITS);
-    (void)u2;  // avoid warning when a #if section doesn't use u2
-    (void)u3;  // avoid warning when a #if section doesn't use u3
-
 # if 0
 // this #if section corresponds to the first #if section of C++ code
 // lower in this function.
@@ -277,6 +272,9 @@ struct RedcIncomplete {
 // the #else section) to make a potential negative value positive during
 // calculations (done by the instructions that conditionally set moz and then
 // add moz).
+
+    TH u2 = static_cast<TH>(u_hi);
+    TH u3 = static_cast<TH>(u_hi >> HALF_BITS);
     TH m, tmp;
     __asm__ ("mul %[m], %[u0], %[invn0] \n\t"
              "umulh %[u0], %[m], %[n0] \n\t"     /* u0 = mnA_1 */
@@ -343,6 +341,50 @@ struct RedcIncomplete {
     minuend = u_hi;
     subtrahend = (static_cast<T>(tmp) << HALF_BITS) | u1;
 # endif
+
+/*
+#elif (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
+     defined(HURCHALLA_ALLOW_INLINE_ASM_REDC)) && \
+    defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
+*/
+#elif 0
+    TH m = u0;
+    TH rrax = n0;
+    TH rrdx, tmp2;
+    __asm__ ("imulq %[invn0], %[m] \n\t"   /* mA = u0 * inv_n */
+             "mulq %[m] \n\t"              /* rdx:rax = mnA_10 = rax * mA (rax == n0); high-order bits of the product in rdx */
+             "movq %%rdx, %[tmp2] \n\t"    /* tmp2 = mnA_1 */
+             "movq %[n1], %%rax \n\t"
+             "mulq %[m] \n\t"              /* rdx:rax = mnA_21 = n1 * mA */
+             "xorl %k[m], %k[m] \n\t"      /* m = 0 */
+             "addq %%rax, %[tmp2] \n\t"    /* tmp2 = mnA_1 = mnA_1_part2 + mnA_1 */
+             "adcq %%rdx, %[m] \n\t"       /* m = mnA_2 + carry */
+             "subq %[tmp2], %[u1] \n\t"    /* u1 = v1 = u1 - mnA_1 */
+             "imulq %[u1], %[invn0] \n\t"  /* invn0 = mB = v1 * invn0 */
+
+             "movq %[n0], %%rax \n\t"
+             "mulq %[invn0] \n\t"          /* rdx:rax = mnB_21 = n0 * mB */
+             "movq %%rax, %[u1] \n\t"      /* u1 = mnB_1 */
+             "movq %%rdx, %[n0] \n\t"      /* n0 = mnB_2 */
+
+             "movq %[n1], %%rax \n\t"
+             "mulq %[invn0] \n\t"          /* rdx:rax = mnB_32 = n1 * mB */
+             "xorl %k[invn0], %k[invn0] \n\t"  /* invn0 = 0 */
+             "addq %%rax, %[n0] \n\t"      /* n0 = mnB_2 = mnB_2_part2 + mnB_2 */
+             "adcq %%rdx, %[invn0] \n\t"   /* invn0 = mnB_3 = mnB_3 + carry */
+
+             "xorl %%eax, %%eax \n\t"      /* rax = 0 */
+             "addq %[u1], %[tmp2] \n\t"    /* tmp2 = dummy = mnA_1 + mnB_1 */
+             "adcq %[n0], %[m] \n\t"       /* m = sum2 = mnB_2 + mnA_2 + carry */
+             "adcq %%rax, %[invn0], hs \n\t"  /* tmp = sum3 = mnB_3 += carry */
+             : [m]"+&r"(m), [invn0]"+&r"(invn0),
+               "+&a"(rrax), "=&d"(rrdx), [tmp2]"=&r"(tmp2), [n1]"+&r"(n1), [u1]"+&r"(u1),
+               [n0]"+&r"(n0)
+             :
+             : "cc");
+    minuend = u_hi;
+    subtrahend = (static_cast<T>(tmp) << HALF_BITS) | u1;
+
 
 #else  // not using inline-asm
 
