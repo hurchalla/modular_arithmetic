@@ -18,9 +18,10 @@
 #    number of jobs will be used.
 # -r specifies to run all tests after the build.  Without -r, no tests will run.
 # -a specifies you want to compile the code using typically helpful (how much it
-#    helps depends on your compiler) inline asm optimizations, which makes for
-#    the fastest binaries but of course has the downsides of inline asm -
-#    primarily that inline asm is extremely difficult to properly test.
+#    helps depends on your compiler) inline asm optimizations, which usually
+#    makes the fastest binaries.  It is probably better to use -u instead for
+#    building these tests, since if we want to test some of the asm, we probably
+#    want to test all of it.
 # -u specifies that you want to compile the code using all available inline asm
 #    routines, so that the tests will cover all of them (this is not expected to
 #    result in the fastest binaries).

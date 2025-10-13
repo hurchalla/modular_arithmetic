@@ -249,69 +249,183 @@ struct RedcIncomplete {
     HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     constexpr int HALF_BITS = ut_numeric_limits<TH>::digits;
-    TH n_lo = static_cast<TH>(n);
-    TH n_hi = static_cast<TH>(n >> HALF_BITS);
+    TH n0 = static_cast<TH>(n);
+    TH n1 = static_cast<TH>(n >> HALF_BITS);
 
-    TH m = static_cast<TH>(u_lo) * static_cast<TH>(inv_n);
+    TH u0 = static_cast<TH>(u_lo);
+    TH u1 = static_cast<TH>(u_lo >> HALF_BITS);
 
-    T mn_lo = static_cast<T>(m) * n_lo;      // mn_lo <= (R-1)*(R-1) == R^2 - 2R + 1
-    T mn_mid = static_cast<T>(m) * n_hi;     // mn_mid <= R^2 - 2R + 1
-    mn_mid = mn_mid + (mn_lo >> HALF_BITS);  // mn_mid <= R^2 - 2R + 1 + floor((R^2 - 2R + 1)/R)
-                                             // mn_mid <= R^2 - 2R + 1 + R - 2 == R^2 - R - 1
+    TH invn0 = static_cast<TH>(inv_n);
+
+
+#if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
+     defined(HURCHALLA_ALLOW_INLINE_ASM_REDC)) && \
+    defined(HURCHALLA_TARGET_ISA_ARM_64) && !defined(_MSC_VER)
+
+    TH u2 = static_cast<TH>(u_hi);
+    TH u3 = static_cast<TH>(u_hi >> HALF_BITS);
+    (void)u2;  // avoid warning when a #if section doesn't use u2
+    (void)u3;  // avoid warning when a #if section doesn't use u3
+
+# if 0
+// this #if section corresponds to the first #if section of C++ code
+// lower in this function.
+// On M2, this section is about 10% slower than the #else (for both clang and
+// gcc), and so it is disabled.  In theory it has an advantage, by having one
+// fewer mult than the #else section, but this seems to be overcome by its
+// disadvantages of needing four or five additional instructions (not needed by
+// the #else section) to make a potential negative value positive during
+// calculations (done by the instructions that conditionally set moz and then
+// add moz).
+    TH m, tmp;
+    __asm__ ("mul %[m], %[u0], %[invn0] \n\t"
+             "umulh %[u0], %[m], %[n0] \n\t"     /* u0 = mnA_1 */
+             "mul %[tmp], %[m], %[n1] \n\t"      /* tmp = mnA_1_part2 */
+             "umulh %[m], %[m], %[n1] \n\t"      /* m = mnA_2 */
+             "adds %[u0], %[tmp], %[u0] \n\t"    /* mnA_1 += mnA_1_part2 */
+             "cinc %[m], %[m], hs \n\t"          /* mnA_2 += carry */
+             "subs %[u1], %[u1], %[u0] \n\t"     /* u1 = v1 = u1 - mnA_1 */
+             "mul %[u0], %[u1], %[invn0] \n\t"   /* u0 = mB = mullo(v1, invn0) */
+
+             "sbcs %[u1], %[u2], %[m] \n\t"      /* u1 = v2 = u2 - mnA_2 - borrow */
+             "sbcs %[tmp], %[u3], xzr \n\t"      /* tmp = v3 = u3 - borrow */
+#   if 1
+             /* on an M2 this perfs better than the #else by ~2% */
+             /* note: on M2, csel and csetm run on exec units 1-3; 'and' runs on units 1-6 */
+             "csetm %[invn0], lo \n\t"           /* invn0 = mask = -borrow */
+             "and %[u2], %[n0], %[invn0] \n\t"   /* u2 = moz0 = n0 & mask */
+             "and %[u3], %[n1], %[invn0] \n\t"   /* u3 = moz1 = n1 & mask */
+#   else
+             "csel %[u2], %[n0], xzr, lo \n\t"   /* u2 = moz0 = (u3<borrow) ? n0 : 0 */
+             "csel %[u3], %[n1], xzr, lo \n\t"   /* u3 = moz1 = (u3<borrow) ? n1 : 0 */
+#   endif
+             "adds %[u1], %[u1], %[u2] \n\t"     /* v2 += moz0 */
+             "adcs %[tmp], %[tmp], %[u3] \n\t"   /* v3 += moz1 */
+
+             "umulh %[m], %[u0], %[n0] \n\t"     /* m = mnB_2 = mulhi(mB, n0) */
+             "mul %[u2], %[u0], %[n1] \n\t"      /* u2 = mnB_2_part2 = mullo(mB, n1) */
+             "umulh %[u0], %[u0], %[n1] \n\t"    /* u0 = mnB_3 = mulhi(mB, n1) */
+             "adds %[m], %[u2], %[m] \n\t"       /* mnB_2 += mnB_2_part2 */
+             "cinc %[u0], %[u0], hs \n\t"        /* mnB_3 += carry */
+             : [m]"=&r"(m), [u0]"+&r"(u0), [invn0]"+&r"(invn0),
+               [n0]"+&r"(n0), [tmp]"=&r"(tmp), [n1]"+&r"(n1),
+               [u1]"+&r"(u1), [u2]"+&r"(u2), [u3]"+&r"(u3)
+             :
+             : "cc");
+    minuend = (static_cast<T>(tmp) << HALF_BITS) | u1;
+    subtrahend = (static_cast<T>(u0) << HALF_BITS) | m;
+# else
+    TH m, tmp;
+    __asm__ ("mul %[m], %[u0], %[invn0] \n\t"
+             "umulh %[u0], %[m], %[n0] \n\t"     /* u0 = mnA_1 */
+             "mul %[tmp], %[m], %[n1] \n\t"      /* tmp = mnA_1_part2 */
+             "umulh %[m], %[m], %[n1] \n\t"      /* m = mnA_2 */
+             "adds %[u0], %[tmp], %[u0] \n\t"    /* mnA_1 += mnA_1_part2 */
+             "cinc %[m], %[m], hs \n\t"          /* mnA_2 += carry */
+             "sub %[u1], %[u1], %[u0] \n\t"      /* u1 = v1 = u1 - mnA_1 */
+             "mul %[tmp], %[u1], %[invn0] \n\t"  /* tmp = mB = mullo(v1, invn0) */
+
+             "mul %[u1], %[tmp], %[n0] \n\t"     /* u1 = mnB_1 = mullo(mB, n0) */
+             "umulh %[n0], %[tmp], %[n0] \n\t"   /* n0 = mnB_2 = mulhi(mB, n0) */
+             "mul %[invn0], %[tmp], %[n1] \n\t"  /* invn0 = mnB_2_part2 = mullo(mB, n1) */
+             "umulh %[tmp], %[tmp], %[n1] \n\t"  /* tmp = mnB_3 = mulhi(mB, n1) */
+             "adds %[n0], %[invn0], %[n0] \n\t"  /* mnB_2 += mnB_2_part2 */
+             "cinc %[tmp], %[tmp], hs \n\t"      /* mnB_3 += carry */
+
+             "adds %[u0], %[u0], %[u1] \n\t"     /* u0 = dummy = mnA_1 + mnB_1 */
+             "adcs %[u1], %[n0], %[m] \n\t"      /* u1 = sum2 = mnB_2 + mnA_2 + carry */
+             "cinc %[tmp], %[tmp], hs \n\t"      /* tmp = sum3 = mnB_3 += carry */
+             : [m]"=&r"(m), [u0]"+&r"(u0), [invn0]"+&r"(invn0),
+               [n0]"+&r"(n0), [tmp]"=&r"(tmp), [n1]"+&r"(n1),
+               [u1]"+&r"(u1)
+             :
+             : "cc");
+    minuend = u_hi;
+    subtrahend = (static_cast<T>(tmp) << HALF_BITS) | u1;
+# endif
+
+#else  // not using inline-asm
+
+    TH mA = u0 * invn0;
+
+    T mnA_10 = static_cast<T>(mA) * n0;      // mnA_10 <= (R-1)*(R-1) == R^2 - 2R + 1
+    T mnA_21 = static_cast<T>(mA) * n1;      // mnA_21 <= R^2 - 2R + 1
+    mnA_21 = mnA_21 + (mnA_10 >> HALF_BITS); // mnA_21 <= R^2 - 2R + 1 + floor((R^2 - 2R + 1)/R)
+                                             // mnA_21 <= R^2 - 2R + 1 + R - 2 == R^2 - R - 1
     // sanity check:  (R^2 - 1) * (R - 1) == R^3 - R^2 - R + 1
-    //                floor((R^3 - R^2 - R + 1)/R) == R^2 - R - 1.  Looks good; this is same as what we got for max possible mn_mid.
-    HPBC_CLOCKWORK_ASSERT2(static_cast<TH>(u_lo) == static_cast<TH>(mn_lo));
+    //                floor((R^3 - R^2 - R + 1)/R) == R^2 - R - 1.  Looks good; this is same as what we got for max possible mnA_21.
+    HPBC_CLOCKWORK_ASSERT2(u0 == static_cast<TH>(mnA_10));
 
-    TH u_mid_lo = static_cast<TH>(u_lo >> HALF_BITS);
-    TH mn_mid_lo = static_cast<TH>(mn_mid);
-    TH v_mid_lo = u_mid_lo - mn_mid_lo;
+    TH mnA_1 = static_cast<TH>(mnA_21);
+    TH v1 = u1 - mnA_1;
 
-    TH m2 = v_mid_lo * static_cast<TH>(inv_n);
+    TH mB = v1 * invn0;
 
-# if 1
-    T mn2_mid = static_cast<T>(m2) * n_lo;     // mn2_mid <= (R-1)*(R-1) == R^2 - 2R + 1
-    T mn2_hi = static_cast<T>(m2) * n_hi;      // mn2_hi <= R^2 - 2R + 1
-    mn2_hi = mn2_hi + (mn2_mid >> HALF_BITS);  // mn2_hi <= R^2 - R - 1    (see mn_mid calculation)
+# if 0
+    T u_21 = (u_hi << HALF_BITS) | u1;
+    // we skip the lowest part of the subtract (u_lo_lo - mn_lo_lo), because
+    // it's implicitly a zero result and generates no borrow.
 
-    // t = ((u - mn)/R - mn2)/R
-    // t = (u_upper3_words - mn_upper3_words - mn2)/R
-    // t = (u_upper3_words - (mn_upper3_words + mn2))/R
-    // t = u_upper2_words - (mn_upper3_words + mn2)/R
+    T v_21 = u_21 - mnA_21;
+    TH u3 = static_cast<TH>(u_hi >> HALF_BITS);
+    // the following can go negative/underflow, which is why we set up moz
+    TH v3 = u3 - (u_21 < mnA_21);
+        // T moz = (u3 < (u_21 < mnA_21)) ? n : 0;
+    T moz = ::hurchalla::conditional_select((u3 < (u_21 < mnA_21)), n, static_cast<__uint128_t>(0));
 
-    TH mn2_mid_lo = static_cast<TH>(mn2_mid);
-    TH dummy = mn2_mid_lo + mn_mid_lo;
-    HPBC_CLOCKWORK_ASSERT2(static_cast<TH>(u_lo >> HALF_BITS) == dummy);
+    T v_32 = (static_cast<T>(v3) << HALF_BITS) | (v_21 >> HALF_BITS);
+    v_32 = v_32 + moz;
 
-    TH mn_mid_hi = static_cast<TH>(mn_mid >> HALF_BITS);      // mn_mid_hi <= floor((R^2 - R - 1)/R) == R - 2
-                                                              // mn_mid_hi <= R - 2
-    T sum_hi = mn2_hi + mn_mid_hi + (dummy < mn2_mid_lo);     // sum_hi <= R^2 - R - 1 + R - 2 + 1 == R^2 - 2
+    T mnB_21 = static_cast<T>(mB) * n0;      // mnB_21 <= (R-1)*(R-1) == R^2 - 2R + 1
+    T mnB_32 = static_cast<T>(mB) * n1;      // mnB_32 <= R^2 - 2R + 1
+    mnB_32 = mnB_32 + (mnB_21 >> HALF_BITS); // mnB_32 <= R^2 - R    (see mnA_21 calculation)
+    HPBC_CLOCKWORK_ASSERT2(static_cast<TH>(v_21) == static_cast<TH>(mnB_21));
+
+    // in our function outputs of minuend and subtrahend, we don't include
+    // v1 or mnB_1, because  v1 - mnB_1  is implicitly a zero result and generate
+    // generates no borrow.
+
+//    T t_hi = v_32 - mnB_32;
+//    ovf = (v_32 < mnB_32);
+    minuend = v_32;
+    subtrahend = mnB_32;
+# else
+    T mnB_21 = static_cast<T>(mB) * n0;     // mnB_21 <= (R-1)*(R-1) == R^2 - 2R + 1
+    T mnB_32 = static_cast<T>(mB) * n1;      // mnB_32 <= R^2 - 2R + 1
+    mnB_32 = mnB_32 + (mnB_21 >> HALF_BITS);  // mnB_32 <= R^2 - R - 1    (see mnA_21 calculation)
+
+    TH mnB_1 = static_cast<TH>(mnB_21);
+    HPBC_CLOCKWORK_ASSERT2(v1 == mnB_1);
+
+    // t = ((u - mnA)/R - mnB)/R
+    // t = ((u_upper3_words - mnA_upper3_words) - mnB)/R
+    // t = (u_upper3_words - (mnA_upper3_words + mnB))/R
+
+    // we know that  u_upper3_words - mnA_upper3_words ≡ mnB  (mod R)
+    // and thus      u_upper3_words ≡ mnA_upper3_words + mnB  (mod R)
+
+    TH dummy = mnA_1 + mnB_1;
+    HPBC_CLOCKWORK_ASSERT2(u1 == dummy);
+    // Thus we don't need to perform  u_lo_lo - dummy  (or more precisely, we
+    // don't need to provide u_lo_lo and dummy as part of the function's outputs
+    // minuend and subtrahend),  because the result is implicitly zero and the
+    // sub doesn't generate a borrow.
+
+    // We do need to make sure we account for the potential carry from the
+    // addition that created dummy (the carry is why dummy exists).
+
+    TH mnA_2 = static_cast<TH>(mnA_21 >> HALF_BITS); // mnA_2 <= floor((R^2 - R - 1)/R) == R - 2
+                                                     // mnA_2 <= R - 2
+    T sum_hi = mnB_32 + mnA_2 + (dummy < mnB_1);     // sum_hi <= R^2 - R - 1 + R - 2 + 1 == R^2 - 2
     // unless I've made some bad mistakes, the calculation of sum_hi can not overflow.
 
 //    T t_hi = u_hi - sum_hi;
 //    ovf = (u_hi < sum_hi);
     minuend = u_hi;
     subtrahend = sum_hi;
-# else
-    T u_mid = (u_hi << HALF_BITS) | u_mid_lo;
-    T v_mid = u_mid - mn_mid;
-    TH u_hi_hi = static_cast<TH>(u_hi >> HALF_BITS);
-    TH v_hi_hi = u_hi_hi - (u_mid < mn_mid);
-        // T moz = (u_hi_hi < (u_mid < mn_mid)) ? n : 0;
-    T moz = ::hurchalla::conditional_select((u_hi_hi < (u_mid < mn_mid)), n, 0);
-
-    T v_hi = (static_cast<T>(v_hi_hi) << HALF_BITS) | (v_mid >> HALF_BITS);
-    v_hi = v_hi + moz;
-
-    T mn2_mid = static_cast<T>(m2) * n_lo;     // mn2_mid <= (R-1)*(R-1) == R^2 - 2R + 1
-    T mn2_hi = static_cast<T>(m2) * n_hi;      // mn2_hi <= R^2 - 2R + 1
-    mn2_hi = mn2_hi + (mn2_mid >> HALF_BITS);  // mn2_hi <= R^2 - R    (see mn_mid calculation)
-    HPBC_CLOCKWORK_ASSERT2(static_cast<TH>(v_mid) == static_cast<TH>(mn2_mid));
-
-//    T t_hi = v_hi - mn2_hi;
-//    ovf = (v_hi < mn2_hi);
-    minuend = v_hi;
-    subtrahend = mn2_hi;
 # endif
+
+#endif  // choice of inline-asm vs not inline-asm
 
     HPBC_CLOCKWORK_POSTCONDITION2(minuend < n && subtrahend < n);
 
@@ -333,6 +447,7 @@ struct RedcIncomplete {
     }
   }
 
+
   // we can implement the above algorithm more straightforwardly and more
   // efficiently here, since we return the final subtraction result while
   // making no distinction between a positive or negative result.
@@ -348,39 +463,92 @@ struct RedcIncomplete {
     HPBC_CLOCKWORK_PRECONDITION2(n > 1);
 
     constexpr int HALF_BITS = ut_numeric_limits<TH>::digits;
-    TH n_lo = static_cast<TH>(n);
-    TH n_hi = static_cast<TH>(n >> HALF_BITS);
+    TH n0 = static_cast<TH>(n);
+    TH n1 = static_cast<TH>(n >> HALF_BITS);
+    TH invn0 = static_cast<TH>(inv_n);
 
-    TH m = static_cast<TH>(u_lo) * static_cast<TH>(inv_n);
+    TH u0 = static_cast<TH>(u_lo);
+    TH u1 = static_cast<TH>(u_lo >> HALF_BITS);
 
-    T mn_lo = static_cast<T>(m) * n_lo;
-    T mn_mid = static_cast<T>(m) * n_hi;
-    mn_mid = mn_mid + (mn_lo >> HALF_BITS);
-    HPBC_CLOCKWORK_ASSERT2(static_cast<TH>(u_lo) == static_cast<TH>(mn_lo));
 
-    TH u_mid_lo = static_cast<TH>(u_lo >> HALF_BITS);
-    TH mn_mid_lo = static_cast<TH>(mn_mid);
-    TH v_mid_lo = u_mid_lo - mn_mid_lo;
-    TH m2 = v_mid_lo * static_cast<TH>(inv_n);
+#if (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
+     defined(HURCHALLA_ALLOW_INLINE_ASM_REDC)) && \
+    defined(HURCHALLA_TARGET_ISA_ARM_64) && !defined(_MSC_VER)
+
+    TH u2 = static_cast<TH>(u_hi);
+    TH u3 = static_cast<TH>(u_hi >> HALF_BITS);
+
+    TH m, tmp;
+    __asm__ ("mul %[m], %[u0], %[invn0] \n\t"
+             "umulh %[u0], %[m], %[n0] \n\t"     /* u0 = mnA_1 */
+             "mul %[tmp], %[m], %[n1] \n\t"
+             "umulh %[m], %[m], %[n1] \n\t"      /* m = mnA_2 */
+             "adds %[u0], %[tmp], %[u0] \n\t"    /* mnA_1 += tmp */
+             "cinc %[m], %[m], hs \n\t"          /* mnA_2 += carry */
+             "subs %[u1], %[u1], %[u0] \n\t"     /* u1 = v1 = u1 - mnA_1 */
+             "mul %[u0], %[u1], %[invn0] \n\t"   /* u0 = mB = mullo(v1, invn0) */
+             "sbcs %[u1], %[u2], %[m] \n\t"      /* u1 = v2 = u2 - mnA_2 - borrow */
+             "sbc %[tmp], %[u3], xzr \n\t"       /* tmp = v3 = u3 - borrow */
+             "umulh %[m], %[u0], %[n0] \n\t"     /* m = mnB_2 = mulhi(mB, n0) */
+             "mul %[u2], %[u0], %[n1] \n\t"      /* u2 = mnB_2_part2 =mullo(mB, n1) */
+             "umulh %[u0], %[u0], %[n1] \n\t"    /* u0 = mnB_3 = mulhi(mB, n1) */
+             "adds %[m], %[u2], %[m] \n\t"       /* mnB_2 += mnB_2_part2 */
+             "cinc %[u0], %[u0], hs \n\t"        /* mnB_3 += carry */
+             "subs %[u1], %[u1], %[m] \n\t"      /* t2 = v2 - mnB_2 */
+             "sbc %[tmp], %[tmp], %[u0] \n\t"    /* t3 = v3 - mnB_3 - borrow */
+             : [m]"=&r"(m), [u0]"+&r"(u0), [invn0]"+&r"(invn0),
+               [n0]"+&r"(n0), [tmp]"=&r"(tmp), [n1]"+&r"(n1),
+               [u1]"+&r"(u1), [u2]"+&r"(u2), [u3]"+&r"(u3)
+             :
+             : "cc");
+    // strangely both gcc and clang are timing about 1% faster when I declare
+    // inputs as in/out params, rather than declaring them input params (which
+    // would be more normal), so for now I've declared everything as in/out or
+    // out params.
+
+    T t_hi = (static_cast<T>(tmp) << HALF_BITS) | u1;
+
+#else
+    TH mA = u0 * invn0;
+
+    T mnA_10 = static_cast<T>(mA) * n0;
+    T mnA_21 = static_cast<T>(mA) * n1;
+    mnA_21 = mnA_21 + (mnA_10 >> HALF_BITS);
+    HPBC_CLOCKWORK_ASSERT2(u0 == static_cast<TH>(mnA_10));
+
+    TH mnA_1 = static_cast<TH>(mnA_21);
+    TH v1 = u1 - mnA_1;
+    TH mB = v1 * invn0;
 
 # if defined(__clang__)
-    // clang compiles better assembly with this section (gcc does very badly on it!)
-    T u_mid = (u_hi << HALF_BITS) | u_mid_lo;
-    T v_mid = u_mid - mn_mid;
-    TH u_hi_hi = static_cast<TH>(u_hi >> HALF_BITS);
-    TH v_hi_hi = u_hi_hi - (u_mid < mn_mid);
-    T v_hi = (static_cast<T>(v_hi_hi) << HALF_BITS) | (v_mid >> HALF_BITS);
+    // clang produces better assembly with this section (gcc does very badly on it!)
+    T u_21 = (u_hi << HALF_BITS) | u1;
+    T v_21 = u_21 - mnA_21;
+    TH u3 = static_cast<TH>(u_hi >> HALF_BITS);
+    // note: this subtraction can produce a negative number (interpreting the
+    // result as a signed integer) or unsigned underflow (intepreting the
+    // result as unsigned).  Both are fine for this function.
+    TH v3 = u3 - (u_21 < mnA_21);
+    T v_32 = (static_cast<T>(v3) << HALF_BITS) | (v_21 >> HALF_BITS);
 # else
-    TH mn_mid_hi = static_cast<TH>(mn_mid >> HALF_BITS);
-    T v_hi = u_hi - mn_mid_hi - (u_mid_lo < mn_mid_lo);
+    TH mnA_2 = static_cast<TH>(mnA_21 >> HALF_BITS);
+    // note: this subtraction can produce a negative number (interpreting the
+    // result as a signed integer) or unsigned underflow (intepreting the
+    // result as unsigned).  Both are fine for this function.
+    T v_32 = (u_hi - static_cast<T>(mnA_2)) - (u1 < mnA_1);
 # endif
 
-    T mn2_mid = static_cast<T>(m2) * n_lo;
-    T mn2_hi = static_cast<T>(m2) * n_hi;
-    mn2_hi = mn2_hi + (mn2_mid >> HALF_BITS);
-    HPBC_CLOCKWORK_ASSERT2(v_mid_lo == static_cast<TH>(mn2_mid));
+    T mnB_21 = static_cast<T>(mB) * n0;
+    T mnB_32 = static_cast<T>(mB) * n1;
+    mnB_32 = mnB_32 + (mnB_21 >> HALF_BITS);
+    HPBC_CLOCKWORK_ASSERT2(v1 == static_cast<TH>(mnB_21));
 
-    T t_hi = v_hi - mn2_hi;
+    // this subtraction can go negative/underflow too, which is no problem for
+    // this function
+    T t_hi = v_32 - mnB_32;
+
+#endif
+
 
     if (HPBC_CLOCKWORK_POSTCONDITION2_MACRO_IS_ACTIVE) {
         T minuend, subt;

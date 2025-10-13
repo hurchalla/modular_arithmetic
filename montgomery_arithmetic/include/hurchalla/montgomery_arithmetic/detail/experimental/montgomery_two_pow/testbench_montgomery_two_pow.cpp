@@ -941,7 +941,7 @@ using namespace hurchalla;
    constexpr int NUM_TEST_REPETITIONS = 10;
 
 
-#if 0
+#if 1
    std::cout << "\nbegin benchmarks - array two_pow\n";
 
    // warm up call
@@ -955,17 +955,17 @@ using namespace hurchalla;
      for (size_t j=0; j<timingA[i].size(); ++j) {
 
       timingA[i][j].push_back(
-         bench_array_two_pow<0, 31, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+         bench_array_two_pow<0, 30, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(
-         bench_array_two_pow<0, 31, 4, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+         bench_array_two_pow<0, 30, 4, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(
-         bench_array_two_pow<0, 31, 5, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+         bench_array_two_pow<0, 30, 5, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(
-         bench_array_two_pow<0, 31, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+         bench_array_two_pow<0, 30, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(
-         bench_array_two_pow<0, 31, 7, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+         bench_array_two_pow<0, 30, 7, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(
-         bench_array_two_pow<0, 31, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+         bench_array_two_pow<0, 30, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 
 
 #if 0
@@ -1779,7 +1779,7 @@ std::cout << "Timings By Test Type:\n";
 
 
 
-#if 1
+#if 0
    std::cout << "\nbegin benchmarks - scalar two_pow\n";
 
    //  warm up to get cpu boost (or throttle) going
@@ -1796,7 +1796,7 @@ std::cout << "Timings By Test Type:\n";
        // format is bench_range<TABLE_BITS, USE_SLIDING_WINDOW_OPTIMIZATION, CODE_SECTION,
        //                       MontType, USE_SQUARING_VALUE_OPTIMIZATION>
       timings[i][j].push_back(
-         bench_range<0, false, 22, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+         bench_range<0, false, 34, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 
 #if 0
 // This is a copy/paste of the "best of best" code sections from further below (nothing is new here).
