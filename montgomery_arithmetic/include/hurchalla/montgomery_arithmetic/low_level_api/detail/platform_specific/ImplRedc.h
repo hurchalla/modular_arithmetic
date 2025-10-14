@@ -222,13 +222,13 @@ struct RedcIncomplete {
   }
 
 
+
 #if (HURCHALLA_COMPILER_HAS_UINT128_T())
-  // It's possible these __uint128_t versions should be better tested than they
-  // have been so far - I've used the existing REDC unit tests, but little more.
-  // The performance on m2 is excellent, so long as throughput is needed rather
-  // than low latency.
-  // The performance on x86 is unknown at the time of this writing - I haven't
-  // yet tried it on x86.
+  // The performance for these __uint128_t versions on m2 is excellent, so long
+  // as throughput is needed rather than low latency.
+  // Performance benefits on x64 are similar to ARM64 (m2) - these are much
+  // faster than the ordinary versions when using LowuopsTag (for throughput),
+  // and slower when using LowlatencyTag.
 
 
   // Calculates the minuend and subtrahend of the REDC, such that the finalized
@@ -342,51 +342,49 @@ struct RedcIncomplete {
     subtrahend = (static_cast<T>(tmp) << HALF_BITS) | u1;
 # endif
 
-/*
 #elif (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
      defined(HURCHALLA_ALLOW_INLINE_ASM_REDC)) && \
     defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
-*/
-#elif 0
-    TH m = u0;
+
+    TH tmp = u0;
     TH rrax = n0;
-    TH rrdx, tmp2;
-    __asm__ ("imulq %[invn0], %[m] \n\t"   /* mA = u0 * inv_n */
-             "mulq %[m] \n\t"              /* rdx:rax = mnA_10 = rax * mA (rax == n0); high-order bits of the product in rdx */
-             "movq %%rdx, %[tmp2] \n\t"    /* tmp2 = mnA_1 */
-             "movq %[n1], %%rax \n\t"
-             "mulq %[m] \n\t"              /* rdx:rax = mnA_21 = n1 * mA */
-             "xorl %k[m], %k[m] \n\t"      /* m = 0 */
-             "addq %%rax, %[tmp2] \n\t"    /* tmp2 = mnA_1 = mnA_1_part2 + mnA_1 */
-             "adcq %%rdx, %[m] \n\t"       /* m = mnA_2 + carry */
-             "subq %[tmp2], %[u1] \n\t"    /* u1 = v1 = u1 - mnA_1 */
+    TH rrdx;
+    __asm__ ("imulq %[invn0], %[tmp] \n\t" /* tmp = mA = u0 * inv_n */
+             "mulq %[tmp] \n\t"            /* rdx:rax = mnA_10 = rax * mA (rax == n0); high-order bits of the product in rdx */
+             "movq %[tmp], %%rax \n\t"     /* rax = mA */
+             "movq %%rdx, %[tmp] \n\t"     /* tmp = mnA_1 */
+             "mulq %[n1] \n\t"             /* rdx:rax = mnA_21 = n1 * mA */
+             "addq %%rax, %[tmp] \n\t"     /* tmp = mnA_1 += mnA_1_part2 */
+
+             "movq %[n0], %%rax \n\t"      /* rax = n0_original */
+             "movq %%rdx, %[n0] \n\t"      /* n0 = mnA_2 */
+
+             "adcq $0, %[n0] \n\t"         /* mnA_2 += carry */
+             "subq %[tmp], %[u1] \n\t"     /* u1 = v1 = u1 - mnA_1 */
              "imulq %[u1], %[invn0] \n\t"  /* invn0 = mB = v1 * invn0 */
 
-             "movq %[n0], %%rax \n\t"
-             "mulq %[invn0] \n\t"          /* rdx:rax = mnB_21 = n0 * mB */
+             "mulq %[invn0] \n\t"          /* rdx:rax = mnB_21 = n0_original * mB */
              "movq %%rax, %[u1] \n\t"      /* u1 = mnB_1 */
-             "movq %%rdx, %[n0] \n\t"      /* n0 = mnB_2 */
 
-             "movq %[n1], %%rax \n\t"
-             "mulq %[invn0] \n\t"          /* rdx:rax = mnB_32 = n1 * mB */
-             "xorl %k[invn0], %k[invn0] \n\t"  /* invn0 = 0 */
-             "addq %%rax, %[n0] \n\t"      /* n0 = mnB_2 = mnB_2_part2 + mnB_2 */
-             "adcq %%rdx, %[invn0] \n\t"   /* invn0 = mnB_3 = mnB_3 + carry */
+             "movq %[invn0], %%rax \n\t"   /* rax = mB */
+             "movq %%rdx, %[invn0] \n\t"   /* invn0 = mnB_2 */
 
-             "xorl %%eax, %%eax \n\t"      /* rax = 0 */
-             "addq %[u1], %[tmp2] \n\t"    /* tmp2 = dummy = mnA_1 + mnB_1 */
-             "adcq %[n0], %[m] \n\t"       /* m = sum2 = mnB_2 + mnA_2 + carry */
-             "adcq %%rax, %[invn0], hs \n\t"  /* tmp = sum3 = mnB_3 += carry */
-             : [m]"+&r"(m), [invn0]"+&r"(invn0),
-               "+&a"(rrax), "=&d"(rrdx), [tmp2]"=&r"(tmp2), [n1]"+&r"(n1), [u1]"+&r"(u1),
-               [n0]"+&r"(n0)
-             :
+             "mulq %[n1] \n\t"             /* rdx:rax = mnB_32 = n1 * mB */
+             "addq %%rax, %[invn0] \n\t"   /* invn0 = mnB_2 += mnB_2_part2 */
+             "adcq $0, %%rdx \n\t"         /* rdx = mnB_3 += carry */
+
+             "addq %[u1], %[tmp] \n\t"     /* tmp = dummy = mnA_1 + mnB_1 */
+             "adcq %[invn0], %[n0] \n\t"   /* n0 = sum2 = mnB_2 + mnA_2 + carry */
+             "adcq $0, %%rdx \n\t"         /* rdx = sum3 = mnB_3 += carry */
+             : [invn0]"+&r"(invn0), "+&a"(rrax), "=&d"(rrdx),
+               [tmp]"+&r"(tmp), [u1]"+&r"(u1), [n0]"+&r"(n0)
+             : [n1]"r"(n1)
              : "cc");
     minuend = u_hi;
-    subtrahend = (static_cast<T>(tmp) << HALF_BITS) | u1;
-
+    subtrahend = (static_cast<T>(rrdx) << HALF_BITS) | n0;
 
 #else  // not using inline-asm
+
 
     TH mA = u0 * invn0;
 
@@ -488,6 +486,7 @@ struct RedcIncomplete {
                                        ((t_hi + n) < 2*n) : true);
     }
   }
+
 
 
   // we can implement the above algorithm more straightforwardly and more

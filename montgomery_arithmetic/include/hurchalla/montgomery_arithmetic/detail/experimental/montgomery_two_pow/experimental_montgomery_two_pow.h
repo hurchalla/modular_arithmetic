@@ -3572,7 +3572,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         if (n <= MASKBIG) {
             size_t loindex = static_cast<size_t>(n);
             HPBC_CLOCKWORK_ASSERT2(loindex < ut_numeric_limits<RU>::digits);
-#if defined(__GNUC__) && !defined(__clang__)
+#if defined(__GNUC__) && (__GNUC__ >= 14) && !defined(__clang__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wnrvo"
 #endif

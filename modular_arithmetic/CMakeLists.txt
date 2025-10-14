@@ -75,7 +75,7 @@ include(FetchContent)
 FetchContent_Declare(
     hurchalla_util
     GIT_REPOSITORY https://github.com/hurchalla/util.git
-    GIT_TAG        6901743704ac1caf4e99090ce52e52a40147ba82
+    GIT_TAG        9fac434b586717052c648339eb0f0f89d23e0298
 )
 FetchContent_MakeAvailable(hurchalla_util)
 

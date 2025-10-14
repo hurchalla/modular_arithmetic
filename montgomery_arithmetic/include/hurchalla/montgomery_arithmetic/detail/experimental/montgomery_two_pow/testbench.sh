@@ -466,8 +466,6 @@ optimization_level=$2
 define_mont_type=-DDEF_MONT_TYPE=$3
 define_uint_type=-DDEF_UINT_TYPE=$4
 
-define_use_asm=$8
-
 
 cpp_standard=c++17
 
@@ -479,7 +477,9 @@ cpp_standard=c++17
 # SET repo_directory TO THE DIRECTORY WHERE YOU CLONED THE HURCHALLA GIT
 # REPOSITORIES.  (or otherwise ensure the compiler /I flags correctly specify
 # the needed hurchalla include directories)
+
 repo_directory=/Users/jeffreyhurchalla/Desktop
+#repo_directory=/home/jeff/repos
 
 
 
