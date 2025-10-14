@@ -941,11 +941,11 @@ using namespace hurchalla;
    constexpr int NUM_TEST_REPETITIONS = 10;
 
 
-#if 1
+#if 0
    std::cout << "\nbegin benchmarks - array two_pow\n";
 
    // warm up call
-   bench_array_two_pow<5, 8, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, max_modulus_bits_reduce, seed, exponent_bits_reduce);
+   bench_array_two_pow<1, 8, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, max_modulus_bits_reduce, seed, exponent_bits_reduce);
 
       // format is bench_array_two_pow<TABLE_BITS, CODE_SECTION, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION>(...)
 
@@ -955,17 +955,17 @@ using namespace hurchalla;
      for (size_t j=0; j<timingA[i].size(); ++j) {
 
       timingA[i][j].push_back(
-         bench_array_two_pow<0, 30, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+         bench_array_two_pow<1, 8, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(
-         bench_array_two_pow<0, 30, 4, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+         bench_array_two_pow<1, 8, 4, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(
-         bench_array_two_pow<0, 30, 5, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+         bench_array_two_pow<1, 8, 5, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(
-         bench_array_two_pow<0, 30, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+         bench_array_two_pow<1, 8, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(
-         bench_array_two_pow<0, 30, 7, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+         bench_array_two_pow<1, 8, 7, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(
-         bench_array_two_pow<0, 30, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+         bench_array_two_pow<1, 8, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 
 
 #if 0
@@ -1779,12 +1779,12 @@ std::cout << "Timings By Test Type:\n";
 
 
 
-#if 0
+#if 1
    std::cout << "\nbegin benchmarks - scalar two_pow\n";
 
    //  warm up to get cpu boost (or throttle) going
-   for (size_t i=0; i<2; ++i)
-      bench_range<0, true , 0, MontType, false>(static_cast<U>(maxU - range), range, dummy, max_modulus_bits_reduce, seed, exponent_bits_reduce);
+   for (size_t i=0; i<1; ++i)
+      bench_range<1, false, 0, MontType, false>(static_cast<U>(maxU - range), range, dummy, max_modulus_bits_reduce, seed, exponent_bits_reduce);
 
 //   std::array<std::vector<Timing>, 4> timings;
 
@@ -1796,7 +1796,7 @@ std::cout << "Timings By Test Type:\n";
        // format is bench_range<TABLE_BITS, USE_SLIDING_WINDOW_OPTIMIZATION, CODE_SECTION,
        //                       MontType, USE_SQUARING_VALUE_OPTIMIZATION>
       timings[i][j].push_back(
-         bench_range<0, false, 34, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+         bench_range<1, false, 0, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 
 #if 0
 // This is a copy/paste of the "best of best" code sections from further below (nothing is new here).

@@ -4183,6 +4183,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
         }
 
         while (shift >= P) {
+            static_assert(P > 0, "");
             shift -= P;
 
             if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
