@@ -549,7 +549,50 @@ struct RedcIncomplete {
 
     T t_hi = (static_cast<T>(tmp) << HALF_BITS) | u1;
 
+#elif (defined(HURCHALLA_ALLOW_INLINE_ASM_ALL) || \
+     defined(HURCHALLA_ALLOW_INLINE_ASM_REDC)) && \
+    defined(HURCHALLA_TARGET_ISA_X86_64) && !defined(_MSC_VER)
+
+    TH u2 = static_cast<TH>(u_hi);
+    TH u3 = static_cast<TH>(u_hi >> HALF_BITS);
+
+    TH tmp = u0;
+    TH rrax = n0;
+    TH rrdx;
+    __asm__ ("imulq %[invn0], %[tmp] \n\t" /* tmp = mA = u0 * inv_n */
+             "mulq %[tmp] \n\t"            /* rdx:rax = mnA_10 = rax * mA (rax == n0); high-order bits of the product in rdx */
+             "movq %[tmp], %%rax \n\t"     /* rax = mA */
+             "movq %%rdx, %[tmp] \n\t"     /* tmp = mnA_1 */
+             "mulq %[n1] \n\t"             /* rdx:rax = mnA_21 = n1 * mA */
+             "addq %%rax, %[tmp] \n\t"     /* tmp = mnA_1 += mnA_1_part2 */
+
+             "movq %[n0], %%rax \n\t"      /* rax = n0_original */
+
+             "adcq $0, %%rdx \n\t"         /* mnA_2 += carry */
+             "subq %[tmp], %[u1] \n\t"     /* u1 = v1 = u1 - mnA_1 */
+             "sbbq %%rdx, %[u2] \n\t"      /* u2 = v2 = u2 - mnA_2 - borrow */
+             "sbbq $0, %[u3] \n\t"         /* u3 = v3 = u3 - borrow */
+
+             "imulq %[invn0], %[u1] \n\t"  /* u1 = mB = v1 * invn0 */
+
+             "mulq %[u1] \n\t"             /* rdx:rax = mnB_21 = n0_original * mB */
+             "movq %[u1], %%rax \n\t"      /* rax = mB */
+             "movq %%rdx, %[u1] \n\t"      /* invn0 = mnB_2 */
+             "mulq %[n1] \n\t"             /* rdx:rax = mnB_32 = n1 * mB */
+             "addq %%rax, %[u1] \n\t"      /* invn0 = mnB_2 += mnB_2_part2 */
+             "adcq $0, %%rdx \n\t"         /* rdx = mnB_3 += carry */
+
+             "subq %[u1], %[u2] \n\t"      /* t2 = v2 - mnB_2 */
+             "sbbq %%rdx, %[u3] \n\t"      /* t3 = v3 - mnB_3 - borrow */
+             : [invn0]"+&r"(invn0), "+&a"(rrax), "=&d"(rrdx), [tmp]"+&r"(tmp),
+               [u1]"+&r"(u1), [u2]"+&r"(u2), [u3]"+&r"(u3)
+             : [n0]"r"(n0), [n1]"r"(n1)
+             : "cc");
+    T t_hi = (static_cast<T>(u3) << HALF_BITS) | u2;
+
 #else
+// no inline-asm
+
     TH mA = u0 * invn0;
 
     T mnA_10 = static_cast<T>(mA) * n0;
