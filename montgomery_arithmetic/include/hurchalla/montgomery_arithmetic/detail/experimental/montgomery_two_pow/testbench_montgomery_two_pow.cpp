@@ -846,6 +846,13 @@ int main(int argc, char** argv)
 using namespace hurchalla;
 
 
+#if !defined(TEST_ARRAY) && !defined(TEST_SCALAR)
+#  error "You must define either TEST_ARRAY or TEST_SCALAR"
+#endif
+#if defined(TEST_ARRAY) && defined(TEST_SCALAR)
+#  error "You must not define both TEST_ARRAY and TEST_SCALAR"
+#endif
+
 
 #ifndef DEF_UINT_TYPE
 #  error "DEF_UINT_TYPE was not defined"
@@ -941,7 +948,7 @@ using namespace hurchalla;
    constexpr int NUM_TEST_REPETITIONS = 10;
 
 
-#if 0
+#if defined(TEST_ARRAY)
    std::cout << "\nbegin benchmarks - array two_pow\n";
 
    // warm up call
@@ -1765,7 +1772,7 @@ std::cout << "Timings By Test Type:\n";
 
 
 
-#if 1
+#if defined(TEST_SCALAR)
    std::cout << "\nbegin benchmarks - scalar two_pow\n";
 
    //  warm up to get cpu boost (or throttle) going
