@@ -64,10 +64,11 @@ struct impl_montgomery_two_pow {
     // correspondence with experimental_montgomery_two_pow.h.
     //
     // All of this code is a copy of experimental_montgomery_two_pow.h's
-    // non-array call(), for TABLE_BITS == 0, CODE_SECTIONs 22, 23, 24, 33, 34.
+    // non-array call(), for TABLE_BITS == 0 with the following code sections.
     static_assert(TABLE_BITS == 0 &&
-           (CODE_SECTION == 22 || CODE_SECTION == 23 || CODE_SECTION == 24 ||
-            CODE_SECTION == 33 || CODE_SECTION == 34), "");
+           ((CODE_SECTION >= 22 && CODE_SECTION <= 26) ||
+            (CODE_SECTION >= 31 && CODE_SECTION <= 33) ||
+            (CODE_SECTION >= 34 && CODE_SECTION <= 38)), "");
 
     static_assert(ut_numeric_limits<U>::is_integer, "");
     static_assert(!ut_numeric_limits<U>::is_signed, "");

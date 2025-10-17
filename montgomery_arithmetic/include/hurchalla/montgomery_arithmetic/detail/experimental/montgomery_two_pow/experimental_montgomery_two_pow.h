@@ -2726,6 +2726,171 @@ break_0_39:
         }
         result = mf.multiply(result, val1);
         return result;
+} else if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 40) {
+        // optimization of code section 28
+        // that replaces 'shift' with 'bits_remaining' in order to obtain more
+        // efficient shifts.  It may or may not make a difference for speed...
+
+        if (n <= MASK) {
+            C cR1 = MFE::getMontvalueR(mf);
+            V result = MFE::twoPowLimited_times_x(mf, static_cast<size_t>(n), cR1);
+            return result;
+        }
+        HPBC_CLOCKWORK_ASSERT2(n > MASK);
+
+        HPBC_CLOCKWORK_ASSERT2(n > 0);
+        int leading_zeros = count_leading_zeros(n);
+        int bits_remaining = ut_numeric_limits<decltype(n)>::digits - leading_zeros;
+        HPBC_CLOCKWORK_ASSERT2(bits_remaining > P2);
+
+        U n2 = branchless_shift_left(n, leading_zeros);
+
+        // calculate the constexpr var 'high_word_shift' - when we right shift a
+        // type U variable by this amount, we'll get the size_t furthest most
+        // left bits of the type U variable.  Note that we assume that a right
+        // shift by high_word_shift will be zero cost, since the shift is just a
+        // way to access the CPU register that has the most significant bits -
+        // unless the compiler is really dumb and misses this optimization,
+        // which I haven't seen happen and which would surprise me.
+        constexpr int size_t_digits = ut_numeric_limits<size_t>::digits;
+        constexpr int digits_U = ut_numeric_limits<U>::digits;
+        constexpr int digits_bigger = (digits_U > size_t_digits) ? digits_U : size_t_digits;
+        constexpr int digits_smaller = (digits_U < size_t_digits) ? digits_U : size_t_digits;
+        constexpr int high_word_shift = digits_bigger - size_t_digits;
+
+        size_t index = static_cast<size_t>(n2 >> high_word_shift) >> (digits_smaller - P2);
+        n2 = static_cast<U>(n2 << P2);
+        HPBC_CLOCKWORK_ASSERT2(index <= MASK);
+        // normally we use (index & MASK), but it's redundant with index <= MASK
+        C cR1 = MFE::getMontvalueR(mf);
+        V result = MFE::twoPowLimited_times_x_v2(mf, index + 1, cR1);
+
+        bits_remaining -= P2;
+
+        while (bits_remaining >= P2) {
+            if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
+                SV sv = MFE::getSquaringValue(mf, result);
+                static_assert(P2 > 0, "");
+                HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i<P2 - 1; ++i)
+                    sv = MFE::squareSV(mf, sv);
+                result = MFE::squareToMontgomeryValue(mf, sv);
+            } else {
+                HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i<P2; ++i)
+                    result = mf.square(result);
+            }
+
+            bits_remaining -= P2;
+            index = static_cast<size_t>(n2 >> high_word_shift) >> (digits_smaller - P2);
+            n2 = static_cast<U>(n2 << P2);
+            C tmp = mf.getCanonicalValue(result);
+            result = MFE::twoPowLimited_times_x_v2(mf, index + 1, tmp);
+        }
+        result = mf.halve(result);
+
+        if (bits_remaining == 0)
+            return result;
+        HPBC_CLOCKWORK_ASSERT2(0 < bits_remaining && bits_remaining < P2);
+
+        index = static_cast<size_t>(n2 >> high_word_shift) >> (digits_smaller - bits_remaining);
+        V tableVal = MFE::twoPowLimited_times_x(mf, index, cR1);
+
+        if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
+            SV sv = MFE::getSquaringValue(mf, result);
+            HPBC_CLOCKWORK_ASSERT2(bits_remaining >= 1);
+            for (int i=0; i<bits_remaining-1; ++i)
+                sv = MFE::squareSV(mf, sv);
+            result = MFE::squareToMontgomeryValue(mf, sv);
+        }
+        else {
+            for (int i=0; i<bits_remaining; ++i)
+                result = mf.square(result);
+        }
+        result = mf.multiply(result, tableVal);
+        return result;
+} else if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 41) {
+        // optimization of code section 29
+        // that replaces 'shift' with 'bits_remaining' in order to obtain more
+        // efficient shifts.  It may or may not make a difference for speed...
+
+        if (n <= MASK) {
+            C cR1 = MFE::getMontvalueR(mf);
+            V result = MFE::twoPowLimited_times_x(mf, static_cast<size_t>(n), cR1);
+            return result;
+        }
+        HPBC_CLOCKWORK_ASSERT2(n > MASK);
+
+        HPBC_CLOCKWORK_ASSERT2(n > 0);
+        int leading_zeros = count_leading_zeros(n);
+        int bits_remaining = ut_numeric_limits<decltype(n)>::digits - leading_zeros;
+        HPBC_CLOCKWORK_ASSERT2(bits_remaining > P2);
+
+        U n2 = branchless_shift_left(n, leading_zeros);
+
+        // calculate the constexpr var 'high_word_shift' - when we right shift a
+        // type U variable by this amount, we'll get the size_t furthest most
+        // left bits of the type U variable.  Note that we assume that a right
+        // shift by high_word_shift will be zero cost, since the shift is just a
+        // way to access the CPU register that has the most significant bits -
+        // unless the compiler is really dumb and misses this optimization,
+        // which I haven't seen happen and which would surprise me.
+        constexpr int size_t_digits = ut_numeric_limits<size_t>::digits;
+        constexpr int digits_U = ut_numeric_limits<U>::digits;
+        constexpr int digits_bigger = (digits_U > size_t_digits) ? digits_U : size_t_digits;
+        constexpr int digits_smaller = (digits_U < size_t_digits) ? digits_U : size_t_digits;
+        constexpr int high_word_shift = digits_bigger - size_t_digits;
+
+        C cresult = MFE::getMontvalueR(mf);
+
+        HPBC_CLOCKWORK_ASSERT2(bits_remaining > P2);
+        // we check against P2 + P2 because we always process P2 more bits after
+        // the loop ends -- so we need to ensure we'll actually have
+        // (bits_remaining >= P2) after the loop ends.
+        while (bits_remaining >= P2 + P2) {
+            size_t index = static_cast<size_t>(n2 >> high_word_shift) >> (digits_smaller - P2);
+            n2 = static_cast<U>(n2 << P2);
+            V result = MFE::twoPowLimited_times_x_v2(mf, index + 1, cresult);
+
+            if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
+                SV sv = MFE::getSquaringValue(mf, result);
+                static_assert(P2 > 0, "");
+                HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i<P2 - 1; ++i)
+                    sv = MFE::squareSV(mf, sv);
+                result = MFE::squareToMontgomeryValue(mf, sv);
+            } else {
+                HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i<P2; ++i)
+                    result = mf.square(result);
+            }
+            cresult = mf.getCanonicalValue(result);
+
+            bits_remaining -= P2;
+        }
+        HPBC_CLOCKWORK_ASSERT2(P2 <= bits_remaining && bits_remaining < P2 + P2);
+
+        size_t index = static_cast<size_t>(n2 >> high_word_shift) >> (digits_smaller - P2);
+        n2 = static_cast<U>(n2 << P2);
+        V result = MFE::twoPowLimited_times_x(mf, index, cresult);
+        bits_remaining -= P2;
+        if (bits_remaining == 0)
+            return result;
+        HPBC_CLOCKWORK_ASSERT2(0 < bits_remaining && bits_remaining < P2);
+
+        index = static_cast<size_t>(n2 >> high_word_shift) >> (digits_smaller - bits_remaining);
+        C cR1 = MFE::getMontvalueR(mf);
+        V tableVal = MFE::twoPowLimited_times_x(mf, index, cR1);
+
+        if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
+            SV sv = MFE::getSquaringValue(mf, result);
+            HPBC_CLOCKWORK_ASSERT2(bits_remaining >= 1);
+            for (int i=0; i<bits_remaining-1; ++i)
+                sv = MFE::squareSV(mf, sv);
+            result = MFE::squareToMontgomeryValue(mf, sv);
+        }
+        else {
+            for (int i=0; i<bits_remaining; ++i)
+                result = mf.square(result);
+        }
+        result = mf.multiply(result, tableVal);
+        return result;
 }
     }
     else if HURCHALLA_CPP17_CONSTEXPR (TABLESIZE == 2) {
