@@ -43,7 +43,7 @@ exit_on_failure () {
 #optimization_level=O3
 optimization_level=$2
 
-#define_mont_type=-DDEF_MONT_TYPE=MontgomeryQuarter<U>
+#define_mont_type=-DDEF_MONT_TYPE=MontgomeryQuarter
 define_mont_type=-DDEF_MONT_TYPE=$3
 define_uint_type=-DDEF_UINT_TYPE=$4
 

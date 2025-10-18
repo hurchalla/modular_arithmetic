@@ -334,11 +334,13 @@ public:
         return ret;
     }
 
-    // Returns the Montgomery division of x by 2, which is a modular division.
-    // The returned quotient times two is congruent to x.  Division by two can
-    // be defined as multiplication by the modular multiplicative inverse of 2,
-    // which is always valid in Montgomery form because the inverse of 2 always
-    // exists in Montgomery form (due to the Montgomery modulus being odd).
+    // Returns the Montgomery modular division of x by 2.
+    // The returned quotient times two is congruent to x.
+    // Note: modular division is defined as multiplication by the modular
+    // multiplicative inverse of the divisor; when halving, the divisor is 2.
+    // Due to the requirement that a Montgomery modulus must always be odd, the
+    // inverse of 2 always exists in Montgomery form, and thus halving is always
+    // valid and well defined in Montgomery form.
     HURCHALLA_FORCE_INLINE
     MontgomeryValue halve(MontgomeryValue x) const
     {
