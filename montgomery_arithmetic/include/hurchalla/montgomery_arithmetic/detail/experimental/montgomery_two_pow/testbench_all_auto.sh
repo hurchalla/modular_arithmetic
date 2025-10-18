@@ -7,12 +7,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-exit_on_failure () {
-  if [ $? -ne 0 ]; then
-    exit 1
-  fi
-}
-
 invoke_test() {
   (
     set -e
@@ -32,106 +26,81 @@ invoke_test() {
 
 
 
-
 invoke_test 64_quarter_gcc_asm_scalar.txt ./testbench.sh g++ O3 MontgomeryQuarter uint64_t 191 8 22 \
       -DTEST_SCALAR -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
 invoke_test 64_quarter_gcc_asm_array.txt ./testbench.sh g++ O3 MontgomeryQuarter uint64_t 191 8 22 \
       -DTEST_ARRAY -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
 invoke_test 64_quarter_clang_asm_scalar.txt ./testbench.sh clang++ O3 MontgomeryQuarter uint64_t 191 8 22 \
       -DTEST_SCALAR -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
 invoke_test 64_quarter_clang_asm_array.txt ./testbench.sh clang++ O3 MontgomeryQuarter uint64_t 191 8 22 \
       -DTEST_ARRAY -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
 invoke_test 64_quarter_gcc_noasm_scalar.txt ./testbench.sh g++ O3 MontgomeryQuarter uint64_t 191 8 22 \
       -DTEST_SCALAR
-exit_on_failure
 
 invoke_test 64_quarter_gcc_noasm_array.txt ./testbench.sh g++ O3 MontgomeryQuarter uint64_t 191 8 22 \
       -DTEST_ARRAY
-exit_on_failure
 
 invoke_test 64_quarter_clang_noasm_scalar.txt ./testbench.sh clang++ O3 MontgomeryQuarter uint64_t 191 8 22 \
       -DTEST_SCALAR
-exit_on_failure
 
 invoke_test 64_quarter_clang_noasm_array.txt ./testbench.sh clang++ O3 MontgomeryQuarter uint64_t 191 8 22 \
       -DTEST_ARRAY
-exit_on_failure
 
 
 
 invoke_test 64_half_gcc_asm_scalar.txt ./testbench.sh g++ O3 MontgomeryHalf uint64_t 191 8 22 \
       -DTEST_SCALAR -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
 invoke_test 64_half_gcc_asm_array.txt ./testbench.sh g++ O3 MontgomeryHalf uint64_t 191 8 22 \
       -DTEST_ARRAY -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
 invoke_test 64_half_clang_asm_scalar.txt ./testbench.sh clang++ O3 MontgomeryHalf uint64_t 191 8 22 \
       -DTEST_SCALAR -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
 invoke_test 64_half_clang_asm_array.txt ./testbench.sh clang++ O3 MontgomeryHalf uint64_t 191 8 22 \
       -DTEST_ARRAY -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
 invoke_test 64_half_gcc_noasm_scalar.txt ./testbench.sh g++ O3 MontgomeryHalf uint64_t 191 8 22 \
       -DTEST_SCALAR
-exit_on_failure
 
 invoke_test 64_half_gcc_noasm_array.txt ./testbench.sh g++ O3 MontgomeryHalf uint64_t 191 8 22 \
       -DTEST_ARRAY
-exit_on_failure
 
 invoke_test 64_half_clang_noasm_scalar.txt ./testbench.sh clang++ O3 MontgomeryHalf uint64_t 191 8 22 \
       -DTEST_SCALAR
-exit_on_failure
 
 invoke_test 64_half_clang_noasm_array.txt ./testbench.sh clang++ O3 MontgomeryHalf uint64_t 191 8 22 \
       -DTEST_ARRAY
-exit_on_failure
 
 
 
 invoke_test 64_full_gcc_asm_scalar.txt ./testbench.sh g++ O3 MontgomeryFull uint64_t 191 8 22 \
       -DTEST_SCALAR -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
 invoke_test 64_full_gcc_asm_array.txt ./testbench.sh g++ O3 MontgomeryFull uint64_t 191 8 22 \
       -DTEST_ARRAY -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
 invoke_test 64_full_clang_asm_scalar.txt ./testbench.sh clang++ O3 MontgomeryFull uint64_t 191 8 22 \
       -DTEST_SCALAR -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
 invoke_test 64_full_clang_asm_array.txt ./testbench.sh clang++ O3 MontgomeryFull uint64_t 191 8 22 \
       -DTEST_ARRAY -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
 invoke_test 64_full_gcc_noasm_scalar.txt ./testbench.sh g++ O3 MontgomeryFull uint64_t 191 8 22 \
       -DTEST_SCALAR
-exit_on_failure
 
 invoke_test 64_full_gcc_noasm_array.txt ./testbench.sh g++ O3 MontgomeryFull uint64_t 191 8 22 \
       -DTEST_ARRAY
-exit_on_failure
 
 invoke_test 64_full_clang_noasm_scalar.txt ./testbench.sh clang++ O3 MontgomeryFull uint64_t 191 8 22 \
       -DTEST_SCALAR
-exit_on_failure
 
 invoke_test 64_full_clang_noasm_array.txt ./testbench.sh clang++ O3 MontgomeryFull uint64_t 191 8 22 \
       -DTEST_ARRAY
-exit_on_failure
 
 
 
@@ -139,102 +108,78 @@ exit_on_failure
 
 
 
-invoke_test 128_quarter_gcc_asm_scalar.txt ./testbench.sh g++ O3 MontgomeryQuarter __uint128_t 191 8 22 \
+invoke_test 128_quarter_gcc_asm_scalar.txt ./testbench.sh g++ O3 MontgomeryQuarter __uint128_t 191 8 40 \
       -DTEST_SCALAR -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
-invoke_test 128_quarter_gcc_asm_array.txt ./testbench.sh g++ O3 MontgomeryQuarter __uint128_t 191 8 22 \
+invoke_test 128_quarter_gcc_asm_array.txt ./testbench.sh g++ O3 MontgomeryQuarter __uint128_t 191 8 40 \
       -DTEST_ARRAY -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
-invoke_test 128_quarter_clang_asm_scalar.txt ./testbench.sh clang++ O3 MontgomeryQuarter __uint128_t 191 8 22 \
+invoke_test 128_quarter_clang_asm_scalar.txt ./testbench.sh clang++ O3 MontgomeryQuarter __uint128_t 191 8 40 \
       -DTEST_SCALAR -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
-invoke_test 128_quarter_clang_asm_array.txt ./testbench.sh clang++ O3 MontgomeryQuarter __uint128_t 191 8 22 \
+invoke_test 128_quarter_clang_asm_array.txt ./testbench.sh clang++ O3 MontgomeryQuarter __uint128_t 191 8 40 \
       -DTEST_ARRAY -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
-invoke_test 128_quarter_gcc_noasm_scalar.txt ./testbench.sh g++ O3 MontgomeryQuarter __uint128_t 191 8 22 \
+invoke_test 128_quarter_gcc_noasm_scalar.txt ./testbench.sh g++ O3 MontgomeryQuarter __uint128_t 191 8 40 \
       -DTEST_SCALAR
-exit_on_failure
 
-invoke_test 128_quarter_gcc_noasm_array.txt ./testbench.sh g++ O3 MontgomeryQuarter __uint128_t 191 8 22 \
+invoke_test 128_quarter_gcc_noasm_array.txt ./testbench.sh g++ O3 MontgomeryQuarter __uint128_t 191 8 40 \
       -DTEST_ARRAY
-exit_on_failure
 
-invoke_test 128_quarter_clang_noasm_scalar.txt ./testbench.sh clang++ O3 MontgomeryQuarter __uint128_t 191 8 22 \
+invoke_test 128_quarter_clang_noasm_scalar.txt ./testbench.sh clang++ O3 MontgomeryQuarter __uint128_t 191 8 40 \
       -DTEST_SCALAR
-exit_on_failure
 
-invoke_test 128_quarter_clang_noasm_array.txt ./testbench.sh clang++ O3 MontgomeryQuarter __uint128_t 191 8 22 \
+invoke_test 128_quarter_clang_noasm_array.txt ./testbench.sh clang++ O3 MontgomeryQuarter __uint128_t 191 8 40 \
       -DTEST_ARRAY
-exit_on_failure
 
 
 
-invoke_test 128_half_gcc_asm_scalar.txt ./testbench.sh g++ O3 MontgomeryHalf __uint128_t 191 8 22 \
+invoke_test 128_half_gcc_asm_scalar.txt ./testbench.sh g++ O3 MontgomeryHalf __uint128_t 191 8 40 \
       -DTEST_SCALAR -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
-invoke_test 128_half_gcc_asm_array.txt ./testbench.sh g++ O3 MontgomeryHalf __uint128_t 191 8 22 \
+invoke_test 128_half_gcc_asm_array.txt ./testbench.sh g++ O3 MontgomeryHalf __uint128_t 191 8 40 \
       -DTEST_ARRAY -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
-invoke_test 128_half_clang_asm_scalar.txt ./testbench.sh clang++ O3 MontgomeryHalf __uint128_t 191 8 22 \
+invoke_test 128_half_clang_asm_scalar.txt ./testbench.sh clang++ O3 MontgomeryHalf __uint128_t 191 8 40 \
       -DTEST_SCALAR -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
-invoke_test 128_half_clang_asm_array.txt ./testbench.sh clang++ O3 MontgomeryHalf __uint128_t 191 8 22 \
+invoke_test 128_half_clang_asm_array.txt ./testbench.sh clang++ O3 MontgomeryHalf __uint128_t 191 8 40 \
       -DTEST_ARRAY -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
-invoke_test 128_half_gcc_noasm_scalar.txt ./testbench.sh g++ O3 MontgomeryHalf __uint128_t 191 8 22 \
+invoke_test 128_half_gcc_noasm_scalar.txt ./testbench.sh g++ O3 MontgomeryHalf __uint128_t 191 8 40 \
       -DTEST_SCALAR
-exit_on_failure
 
-invoke_test 128_half_gcc_noasm_array.txt ./testbench.sh g++ O3 MontgomeryHalf __uint128_t 191 8 22 \
+invoke_test 128_half_gcc_noasm_array.txt ./testbench.sh g++ O3 MontgomeryHalf __uint128_t 191 8 40 \
       -DTEST_ARRAY
-exit_on_failure
 
-invoke_test 128_half_clang_noasm_scalar.txt ./testbench.sh clang++ O3 MontgomeryHalf __uint128_t 191 8 22 \
+invoke_test 128_half_clang_noasm_scalar.txt ./testbench.sh clang++ O3 MontgomeryHalf __uint128_t 191 8 40 \
       -DTEST_SCALAR
-exit_on_failure
 
-invoke_test 128_half_clang_noasm_array.txt ./testbench.sh clang++ O3 MontgomeryHalf __uint128_t 191 8 22 \
+invoke_test 128_half_clang_noasm_array.txt ./testbench.sh clang++ O3 MontgomeryHalf __uint128_t 191 8 40 \
       -DTEST_ARRAY
-exit_on_failure
 
 
 
-invoke_test 128_full_gcc_asm_scalar.txt ./testbench.sh g++ O3 MontgomeryFull __uint128_t 191 8 22 \
+invoke_test 128_full_gcc_asm_scalar.txt ./testbench.sh g++ O3 MontgomeryFull __uint128_t 191 8 40 \
       -DTEST_SCALAR -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
-invoke_test 128_full_gcc_asm_array.txt ./testbench.sh g++ O3 MontgomeryFull __uint128_t 191 8 22 \
+invoke_test 128_full_gcc_asm_array.txt ./testbench.sh g++ O3 MontgomeryFull __uint128_t 191 8 40 \
       -DTEST_ARRAY -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
-invoke_test 128_full_clang_asm_scalar.txt ./testbench.sh clang++ O3 MontgomeryFull __uint128_t 191 8 22 \
+invoke_test 128_full_clang_asm_scalar.txt ./testbench.sh clang++ O3 MontgomeryFull __uint128_t 191 8 40 \
       -DTEST_SCALAR -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
-invoke_test 128_full_clang_asm_array.txt ./testbench.sh clang++ O3 MontgomeryFull __uint128_t 191 8 22 \
+invoke_test 128_full_clang_asm_array.txt ./testbench.sh clang++ O3 MontgomeryFull __uint128_t 191 8 40 \
       -DTEST_ARRAY -DHURCHALLA_MONTGOMERY_TWO_POW_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-exit_on_failure
 
-invoke_test 128_full_gcc_noasm_scalar.txt ./testbench.sh g++ O3 MontgomeryFull __uint128_t 191 8 22 \
+invoke_test 128_full_gcc_noasm_scalar.txt ./testbench.sh g++ O3 MontgomeryFull __uint128_t 191 8 40 \
       -DTEST_SCALAR
-exit_on_failure
 
-invoke_test 128_full_gcc_noasm_array.txt ./testbench.sh g++ O3 MontgomeryFull __uint128_t 191 8 22 \
+invoke_test 128_full_gcc_noasm_array.txt ./testbench.sh g++ O3 MontgomeryFull __uint128_t 191 8 40 \
       -DTEST_ARRAY
-exit_on_failure
 
-invoke_test 128_full_clang_noasm_scalar.txt ./testbench.sh clang++ O3 MontgomeryFull __uint128_t 191 8 22 \
+invoke_test 128_full_clang_noasm_scalar.txt ./testbench.sh clang++ O3 MontgomeryFull __uint128_t 191 8 40 \
       -DTEST_SCALAR
-exit_on_failure
 
-invoke_test 128_full_clang_noasm_array.txt ./testbench.sh clang++ O3 MontgomeryFull __uint128_t 191 8 22 \
+invoke_test 128_full_clang_noasm_array.txt ./testbench.sh clang++ O3 MontgomeryFull __uint128_t 191 8 40 \
       -DTEST_ARRAY
-exit_on_failure

@@ -66,7 +66,8 @@ struct impl_montgomery_two_pow {
     // All of this code is a copy of experimental_montgomery_two_pow.h's
     // non-array call(), for TABLE_BITS == 0 with the following code sections.
     static_assert(TABLE_BITS == 0 &&
-           ((CODE_SECTION >= 22 && CODE_SECTION <= 26) ||
+            (CODE_SECTION == 6 || CODE_SECTION == 29 || CODE_SECTION == 41 ||
+            (CODE_SECTION >= 22 && CODE_SECTION <= 26) ||
             (CODE_SECTION >= 31 && CODE_SECTION <= 33) ||
             (CODE_SECTION >= 34 && CODE_SECTION <= 38)), "");
 
@@ -88,7 +89,23 @@ struct impl_montgomery_two_pow {
     using MFE_LU = hc::detail::MontgomeryFormExtensions<MF, hc::LowuopsTag>;
 
 
-    if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION >= 22 && CODE_SECTION <= 26) {
+    if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 6) {
+        // this section corresponds exactly to CODE_SECTION 6 in
+        // experimental_montgomery_two_pow.h.  It is essentially a copy/paste.
+        V result = MFE::twoPowLimited(mf, static_cast<size_t>(n) & MASK);
+        V base = MFE::getMontvalueR(mf);
+        n = static_cast<U>(n >> P2);
+        V mont_one = mf.getUnityValue();
+        while (true) {
+            V tmp = V::template cselect_on_bit_ne0<0>(static_cast<uint64_t>(n), base, mont_one);
+            result = mf.multiply(result, tmp);
+            if (n <= 1)
+                break;
+            base = mf.square(base);
+            n = static_cast<U>(n >> 1u);
+        }
+        return result;
+    } else if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION >= 22 && CODE_SECTION <= 26) {
         // this section corresponds exactly to CODE_SECTIONs 22 - 26 in
         // experimental_montgomery_two_pow.h.  It should be essentially a
         // copy/paste.
@@ -259,6 +276,62 @@ struct impl_montgomery_two_pow {
         result = mf.multiply(result, val1);
         return result;
 
+    } else if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 29) {
+        // this section corresponds exactly to CODE_SECTION 29 in
+        // experimental_montgomery_two_pow.h.  It is a copy/paste.
+
+        int shift = 0;
+        if (n > MASK) {
+            HPBC_CLOCKWORK_ASSERT2(n > 0);
+            int leading_zeros = count_leading_zeros(n);
+            int numbits = ut_numeric_limits<decltype(n)>::digits - leading_zeros;
+            HPBC_CLOCKWORK_ASSERT2(numbits > P2);
+            shift = numbits - P2;
+        }
+        C cR1 = MFE::getMontvalueR(mf);
+        C cresult = cR1;
+
+        while (shift >= P2) {
+            size_t index = static_cast<size_t>(branchless_shift_right(n, shift)) & MASK;
+            V result = MFE::twoPowLimited_times_x_v2(mf, index + 1, cresult);
+
+            if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
+                SV sv = MFE::getSquaringValue(mf, result);
+                static_assert(P2 > 0, "");
+                HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i<P2 - 1; ++i)
+                    sv = MFE::squareSV(mf, sv);
+                result = MFE::squareToMontgomeryValue(mf, sv);
+            } else {
+                HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i<P2; ++i)
+                    result = mf.square(result);
+            }
+            cresult = mf.getCanonicalValue(result);
+
+            shift -= P2;
+        }
+        size_t index = static_cast<size_t>(branchless_shift_right(n, shift)) & MASK;
+        V result = MFE::twoPowLimited_times_x(mf, index, cresult);
+
+        if (shift == 0)
+            return result;
+        HPBC_CLOCKWORK_ASSERT2(0 < shift && shift < P2);
+
+        size_t tmpmask = (1u << shift) - 1u;
+        index = static_cast<size_t>(n) & tmpmask;
+        V tableVal = MFE::twoPowLimited_times_x(mf, index, cR1);
+        if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
+            SV sv = MFE::getSquaringValue(mf, result);
+            HPBC_CLOCKWORK_ASSERT2(shift >= 1);
+            for (int i=0; i<shift-1; ++i)
+                sv = MFE::squareSV(mf, sv);
+            result = MFE::squareToMontgomeryValue(mf, sv);
+        }
+        else {
+            for (int i=0; i<shift; ++i)
+                result = mf.square(result);
+        }
+        result = mf.multiply(result, tableVal);
+        return result;
     } else if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION >= 31 && CODE_SECTION <= 33) {
         // this section corresponds exactly to CODE_SECTIONs 31 - 33 in
         // experimental_montgomery_two_pow.h.  It should be essentially a
@@ -760,6 +833,89 @@ struct impl_montgomery_two_pow {
                 result = mf.square(result);
         }
         result = mf.multiply(result, val1);
+        return result;
+    } else if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 41) {
+        // this section corresponds exactly to CODE_SECTION 41 in
+        // experimental_montgomery_two_pow.h.  It is a copy/paste.
+
+        if (n <= MASK) {
+            C cR1 = MFE::getMontvalueR(mf);
+            V result = MFE::twoPowLimited_times_x(mf, static_cast<size_t>(n), cR1);
+            return result;
+        }
+        HPBC_CLOCKWORK_ASSERT2(n > MASK);
+
+        HPBC_CLOCKWORK_ASSERT2(n > 0);
+        int leading_zeros = count_leading_zeros(n);
+        int bits_remaining = ut_numeric_limits<decltype(n)>::digits - leading_zeros;
+        HPBC_CLOCKWORK_ASSERT2(bits_remaining > P2);
+
+        U n2 = branchless_shift_left(n, leading_zeros);
+
+        // calculate the constexpr var 'high_word_shift' - when we right shift a
+        // type U variable by this amount, we'll get the size_t furthest most
+        // left bits of the type U variable.  Note that we assume that a right
+        // shift by high_word_shift will be zero cost, since the shift is just a
+        // way to access the CPU register that has the most significant bits -
+        // unless the compiler is really dumb and misses this optimization,
+        // which I haven't seen happen and which would surprise me.
+        constexpr int size_t_digits = ut_numeric_limits<size_t>::digits;
+        constexpr int digits_U = ut_numeric_limits<U>::digits;
+        constexpr int digits_bigger = (digits_U > size_t_digits) ? digits_U : size_t_digits;
+        constexpr int digits_smaller = (digits_U < size_t_digits) ? digits_U : size_t_digits;
+        constexpr int high_word_shift = digits_bigger - size_t_digits;
+
+        C cresult = MFE::getMontvalueR(mf);
+
+        HPBC_CLOCKWORK_ASSERT2(bits_remaining > P2);
+        // we check against P2 + P2 because we always process P2 more bits after
+        // the loop ends -- so we need to ensure we'll actually have
+        // (bits_remaining >= P2) after the loop ends.
+        while (bits_remaining >= P2 + P2) {
+            size_t index = static_cast<size_t>(n2 >> high_word_shift) >> (digits_smaller - P2);
+            n2 = static_cast<U>(n2 << P2);
+            V result = MFE::twoPowLimited_times_x_v2(mf, index + 1, cresult);
+
+            if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
+                SV sv = MFE::getSquaringValue(mf, result);
+                static_assert(P2 > 0, "");
+                HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i<P2 - 1; ++i)
+                    sv = MFE::squareSV(mf, sv);
+                result = MFE::squareToMontgomeryValue(mf, sv);
+            } else {
+                HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i<P2; ++i)
+                    result = mf.square(result);
+            }
+            cresult = mf.getCanonicalValue(result);
+
+            bits_remaining -= P2;
+        }
+        HPBC_CLOCKWORK_ASSERT2(P2 <= bits_remaining && bits_remaining < P2 + P2);
+
+        size_t index = static_cast<size_t>(n2 >> high_word_shift) >> (digits_smaller - P2);
+        n2 = static_cast<U>(n2 << P2);
+        V result = MFE::twoPowLimited_times_x(mf, index, cresult);
+        bits_remaining -= P2;
+        if (bits_remaining == 0)
+            return result;
+        HPBC_CLOCKWORK_ASSERT2(0 < bits_remaining && bits_remaining < P2);
+
+        index = static_cast<size_t>(n2 >> high_word_shift) >> (digits_smaller - bits_remaining);
+        C cR1 = MFE::getMontvalueR(mf);
+        V tableVal = MFE::twoPowLimited_times_x(mf, index, cR1);
+
+        if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
+            SV sv = MFE::getSquaringValue(mf, result);
+            HPBC_CLOCKWORK_ASSERT2(bits_remaining >= 1);
+            for (int i=0; i<bits_remaining-1; ++i)
+                sv = MFE::squareSV(mf, sv);
+            result = MFE::squareToMontgomeryValue(mf, sv);
+        }
+        else {
+            for (int i=0; i<bits_remaining; ++i)
+                result = mf.square(result);
+        }
+        result = mf.multiply(result, tableVal);
         return result;
     }
 

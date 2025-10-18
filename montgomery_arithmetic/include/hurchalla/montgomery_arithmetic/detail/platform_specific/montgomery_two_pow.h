@@ -57,6 +57,8 @@ struct tagged_montgomery_two_pow {};
 //            bool USE_SQUARING_VALUE_OPTIMIZATION>
 
 
+// ARM64
+#if defined(HURCHALLA_TARGET_ISA_ARM_64)
 // -- the following best performance tunings were measured with mac M2 --
 
 
@@ -315,6 +317,248 @@ template <> struct tagged_montgomery_two_pow
     return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
   }
 };
+
+
+
+
+
+// X64, and all other achitectures
+#else
+// -- the following best performance tunings were measured with AMD Zen4 --
+
+
+// Partial Specialization: clang and big uint pow.
+// Intended for MontgomeryFull, but catches all non-specialized monty types
+template <class MontyTag> struct tagged_montgomery_two_pow
+   <MontyTag, Tag_montgomery_two_pow_clang, Tag_montgomery_two_pow_big>
+{
+  template <class MF, typename U>  HURCHALLA_FORCE_INLINE
+  static typename MF::MontgomeryValue call(const MF& mf, U n)
+  {
+    // x t 0 41 best.  x x 0 41 also arguable, since it has absolute best time
+    return impl_montgomery_two_pow::call<MF, U, false, 0, 41, true>(mf, n);
+  }
+  template <class MF, typename U, std::size_t ARRAY_SIZE> HURCHALLA_FORCE_INLINE
+  static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
+  call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
+  {
+    // 0 31 x best.  28 second place
+    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
+  }
+};
+// Full Specialization: clang and big uint pow and MontgomeryHalf.
+template <> struct tagged_montgomery_two_pow
+   <TagMontyHalfrange, Tag_montgomery_two_pow_clang, Tag_montgomery_two_pow_big>
+{
+  template <class MF, typename U>  HURCHALLA_FORCE_INLINE
+  static typename MF::MontgomeryValue call(const MF& mf, U n)
+  {
+    // x x 0 41  best
+    return impl_montgomery_two_pow::call<MF, U, false, 0, 41, false>(mf, n);
+  }
+  template <class MF, typename U, std::size_t ARRAY_SIZE> HURCHALLA_FORCE_INLINE
+  static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
+  call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
+  {
+    // 0 31 x best, 30 pretty close second
+    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
+  }
+};
+// Full Specialization: clang and big uint pow and MontgomeryQuarter.
+template <> struct tagged_montgomery_two_pow
+   <TagMontyQuarterrange, Tag_montgomery_two_pow_clang, Tag_montgomery_two_pow_big>
+{
+  template <class MF, typename U>  HURCHALLA_FORCE_INLINE
+  static typename MF::MontgomeryValue call(const MF& mf, U n)
+  {
+    // x x 0 41 clear winner.  40 or 39 or 11 maybe second.
+    return impl_montgomery_two_pow::call<MF, U, false, 0, 41, false>(mf, n);
+  }
+  template <class MF, typename U, std::size_t ARRAY_SIZE> HURCHALLA_FORCE_INLINE
+  static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
+  call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
+  {
+    // 0 30 x best.  31 extremely close second.
+    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
+  }
+};
+
+
+// Partial specialization: gcc and big uint pow.
+// Intended for MontgomeryFull, but catches all non-specialized monty types
+template <class MontyTag> struct tagged_montgomery_two_pow
+   <MontyTag, Tag_montgomery_two_pow_gcc, Tag_montgomery_two_pow_big>
+{
+  template <class MF, typename U>  HURCHALLA_FORCE_INLINE
+  static typename MF::MontgomeryValue call(const MF& mf, U n)
+  {
+    // x t 0 29 clear winner.  x t 0 41 clear second place
+    return impl_montgomery_two_pow::call<MF, U, false, 0, 29, true>(mf, n);
+  }
+  template <class MF, typename U, std::size_t ARRAY_SIZE> HURCHALLA_FORCE_INLINE
+  static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
+  call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
+  {
+    // 0 31 x clear winner.  29 clear second place
+    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
+  }
+};
+// Full Specialization: gcc and big uint pow and MontgomeryHalf.
+template <> struct tagged_montgomery_two_pow
+   <TagMontyHalfrange, Tag_montgomery_two_pow_gcc, Tag_montgomery_two_pow_big>
+{
+  template <class MF, typename U>  HURCHALLA_FORCE_INLINE
+  static typename MF::MontgomeryValue call(const MF& mf, U n)
+  {
+    // x x 0 29 clear winner
+    return impl_montgomery_two_pow::call<MF, U, false, 0, 29, false>(mf, n);
+  }
+  template <class MF, typename U, std::size_t ARRAY_SIZE> HURCHALLA_FORCE_INLINE
+  static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
+  call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
+  {
+    // 0 31 x clear winner
+    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
+  }
+};
+// Full Specialization: gcc and big uint pow and MontgomeryQuarter.
+template <> struct tagged_montgomery_two_pow
+   <TagMontyQuarterrange, Tag_montgomery_two_pow_gcc, Tag_montgomery_two_pow_big>
+{
+  template <class MF, typename U>  HURCHALLA_FORCE_INLINE
+  static typename MF::MontgomeryValue call(const MF& mf, U n)
+  {
+    // x x 0 41 clear winner
+    return impl_montgomery_two_pow::call<MF, U, false, 0, 41, false>(mf, n);
+  }
+  template <class MF, typename U, std::size_t ARRAY_SIZE> HURCHALLA_FORCE_INLINE
+  static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
+  call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
+  {
+    // 29 or 31 best, though 30 arguably better since it has absolute best time
+    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
+  }
+};
+
+
+
+// Partial Specialization: clang and small uint pow.
+// Intended for MontgomeryFull, but catches all non-specialized monty types
+template <class MontyTag> struct tagged_montgomery_two_pow
+   <MontyTag, Tag_montgomery_two_pow_clang, Tag_montgomery_two_pow_small>
+{
+  template <class MF, typename U>  HURCHALLA_FORCE_INLINE
+  static typename MF::MontgomeryValue call(const MF& mf, U n)
+  {
+    // x 0 23 t clear winner.  35 probably second place but not so clearly.
+    return impl_montgomery_two_pow::call<MF, U, false, 0, 23, true>(mf, n);
+  }
+  template <class MF, typename U, std::size_t ARRAY_SIZE> HURCHALLA_FORCE_INLINE
+  static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
+  call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
+  {
+    // 29 ~3% slower
+    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 28, false>(mf, n);
+  }
+};
+// Full Specialization: clang and small uint pow and MontgomeryHalf.
+template <> struct tagged_montgomery_two_pow
+   <TagMontyHalfrange, Tag_montgomery_two_pow_clang, Tag_montgomery_two_pow_small>
+{
+  template <class MF, typename U>  HURCHALLA_FORCE_INLINE
+  static typename MF::MontgomeryValue call(const MF& mf, U n)
+  {
+    // x x 0 6 clear winner.  x x 0 23 about 2% slower if I can't use 0 6.
+    return impl_montgomery_two_pow::call<MF, U, false, 0, 6, false>(mf, n);
+  }
+  template <class MF, typename U, std::size_t ARRAY_SIZE> HURCHALLA_FORCE_INLINE
+  static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
+  call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
+  {
+    // 29 clear winner asm (though 28 ~2% better than 29 on noasm)
+    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
+  }
+};
+// Full Specialization: clang and small uint pow and MontgomeryQuarter.
+template <> struct tagged_montgomery_two_pow
+   <TagMontyQuarterrange, Tag_montgomery_two_pow_clang, Tag_montgomery_two_pow_small>
+{
+  template <class MF, typename U>  HURCHALLA_FORCE_INLINE
+  static typename MF::MontgomeryValue call(const MF& mf, U n)
+  {
+    // x x 0 23 clear winner.  24 or 25 second place
+    return impl_montgomery_two_pow::call<MF, U, false, 0, 23, false>(mf, n);
+  }
+  template <class MF, typename U, std::size_t ARRAY_SIZE> HURCHALLA_FORCE_INLINE
+  static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
+  call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
+  {
+    // 0 28 x seems best, though 29 is close enough to be a near toss-up
+    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 28, false>(mf, n);
+  }
+};
+
+
+// Partial Specialization: gcc and small uint pow and MontgomeryFull.
+// Intended for MontgomeryFull, but catches all non-specialized monty types
+template <class MontyTag> struct tagged_montgomery_two_pow
+   <MontyTag, Tag_montgomery_two_pow_gcc, Tag_montgomery_two_pow_small>
+{
+  template <class MF, typename U>  HURCHALLA_FORCE_INLINE
+  static typename MF::MontgomeryValue call(const MF& mf, U n)
+  {
+    // x t 0 23 clear winner
+    return impl_montgomery_two_pow::call<MF, U, false, 0, 23, true>(mf, n);
+  }
+  template <class MF, typename U, std::size_t ARRAY_SIZE> HURCHALLA_FORCE_INLINE
+  static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
+  call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
+  {
+    // 0 29 x best.  31 very close second
+    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
+  }
+};
+// Full Specialization: gcc and small uint pow and MontgomeryHalf.
+template <> struct tagged_montgomery_two_pow
+   <TagMontyHalfrange, Tag_montgomery_two_pow_gcc, Tag_montgomery_two_pow_small>
+{
+  template <class MF, typename U>  HURCHALLA_FORCE_INLINE
+  static typename MF::MontgomeryValue call(const MF& mf, U n)
+  {
+    // x x 0 6 seems best, but 0 5 could also be arguable as best
+    return impl_montgomery_two_pow::call<MF, U, false, 0, 6, false>(mf, n);
+  }
+  template <class MF, typename U, std::size_t ARRAY_SIZE> HURCHALLA_FORCE_INLINE
+  static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
+  call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
+  {
+    // 0 29 x clear winner
+    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
+  }
+};
+// Full Specialization: gcc and small uint pow and MontgomeryQuarter.
+template <> struct tagged_montgomery_two_pow
+   <TagMontyQuarterrange, Tag_montgomery_two_pow_gcc, Tag_montgomery_two_pow_small>
+{
+  template <class MF, typename U>  HURCHALLA_FORCE_INLINE
+  static typename MF::MontgomeryValue call(const MF& mf, U n)
+  {
+    // x x 0 6  clearly wins.  either  x x 0 23  or  35  is second place
+    return impl_montgomery_two_pow::call<MF, U, false, 0, 6, false>(mf, n);
+  }
+  template <class MF, typename U, std::size_t ARRAY_SIZE> HURCHALLA_FORCE_INLINE
+  static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
+  call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
+  {
+    // 0 29 x clearly wins
+    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
+  }
+};
+
+#endif
+
+
+
 
 
 
