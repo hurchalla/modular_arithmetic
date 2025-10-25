@@ -320,6 +320,16 @@ void run_pow_tests()
         test_two_pow<M>(modulus, exponent);
         exponent = generate_random_value<U>(gen, distrib64);
         test_two_pow<M>(modulus, exponent);
+
+        // test the boundaries of the pow exponent tables used internally
+        constexpr int digitsU = hc::ut_numeric_limits<U>::digits;
+        for (int i=1; i<digitsU && i<27; ++i){
+            U expo = static_cast<U>(static_cast<U>(1) << i);
+            test_two_pow<M>(modulus, static_cast<U>(expo - 2));
+            test_two_pow<M>(modulus, static_cast<U>(expo - 1));
+            test_two_pow<M>(modulus, static_cast<U>(expo - 0));
+            test_two_pow<M>(modulus, static_cast<U>(expo + 1));
+        }
     }
 }
 

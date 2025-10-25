@@ -7,38 +7,21 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-exit_on_failure () {
-  if [ $? -ne 0 ]; then
-    exit 1
-  fi
-}
-
-
-#cppcompiler=g++
-#cppcompiler=clang++
-cppcompiler=$1
-
-#optimization_level=O2
-#optimization_level=O3
-optimization_level=$2
-
-#define_mont_type=-DDEF_MONT_TYPE=MontgomeryQuarter<U>
-define_mont_type=-DDEF_MONT_TYPE=$3
-define_uint_type=-DDEF_UINT_TYPE=$4
-
-
-cpp_standard=c++17
 
 
 # You need to clone the util, factoring, and modular_arithmetic repos
 # from https://github.com/hurchalla
 
-
 # SET repo_directory TO THE DIRECTORY WHERE YOU CLONED THE HURCHALLA GIT
 # REPOSITORIES.  (or otherwise ensure the compiler /I flags correctly specify
 # the needed hurchalla include directories)
-repo_directory=/Users/jeffreyhurchalla/Desktop
 
+repo_directory=/Users/jeffreyhurchalla/Desktop
+#repo_directory=/home/jeff/repos
+
+
+# you would ordinarily use either g++ or clang++  for $1
+cppcompiler=$1
 
 
 if [[ $cppcompiler == "g++" ]]; then
@@ -50,7 +33,29 @@ fi
 
 
 
-# You can use arguments $8 and $9 and ${10} etc to define macros such as
+
+exit_on_failure () {
+  if [ $? -ne 0 ]; then
+    exit 1
+  fi
+}
+
+#optimization_level=O2
+#optimization_level=O3
+optimization_level=$2
+
+#define_mont_type=-DDEF_MONT_TYPE=MontgomeryQuarter
+define_mont_type=-DDEF_MONT_TYPE=$3
+define_uint_type=-DDEF_UINT_TYPE=$4
+
+# you must specify either -DTEST_ARRAY or -DTEST_SCALAR or -DTEST_PARTIAL_ARRAY for $8
+define_test_type=$8
+
+
+cpp_standard=c++17
+
+
+# You can use arguments $9 and ${10} and ${11} etc to define macros such as
 # -DHURCHALLA_ALLOW_INLINE_ASM_ALL
 # for debugging, defining the following macros may be useful
 # -DHURCHALLA_CLOCKWORK_ENABLE_ASSERTS  -DHURCHALLA_UTIL_ENABLE_ASSERTS
@@ -58,19 +63,20 @@ fi
 
 # we could also use  -g  to get debug symbols (for lldb/gdb, and objdump)
 
-$cppcompiler  \
+$cppcompiler   \
         $error_limit   -$optimization_level \
-        $define_mont_type  $define_uint_type  $8 $9 ${10} ${11} ${12} ${13} ${14} \
-        -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion $warn_nrvo  \
+        $define_mont_type  $define_uint_type  $define_test_type \
+         $9 ${10} ${11} ${12} ${13} ${14} \
+        -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion $warn_nrvo \
         -std=$cpp_standard \
         -I${repo_directory}/modular_arithmetic/modular_arithmetic/include \
         -I${repo_directory}/modular_arithmetic/montgomery_arithmetic/include \
         -I${repo_directory}/util/include \
         -c testbench_montgomery_pow_2kary.cpp
 
+exit_on_failure
+
 $cppcompiler  -$optimization_level  -std=$cpp_standard  -o testbench_montgomery_pow_2kary  testbench_montgomery_pow_2kary.o -lm
-
-
 
 exit_on_failure
 
@@ -84,6 +90,6 @@ echo "compilation finished, now executing:"
 ./testbench_montgomery_pow_2kary $5 $6 $7
 
 # To give you an example of invoking this script at the command line:
-#   ./testbench.sh clang++ O3 MontgomeryFull __uint128_t 191 8 50 -DHURCHALLA_ALLOW_INLINE_ASM_ALL
+#   ./testbench.sh clang++ O3 MontgomeryFull __uint128_t 191 8 50  -DTEST_ARRAY -DHURCHALLA_ALLOW_INLINE_ASM_ALL
 
 

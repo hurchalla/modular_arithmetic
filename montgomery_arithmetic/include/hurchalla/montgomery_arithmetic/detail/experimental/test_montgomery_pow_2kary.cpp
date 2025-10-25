@@ -21,6 +21,13 @@
 #  define HURCHALLA_CLOCKWORK_ENABLE_ASSERTS
 #endif
 
+
+// Likewise we'll enable util library postcondition checks 
+#ifndef HURCHALLA_UTIL_ENABLE_ASSERTS
+#  define HURCHALLA_UTIL_ENABLE_ASSERTS
+#endif
+
+
 #ifdef HURCHALLA_TEST_MODULAR_ARITHMETIC_HEAVYWEIGHT
 // You can define the next macro to test all realistic function template arg
 // combos, rather than only the template args likely to be used.
@@ -477,6 +484,17 @@ void run_pow_tests()
         test_pow_2kary<M>(modulus, base, exponent);
         exponent = exponent/2;
         test_pow_2kary<M>(modulus, base, exponent);
+
+        // test the boundaries of the pow exponent tables used internally
+        base = 11;
+        constexpr int digitsU = hc::ut_numeric_limits<U>::digits;
+        for (int i=1; i<digitsU && i<27; ++i){
+            U expo = static_cast<U>(static_cast<U>(1) << i);
+            test_pow_2kary<M>(modulus, base, static_cast<U>(expo - 2));
+            test_pow_2kary<M>(modulus, base, static_cast<U>(expo - 1));
+            test_pow_2kary<M>(modulus, base, static_cast<U>(expo - 0));
+            test_pow_2kary<M>(modulus, base, static_cast<U>(expo + 1));
+        }
     }
 }
 

@@ -941,7 +941,7 @@ using namespace hurchalla;
 
    std::array<unsigned int, 4> mmbr = { 0, max_modulus_bits_reduce, 0, max_modulus_bits_reduce };
    unsigned int default_ebr = (std::is_same<MontType, MontgomeryQuarter<U>>::value) ? 2 :
-                                 (std::is_same<MontType, MontgomeryHalf<U>>::value) ? 1 : 0;
+                                 ((std::is_same<MontType, MontgomeryHalf<U>>::value) ? 1 : 0);
    std::array<unsigned int, 4> ebr = { default_ebr, default_ebr, exponent_bits_reduce, exponent_bits_reduce };
 
 
@@ -952,7 +952,7 @@ using namespace hurchalla;
    std::cout << "\nbegin benchmarks - array two_pow\n";
 
    // warm up call
-   bench_array_two_pow<0, 30, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, max_modulus_bits_reduce, seed, exponent_bits_reduce);
+   bench_array_two_pow<0, 29, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, max_modulus_bits_reduce, seed, exponent_bits_reduce);
 
       // format is bench_array_two_pow<TABLE_BITS, CODE_SECTION, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION>(...)
 
@@ -961,7 +961,28 @@ using namespace hurchalla;
    for (size_t i=0; i<4; ++i) {
      for (size_t j=0; j<timingA[i].size(); ++j) {
 
-#if 1
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 4, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 5, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 7, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 10, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 12, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 14, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 16, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+#if 0
       timingA[i][j].push_back(
          bench_array_two_pow<0, 27, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(
@@ -1142,7 +1163,7 @@ using namespace hurchalla;
    }
 #endif
 
-#if 1
+#if 0
       timingA[i][j].push_back(
          bench_array_two_pow<0, 0, 10, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(

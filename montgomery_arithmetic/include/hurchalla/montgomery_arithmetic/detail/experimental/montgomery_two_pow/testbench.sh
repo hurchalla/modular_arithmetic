@@ -23,6 +23,7 @@ repo_directory=/Users/jeffreyhurchalla/Desktop
 # you would ordinarily use either g++ or clang++  for $1
 cppcompiler=$1
 
+
 if [[ $cppcompiler == "g++" ]]; then
   error_limit=-fmax-errors=3
   warn_nrvo=-Wnrvo
@@ -89,6 +90,6 @@ echo "compilation finished, now executing:"
 ./testbench_montgomery_two_pow $5 $6 $7
 
 # To give you an example of invoking this script at the command line:
-#   ./testbench.sh clang++ O3 MontgomeryFull __uint128_t 191 8 50
+#   ./testbench.sh clang++ O3 MontgomeryFull __uint128_t 191 8 50  -DTEST_ARRAY -DHURCHALLA_ALLOW_INLINE_ASM_ALL
 
 
