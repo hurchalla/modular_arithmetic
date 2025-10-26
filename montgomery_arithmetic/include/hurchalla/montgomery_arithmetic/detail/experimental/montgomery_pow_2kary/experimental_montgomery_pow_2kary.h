@@ -494,7 +494,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
                 SV sv = MFE::getSquaringValue(mf, result);
                 if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
                     while (shift > NUMBITS_MASKBIG && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
-                        MFE::squareSV(mf, sv);
+                        sv = MFE::squareSV(mf, sv);
                         --shift;
                     }
                 }
