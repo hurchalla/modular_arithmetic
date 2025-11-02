@@ -377,7 +377,7 @@ bench_array_two_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_red
 {
    HPBC_CLOCKWORK_PRECONDITION2(max_modulus_bits_reduce <
                      hurchalla::ut_numeric_limits<decltype(MontType::max_modulus())>::digits);
-
+#if 1
    // run very short tests to hopefully catch a bugged experimental impl
    int tcatp_result = test_correctness_array_two_pow<TABLE_BITS,
                                                      CODE_SECTION,
@@ -409,6 +409,10 @@ bench_array_two_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_red
 
       exit(1);
    }
+# ifdef TEST_CORRECTNESS_ONLY
+   return TimingA();
+# endif
+#endif
 
    using namespace std::chrono;
    using dsec = duration<double>;
@@ -624,7 +628,7 @@ bench_range(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST 
 {
    HPBC_CLOCKWORK_PRECONDITION2(max_modulus_bits_reduce <
                      hurchalla::ut_numeric_limits<decltype(MontType::max_modulus())>::digits);
-
+#if 1
    // run very short tests to hopefully catch a bugged experimental impl
    int tctp_result = test_correctness_two_pow<TABLE_BITS,
                                              USE_SLIDING_WINDOW_OPTIMIZATION,
@@ -659,6 +663,10 @@ bench_range(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST 
 
       exit(1);
    }
+# ifdef TEST_CORRECTNESS_ONLY
+   return Timing();
+# endif
+#endif
 
    using namespace std::chrono;
    using dsec = duration<double>;
@@ -945,7 +953,7 @@ using namespace hurchalla;
    std::array<unsigned int, 4> ebr = { default_ebr, default_ebr, exponent_bits_reduce, exponent_bits_reduce };
 
 
-   constexpr int NUM_TEST_REPETITIONS = 10;
+   constexpr int NUM_TEST_REPETITIONS = 30;
 
 
 #if defined(TEST_ARRAY)
@@ -1719,6 +1727,10 @@ using namespace hurchalla;
 #endif
      }
    }
+#ifdef TEST_CORRECTNESS_ONLY
+   std::cout << "no errors found" << "\n\n";
+   return 0;
+#endif
 
 
    std::array<std::vector<TimingA>, 4> best_timingA;
@@ -1797,8 +1809,8 @@ std::cout << "Timings By Test Type:\n";
    std::cout << "\nbegin benchmarks - scalar two_pow\n";
 
    //  warm up to get cpu boost (or throttle) going
-   for (size_t i=0; i<1; ++i)
-      bench_range<0, false, 34, MontType, true>(static_cast<U>(maxU - range), range, dummy, max_modulus_bits_reduce, seed, exponent_bits_reduce);
+//   for (size_t i=0; i<1; ++i)
+//      bench_range<0, false, 34, MontType, true>(static_cast<U>(maxU - range), range, dummy, max_modulus_bits_reduce, seed, exponent_bits_reduce);
 
 //   std::array<std::vector<Timing>, 4> timings;
 
@@ -1809,6 +1821,9 @@ std::cout << "Timings By Test Type:\n";
 
        // format is bench_range<TABLE_BITS, USE_SLIDING_WINDOW_OPTIMIZATION, CODE_SECTION,
        //                       MontType, USE_SQUARING_VALUE_OPTIMIZATION>
+
+      timings[i][j].push_back(
+         bench_range<0, false , 42, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 
 #if 0
 // This is a copy/paste of the "best of best" code sections from further below (nothing is new here).
@@ -2028,7 +2043,7 @@ std::cout << "Timings By Test Type:\n";
 
 
 
-#if 1
+#if 0
       timings[i][j].push_back(
          bench_range<0, true , 17, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timings[i][j].push_back(
@@ -2348,7 +2363,7 @@ std::cout << "Timings By Test Type:\n";
          bench_range<4, true , 1, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 #endif
 
-#if 1
+#if 0
       timings[i][j].push_back(
          bench_range<4, true , 0, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timings[i][j].push_back(
@@ -2582,6 +2597,10 @@ std::cout << "Timings By Test Type:\n";
 #endif
      }
    }
+#ifdef TEST_CORRECTNESS_ONLY
+   std::cout << "no errors found" << "\n\n";
+   return 0;
+#endif
 
 
    std::array<std::vector<Timing>, 4> best_timings;

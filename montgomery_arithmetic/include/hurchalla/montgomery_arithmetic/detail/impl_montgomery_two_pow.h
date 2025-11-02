@@ -68,7 +68,6 @@ struct impl_montgomery_two_pow {
     static_assert(TABLE_BITS == 0 &&
             (CODE_SECTION == 6 || CODE_SECTION == 29 || CODE_SECTION == 41 ||
             (CODE_SECTION >= 22 && CODE_SECTION <= 26) ||
-            (CODE_SECTION >= 31 && CODE_SECTION <= 33) ||
             (CODE_SECTION >= 34 && CODE_SECTION <= 38)), "");
 
     static_assert(ut_numeric_limits<U>::is_integer, "");
@@ -151,18 +150,55 @@ struct impl_montgomery_two_pow {
             result = MFE_LU::twoPowLimited_times_x(mf, loindex, table_mid[midindex]);
 
             V next = r4;              // R^4
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i < NUM_EXTRA_TABLES; ++i) {
-                tables_extra[i][0] = mf.getUnityValue();   // R^0
-                tables_extra[i][1] = next;
-                V nextSq = mf.square(next);
-                V nexttmp = mf.square(nextSq);
-                tables_extra[i][2] = nextSq;
-                tables_extra[i][3] = mf.template multiply<LowuopsTag>(nextSq, next);
-                next = nexttmp;
 
-                int P_extra = P3 + static_cast<int>(i * NUMBITS_TABLE_HIGH_SIZE);
-                size_t index_extra = (tmp >> P_extra) & (TABLE_HIGH_SIZE - 1);
-                result = mf.template multiply<LowuopsTag>(tables_extra[i][index_extra], result);
+            // Check whether we have 128bit MontgomeryForm or 64bit (or less).
+            // We use this to choose whether to unroll the loop.
+            if HURCHALLA_CPP17_CONSTEXPR (digitsRU > HURCHALLA_TARGET_BIT_WIDTH) {
+                for (size_t i=0; i < NUM_EXTRA_TABLES; ++i) {
+                    int P_extra = P3 + static_cast<int>(i * NUMBITS_TABLE_HIGH_SIZE);
+#if 1
+                    // This early exit is optional for us to include or not include.
+                    // (On M2 benches, this check didn't hurt 128bit perf, but 64bit
+                    // perf was slightly slowed.  Thus it's enabled only for 128bit)
+                    if (n < (static_cast<size_t>(1) << P_extra))
+                        return result;
+#endif
+                    tables_extra[i][0] = mf.getUnityValue();   // R^0
+                    tables_extra[i][1] = next;
+                    V nextSq = mf.square(next);
+                    V nexttmp = mf.square(nextSq);
+                    tables_extra[i][2] = nextSq;
+                    tables_extra[i][3] = mf.template multiply<LowuopsTag>(nextSq, next);
+                    next = nexttmp;
+
+                    size_t index_extra = (tmp >> P_extra) & (TABLE_HIGH_SIZE - 1);
+                    result = mf.template multiply<LowuopsTag>(tables_extra[i][index_extra], result);
+                }
+            }
+            else {
+#if defined(__GNUC__) && !defined(__clang__)
+                HURCHALLA_REQUEST_UNROLL_LOOP
+#endif
+                for (size_t i=0; i < NUM_EXTRA_TABLES; ++i) {
+                    int P_extra = P3 + static_cast<int>(i * NUMBITS_TABLE_HIGH_SIZE);
+#if 0
+                    // This early exit is optional for us to include or not include.
+                    // (On M2 benches, this check didn't hurt 128bit perf, but 64bit
+                    // perf was slightly slowed.  Thus it's enabled only for 128bit)
+                    if (n < (static_cast<size_t>(1) << P_extra))
+                        return result;
+#endif
+                    tables_extra[i][0] = mf.getUnityValue();   // R^0
+                    tables_extra[i][1] = next;
+                    V nextSq = mf.square(next);
+                    V nexttmp = mf.square(nextSq);
+                    tables_extra[i][2] = nextSq;
+                    tables_extra[i][3] = mf.template multiply<LowuopsTag>(nextSq, next);
+                    next = nexttmp;
+
+                    size_t index_extra = (tmp >> P_extra) & (TABLE_HIGH_SIZE - 1);
+                    result = mf.template multiply<LowuopsTag>(tables_extra[i][index_extra], result);
+                }
             }
         }
 
@@ -243,34 +279,40 @@ struct impl_montgomery_two_pow {
         V val1 = MFE::twoPowLimited_times_x(mf, loindex, table_mid[midindex]);
 
         if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
-            // could use:
-            //for (int i=0; i < NUM_EXTRA_TABLES && (2*i + P3 < shift); ++i)
-
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i < NUM_EXTRA_TABLES; ++i) {
-                int P_extra = P3 + static_cast<int>(i * NUMBITS_TABLE_HIGH_SIZE);
-                size_t index_extra = (tmp >> P_extra) & (TABLE_HIGH_SIZE - 1);
-                val1 = mf.multiply(val1, tables_extra[i][index_extra]);
-            }
-
             SV sv = MFE::getSquaringValue(mf, result);
+            int i=0;
+            for (; i * NUMBITS_TABLE_HIGH_SIZE + P3 < shift; ++i) {
+                int P_extra = i * NUMBITS_TABLE_HIGH_SIZE + P3;
+                size_t index_extra = (tmp >> P_extra) & (TABLE_HIGH_SIZE - 1);
+                HURCHALLA_REQUEST_UNROLL_LOOP for (int k=0; k < NUMBITS_TABLE_HIGH_SIZE; ++k)
+                    sv = MFE::squareSV(mf, sv);
+                val1 = mf.template multiply<LowuopsTag>(
+                          val1, tables_extra[static_cast<size_t>(i)][index_extra]);
+            }
+            //make 'i' the count of how many squarings of sv (i.e. result) we just did
+            i = i * NUMBITS_TABLE_HIGH_SIZE;
+
             HPBC_CLOCKWORK_ASSERT2(shift >= 1);
-            for (int i=0; i<shift-1; ++i)
+            for (; i<shift-1; ++i)
                 sv = MFE::squareSV(mf, sv);
+            HPBC_CLOCKWORK_ASSERT2(i == shift-1);
             result = MFE::squareToMontgomeryValue(mf, sv);
         }
         else {
-            result = mf.square(result);
-
-            // could use:
-            //for (int i=0; i < NUM_EXTRA_TABLES && (2*i + P3 < shift); ++i)
-
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i < NUM_EXTRA_TABLES; ++i) {
-                int P_extra = P3 + static_cast<int>(i * NUMBITS_TABLE_HIGH_SIZE);
+            int i=0;
+            for (; i * NUMBITS_TABLE_HIGH_SIZE + P3 < shift; ++i) {
+                int P_extra = i * NUMBITS_TABLE_HIGH_SIZE + P3;
                 size_t index_extra = (tmp >> P_extra) & (TABLE_HIGH_SIZE - 1);
-                val1 = mf.multiply(val1, tables_extra[i][index_extra]);
+                HURCHALLA_REQUEST_UNROLL_LOOP for (int k=0; k < NUMBITS_TABLE_HIGH_SIZE; ++k)
+                    result = mf.square(result);
+                val1 = mf.template multiply<LowuopsTag>(
+                          val1, tables_extra[static_cast<size_t>(i)][index_extra]);
             }
+            //make 'i' the count of how many squarings of result we just did
+            i = i * NUMBITS_TABLE_HIGH_SIZE;
+            HPBC_CLOCKWORK_ASSERT2(i <= shift);
 
-            for (int i=1; i<shift; ++i)
+            for (; i<shift; ++i)
                 result = mf.square(result);
         }
         result = mf.multiply(result, val1);
@@ -332,296 +374,6 @@ struct impl_montgomery_two_pow {
         }
         result = mf.multiply(result, tableVal);
         return result;
-    } else if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION >= 31 && CODE_SECTION <= 33) {
-        // this section corresponds exactly to CODE_SECTIONs 31 - 33 in
-        // experimental_montgomery_two_pow.h.  It should be essentially a
-        // copy/paste.
-
-        // make the high tables' size either 2, 4, 8, depending on the CODE_SECTION
-        constexpr int NUMBITS_TABLE_HIGH_SIZE = static_cast<int>(CODE_SECTION) - 30;
-
-        static_assert(1 <= NUMBITS_TABLE_HIGH_SIZE && NUMBITS_TABLE_HIGH_SIZE <= 3, "");
-
-        constexpr size_t TABLE_HIGH_SIZE = 1u << NUMBITS_TABLE_HIGH_SIZE;
-        constexpr int NUMBITS_MASKBIG = P2 + 3 * NUMBITS_TABLE_HIGH_SIZE;
-        constexpr int P3 = P2 + NUMBITS_TABLE_HIGH_SIZE;
-        constexpr int P4 = P3 + NUMBITS_TABLE_HIGH_SIZE;
-        constexpr size_t MASKBIG = (1u << NUMBITS_MASKBIG) - 1u;
-        std::array<C, TABLE_HIGH_SIZE> table_mid;
-        std::array<V, TABLE_HIGH_SIZE> table_high;
-        std::array<V, TABLE_HIGH_SIZE> table_ultra;
-
-        int shift = 0;
-        size_t tmp;
-        if (n > MASKBIG) {
-            HPBC_CLOCKWORK_ASSERT2(n > 0);
-            int leading_zeros = count_leading_zeros(n);
-            int numbits = ut_numeric_limits<decltype(n)>::digits - leading_zeros;
-            HPBC_CLOCKWORK_ASSERT2(numbits > NUMBITS_MASKBIG);
-            shift = numbits - NUMBITS_MASKBIG;
-            HPBC_CLOCKWORK_ASSERT2(shift >= 0);
-            tmp = static_cast<size_t>(branchless_shift_right(n, shift));
-            n = branchless_shift_left(n, leading_zeros + NUMBITS_MASKBIG);
-        }
-        else {
-            HPBC_CLOCKWORK_ASSERT2(n <= MASKBIG);
-            tmp = static_cast<size_t>(n);
-        }
-
-        HPBC_CLOCKWORK_ASSERT2(tmp <= MASKBIG);
-        size_t loindex = tmp & MASK;
-        size_t midindex = (tmp >> P2) & (TABLE_HIGH_SIZE - 1);
-        size_t hiindex = (tmp >> P3) & (TABLE_HIGH_SIZE - 1);
-        size_t ultindex = (tmp >> P4);
-        HPBC_CLOCKWORK_ASSERT2(ultindex < TABLE_HIGH_SIZE);
-
-        V result;
-
-        static_assert(2 <= TABLE_HIGH_SIZE && TABLE_HIGH_SIZE <= 8, "");
-        if HURCHALLA_CPP17_CONSTEXPR (TABLE_HIGH_SIZE == 2) {
-            C r1 = MFE::getMontvalueR(mf);
-            V r2 = mf.square(r1);
-            table_mid[0] = r1;                             // R^1
-            table_mid[1] = mf.getCanonicalValue(r2);       // R^2
-
-            table_high[0] = mf.getUnityValue();            // R^0
-            table_high[1] = r2;                            // R^2
-
-            V ttx = MFE::twoPowLimited_times_x(mf, loindex, table_mid[midindex]);
-
-            table_ultra[0] = mf.getUnityValue();           // R^0
-            table_ultra[1] = mf.square(r2);                // R^4
-
-            V val1 = mf.multiply(ttx, table_high[hiindex]);
-            result = mf.multiply(val1, table_ultra[ultindex]);
-        }
-        else if HURCHALLA_CPP17_CONSTEXPR (TABLE_HIGH_SIZE == 4) {
-            C r1 = MFE::getMontvalueR(mf);
-            V r2 = mf.square(r1);
-            V r3 = mf.template multiply<LowuopsTag>(r2, r1);
-            V r4 = mf.square(r2);
-            table_mid[0] = r1;                         // R^1
-            table_mid[1] = mf.getCanonicalValue(r2);   // R^2
-            table_mid[2] = mf.getCanonicalValue(r3);   // R^3
-            table_mid[3] = mf.getCanonicalValue(r4);   // R^4
-
-            V ttx = MFE::twoPowLimited_times_x(mf, loindex, table_mid[midindex]);
-
-            V r8 = mf.square(r4);
-            V r16 = mf.square(r8);
-
-            table_high[0] = mf.getUnityValue();      // R^0
-            table_high[1] = r4;                      // R^4
-            table_high[2] = r8;                      // R^8
-            table_high[3] = mf.multiply(r8, r4);     // R^12
-
-            V r32 = mf.square(r16);
-
-            V val1 = mf.multiply(ttx, table_high[hiindex]);
-
-            table_ultra[0] = mf.getUnityValue();     // R^0
-            table_ultra[1] = r16;                    // R^16
-            table_ultra[2] = r32;                    // R^32
-            table_ultra[3] = mf.multiply(r32, r16);  // R^48
-
-            result = mf.multiply(val1, table_ultra[ultindex]);
-        }
-        if HURCHALLA_CPP17_CONSTEXPR (TABLE_HIGH_SIZE == 8) {
-            C r1 = MFE::getMontvalueR(mf);
-            V r2 = mf.square(r1);
-            V r4 = mf.square(r2);
-            V r3 = mf.multiply(r2, r1);
-
-            table_mid[0] = r1;                                                             // R^1
-            table_mid[1] = mf.getCanonicalValue(r2);                                       // R^2
-
-            V r8 = mf.square(r4);
-
-            table_mid[2] = mf.getCanonicalValue(r3);                                       // R^3
-            table_mid[3] = mf.getCanonicalValue(r4);                                       // R^4
-            table_mid[4] = mf.getCanonicalValue(mf.template multiply<LowuopsTag>(r3, r2)); // R^5
-
-            V r16 = mf.square(r8);
-
-            table_mid[5] = mf.getCanonicalValue(mf.template square<LowuopsTag>(r3));       // R^6
-            table_mid[6] = mf.getCanonicalValue(mf.template multiply<LowuopsTag>(r3, r4)); // R^7
-            table_mid[7] = mf.getCanonicalValue(r8);                                       // R^8
-
-            V r32 = mf.square(r16);
-            V r24 = mf.multiply(r16, r8);
-
-            V ttx = MFE_LU::twoPowLimited_times_x(mf, loindex, table_mid[midindex]);
-
-            table_high[0] = mf.getUnityValue();                          // R^0
-            table_high[1] = r8;                                          // R^8
-            table_high[2] = r16;                                         // R^16
-            table_high[3] = r24;                                         // R^24
-
-            V r64 = mf.square(r32);
-
-            table_high[4] = r32;                                         // R^32
-            table_high[5] = mf.template multiply<LowuopsTag>(r24, r16);  // R^40
-
-            V r128 = mf.square(r64);
-            table_high[6] = mf.template square<LowuopsTag>(r24);         // R^48
-            table_high[7] = mf.template multiply<LowuopsTag>(r32, r24);  // R^56
-
-            V r192 = mf.multiply(r128, r64);
-            V r256 = mf.square(r128);
-
-            V val1 = mf.template multiply<LowuopsTag>(ttx, table_high[hiindex]);
-
-            table_ultra[0] = mf.getUnityValue();                            // R^0
-            table_ultra[1] = r64;                                           // R^64
-            table_ultra[2] = r128;                                          // R^128
-            table_ultra[3] = r192;                                          // R^192
-            table_ultra[4] = r256;                                          // R^256
-            table_ultra[5] = mf.template multiply<LowuopsTag>(r192, r128);  // R^320
-            table_ultra[6] = mf.square(r192);                               // R^384
-            table_ultra[7] = mf.multiply(r256, r192);                       // R^448
-
-            result = mf.multiply(val1, table_ultra[ultindex]);
-        }
-
-        // note: 'n' is type U.
-        // Calculate the constexpr var 'high_word_shift' - when we right shift a
-        // type U variable by this amount, we'll get the size_t furthest most
-        // left bits of the type U variable.  Note that we assume that a right
-        // shift by high_word_shift will be zero cost, since the shift is just a
-        // way to access the CPU register that has the most significant bits -
-        // unless the compiler is really dumb and misses this optimization,
-        // which I haven't seen happen and which would surprise me.
-        constexpr int size_t_digits = ut_numeric_limits<size_t>::digits;
-        constexpr int digits_U = ut_numeric_limits<U>::digits;
-        constexpr int digits_bigger = (digits_U > size_t_digits) ? digits_U : size_t_digits;
-        constexpr int digits_smaller = (digits_U < size_t_digits) ? digits_U : size_t_digits;
-        constexpr int high_word_shift = digits_bigger - size_t_digits;
-        // the conditional below is just to avoid a compiler warning about a
-        // negative shift in the loop, even though it would never happen
-        constexpr int small_shift = (digits_smaller < NUMBITS_MASKBIG)
-                                     ? 0 : (digits_smaller - NUMBITS_MASKBIG);
-
-        int bits_remaining = shift;
-
-        while (bits_remaining >= NUMBITS_MASKBIG) {
-            if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
-                SV sv = MFE::getSquaringValue(mf, result);
-                if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
-                    while (bits_remaining > NUMBITS_MASKBIG &&
-                                (static_cast<size_t>(n >> high_word_shift) &
-                                     (static_cast<size_t>(1) << (digits_smaller - 1))) == 0) {
-                        sv = MFE::squareSV(mf, sv);
-                        n = static_cast<U>(n << 1);
-                        --bits_remaining;
-                    }
-                }
-                HPBC_CLOCKWORK_ASSERT2(bits_remaining >= NUMBITS_MASKBIG);
-
-//                tmp = static_cast<size_t>(branchless_shift_right(n, shift));
-                tmp = static_cast<size_t>(n >> high_word_shift) >> small_shift;
-                n = static_cast<U>(n << NUMBITS_MASKBIG);
-                bits_remaining -= NUMBITS_MASKBIG;
-
-                loindex = tmp & MASK;
-                midindex = (tmp >> P2) & (TABLE_HIGH_SIZE - 1);
-                hiindex = (tmp >> P3) & (TABLE_HIGH_SIZE - 1);
-                ultindex = (tmp >> P4) & (TABLE_HIGH_SIZE - 1);
-
-                V ttx = MFE_LU::twoPowLimited_times_x(mf, loindex, table_mid[midindex]);
-
-                static_assert(NUMBITS_MASKBIG >= 5, "");
-                sv = MFE::squareSV(mf, sv);
-                sv = MFE::squareSV(mf, sv);
-
-                V val1 = mf.template multiply<LowuopsTag>(ttx, table_high[hiindex]);
-
-                sv = MFE::squareSV(mf, sv);
-                sv = MFE::squareSV(mf, sv);
-
-                val1 = mf.template multiply<LowuopsTag>(val1, table_ultra[ultindex]);
-
-                HURCHALLA_REQUEST_UNROLL_LOOP for (int i=4; i<NUMBITS_MASKBIG - 1; ++i)
-                    sv = MFE::squareSV(mf, sv);
-                result = MFE::squareToMontgomeryValue(mf, sv);
-
-                result = mf.multiply(result, val1);
-            }
-            else {
-                if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
-                    while (bits_remaining > NUMBITS_MASKBIG &&
-                                (static_cast<size_t>(n >> high_word_shift) &
-                                     (static_cast<size_t>(1) << (digits_smaller - 1))) == 0) {
-                        result = mf.square(result);
-                        n = static_cast<U>(n << 1);
-                        --bits_remaining;
-                    }
-                }
-                HPBC_CLOCKWORK_ASSERT2(bits_remaining >= NUMBITS_MASKBIG);
-
-                //tmp = static_cast<size_t>(branchless_shift_right(n, shift));
-                tmp = static_cast<size_t>(n >> high_word_shift) >> small_shift;
-                n = static_cast<U>(n << NUMBITS_MASKBIG);
-                bits_remaining -= NUMBITS_MASKBIG;
-
-                loindex = tmp & MASK;
-                midindex = (tmp >> P2) & (TABLE_HIGH_SIZE - 1);
-                hiindex = (tmp >> P3) & (TABLE_HIGH_SIZE - 1);
-                ultindex = (tmp >> P4) & (TABLE_HIGH_SIZE - 1);
-
-                V ttx = MFE_LU::twoPowLimited_times_x(mf, loindex, table_mid[midindex]);
-
-                static_assert(NUMBITS_MASKBIG >= 4, "");
-                result = mf.square(result);
-                result = mf.square(result);
-
-                V val1 = mf.template multiply<LowuopsTag>(ttx, table_high[hiindex]);
-
-                result = mf.square(result);
-                result = mf.square(result);
-
-                val1 = mf.template multiply<LowuopsTag>(val1, table_ultra[ultindex]);
-
-                HURCHALLA_REQUEST_UNROLL_LOOP for (int i=4; i<NUMBITS_MASKBIG; ++i)
-                    result = mf.square(result);
-
-                result = mf.multiply(result, val1);
-            }
-        }
-        if (bits_remaining == 0)
-            return result;
-
-        HPBC_CLOCKWORK_ASSERT2(0 < bits_remaining && bits_remaining < NUMBITS_MASKBIG);
-
-        //size_t tmpmask = (1u << shift) - 1u;
-        //size_t index = static_cast<size_t>(n) & tmpmask;
-        size_t index = static_cast<size_t>(n >> high_word_shift) >> (digits_smaller - bits_remaining);
-        loindex = index & MASK;
-        midindex = (index >> P2) & (TABLE_HIGH_SIZE - 1);
-        hiindex = (index >> P3) & (TABLE_HIGH_SIZE - 1);
-        ultindex = (index >> P4) & (TABLE_HIGH_SIZE - 1);
-        V ttx = MFE::twoPowLimited_times_x(mf, loindex, table_mid[midindex]);
-
-        V val1;
-        if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
-            val1 = mf.template multiply<LowuopsTag>(ttx, table_high[hiindex]);
-            val1 = mf.template multiply<LowuopsTag>(val1, table_ultra[ultindex]);
-
-            SV sv = MFE::getSquaringValue(mf, result);
-            HPBC_CLOCKWORK_ASSERT2(bits_remaining >= 1);
-            for (int i=0; i<bits_remaining-1; ++i)
-                sv = MFE::squareSV(mf, sv);
-            result = MFE::squareToMontgomeryValue(mf, sv);
-        }
-        else {
-            result = mf.square(result);
-            val1 = mf.template multiply<LowuopsTag>(ttx, table_high[hiindex]);
-            val1 = mf.template multiply<LowuopsTag>(val1, table_ultra[ultindex]);
-
-            for (int i=1; i<bits_remaining; ++i)
-                result = mf.square(result);
-        }
-        result = mf.multiply(result, val1);
-        return result;
 
     } else if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION >= 34 && CODE_SECTION <= 38) {
         // this section corresponds exactly to CODE_SECTIONs 34 - 38 in
@@ -638,6 +390,9 @@ struct impl_montgomery_two_pow {
         constexpr size_t MASKBIG = (static_cast<size_t>(1) << NUMBITS_MASKBIG) - 1u;
         std::array<C, TABLE_HIGH_SIZE> table_mid;
         std::array<std::array<V, TABLE_HIGH_SIZE>, NUM_EXTRA_TABLES> tables_extra;
+
+        auto n_orig = n;
+        (void)n_orig; // silence potential unused var warnings
 
         int shift = 0;
         size_t tmp;
@@ -677,18 +432,55 @@ struct impl_montgomery_two_pow {
             result = MFE_LU::twoPowLimited_times_x(mf, loindex, table_mid[midindex]);
 
             V next = r4;              // R^4
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i < NUM_EXTRA_TABLES; ++i) {
-                tables_extra[i][0] = mf.getUnityValue();   // R^0
-                tables_extra[i][1] = next;
-                V nextSq = mf.square(next);
-                V nexttmp = mf.square(nextSq);
-                tables_extra[i][2] = nextSq;
-                tables_extra[i][3] = mf.template multiply<LowuopsTag>(nextSq, next);
-                next = nexttmp;
 
-                int P_extra = P3 + static_cast<int>(i * NUMBITS_TABLE_HIGH_SIZE);
-                size_t index_extra = (tmp >> P_extra) & (TABLE_HIGH_SIZE - 1);
-                result = mf.template multiply<LowuopsTag>(tables_extra[i][index_extra], result);
+            // Check whether we have 128bit MontgomeryForm or 64bit (or less).
+            // We use this to choose whether to unroll the loop.
+            if HURCHALLA_CPP17_CONSTEXPR (digitsRU > HURCHALLA_TARGET_BIT_WIDTH) {
+                for (size_t i=0; i < NUM_EXTRA_TABLES; ++i) {
+                    int P_extra = P3 + static_cast<int>(i * NUMBITS_TABLE_HIGH_SIZE);
+#if 1
+                    // This early exit is optional for us to include or not include.
+                    // (On M2 benches, this check didn't hurt 128bit perf, but 64bit
+                    // perf was slightly slowed.  Thus it's enabled only for 128bit)
+                    if (n_orig < (static_cast<size_t>(1) << P_extra))
+                        return result;
+#endif
+                    tables_extra[i][0] = mf.getUnityValue();   // R^0
+                    tables_extra[i][1] = next;
+                    V nextSq = mf.square(next);
+                    V nexttmp = mf.square(nextSq);
+                    tables_extra[i][2] = nextSq;
+                    tables_extra[i][3] = mf.template multiply<LowuopsTag>(nextSq, next);
+                    next = nexttmp;
+
+                    size_t index_extra = (tmp >> P_extra) & (TABLE_HIGH_SIZE - 1);
+                    result = mf.template multiply<LowuopsTag>(tables_extra[i][index_extra], result);
+                }
+            }
+            else {
+#if defined(__GNUC__) && !defined(__clang__)
+                HURCHALLA_REQUEST_UNROLL_LOOP
+#endif
+                for (size_t i=0; i < NUM_EXTRA_TABLES; ++i) {
+                    int P_extra = P3 + static_cast<int>(i * NUMBITS_TABLE_HIGH_SIZE);
+#if 0
+                    // This early exit is optional for us to include or not include.
+                    // (On M2 benches, this check didn't hurt 128bit perf, but 64bit
+                    // perf was slightly slowed.  Thus it's enabled only for 128bit)
+                    if (n_orig < (static_cast<size_t>(1) << P_extra))
+                        return result;
+#endif
+                    tables_extra[i][0] = mf.getUnityValue();   // R^0
+                    tables_extra[i][1] = next;
+                    V nextSq = mf.square(next);
+                    V nexttmp = mf.square(nextSq);
+                    tables_extra[i][2] = nextSq;
+                    tables_extra[i][3] = mf.template multiply<LowuopsTag>(nextSq, next);
+                    next = nexttmp;
+
+                    size_t index_extra = (tmp >> P_extra) & (TABLE_HIGH_SIZE - 1);
+                    result = mf.template multiply<LowuopsTag>(tables_extra[i][index_extra], result);
+                }
             }
         }
 
@@ -802,34 +594,40 @@ struct impl_montgomery_two_pow {
         V val1 = MFE::twoPowLimited_times_x(mf, loindex, table_mid[midindex]);
 
         if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
-            // could use:
-            //for (int i=0; i < NUM_EXTRA_TABLES && (2*i + P3 < bits_remaining); ++i)
-
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i < NUM_EXTRA_TABLES; ++i) {
-                int P_extra = P3 + static_cast<int>(i * NUMBITS_TABLE_HIGH_SIZE);
-                size_t index_extra = (tmp >> P_extra) & (TABLE_HIGH_SIZE - 1);
-                val1 = mf.multiply(val1, tables_extra[i][index_extra]);
-            }
-
             SV sv = MFE::getSquaringValue(mf, result);
+            int i=0;
+            for (; i * NUMBITS_TABLE_HIGH_SIZE + P3 < bits_remaining; ++i) {
+                int P_extra = i * NUMBITS_TABLE_HIGH_SIZE + P3;
+                size_t index_extra = (tmp >> P_extra) & (TABLE_HIGH_SIZE - 1);
+                HURCHALLA_REQUEST_UNROLL_LOOP for (int k=0; k < NUMBITS_TABLE_HIGH_SIZE; ++k)
+                    sv = MFE::squareSV(mf, sv);
+                val1 = mf.template multiply<LowuopsTag>(
+                          val1, tables_extra[static_cast<size_t>(i)][index_extra]);
+            }
+            //make 'i' the count of how many squarings of sv (i.e. result) we just did
+            i = i * NUMBITS_TABLE_HIGH_SIZE;
+
             HPBC_CLOCKWORK_ASSERT2(bits_remaining >= 1);
-            for (int i=0; i<bits_remaining-1; ++i)
+            for (; i<bits_remaining-1; ++i)
                 sv = MFE::squareSV(mf, sv);
+            HPBC_CLOCKWORK_ASSERT2(i == bits_remaining-1);
             result = MFE::squareToMontgomeryValue(mf, sv);
         }
         else {
-            result = mf.square(result);
-
-            // could use:
-            //for (int i=0; i < NUM_EXTRA_TABLES && (2*i + P3 < bits_remaining); ++i)
-
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i < NUM_EXTRA_TABLES; ++i) {
-                int P_extra = P3 + static_cast<int>(i * NUMBITS_TABLE_HIGH_SIZE);
+            int i=0;
+            for (; i * NUMBITS_TABLE_HIGH_SIZE + P3 < bits_remaining; ++i) {
+                int P_extra = i * NUMBITS_TABLE_HIGH_SIZE + P3;
                 size_t index_extra = (tmp >> P_extra) & (TABLE_HIGH_SIZE - 1);
-                val1 = mf.multiply(val1, tables_extra[i][index_extra]);
+                HURCHALLA_REQUEST_UNROLL_LOOP for (int k=0; k < NUMBITS_TABLE_HIGH_SIZE; ++k)
+                    result = mf.square(result);
+                val1 = mf.template multiply<LowuopsTag>(
+                          val1, tables_extra[static_cast<size_t>(i)][index_extra]);
             }
+            //make 'i' the count of how many squarings of result we just did
+            i = i * NUMBITS_TABLE_HIGH_SIZE;
+            HPBC_CLOCKWORK_ASSERT2(i <= bits_remaining);
 
-            for (int i=1; i<bits_remaining; ++i)
+            for (; i<bits_remaining; ++i)
                 result = mf.square(result);
         }
         result = mf.multiply(result, val1);
@@ -963,10 +761,10 @@ struct impl_montgomery_two_pow {
     // correspondence with experimental_montgomery_two_pow.cpp.
 
     // note: This code is a copy of experimental_montgomery_two_pow.cpp's
-    // array call(), for TABLE_BITS == 0, CODE_SECTIONs 28 through 31.
+    // array call(), for TABLE_BITS == 0, CODE_SECTIONs 28,29,31.
 
     HPBC_CLOCKWORK_ASSERT2(TABLE_BITS == 0 &&
-                           (CODE_SECTION >= 28 && CODE_SECTION <= 31));
+                           (CODE_SECTION == 28 || CODE_SECTION == 29 || CODE_SECTION == 31));
 
     if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 28) {
         std::array<V, ARRAY_SIZE> result;
@@ -1113,101 +911,6 @@ struct impl_montgomery_two_pow {
             tableVal[j] = MFE_LU::twoPowLimited_times_x(mf[j], index, cR1);
         }
         for (int i=0; i<shift; ++i) {
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-                result[j] = mf[j].template square<hc::LowuopsTag>(result[j]);
-        }
-        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-            result[j] = mf[j].template multiply<hc::LowuopsTag>(result[j],
-                                                                   tableVal[j]);
-        }
-        return result;
-    } else if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 30) {
-        std::array<V, ARRAY_SIZE> result;
-        if (n_max <= MASK) {
-            for (size_t j=0; j<ARRAY_SIZE; ++j) {
-                C cR1 = MFE_LU::getMontvalueR(mf[j]);
-                result[j]= MFE_LU::twoPowLimited_times_x(mf[j], static_cast<size_t>(n[j]), cR1);
-            }
-            return result;
-        }
-
-        HPBC_CLOCKWORK_ASSERT2(n_max > 0);
-        int leading_zeros = count_leading_zeros(n_max);
-        int bits_remaining = ut_numeric_limits<decltype(n_max)>::digits - leading_zeros;
-        HPBC_CLOCKWORK_ASSERT2(bits_remaining > P2);
-
-        std::array<U, ARRAY_SIZE> n2;
-        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-              // n2[j] = n[j] << leading_zeros;
-            n2[j] = branchless_shift_left(n[j], leading_zeros);
-        }
-
-        // calculate the constexpr var 'high_word_shift' - when we right shift a
-        // type U variable by this amount, we'll get the size_t furthest most
-        // left bits of the type U variable.  Note that we assume that a right
-        // shift by high_word_shift will be zero cost, since the shift is just a
-        // way to access the CPU register that has the most significant bits -
-        // unless the compiler is really dumb and misses this optimization,
-        // which I haven't seen happen and which would surprise me.
-        constexpr int size_t_digits = ut_numeric_limits<size_t>::digits;
-        constexpr int digits_U = ut_numeric_limits<U>::digits;
-        constexpr int digits_bigger = (digits_U > size_t_digits) ? digits_U : size_t_digits;
-        constexpr int digits_smaller = (digits_U < size_t_digits) ? digits_U : size_t_digits;
-        constexpr int high_word_shift = digits_bigger - size_t_digits;
-
-        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-            size_t index = static_cast<size_t>(n2[j] >> high_word_shift) >> (digits_smaller - P2);
-            n2[j] = static_cast<U>(n2[j] << P2);
-            HPBC_CLOCKWORK_ASSERT2(index <= MASK);
-            // normally we use (index & MASK), but it's redundant with index <= MASK
-            C cR1 = MFE_LU::getMontvalueR(mf[j]);
-            result[j] = MFE_LU::twoPowLimited_times_x_v2(mf[j], index + 1, cR1);
-        }
-        bits_remaining -= P2;
-
-        while (bits_remaining >= P2) {
-            if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
-                std::array<SV, ARRAY_SIZE> sv;
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-                    sv[j] = MFE_LU::getSquaringValue(mf[j], result[j]);
-                static_assert(P2 > 0, "");
-                for (int i=0; i<P2 - 1; ++i) {
-                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-                        sv[j] = MFE_LU::squareSV(mf[j], sv[j]);
-                }
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-                    result[j] = MFE_LU::squareToMontgomeryValue(mf[j], sv[j]);
-            } else {
-                for (int i=0; i<P2; ++i) {
-                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-                        result[j] = mf[j].template square<hc::LowuopsTag>(result[j]);
-                }
-            }
-
-            bits_remaining -= P2;
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-                size_t index = static_cast<size_t>(n2[j] >> high_word_shift) >> (digits_smaller - P2);
-                n2[j] = static_cast<U>(n2[j] << P2);
-                C tmp = mf[j].getCanonicalValue(result[j]);
-                result[j] = MFE_LU::twoPowLimited_times_x_v2(mf[j], index + 1, tmp);
-            }
-        }
-
-        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-            result[j] = mf[j].halve(result[j]);
-        }
-
-        if (bits_remaining == 0)
-            return result;
-        HPBC_CLOCKWORK_ASSERT2(0 < bits_remaining && bits_remaining < P2);
-
-        std::array<V, ARRAY_SIZE> tableVal;
-        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-            size_t index = static_cast<size_t>(n2[j] >> high_word_shift) >> (digits_smaller - bits_remaining);
-            C cR1 = MFE_LU::getMontvalueR(mf[j]);
-            tableVal[j] = MFE_LU::twoPowLimited_times_x(mf[j], index, cR1);
-        }
-        for (int i=0; i<bits_remaining; ++i) {
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
                 result[j] = mf[j].template square<hc::LowuopsTag>(result[j]);
         }
