@@ -790,7 +790,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
                 SV sv = MFE::getSquaringValue(mf, result);
                 int i=0;
                 for (size_t k=1; i + static_cast<int>(TABLE_BITS) < shift;
-                                 i += TABLE_BITS, ++k) {
+                                 i += static_cast<int>(TABLE_BITS), ++k) {
                     HURCHALLA_REQUEST_UNROLL_LOOP for (size_t h=0; h<TABLE_BITS; ++h)
                         sv = MFE::squareSV(mf, sv);
                     size_t index = (tmp >> (k * TABLE_BITS)) & MASK;
@@ -806,7 +806,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
             else {
                 int i=0;
                 for (size_t k=1; i + static_cast<int>(TABLE_BITS) < shift;
-                                 i += TABLE_BITS, ++k) {
+                                 i += static_cast<int>(TABLE_BITS), ++k) {
                     HURCHALLA_REQUEST_UNROLL_LOOP for (size_t h=0; h<TABLE_BITS; ++h)
                         result = mf.square(result);
                     size_t index = (tmp >> (k * TABLE_BITS)) & MASK;
@@ -1024,7 +1024,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
                 SV sv = MFE::getSquaringValue(mf, result);
                 int i=0;
                 for (size_t k=1; i + static_cast<int>(TABLE_BITS) < bits_remaining;
-                                 i += TABLE_BITS, ++k) {
+                                 i += static_cast<int>(TABLE_BITS), ++k) {
                     HURCHALLA_REQUEST_UNROLL_LOOP for (size_t h=0; h<TABLE_BITS; ++h)
                         sv = MFE::squareSV(mf, sv);
                     size_t index = (tmp >> (k * TABLE_BITS)) & MASK;
@@ -1040,7 +1040,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
             else {
                 int i=0;
                 for (size_t k=1; i + static_cast<int>(TABLE_BITS) < bits_remaining;
-                                 i += TABLE_BITS, ++k) {
+                                 i += static_cast<int>(TABLE_BITS), ++k) {
                     HURCHALLA_REQUEST_UNROLL_LOOP for (size_t h=0; h<TABLE_BITS; ++h)
                         result = mf.square(result);
                     size_t index = (tmp >> (k * TABLE_BITS)) & MASK;

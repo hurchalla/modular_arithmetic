@@ -1174,7 +1174,7 @@ bench_range(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST 
 #else
          auto val = hurchalla::experimental::experimental_montgomery_pow_2kary::call<
                 MontType, U, USE_SLIDING_WINDOW_OPTIMIZATION, TABLE_BITS, CODE_SECTION,
-                USE_SQUARING_VALUE_OPTIMIZATION>(mf, mont_base, static_cast<U>(exponent));
+                USE_SQUARING_VALUE_OPTIMIZATION>(mf, mont_base, exponent);
 #endif
 
 #if 0
@@ -1320,8 +1320,8 @@ void bench_PA_2(std::vector<TimingPA>& vecTimingPA,
 
 
 
-template <size_t ARRAY_SIZE, class MontType, typename U, typename ST>
-void bench_PA_no_sv(std::vector<TimingPA>& vecTimingPA,
+template <class PTAG, size_t ARRAY_SIZE, class MontType, typename U, typename ST>
+void bench_PA_PTAG(std::vector<TimingPA>& vecTimingPA,
    U maxU, U range, U& dummy, unsigned int mmbr, ST seed, unsigned int ebr)
 {
    namespace hc = ::hurchalla;
@@ -1331,52 +1331,45 @@ void bench_PA_no_sv(std::vector<TimingPA>& vecTimingPA,
 //          typename U, typename ST>    TimingPA  bench_partial_array_pow(...)
 
       vecTimingPA.push_back(
-         bench_partial_array_pow<hc::LowuopsTag, 2, 0, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+         bench_partial_array_pow<PTAG, 2, 0, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
       vecTimingPA.push_back(
-         bench_partial_array_pow<hc::LowuopsTag, 2, 3, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+         bench_partial_array_pow<PTAG, 2, 3, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
       vecTimingPA.push_back(
-         bench_partial_array_pow<hc::LowuopsTag, 2, 4, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+         bench_partial_array_pow<PTAG, 2, 4, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
       vecTimingPA.push_back(
-         bench_partial_array_pow<hc::LowuopsTag, 2, 5, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+         bench_partial_array_pow<PTAG, 2, 5, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
 
-      vecTimingPA.push_back(
-         bench_partial_array_pow<hc::LowlatencyTag, 2, 0, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-      vecTimingPA.push_back(
-         bench_partial_array_pow<hc::LowlatencyTag, 2, 3, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-      vecTimingPA.push_back(
-         bench_partial_array_pow<hc::LowlatencyTag, 2, 4, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-      vecTimingPA.push_back(
-         bench_partial_array_pow<hc::LowlatencyTag, 2, 5, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
 
 //template <class PTAG, size_t ARRAY_SIZE,
 //          class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION, bool USE_SLIDING_WINDOW_OPTIMIZATION,
 //          typename U, typename ST>bench_PA_2(...)
 
-      bench_PA_2<hc::LowuopsTag, ARRAY_SIZE, MontType, false, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
-      bench_PA_2<hc::LowlatencyTag, ARRAY_SIZE, MontType, false, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+      bench_PA_2<PTAG, ARRAY_SIZE, MontType, false, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+      bench_PA_2<PTAG, ARRAY_SIZE, MontType, false, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
 
-      bench_PA_2<hc::LowuopsTag, ARRAY_SIZE, MontType, false, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
-      bench_PA_2<hc::LowlatencyTag, ARRAY_SIZE, MontType, false, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+   if constexpr (std::is_same<typename MontType::MontType::MontyTag,
+                                    ::hurchalla::detail::TagMontyFullrange>::value) {
+      bench_PA_2<PTAG, ARRAY_SIZE, MontType, true, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+      bench_PA_2<PTAG, ARRAY_SIZE, MontType, true, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+   }
 }
 
 
 
 template <size_t ARRAY_SIZE, class MontType, typename U, typename ST>
-void bench_PA_use_sv(std::vector<TimingPA>& vecTimingPA,
+void bench_PA_all(std::vector<TimingPA>& vecTimingPA,
    U maxU, U range, U& dummy, unsigned int mmbr, ST seed, unsigned int ebr)
 {
    namespace hc = ::hurchalla;
 
-//template <class PTAG, size_t ARRAY_SIZE,
-//          class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION, bool USE_SLIDING_WINDOW_OPTIMIZATION,
-//          typename U, typename ST>bench_PA_2(...)
+//template <class PTAG, size_t ARRAY_SIZE, class MontType, typename U, typename ST>
+//void bench_PA_PTAG(...
 
-      bench_PA_2<hc::LowuopsTag, ARRAY_SIZE, MontType, true, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
-      bench_PA_2<hc::LowlatencyTag, ARRAY_SIZE, MontType, true, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
-
-      bench_PA_2<hc::LowuopsTag, ARRAY_SIZE, MontType, true, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
-      bench_PA_2<hc::LowlatencyTag, ARRAY_SIZE, MontType, true, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+      bench_PA_PTAG<hc::LowuopsTag, ARRAY_SIZE, MontType>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+      bench_PA_PTAG<hc::LowlatencyTag, ARRAY_SIZE, MontType>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
 }
+
 
 
 
@@ -1485,32 +1478,17 @@ using namespace hurchalla;
    for (size_t i=0; i<4; ++i) {
      for (size_t j=0; j<timingPA[i].size(); ++j) {
 
-#if 1
-      bench_PA_no_sv<2, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_no_sv<3, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_no_sv<4, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_no_sv<5, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_no_sv<6, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_no_sv<7, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_no_sv<8, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_no_sv<10, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_no_sv<12, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_no_sv<14, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+      bench_PA_all<2, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+      bench_PA_all<3, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+      bench_PA_all<4, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+      bench_PA_all<5, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+      bench_PA_all<6, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+      bench_PA_all<7, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+      bench_PA_all<8, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+      bench_PA_all<10, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+      bench_PA_all<12, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+      bench_PA_all<14, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
 
-   if constexpr (std::is_same<typename MontType::MontType::MontyTag,
-                                    ::hurchalla::detail::TagMontyFullrange>::value) {
-      bench_PA_use_sv<2, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_use_sv<3, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_use_sv<4, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_use_sv<5, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_use_sv<6, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_use_sv<7, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_use_sv<8, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_use_sv<10, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_use_sv<12, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_use_sv<14, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-   }
-#endif
      }
    }
 #ifdef TEST_CORRECTNESS_ONLY
@@ -2018,6 +1996,23 @@ std::cout << "Timings By Test Type:\n";
 
    for (size_t i=0; i<4; ++i) {
      for (size_t j=0; j<timings[i].size(); ++j) {
+
+#if 1
+      // Partial array pow using ARRAY_SIZE 1 is essentially a scalar pow.
+      // We enter it into the main timing records with (code_section + 50) to distinguish it
+      //
+      // Note this is somewhat of a hack since we're assuming the tests and number of tests are
+      // the same for both bench_range() and bench_partial_array_pow(), which they are for now.
+      // If they weren't the same, then entering the PA timings into the main timings would
+      // result in invalid timing comparisons/rankings.
+      //
+      std::vector<TimingPA> vecTimingPA;
+      bench_PA_PTAG<hc::LowlatencyTag, 1, MontType>(vecTimingPA, maxU, range, dummy, mmbr[i], seed, ebr[i]);
+      for (auto timingPA : vecTimingPA) {
+         timings[i][j].push_back(Timing(timingPA.table_bits, timingPA.uses_sliding_window,
+               timingPA.code_section + 50, timingPA.time, timingPA.uses_squaring_values));
+      }
+#endif
 
 #if 1
       timings[i][j].push_back(
