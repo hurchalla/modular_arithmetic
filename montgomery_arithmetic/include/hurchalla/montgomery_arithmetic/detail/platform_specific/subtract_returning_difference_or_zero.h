@@ -192,6 +192,44 @@ subtract_returning_difference_or_zero(uint32_t& difference, uint32_t a, uint32_t
 #endif
 
 
+
+
+HURCHALLA_FORCE_INLINE uint16_t
+subtract_returning_difference_or_zero(uint16_t& difference, uint16_t a, uint16_t b)
+{
+    using U = uint16_t;
+
+    uint32_t a32 = a;
+    uint32_t b32 = b;
+    uint32_t diff32;
+    uint32_t ret32 = subtract_returning_difference_or_zero(diff32, a32, b32);
+    difference = static_cast<U>(diff32);
+    U ret = static_cast<U>(ret32);
+
+    HPBC_CLOCKWORK_POSTCONDITION2(difference == static_cast<U>(a - b));
+    HPBC_CLOCKWORK_POSTCONDITION2(ret == ((a < b) ? difference : 0));
+    return ret;
+}
+
+HURCHALLA_FORCE_INLINE uint8_t
+subtract_returning_difference_or_zero(uint8_t& difference, uint8_t a, uint8_t b)
+{
+    using U = uint8_t;
+
+    uint32_t a32 = a;
+    uint32_t b32 = b;
+    uint32_t diff32;
+    uint32_t ret32 = subtract_returning_difference_or_zero(diff32, a32, b32);
+    difference = static_cast<U>(diff32);
+    U ret = static_cast<U>(ret32);
+
+    HPBC_CLOCKWORK_POSTCONDITION2(difference == static_cast<U>(a - b));
+    HPBC_CLOCKWORK_POSTCONDITION2(ret == ((a < b) ? difference : 0));
+    return ret;
+}
+
+
+
 }} // end namespace
 
 #endif

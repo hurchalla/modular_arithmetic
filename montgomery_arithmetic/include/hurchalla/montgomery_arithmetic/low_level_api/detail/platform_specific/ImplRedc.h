@@ -537,15 +537,30 @@ struct RedcIncomplete {
              "cinc %[u0], %[u0], hs \n\t"        /* mnB_3 += carry */
              "subs %[u1], %[u1], %[m] \n\t"      /* t2 = v2 - mnB_2 */
              "sbc %[tmp], %[tmp], %[u0] \n\t"    /* t3 = v3 - mnB_3 - borrow */
+#if 1
+/* strangely I've observed both gcc and clang timing about 1% faster here when
+   I declare inputs as in/out params, rather than declaring them input params
+   (which is much more normal).  It's difficult to say if that's likely to be
+   consistent, or it was a fluke with a particular benchmark.  I've also
+   observed gcc go badly wrong on benchmark timings with this asm here, where
+   using this asm made the benchmark take 1.35x longer than not using the asm
+   (I suspect a bug in gcc- maybe it was redundantly using this asm code
+   twice?).  When I used the #else clause (where inputs are declared normally)
+   the perf improved to only a 1.1x slowdown, which shows the #else can be
+   better at times, even though the perf was still quite bad.
+   In theory... we would expect that declaring inputs as in/out params when
+   they are truly input-only (i.e. unchanged in the asm) would not improve
+   perf... */
              : [m]"=&r"(m), [u0]"+&r"(u0), [invn0]"+&r"(invn0),
                [n0]"+&r"(n0), [tmp]"=&r"(tmp), [n1]"+&r"(n1),
                [u1]"+&r"(u1), [u2]"+&r"(u2), [u3]"+&r"(u3)
              :
+#else
+             : [m]"=&r"(m), [u0]"+&r"(u0), [tmp]"=&r"(tmp),
+               [u1]"+&r"(u1), [u2]"+&r"(u2)
+             : [invn0]"r"(invn0), [n0]"r"(n0), [n1]"r"(n1), [u3]"r"(u3)
+#endif
              : "cc");
-    // strangely both gcc and clang are timing about 1% faster when I declare
-    // inputs as in/out params, rather than declaring them input params (which
-    // would be more normal), so for now I've declared everything as in/out or
-    // out params.
 
     T t_hi = (static_cast<T>(tmp) << HALF_BITS) | u1;
 

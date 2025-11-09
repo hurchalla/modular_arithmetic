@@ -66,7 +66,8 @@ cpp_standard=c++17
 $cppcompiler   \
         $error_limit   -$optimization_level \
         $define_mont_type  $define_uint_type  $define_test_type \
-         $9 ${10} ${11} ${12} ${13} ${14} \
+         $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16} ${17} ${18} ${19} ${20} \
+         ${21} ${22} ${23} ${24} ${25} ${26} ${27} ${28} ${29} ${30} \
         -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion $warn_nrvo \
         -std=$cpp_standard \
         -I${repo_directory}/modular_arithmetic/modular_arithmetic/include \

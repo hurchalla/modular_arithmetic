@@ -402,7 +402,13 @@ int test_correctness_array_pow(ST seed)
 }
 
 
-template <class PTAG, size_t TABLE_BITS, size_t CODE_SECTION, size_t ARRAY_SIZE, class MontType,
+template <bool UseEarlyExitInInit,
+          bool UnrollTablesizeInInit,
+          bool UnrollArraySize,
+          bool UnrollNumTablesInit,
+          bool UnrollTableBits,
+          bool UnrollNumTablesMainloop,
+          class PTAG, size_t TABLE_BITS, size_t CODE_SECTION, size_t ARRAY_SIZE, class MontType,
           bool USE_SQUARING_VALUE_OPTIMIZATION, bool USE_SLIDING_WINDOW_OPTIMIZATION,
           typename ST>
 int test_correctness_partial_array_pow(ST seed)
@@ -440,7 +446,9 @@ int test_correctness_partial_array_pow(ST seed)
 
       auto mont_result_arr = hc::experimental::experimental_montgomery_pow_2kary::call<
                 MontType, U, ARRAY_SIZE, USE_SLIDING_WINDOW_OPTIMIZATION, TABLE_BITS, CODE_SECTION,
-                USE_SQUARING_VALUE_OPTIMIZATION, PTAG>(mf, mont_base_arr, exponent);
+                USE_SQUARING_VALUE_OPTIMIZATION, PTAG,
+                UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize,
+                UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop>(mf, mont_base_arr, exponent);
       for (size_t j=0; j<ARRAY_SIZE; ++j) {
          U result = mf.convertOut(mont_result_arr[j]);
          U standard_result = mf.convertOut(mf.pow(mont_base_arr[j], exponent));
@@ -473,7 +481,9 @@ int test_correctness_partial_array_pow(ST seed)
 
       auto mont_result_arr = hc::experimental::experimental_montgomery_pow_2kary::call<
                 MontType, U, ARRAY_SIZE, USE_SLIDING_WINDOW_OPTIMIZATION, TABLE_BITS, CODE_SECTION,
-                USE_SQUARING_VALUE_OPTIMIZATION, PTAG>(mf, mont_base_arr, exponent);
+                USE_SQUARING_VALUE_OPTIMIZATION, PTAG,
+                UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize,
+                UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop>(mf, mont_base_arr, exponent);
 
       for (size_t j=0; j<ARRAY_SIZE; ++j) {
          U result = mf.convertOut(mont_result_arr[j]);
@@ -493,6 +503,12 @@ int test_correctness_partial_array_pow(ST seed)
 
 
 struct TimingPA {
+   bool UseEarlyExitInInit;
+   bool UnrollTablesizeInInit;
+   bool UnrollArraySize;
+   bool UnrollNumTablesInit;
+   bool UnrollTableBits;
+   bool UnrollNumTablesMainloop;
    bool is_low_uops;
    size_t table_bits;
    bool uses_sliding_window;
@@ -500,17 +516,41 @@ struct TimingPA {
    size_t array_size;
    std::chrono::duration<double>::rep time;
    bool uses_squaring_values;
-   TimingPA(bool is_low_uops1, size_t table_bits1, bool uses_sliding_window1, size_t code_section1, size_t array_size1,
+   TimingPA(bool UseEarlyExitInInit1,
+          bool UnrollTablesizeInInit1,
+          bool UnrollArraySize1,
+          bool UnrollNumTablesInit1,
+          bool UnrollTableBits1,
+          bool UnrollNumTablesMainloop1,
+          bool is_low_uops1, size_t table_bits1, bool uses_sliding_window1, size_t code_section1, size_t array_size1,
            std::chrono::duration<double>::rep time1, bool uses_squaring_values1)
-      : is_low_uops(is_low_uops1), table_bits(table_bits1), uses_sliding_window(uses_sliding_window1),
+      : UseEarlyExitInInit(UseEarlyExitInInit1),
+         UnrollTablesizeInInit(UnrollTablesizeInInit1),
+         UnrollArraySize(UnrollArraySize1),
+         UnrollNumTablesInit(UnrollNumTablesInit1),
+         UnrollTableBits(UnrollTableBits1),
+         UnrollNumTablesMainloop(UnrollNumTablesMainloop1),
+        is_low_uops(is_low_uops1), table_bits(table_bits1), uses_sliding_window(uses_sliding_window1),
         code_section(code_section1), array_size(array_size1),
         time(time1), uses_squaring_values(uses_squaring_values1) {}
-   TimingPA() : is_low_uops(true), table_bits(0), uses_sliding_window(false), code_section(0),
+   TimingPA() : UseEarlyExitInInit(false),
+         UnrollTablesizeInInit(false),
+         UnrollArraySize(false),
+         UnrollNumTablesInit(false),
+         UnrollTableBits(false),
+         UnrollNumTablesMainloop(false),
+         is_low_uops(true), table_bits(0), uses_sliding_window(false), code_section(0),
                array_size(0), time(0.0), uses_squaring_values(false) {}
 };
 
 
-template <class PTAG, size_t TABLE_BITS, size_t CODE_SECTION, size_t ARRAY_SIZE,
+template <bool UseEarlyExitInInit,
+          bool UnrollTablesizeInInit,
+          bool UnrollArraySize,
+          bool UnrollNumTablesInit,
+          bool UnrollTableBits,
+          bool UnrollNumTablesMainloop,
+          class PTAG, size_t TABLE_BITS, size_t CODE_SECTION, size_t ARRAY_SIZE,
           class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION, bool USE_SLIDING_WINDOW_OPTIMIZATION,
           typename U, typename ST>
 TimingPA
@@ -520,7 +560,13 @@ bench_partial_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits
                      hurchalla::ut_numeric_limits<decltype(MontType::max_modulus())>::digits);
 #if 1
    // run very short tests to hopefully catch a bugged experimental impl
-   int tcpap_result = test_correctness_partial_array_pow<PTAG,
+   int tcpap_result = test_correctness_partial_array_pow<UseEarlyExitInInit,
+                                                     UnrollTablesizeInInit,
+                                                     UnrollArraySize,
+                                                     UnrollNumTablesInit,
+                                                     UnrollTableBits,
+                                                     UnrollNumTablesMainloop,
+                                                     PTAG,
                                                      TABLE_BITS,
                                                      CODE_SECTION,
                                                      ARRAY_SIZE,
@@ -695,7 +741,9 @@ bench_partial_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits
 #else
          std::array<V, ARRAY_SIZE> result = hurchalla::experimental::experimental_montgomery_pow_2kary::call<
                 MontType, U, ARRAY_SIZE, USE_SLIDING_WINDOW_OPTIMIZATION, TABLE_BITS, CODE_SECTION,
-                USE_SQUARING_VALUE_OPTIMIZATION, PTAG>(mf, mont_base_arr, exponent);
+                USE_SQUARING_VALUE_OPTIMIZATION, PTAG,
+                UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize,
+                UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop>(mf, mont_base_arr, exponent);
 #endif
 
 #if 0
@@ -725,12 +773,17 @@ bench_partial_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits
       auto t1_mfp = steady_clock::now();
       dsec::rep mtp_time = dsec(t1_mfp-t0_mfp).count();
 
-      return TimingPA(std::is_same<PTAG, ::hurchalla::LowuopsTag>::value,
+      return TimingPA(UseEarlyExitInInit,
+          UnrollTablesizeInInit,
+          UnrollArraySize,
+          UnrollNumTablesInit,
+          UnrollTableBits,
+          UnrollNumTablesMainloop,
+          std::is_same<PTAG, ::hurchalla::LowuopsTag>::value,
                      TABLE_BITS, USE_SLIDING_WINDOW_OPTIMIZATION,
                      CODE_SECTION, ARRAY_SIZE, mtp_time, USE_SQUARING_VALUE_OPTIMIZATION);
    }
 }
-
 
 
 
@@ -1209,114 +1262,268 @@ bench_range(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST 
 
 
 
-#if 0
-template <class PTAG, size_t TABLE_BITS, size_t CODE_SECTION,
+
+
+template <bool UseEarlyExitInInit,
+          bool UnrollTablesizeInInit,
+          bool UnrollArraySize,
+          bool UnrollNumTablesInit,
+          bool UnrollTableBits,
+          bool UnrollNumTablesMainloop,
+          class PTAG, size_t ARRAY_SIZE,
           class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION, bool USE_SLIDING_WINDOW_OPTIMIZATION,
           typename U, typename ST>
-void bench_PA(std::vector<TimingPA>& vecTimingPA,
+void bench_PA_6(std::vector<TimingPA>& vecTimingPA,
+   U maxU, U range, U& dummy, unsigned int mmbr, ST seed, unsigned int ebr)
+{
+// template <bool UseEarlyExitInInit,
+//          bool UnrollTablesizeInInit,
+//          bool UnrollArraySize,
+//          bool UnrollNumTablesInit,
+//          bool UnrollTableBits,
+//          bool UnrollNumTablesMainloop,
+//          class PTAG, size_t TABLE_BITS, size_t CODE_SECTION, size_t ARRAY_SIZE,
+//          class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION, bool USE_SLIDING_WINDOW_OPTIMIZATION,
+//          typename U, typename ST>
+//TimingPA bench_partial_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST seed, unsigned int exponent_bits_reduce)
+
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 2, 7, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 2, 8, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 2, 9, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 2, 10, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 2, 11, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 2, 12, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 2, 13, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 2, 14, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 2, 15, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 2, 16, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 3, 6, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 3, 7, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 3, 8, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 3, 9, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 3, 10, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 3, 11, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 4, 6, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 4, 7, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 4, 8, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   vecTimingPA.push_back(bench_partial_array_pow
+      <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, 4, 9, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+}
+
+
+
+template <bool UnrollNumTablesInit,
+          bool UnrollTableBits,
+          bool UnrollNumTablesMainloop,
+          class PTAG, size_t ARRAY_SIZE,
+          class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION, bool USE_SLIDING_WINDOW_OPTIMIZATION,
+          typename U, typename ST>
+void bench_PA_6a(std::vector<TimingPA>& vecTimingPA,
+   U maxU, U range, U& dummy, unsigned int mmbr, ST seed, unsigned int ebr)
+{
+/*
+template <bool UseEarlyExitInInit,
+          bool UnrollTablesizeInInit,
+          bool UnrollArraySize,
+          bool UnrollNumTablesInit,
+          bool UnrollTableBits,
+          bool UnrollNumTablesMainloop,
+          class PTAG, size_t ARRAY_SIZE,
+          class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION, bool USE_SLIDING_WINDOW_OPTIMIZATION,
+          typename U, typename ST>
+void bench_PA_6(...)
+*/
+   bench_PA_6<true, true, true, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+   bench_PA_6<false, true, true, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+   bench_PA_6<true, false, true, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+   bench_PA_6<false, false, true, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+   bench_PA_6<true, true, false, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+   bench_PA_6<false, true, false, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+   bench_PA_6<true, false, false, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+   bench_PA_6<false, false, false, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+}
+
+
+template <class PTAG, size_t ARRAY_SIZE,
+          class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION, bool USE_SLIDING_WINDOW_OPTIMIZATION,
+          typename U, typename ST>
+void bench_PA_6b(std::vector<TimingPA>& vecTimingPA,
+   U maxU, U range, U& dummy, unsigned int mmbr, ST seed, unsigned int ebr)
+{
+/*
+template <bool UnrollNumTablesInit,
+          bool UnrollTableBits,
+          bool UnrollNumTablesMainloop,
+          class PTAG, size_t ARRAY_SIZE,
+          class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION, bool USE_SLIDING_WINDOW_OPTIMIZATION,
+          typename U, typename ST>
+void bench_PA_6a(...)
+*/
+   bench_PA_6a<true, true, true,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+   bench_PA_6a<false, true, true,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+   bench_PA_6a<true, false, true,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+   bench_PA_6a<false, false, true,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+   bench_PA_6a<true, true, false,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+   bench_PA_6a<false, true, false,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+   bench_PA_6a<true, false, false,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+   bench_PA_6a<false, false, false,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+}
+
+
+
+
+
+
+template <bool UnrollTablesizeInInit,
+          bool UnrollArraySize,
+          bool UnrollTableBits,
+          class PTAG, size_t ARRAY_SIZE,
+          class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION, bool USE_SLIDING_WINDOW_OPTIMIZATION,
+          typename U, typename ST>
+void bench_PA_1(std::vector<TimingPA>& vecTimingPA,
    U maxU, U range, U& dummy, unsigned int mmbr, ST seed, unsigned int ebr)
 {
    vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, TABLE_BITS, CODE_SECTION, 2, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+      <false, UnrollTablesizeInInit, UnrollArraySize, false, UnrollTableBits, false,
+      PTAG, 2, 1, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+
    vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, TABLE_BITS, CODE_SECTION, 3, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+      <false, UnrollTablesizeInInit, UnrollArraySize, false, UnrollTableBits, false,
+      PTAG, 3, 1, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+
    vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, TABLE_BITS, CODE_SECTION, 4, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+      <false, UnrollTablesizeInInit, UnrollArraySize, false, UnrollTableBits, false,
+      PTAG, 4, 1, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+
    vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, TABLE_BITS, CODE_SECTION, 5, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, TABLE_BITS, CODE_SECTION, 6, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, TABLE_BITS, CODE_SECTION, 7, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, TABLE_BITS, CODE_SECTION, 8, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, TABLE_BITS, CODE_SECTION, 10, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, TABLE_BITS, CODE_SECTION, 12, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, TABLE_BITS, CODE_SECTION, 14, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+      <false, UnrollTablesizeInInit, UnrollArraySize, false, UnrollTableBits, false,
+      PTAG, 5, 1, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
 }
-#endif
 
 
 
 template <class PTAG, size_t ARRAY_SIZE,
           class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION, bool USE_SLIDING_WINDOW_OPTIMIZATION,
           typename U, typename ST>
-void bench_PA_2(std::vector<TimingPA>& vecTimingPA,
+void bench_PA_1a(std::vector<TimingPA>& vecTimingPA,
    U maxU, U range, U& dummy, unsigned int mmbr, ST seed, unsigned int ebr)
 {
-//   vecTimingPA.push_back(bench_partial_array_pow
-//      <PTAG, TABLE_BITS, CODE_SECTION, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 2, 6, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 2, 7, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 2, 8, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 2, 9, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 2, 10, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 2, 11, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 2, 12, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 2, 13, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 2, 14, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 2, 15, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 2, 16, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   bench_PA_1<true, true, true,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
 
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 3, 6, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 3, 7, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 3, 8, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 3, 9, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 3, 10, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 3, 11, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 3, 12, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   bench_PA_1<false, true, true,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
 
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 4, 6, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 4, 7, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 4, 8, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 4, 9, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 4, 10, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   bench_PA_1<true, false, true,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
 
+   bench_PA_1<false, false, true,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
 
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 2, 1, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   bench_PA_1<true, true, false,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
 
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 3, 1, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 3, 2, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   bench_PA_1<false, true, false,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
 
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 4, 1, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 4, 2, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   bench_PA_1<true, false, false,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
 
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 5, 1, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-   vecTimingPA.push_back(bench_partial_array_pow
-      <PTAG, 5, 2, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+   bench_PA_1<false, false, false,
+      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
 }
+
+
+template <class PTAG, size_t ARRAY_SIZE,
+          class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION, bool USE_SLIDING_WINDOW_OPTIMIZATION,
+          typename U, typename ST>
+void bench_PA_2a(std::vector<TimingPA>& vecTimingPA,
+   U maxU, U range, U& dummy, unsigned int mmbr, ST seed, unsigned int ebr)
+{
+   vecTimingPA.push_back(bench_partial_array_pow
+      <false, false, false, false, false, false,
+      PTAG, 3, 2, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+
+   vecTimingPA.push_back(bench_partial_array_pow
+      <false, false, false, false, false, false,
+      PTAG, 4, 2, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+
+   vecTimingPA.push_back(bench_partial_array_pow
+      <false, false, false, false, false, false,
+      PTAG, 5, 2, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+}
+
 
 
 
@@ -1330,28 +1537,50 @@ void bench_PA_PTAG(std::vector<TimingPA>& vecTimingPA,
 //          class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION, bool USE_SLIDING_WINDOW_OPTIMIZATION,
 //          typename U, typename ST>    TimingPA  bench_partial_array_pow(...)
 
-      vecTimingPA.push_back(
-         bench_partial_array_pow<PTAG, 2, 0, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-      vecTimingPA.push_back(
-         bench_partial_array_pow<PTAG, 2, 3, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-      vecTimingPA.push_back(
-         bench_partial_array_pow<PTAG, 2, 4, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
-      vecTimingPA.push_back(
-         bench_partial_array_pow<PTAG, 2, 5, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+      vecTimingPA.push_back(bench_partial_array_pow
+         <false, false,   true,    false, false, false,
+         PTAG, 2, 0, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+      vecTimingPA.push_back(bench_partial_array_pow
+         <false, false,   false,   false, false, false,
+         PTAG, 2, 0, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+
+      vecTimingPA.push_back(bench_partial_array_pow
+         <false, false, false, false, false, false,
+         PTAG, 2, 3, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+      vecTimingPA.push_back(bench_partial_array_pow
+         <false, false, false, false, false, false,
+         PTAG, 2, 4, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+      vecTimingPA.push_back(bench_partial_array_pow
+         <false, false, false, false, false, false,
+         PTAG, 2, 5, ARRAY_SIZE, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
 
 
 //template <class PTAG, size_t ARRAY_SIZE,
 //          class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION, bool USE_SLIDING_WINDOW_OPTIMIZATION,
-//          typename U, typename ST>bench_PA_2(...)
+//          typename U, typename ST>
+//void bench_PA_2a(...)
 
-      bench_PA_2<PTAG, ARRAY_SIZE, MontType, false, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
-      bench_PA_2<PTAG, ARRAY_SIZE, MontType, false, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+      bench_PA_2a<PTAG, ARRAY_SIZE, MontType, false, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+      bench_PA_2a<PTAG, ARRAY_SIZE, MontType, false, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+      bench_PA_1a<PTAG, ARRAY_SIZE, MontType, false, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+      bench_PA_1a<PTAG, ARRAY_SIZE, MontType, false, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+      bench_PA_6b<PTAG, ARRAY_SIZE, MontType, false, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+      bench_PA_6b<PTAG, ARRAY_SIZE, MontType, false, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
 
 
    if constexpr (std::is_same<typename MontType::MontType::MontyTag,
                                     ::hurchalla::detail::TagMontyFullrange>::value) {
-      bench_PA_2<PTAG, ARRAY_SIZE, MontType, true, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
-      bench_PA_2<PTAG, ARRAY_SIZE, MontType, true, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+      bench_PA_2a<PTAG, ARRAY_SIZE, MontType, true, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+      bench_PA_2a<PTAG, ARRAY_SIZE, MontType, true, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+      bench_PA_1a<PTAG, ARRAY_SIZE, MontType, true, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+      bench_PA_1a<PTAG, ARRAY_SIZE, MontType, true, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+
+      bench_PA_6b<PTAG, ARRAY_SIZE, MontType, true, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+      bench_PA_6b<PTAG, ARRAY_SIZE, MontType, true, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
    }
 }
 
@@ -1460,7 +1689,7 @@ using namespace hurchalla;
    std::array<unsigned int, 4> ebr = { default_ebr, default_ebr, exponent_bits_reduce, exponent_bits_reduce };
 
 
-   constexpr int NUM_TEST_REPETITIONS = 10;
+   constexpr int NUM_TEST_REPETITIONS = 5;
 
 
 #if defined(TEST_PARTIAL_ARRAY)
@@ -1470,6 +1699,7 @@ using namespace hurchalla;
 //   bench_partial_array_pow<LowuopsTag, 4, 1, 4, MontType, false, false>(static_cast<U>(maxU - range), range, dummy,
 //                                                            max_modulus_bits_reduce, seed, exponent_bits_reduce);
 
+
    // format is bench_PA<class PTAG, size_t TABLE_BITS, size_t CODE_SECTION,
    //       class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION, bool USE_SLIDING_WINDOW_OPTIMIZATION>(...)
 
@@ -1478,6 +1708,51 @@ using namespace hurchalla;
    for (size_t i=0; i<4; ++i) {
      for (size_t j=0; j<timingPA[i].size(); ++j) {
 
+#if 0
+      bench_PA_all<2, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+
+#elif 1
+//3 07 t t 02 yxxxxxx
+      constexpr bool UseEarlyExitInInit = true;
+      constexpr bool UnrollTablesizeInInit = false;
+      constexpr bool UnrollArraySize = false;
+      constexpr bool UnrollNumTablesInit = false;
+      constexpr bool UnrollTableBits = false;
+      constexpr bool UnrollNumTablesMainloop = false;
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+         LowlatencyTag, 3, 7, 2, MontType, true, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+#elif 1
+// template <bool UseEarlyExitInInit,
+//          bool UnrollTablesizeInInit,
+//          bool UnrollArraySize,
+//          bool UnrollNumTablesInit,
+//          bool UnrollTableBits,
+//          bool UnrollNumTablesMainloop,
+//          class PTAG, size_t TABLE_BITS, size_t CODE_SECTION, size_t ARRAY_SIZE,
+//          class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION, bool USE_SLIDING_WINDOW_OPTIMIZATION,
+//          typename U, typename ST>
+//TimingPA bench_partial_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST seed, unsigned int exponent_bits_reduce)
+      constexpr bool UseEarlyExitInInit = false;
+      constexpr bool UnrollTablesizeInInit = false;
+      constexpr bool UnrollArraySize = false;
+      constexpr bool UnrollNumTablesInit = false;
+      constexpr bool UnrollTableBits = false;
+      constexpr bool UnrollNumTablesMainloop = false;
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+         LowuopsTag, 2, 12, 3, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+         LowuopsTag, 2, 15, 3, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+         LowuopsTag, 2, 12, 4, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingPA[i][j].push_back(bench_partial_array_pow
+         <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+         LowuopsTag, 2, 15, 4, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+#else
       bench_PA_all<2, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
       bench_PA_all<3, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
       bench_PA_all<4, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
@@ -1488,6 +1763,7 @@ using namespace hurchalla;
       bench_PA_all<10, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
       bench_PA_all<12, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
       bench_PA_all<14, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+#endif
 
      }
    }
@@ -1542,10 +1818,36 @@ std::cout << "OVERALL BEST:\n";
             std::cout <<  " 0" << t.array_size;
          else
             std::cout <<  " " << t.array_size;
+
          if (t.is_low_uops)
             std::cout <<  " u";
          else
             std::cout <<  " y";
+         if (t.UseEarlyExitInInit)
+            std::cout <<  "t";
+         else
+            std::cout <<  "x";
+         if (t.UnrollTablesizeInInit)
+            std::cout <<  "t";
+         else
+            std::cout <<  "x";
+         if (t.UnrollArraySize)
+            std::cout <<  "t";
+         else
+            std::cout <<  "x";
+         if (t.UnrollNumTablesInit)
+            std::cout <<  "t";
+         else
+            std::cout <<  "x";
+         if (t.UnrollTableBits)
+            std::cout <<  "t";
+         else
+            std::cout <<  "x";
+         if (t.UnrollNumTablesMainloop)
+            std::cout <<  "t";
+         else
+            std::cout <<  "x";
+
       std::cout << "\n";
    }
 std::cout << "Timings By Test Type:\n";
@@ -1568,6 +1870,32 @@ std::cout << "Timings By Test Type:\n";
             std::cout <<  "u";
          else
             std::cout <<  "y";
+
+         if (t.UseEarlyExitInInit)
+            std::cout <<  "t";
+         else
+            std::cout <<  "x";
+         if (t.UnrollTablesizeInInit)
+            std::cout <<  "t";
+         else
+            std::cout <<  "x";
+         if (t.UnrollArraySize)
+            std::cout <<  "t";
+         else
+            std::cout <<  "x";
+         if (t.UnrollNumTablesInit)
+            std::cout <<  "t";
+         else
+            std::cout <<  "x";
+         if (t.UnrollTableBits)
+            std::cout <<  "t";
+         else
+            std::cout <<  "x";
+         if (t.UnrollNumTablesMainloop)
+            std::cout <<  "t";
+         else
+            std::cout <<  "x";
+
          if (t.array_size < 10)
             std::cout <<  " 0" << t.array_size;
          else

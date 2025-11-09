@@ -1290,6 +1290,37 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
 
 
+
+
+//template params:
+
+// for 128bit I was doing the early return checks in table init, and was not for 64 bit.
+// UseEarlyExitInInit
+//    Set this to true or false.
+
+
+// I was not using this
+// HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLESIZE_INIT
+//    UnrollTablesizeInInit
+
+// I was using this
+// HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_ARRAY_SIZE
+//    UnrollArraySize
+
+// for 128bit I was NOT unrolling on NUM_TABLES in table init, but I was for 64 bit.
+// HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
+//    UnrollNumTablesInit
+
+// I was using this
+// HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+//    UnrollTableBits
+
+// I was not using this
+// HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+//    UnrollNumTablesMainloop
+
+
+
   // This is the "partial" array version.
   //
   // This is an alternative to calling the MontgomeryForm pow() member function
@@ -1300,11 +1331,18 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
   // function contained within it.
   template <class MF, typename U,
             size_t ARRAY_SIZE,
-            bool USE_SLIDING_WINDOW_OPTIMIZATION = false,
-            size_t TABLE_BITS = 4,
-            size_t CODE_SECTION = 0,
-            bool USE_SQUARING_VALUE_OPTIMIZATION = false,
-            class PTAG = LowuopsTag>
+            bool USE_SLIDING_WINDOW_OPTIMIZATION,
+            size_t TABLE_BITS,
+            size_t CODE_SECTION,
+            bool USE_SQUARING_VALUE_OPTIMIZATION,
+            class PTAG,
+            bool UseEarlyExitInInit,
+            bool UnrollTablesizeInInit,
+            bool UnrollArraySize,
+            bool UnrollNumTablesInit,
+            bool UnrollTableBits,
+            bool UnrollNumTablesMainloop
+            >
   static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
   call(const MF& mf,
        const std::array<typename MF::MontgomeryValue, ARRAY_SIZE>& x,
@@ -1339,21 +1377,41 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 
     std::array<V, ARRAY_SIZE> result;
     if (static_cast<size_t>(exponent) & 1u) {
-        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-            result[j] = bases[j];
+        if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                result[j] = bases[j];
+        } else {
+            for (size_t j=0; j<ARRAY_SIZE; ++j)
+                result[j] = bases[j];
+        }
     } else {
         V mont_one = mf.getUnityValue();
-        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-            result[j] = mont_one;
+        if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                result[j] = mont_one;
+        } else {
+            for (size_t j=0; j<ARRAY_SIZE; ++j)
+                result[j] = mont_one;
+        }
     }
 
     while (exponent > 1u) {
         exponent = static_cast<U>(exponent >> 1);
-        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-            bases[j] = mf.template square<PTAG>(bases[j]);
-        if (static_cast<size_t>(exponent) & 1u) {
+        if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-                result[j] = mf.template multiply<PTAG>(result[j], bases[j]);
+                bases[j] = mf.template square<PTAG>(bases[j]);
+        } else {
+            for (size_t j=0; j<ARRAY_SIZE; ++j)
+                bases[j] = mf.template square<PTAG>(bases[j]);
+        }
+        if (static_cast<size_t>(exponent) & 1u) {
+            if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                    result[j] = mf.template multiply<PTAG>(result[j], bases[j]);
+            } else {
+                for (size_t j=0; j<ARRAY_SIZE; ++j)
+                    result[j] = mf.template multiply<PTAG>(result[j], bases[j]);
+            }
         }
     }
     return result;
@@ -1361,17 +1419,48 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
 } else if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 1) {
 
     V table[TABLESIZE][ARRAY_SIZE];
-    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-        table[0][j] = mf.getUnityValue();   // montgomery one
-        table[1][j] = x[j];
+    if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
+            table[0][j] = mf.getUnityValue();   // montgomery one
+            table[1][j] = x[j];
+        } 
+    } else {
+        for (size_t j=0; j<ARRAY_SIZE; ++j) {
+            table[0][j] = mf.getUnityValue();   // montgomery one
+            table[1][j] = x[j];
+        }
     }
     if HURCHALLA_CPP17_CONSTEXPR (TABLESIZE >= 4) {
-        for (std::size_t i=2; i<TABLESIZE; i+=2) {
-            std::size_t halfi = i/2;
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-                table[i][j] = mf.template square<PTAG>(table[halfi][j]);
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-                table[i+1][j] = mf.template multiply<PTAG>(table[halfi+1][j], table[halfi][j]);
+        if HURCHALLA_CPP17_CONSTEXPR (UnrollTablesizeInInit) {
+            HURCHALLA_REQUEST_UNROLL_LOOP for (std::size_t i=2; i<TABLESIZE; i+=2) {
+                std::size_t halfi = i/2;
+                if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                        table[i][j] = mf.template square<PTAG>(table[halfi][j]);
+                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                        table[i+1][j] = mf.template multiply<PTAG>(table[halfi+1][j], table[halfi][j]);
+                } else {
+                    for (size_t j=0; j<ARRAY_SIZE; ++j)
+                        table[i][j] = mf.template square<PTAG>(table[halfi][j]);
+                    for (size_t j=0; j<ARRAY_SIZE; ++j)
+                        table[i+1][j] = mf.template multiply<PTAG>(table[halfi+1][j], table[halfi][j]);
+                }
+            }
+        } else {
+            for (std::size_t i=2; i<TABLESIZE; i+=2) {
+                std::size_t halfi = i/2;
+                if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                        table[i][j] = mf.template square<PTAG>(table[halfi][j]);
+                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                        table[i+1][j] = mf.template multiply<PTAG>(table[halfi+1][j], table[halfi][j]);
+                } else {
+                    for (size_t j=0; j<ARRAY_SIZE; ++j)
+                        table[i][j] = mf.template square<PTAG>(table[halfi][j]);
+                    for (size_t j=0; j<ARRAY_SIZE; ++j)
+                        table[i+1][j] = mf.template multiply<PTAG>(table[halfi+1][j], table[halfi][j]);
+                }
+            }
         }
     }
 
@@ -1394,53 +1483,118 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
     int shift = numbits - P;
     size_t index = static_cast<size_t>(branchless_shift_right(n, shift));
     HPBC_CLOCKWORK_ASSERT(index <= MASK);
-    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-        // normally we'd use (index & MASK), but it's redundant with index <= MASK
-        result[j] = table[index][j];
+    if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
+            // normally we'd use (index & MASK), but it's redundant with index <= MASK
+            result[j] = table[index][j];
+        }
+    } else {
+        for (size_t j=0; j<ARRAY_SIZE; ++j) {
+            // normally we'd use (index & MASK), but it's redundant with index <= MASK
+            result[j] = table[index][j];
+        }
     }
 
 
     while (shift >= P) {
         if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
             std::array<SV, ARRAY_SIZE> sv;
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-                sv[j] = MFE_LU::getSquaringValue(mf, result[j]);
+            if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                    sv[j] = MFE_LU::getSquaringValue(mf, result[j]);
+            } else {
+                for (size_t j=0; j<ARRAY_SIZE; ++j)
+                    sv[j] = MFE_LU::getSquaringValue(mf, result[j]);
+            }
 
             if (USE_SLIDING_WINDOW_OPTIMIZATION) {
                 while (shift > P && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
-                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-                        sv[j] = MFE_LU::squareSV(mf, sv[j]);
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+                        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                            sv[j] = MFE_LU::squareSV(mf, sv[j]);
+                    } else {
+                        for (size_t j=0; j<ARRAY_SIZE; ++j)
+                            sv[j] = MFE_LU::squareSV(mf, sv[j]);
+                    }
                     --shift;
                 }
             }
 
             static_assert(P > 0, "");
-            for (int i=0; i<P - 1; ++i) {
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-                    sv[j] = MFE_LU::squareSV(mf, sv[j]);
+            if HURCHALLA_CPP17_CONSTEXPR (UnrollTableBits) {
+                HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i<P - 1; ++i) {
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+                        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                            sv[j] = MFE_LU::squareSV(mf, sv[j]);
+                    } else {
+                        for (size_t j=0; j<ARRAY_SIZE; ++j)
+                            sv[j] = MFE_LU::squareSV(mf, sv[j]);
+                    }
+                }
+            } else {
+                for (int i=0; i<P - 1; ++i) {
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+                        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                            sv[j] = MFE_LU::squareSV(mf, sv[j]);
+                    } else {
+                        for (size_t j=0; j<ARRAY_SIZE; ++j)
+                            sv[j] = MFE_LU::squareSV(mf, sv[j]);
+                    }
+                }
             }
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-                result[j] = MFE_LU::squareToMontgomeryValue(mf, sv[j]);
+            if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                    result[j] = MFE_LU::squareToMontgomeryValue(mf, sv[j]);
+            } else {
+                for (size_t j=0; j<ARRAY_SIZE; ++j)
+                    result[j] = MFE_LU::squareToMontgomeryValue(mf, sv[j]);
+            }
         }
         else {
             if (USE_SLIDING_WINDOW_OPTIMIZATION) {
                 while (shift > P && (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0) {
-                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-                        result[j] = mf.template square<PTAG>(result[j]);
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+                        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                            result[j] = mf.template square<PTAG>(result[j]);
+                    } else {
+                        for (size_t j=0; j<ARRAY_SIZE; ++j)
+                            result[j] = mf.template square<PTAG>(result[j]);
+                    }
                     --shift;
                 }
             }
 
-            for (int i=0; i<P; ++i) {
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-                    result[j] = mf.template square<PTAG>(result[j]);
+            if HURCHALLA_CPP17_CONSTEXPR (UnrollTableBits) {
+                HURCHALLA_REQUEST_UNROLL_LOOP for (int i=0; i<P; ++i) {
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+                        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                            result[j] = mf.template square<PTAG>(result[j]);
+                    } else {
+                        for (size_t j=0; j<ARRAY_SIZE; ++j)
+                            result[j] = mf.template square<PTAG>(result[j]);
+                    }
+                }
+            } else {
+                for (int i=0; i<P; ++i) {
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+                        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                            result[j] = mf.template square<PTAG>(result[j]);
+                    } else {
+                        for (size_t j=0; j<ARRAY_SIZE; ++j)
+                            result[j] = mf.template square<PTAG>(result[j]);
+                    }
+                }
             }
         }
 
         shift -= P;
         index = static_cast<size_t>(branchless_shift_right(n, shift)) & MASK;
-        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-            result[j] = mf.template multiply<PTAG>(result[j], table[index][j]);
+        if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                result[j] = mf.template multiply<PTAG>(result[j], table[index][j]);
+        } else {
+            for (size_t j=0; j<ARRAY_SIZE; ++j)
+                result[j] = mf.template multiply<PTAG>(result[j], table[index][j]);
         }
     }
 
@@ -1449,16 +1603,26 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
     HPBC_CLOCKWORK_ASSERT(0 < shift && shift < P);
 
     for (int i=0; i<shift; ++i) {
-        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
-            result[j] = mf.template square<PTAG>(result[j]);
+        if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+                result[j] = mf.template square<PTAG>(result[j]);
+        } else {
+            for (size_t j=0; j<ARRAY_SIZE; ++j)
+                result[j] = mf.template square<PTAG>(result[j]);
+        }
     }
     size_t tmpmask = (static_cast<size_t>(1) << shift) - 1;
     index = static_cast<size_t>(n) & tmpmask;
     HPBC_CLOCKWORK_ASSERT(index <= MASK);
-    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
-        result[j] = mf.template multiply<PTAG>(result[j], table[index][j]);
+    if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j)
+            result[j] = mf.template multiply<PTAG>(result[j], table[index][j]);
+    } else {
+        for (size_t j=0; j<ARRAY_SIZE; ++j)
+            result[j] = mf.template multiply<PTAG>(result[j], table[index][j]);
     }
     return result;
+
 } else if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 2) {
 
     // This CODE_SECTION optimizes table initialization to skip the high even
@@ -1737,135 +1901,6 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
     constexpr size_t MASKBIG = (static_cast<size_t>(1) << NUMBITS_MASKBIG) - 1u;
 
 
-//    V table[NUM_TABLES][TABLESIZE][ARRAY_SIZE];
-    std::array<std::array<std::array<V, ARRAY_SIZE>, TABLESIZE>, NUM_TABLES> table;
-
-    V mont_one = mf.getUnityValue();
-
-    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q) {
-        table[0][0][q] = mont_one;
-        table[0][1][q] = x[q];
-    }
-    if HURCHALLA_CPP17_CONSTEXPR (TABLESIZE >= 4) {
-        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-            table[0][2][q] = mf.square(x[q]);
-        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-            table[0][3][q] = mf.template multiply<PTAG>(table[0][2][q], x[q]);
-    }
-    if HURCHALLA_CPP17_CONSTEXPR (TABLESIZE > 4) {
-        for (size_t i=4; i<TABLESIZE; i+=2) {
-            size_t j = i/2;
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                table[0][i][q] = mf.template square<LowuopsTag>(table[0][j][q]);
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                table[0][i+1][q] = mf.template multiply<LowuopsTag>(table[0][j+1][q], table[0][j][q]);
-        }
-    }
-
-
-    U n_orig = n;
-    (void)n_orig;   // silence potential unsed var warnings
-    int shift;
-    size_t tmp;
-    if (n > MASKBIG) {
-        HPBC_CLOCKWORK_ASSERT2(n > 0);
-        int leading_zeros = count_leading_zeros(n);
-        int numbits = ut_numeric_limits<decltype(n)>::digits - leading_zeros;
-        HPBC_CLOCKWORK_ASSERT2(numbits > NUMBITS_MASKBIG);
-        shift = numbits - NUMBITS_MASKBIG;
-        HPBC_CLOCKWORK_ASSERT2(shift > 0);
-        tmp = static_cast<size_t>(branchless_shift_right(n, shift));
-        // this preps n ahead of time for the main loop
-        n = branchless_shift_left(n, leading_zeros + NUMBITS_MASKBIG);
-    }
-    else {
-        shift = 0;
-        tmp = static_cast<size_t>(n);
-    }
-    HPBC_CLOCKWORK_ASSERT2(shift >= 0);
-
-    HPBC_CLOCKWORK_ASSERT2(tmp <= MASKBIG);
-
-
-    std::array<V, ARRAY_SIZE> result;
-    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q) {
-        result[q] = table[0][tmp & MASK][q];
-    }
-
-
-    constexpr int digitsRU = hurchalla::ut_numeric_limits<typename MFE_LU::RU>::digits;
-
-    // Check whether we have 128bit MontgomeryForm or 64bit (or less).
-    // We use this to choose whether to unroll the loop.
-    if HURCHALLA_CPP17_CONSTEXPR (digitsRU > HURCHALLA_TARGET_BIT_WIDTH) {
-         for (size_t k=1; k < NUM_TABLES; ++k) {
-#if 1
-            // this part could be removed - it provides fast return when n_orig is small.
-            size_t limit_in_progress = static_cast<size_t>(1) << (k * TABLE_BITS);
-            if (n_orig < limit_in_progress)
-                return result;
-#endif
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q) {
-                table[k][0][q] = mont_one;
-                table[k][1][q] = mf.square(table[k-1][TABLESIZE/2][q]);
-            }
-            if HURCHALLA_CPP17_CONSTEXPR (TABLESIZE >= 4) {
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                    table[k][2][q] = mf.square(table[k][1][q]);
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                    table[k][3][q] = mf.template multiply<PTAG>(table[k][2][q], table[k][1][q]);
-            }
-            if HURCHALLA_CPP17_CONSTEXPR (TABLESIZE > 4) {
-                for (size_t i=4; i<TABLESIZE; i+=2) {
-                    size_t j = i/2;
-                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                        table[k][i][q] = mf.template square<LowuopsTag>(table[k][j][q]);
-                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                        table[k][i+1][q] = mf.template multiply<LowuopsTag>(table[k][j+1][q], table[k][j][q]);
-                }
-            }
-
-            size_t index = (tmp >> (k * TABLE_BITS)) & MASK;
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                result[q] = mf.template multiply<LowuopsTag>(table[k][index][q], result[q]);
-        }
-    }
-    else {
-        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t k=1; k < NUM_TABLES; ++k) {
-#if 0
-            // this part could be removed - it provides fast return when n_orig is small.
-            size_t limit_in_progress = static_cast<size_t>(1) << (k * TABLE_BITS);
-            if (n_orig < limit_in_progress)
-                return result;
-#endif
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q) {
-                table[k][0][q] = mont_one;
-                table[k][1][q] = mf.square(table[k-1][TABLESIZE/2][q]);
-            }
-            if HURCHALLA_CPP17_CONSTEXPR (TABLESIZE >= 4) {
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                    table[k][2][q] = mf.square(table[k][1][q]);
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                    table[k][3][q] = mf.template multiply<PTAG>(table[k][2][q], table[k][1][q]);
-            }
-            if HURCHALLA_CPP17_CONSTEXPR (TABLESIZE > 4) {
-                for (size_t i=4; i<TABLESIZE; i+=2) {
-                    size_t j = i/2;
-                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                        table[k][i][q] = mf.template square<LowuopsTag>(table[k][j][q]);
-                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                        table[k][i+1][q] = mf.template multiply<LowuopsTag>(table[k][j+1][q], table[k][j][q]);
-                }
-            }
-
-            size_t index = (tmp >> (k * TABLE_BITS)) & MASK;
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                result[q] = mf.template multiply<LowuopsTag>(table[k][index][q], result[q]);
-        }
-    }
-    int bits_remaining = shift;
-
-
     // calculate the constexpr var 'high_word_shift' - when we right shift a
     // type U variable by this amount, we'll get the size_t furthest most
     // left bits of the type U variable.  Note that we assume that a right
@@ -1883,187 +1918,354 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
     constexpr int small_shift = (digits_smaller < NUMBITS_MASKBIG)
                                  ? 0 : (digits_smaller - NUMBITS_MASKBIG);
 
+//template params:
 
-    while (bits_remaining >= NUMBITS_MASKBIG) {
-        if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
-            SV sv[ARRAY_SIZE];
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                sv[q] = MFE_LU::getSquaringValue(mf, result[q]);
-            if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
-                while (bits_remaining > NUMBITS_MASKBIG &&
-                                (static_cast<size_t>(n >> high_word_shift) &
-                                     (static_cast<size_t>(1) << (digits_smaller - 1))) == 0) {
-                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                        sv[q] = MFE_LU::squareSV(mf, sv[q]);
-                    n = static_cast<U>(n << 1);
-                    --bits_remaining;
+// for 128bit I was doing the early return checks in table init, and was not for 64 bit.
+// UseEarlyExitInInit
+//    Set this to true or false.
+
+
+// I was not using this
+// HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLESIZE_INIT
+//    UnrollTablesizeInInit
+
+// I was using this
+// HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_ARRAY_SIZE
+//    UnrollArraySize
+
+// for 128bit I was NOT unrolling on NUM_TABLES in table init, but I was for 64 bit.
+// HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
+//    UnrollNumTablesInit
+
+// I was using this
+// HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+//    UnrollTableBits
+
+// I was not using this
+// HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+//    UnrollNumTablesMainloop
+
+
+#if defined(HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLESIZE_INIT) || \
+    defined(HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_ARRAY_SIZE) || \
+    defined(HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT) || \
+    defined(HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS) || \
+    defined(HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP)
+# error "you must not define any of these macros"
+#endif
+
+    if HURCHALLA_CPP17_CONSTEXPR (UnrollTablesizeInInit) {
+        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLESIZE_INIT
+        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLESIZE_INIT HURCHALLA_REQUEST_UNROLL_LOOP
+        if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+            #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_ARRAY_SIZE
+            #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_ARRAY_SIZE HURCHALLA_REQUEST_UNROLL_LOOP
+            if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesInit) {
+                #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
+                #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT HURCHALLA_REQUEST_UNROLL_LOOP
+                if HURCHALLA_CPP17_CONSTEXPR (UnrollTableBits) {
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS HURCHALLA_REQUEST_UNROLL_LOOP
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesMainloop) {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP HURCHALLA_REQUEST_UNROLL_LOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    } else {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    }
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                } else {
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesMainloop) {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP HURCHALLA_REQUEST_UNROLL_LOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    } else {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    }
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
                 }
-            }
-            HPBC_CLOCKWORK_ASSERT2(bits_remaining >= NUMBITS_MASKBIG);
-
-            tmp = static_cast<size_t>(n >> high_word_shift) >> small_shift;
-            n = static_cast<U>(n << NUMBITS_MASKBIG);
-            bits_remaining -= NUMBITS_MASKBIG;
-
-            V val1[ARRAY_SIZE];
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                val1[q] = table[0][tmp & MASK][q];
-
-            static_assert(TABLE_BITS >= 1, "");
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i<TABLE_BITS - 1; ++i) {
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                    sv[q] = MFE_LU::squareSV(mf, sv[q]);
-            }
-
-            // HURCHALLA_REQUEST_UNROLL_LOOP
-            for (size_t k=1; k<NUM_TABLES; ++k) {
-                tmp = tmp >> TABLE_BITS;
-                size_t index = tmp & MASK;
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                    val1[q] = mf.template multiply<LowuopsTag>(val1[q], table[k][index][q]);
-
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i<TABLE_BITS; ++i) {
-                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                        sv[q] = MFE_LU::squareSV(mf, sv[q]);
+                #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
+            } else {
+                #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
+                #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
+                if HURCHALLA_CPP17_CONSTEXPR (UnrollTableBits) {
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS HURCHALLA_REQUEST_UNROLL_LOOP
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesMainloop) {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP HURCHALLA_REQUEST_UNROLL_LOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    } else {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    }
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                } else {
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesMainloop) {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP HURCHALLA_REQUEST_UNROLL_LOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    } else {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    }
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
                 }
+                #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
             }
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                result[q] = MFE_LU::squareToMontgomeryValue(mf, sv[q]);
-
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                result[q] = mf.template multiply<PTAG>(result[q], val1[q]);
+            #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_ARRAY_SIZE
+        } else {
+            #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_ARRAY_SIZE
+            #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_ARRAY_SIZE
+            if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesInit) {
+                #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
+                #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT HURCHALLA_REQUEST_UNROLL_LOOP
+                if HURCHALLA_CPP17_CONSTEXPR (UnrollTableBits) {
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS HURCHALLA_REQUEST_UNROLL_LOOP
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesMainloop) {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP HURCHALLA_REQUEST_UNROLL_LOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    } else {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    }
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                } else {
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesMainloop) {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP HURCHALLA_REQUEST_UNROLL_LOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    } else {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    }
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                }
+                #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
+            } else {
+                #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
+                #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
+                if HURCHALLA_CPP17_CONSTEXPR (UnrollTableBits) {
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS HURCHALLA_REQUEST_UNROLL_LOOP
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesMainloop) {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP HURCHALLA_REQUEST_UNROLL_LOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    } else {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    }
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                } else {
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesMainloop) {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP HURCHALLA_REQUEST_UNROLL_LOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    } else {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    }
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                }
+                #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
+            }
+            #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_ARRAY_SIZE
         }
-        else {
-            if HURCHALLA_CPP17_CONSTEXPR (USE_SLIDING_WINDOW_OPTIMIZATION) {
-                while (bits_remaining > NUMBITS_MASKBIG &&
-                                (static_cast<size_t>(n >> high_word_shift) &
-                                     (static_cast<size_t>(1) << (digits_smaller - 1))) == 0) {
-                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                        result[q] = mf.template square<PTAG>(result[q]);
-                    n = static_cast<U>(n << 1);
-                    --bits_remaining;
+        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLESIZE_INIT
+    } else {
+        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLESIZE_INIT
+        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLESIZE_INIT
+        if HURCHALLA_CPP17_CONSTEXPR (UnrollArraySize) {
+            #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_ARRAY_SIZE
+            #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_ARRAY_SIZE HURCHALLA_REQUEST_UNROLL_LOOP
+            if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesInit) {
+                #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
+                #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT HURCHALLA_REQUEST_UNROLL_LOOP
+                if HURCHALLA_CPP17_CONSTEXPR (UnrollTableBits) {
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS HURCHALLA_REQUEST_UNROLL_LOOP
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesMainloop) {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP HURCHALLA_REQUEST_UNROLL_LOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    } else {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    }
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                } else {
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesMainloop) {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP HURCHALLA_REQUEST_UNROLL_LOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    } else {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    }
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
                 }
+                #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
+            } else {
+                #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
+                #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
+                if HURCHALLA_CPP17_CONSTEXPR (UnrollTableBits) {
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS HURCHALLA_REQUEST_UNROLL_LOOP
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesMainloop) {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP HURCHALLA_REQUEST_UNROLL_LOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    } else {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    }
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                } else {
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesMainloop) {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP HURCHALLA_REQUEST_UNROLL_LOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    } else {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    }
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                }
+                #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
             }
-            HPBC_CLOCKWORK_ASSERT2(bits_remaining >= NUMBITS_MASKBIG);
-
-            tmp = static_cast<size_t>(n >> high_word_shift) >> small_shift;
-            n = static_cast<U>(n << NUMBITS_MASKBIG);
-            bits_remaining -= NUMBITS_MASKBIG;
-
-            V val1[ARRAY_SIZE];
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                val1[q] = table[0][tmp & MASK][q];
-
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i<TABLE_BITS; ++i) {
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                    result[q] = mf.template square<PTAG>(result[q]);
+            #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_ARRAY_SIZE
+        } else {
+            #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_ARRAY_SIZE
+            #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_ARRAY_SIZE
+            if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesInit) {
+                #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
+                #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT HURCHALLA_REQUEST_UNROLL_LOOP
+                if HURCHALLA_CPP17_CONSTEXPR (UnrollTableBits) {
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS HURCHALLA_REQUEST_UNROLL_LOOP
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesMainloop) {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP HURCHALLA_REQUEST_UNROLL_LOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    } else {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    }
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                } else {
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesMainloop) {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP HURCHALLA_REQUEST_UNROLL_LOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    } else {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    }
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                }
+                #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
+            } else {
+                #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
+                #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
+                if HURCHALLA_CPP17_CONSTEXPR (UnrollTableBits) {
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS HURCHALLA_REQUEST_UNROLL_LOOP
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesMainloop) {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP HURCHALLA_REQUEST_UNROLL_LOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    } else {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    }
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                } else {
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                    if HURCHALLA_CPP17_CONSTEXPR (UnrollNumTablesMainloop) {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP HURCHALLA_REQUEST_UNROLL_LOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    } else {
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                        #define HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+#include "experimental_montgomery_pow_2kary_partial_array_include.h"
+                        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_MAINLOOP
+                    }
+                    #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLE_BITS
+                }
+                #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_NUM_TABLES_INIT
             }
-
-            // HURCHALLA_REQUEST_UNROLL_LOOP
-            for (size_t k=1; k<NUM_TABLES; ++k) {
-                tmp = tmp >> TABLE_BITS;
-                size_t index = tmp & MASK;
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                    val1[q] = mf.template multiply<LowuopsTag>(val1[q], table[k][index][q]);
-
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t i=0; i<TABLE_BITS; ++i)
-                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                        result[q] = mf.template square<PTAG>(result[q]);
-            }
-
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                result[q] = mf.template multiply<PTAG>(result[q], val1[q]);
+            #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_ARRAY_SIZE
         }
+        #undef HURCHALLA_REQUEST_UNROLL_LOOP_2KARY_TABLESIZE_INIT 
     }
-    if (bits_remaining == 0)
-        return result;
 
-    HPBC_CLOCKWORK_ASSERT2(0 < bits_remaining && bits_remaining < NUMBITS_MASKBIG);
-
-    tmp = static_cast<size_t>(n >> high_word_shift) >> (digits_smaller - bits_remaining);
-    HPBC_CLOCKWORK_ASSERT2(tmp <= MASKBIG);
-
-    V val1[ARRAY_SIZE];
-    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-        val1[q] = table[0][tmp & MASK][q];
-
-
-    if HURCHALLA_CPP17_CONSTEXPR (NUM_TABLES <= 2) {
-        // here we only handle NUM_TABLES <= 2 because when we have larger
-        // numbers of tables we optimize for that below
-        HURCHALLA_REQUEST_UNROLL_LOOP for (size_t k=1; k<NUM_TABLES; ++k) {
-            size_t index = (tmp >> (k * TABLE_BITS)) & MASK;
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                val1[q] = mf.template multiply<PTAG>(val1[q], table[k][index][q]);
-        }
-        if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
-            SV sv[ARRAY_SIZE];
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                sv[q] = MFE_LU::getSquaringValue(mf, result[q]);
-            HPBC_CLOCKWORK_ASSERT2(bits_remaining >= 1);
-            for (int i=0; i<bits_remaining-1; ++i) {
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                    sv[q] = MFE_LU::squareSV(mf, sv[q]);
-            }
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                result[q] = MFE_LU::squareToMontgomeryValue(mf, sv[q]);
-        }
-        else {
-            for (int i=0; i<bits_remaining; ++i) {
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                    result[q] = mf.template square<PTAG>(result[q]);
-            }
-        }
-    }
-    else {
-        if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
-            SV sv[ARRAY_SIZE];
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                sv[q] = MFE_LU::getSquaringValue(mf, result[q]);
-            int i=0;
-            for (size_t k=1; i + static_cast<int>(TABLE_BITS) < bits_remaining;
-                             i += static_cast<int>(TABLE_BITS), ++k) {
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t h=0; h<TABLE_BITS; ++h) {
-                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                        sv[q] = MFE_LU::squareSV(mf, sv[q]);
-                }
-                size_t index = (tmp >> (k * TABLE_BITS)) & MASK;
-                HPBC_CLOCKWORK_ASSERT2(k < NUM_TABLES);
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                    val1[q] = mf.template multiply<PTAG>(val1[q], table[k][index][q]);
-            }
-            HPBC_CLOCKWORK_ASSERT2(bits_remaining >= 1);
-            HPBC_CLOCKWORK_ASSERT2(i < bits_remaining);
-            for (; i<bits_remaining-1; ++i) {
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                    sv[q] = MFE_LU::squareSV(mf, sv[q]);
-            }
-            HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                result[q] = MFE_LU::squareToMontgomeryValue(mf, sv[q]);
-        }
-        else {
-            int i=0;
-            for (size_t k=1; i + static_cast<int>(TABLE_BITS) < bits_remaining;
-                             i += static_cast<int>(TABLE_BITS), ++k) {
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t h=0; h<TABLE_BITS; ++h) {
-                    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                        result[q] = mf.template square<PTAG>(result[q]);
-                }
-                size_t index = (tmp >> (k * TABLE_BITS)) & MASK;
-                HPBC_CLOCKWORK_ASSERT2(k < NUM_TABLES);
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                    val1[q] = mf.template multiply<PTAG>(val1[q], table[k][index][q]);
-            }
-            for (; i<bits_remaining; ++i) {
-                HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-                    result[q] = mf.template square<PTAG>(result[q]);
-            }
-        }
-    }
-
-    HURCHALLA_REQUEST_UNROLL_LOOP for (size_t q=0; q<ARRAY_SIZE; ++q)
-        result[q] = mf.template multiply<PTAG>(result[q], val1[q]);
-    return result;
 }
 
   }
