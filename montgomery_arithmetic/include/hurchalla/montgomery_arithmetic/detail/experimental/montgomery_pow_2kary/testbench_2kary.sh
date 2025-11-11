@@ -57,8 +57,39 @@ cpp_standard=c++17
 
 # You can use arguments $9 and ${10} and ${11} etc to define macros such as
 # -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-# for debugging, defining the following macros may be useful
+# For debugging, defining the following macros may be useful
 # -DHURCHALLA_CLOCKWORK_ENABLE_ASSERTS  -DHURCHALLA_UTIL_ENABLE_ASSERTS
+
+append_if_set() {
+    local array_name="$1"
+    local value="$2"
+    if [ -n "$value" ]; then
+        eval "$array_name+=(\"\$value\")"
+    fi
+}
+extra_args=()
+append_if_set extra_args "$9"
+append_if_set extra_args "${10}"
+append_if_set extra_args "${11}"
+append_if_set extra_args "${12}"
+append_if_set extra_args "${13}"
+append_if_set extra_args "${14}"
+append_if_set extra_args "${15}"
+append_if_set extra_args "${16}"
+append_if_set extra_args "${17}"
+append_if_set extra_args "${18}"
+append_if_set extra_args "${19}"
+append_if_set extra_args "${20}"
+append_if_set extra_args "${21}"
+append_if_set extra_args "${22}"
+append_if_set extra_args "${23}"
+append_if_set extra_args "${24}"
+append_if_set extra_args "${25}"
+append_if_set extra_args "${26}"
+append_if_set extra_args "${27}"
+append_if_set extra_args "${28}"
+append_if_set extra_args "${29}"
+append_if_set extra_args "${30}"
 
 
 # we could also use  -g  to get debug symbols (for lldb/gdb, and objdump)
@@ -66,8 +97,7 @@ cpp_standard=c++17
 $cppcompiler   \
         $error_limit   -$optimization_level \
         $define_mont_type  $define_uint_type  $define_test_type \
-         $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16} ${17} ${18} ${19} ${20} \
-         ${21} ${22} ${23} ${24} ${25} ${26} ${27} ${28} ${29} ${30} \
+         "${extra_args[@]}" \
         -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion $warn_nrvo \
         -std=$cpp_standard \
         -I${repo_directory}/modular_arithmetic/modular_arithmetic/include \

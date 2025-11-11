@@ -26,6 +26,7 @@
 #include <iterator>
 #include <random>
 #include <cstdlib>
+#include <type_traits>
 
 
 #if defined(HURCHALLA_CLOCKWORK_ENABLE_ASSERTS) || defined(HURCHALLA_UTIL_ENABLE_ASSERTS)
@@ -1287,68 +1288,140 @@ void bench_PA_6(std::vector<TimingPA>& vecTimingPA,
 //          typename U, typename ST>
 //TimingPA bench_partial_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST seed, unsigned int exponent_bits_reduce)
 
+#if defined(USE_PA6_2_6) || defined(USE_PA6_2_7) || defined(USE_PA6_2_8) || defined(USE_PA6_2_9) || \
+   defined(USE_PA6_2_10) || defined(USE_PA6_2_11) || defined(USE_PA6_2_12) || defined(USE_PA6_2_13) || \
+   defined(USE_PA6_2_14) || defined(USE_PA6_2_15) || defined(USE_PA6_2_16) || \
+   defined(USE_PA6_3_6) || defined(USE_PA6_3_7) || defined(USE_PA6_3_8) || defined(USE_PA6_3_9) || \
+   defined(USE_PA6_3_10) || defined(USE_PA6_3_11) || defined(USE_PA6_3_12) || \
+   defined(USE_PA6_4_6) || defined(USE_PA6_4_7) || defined(USE_PA6_4_8) || defined(USE_PA6_4_9)
+// do nothing
+#else
+#  define USE_PA6_2_6
+#  define USE_PA6_2_7
+#  define USE_PA6_2_8
+#  define USE_PA6_2_9
+#  define USE_PA6_2_10
+#  define USE_PA6_2_11
+#  define USE_PA6_2_12
+#  define USE_PA6_2_13
+#  define USE_PA6_2_14
+#  define USE_PA6_2_15
+#  define USE_PA6_2_16
+#  define USE_PA6_3_6
+#  define USE_PA6_3_7
+#  define USE_PA6_3_8
+#  define USE_PA6_3_9
+#  define USE_PA6_3_10
+#  define USE_PA6_3_11
+#  define USE_PA6_3_12
+#  define USE_PA6_4_6
+#  define USE_PA6_4_7
+#  define USE_PA6_4_8
+#  define USE_PA6_4_9
+#endif
+
+#ifdef USE_PA6_2_7
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 2, 7, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
+#ifdef USE_PA6_2_8
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 2, 8, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
+#ifdef USE_PA6_2_9
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 2, 9, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
+#ifdef USE_PA6_2_10
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 2, 10, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
+#ifdef USE_PA6_2_11
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 2, 11, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
+#ifdef USE_PA6_2_12
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 2, 12, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
+#ifdef USE_PA6_2_13
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 2, 13, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
+#ifdef USE_PA6_2_14
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 2, 14, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
+#ifdef USE_PA6_2_15
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 2, 15, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
+#ifdef USE_PA6_2_16
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 2, 16, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
 
+#ifdef USE_PA6_3_6
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 3, 6, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
+#ifdef USE_PA6_3_7
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 3, 7, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
+#ifdef USE_PA6_3_8
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 3, 8, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
+#ifdef USE_PA6_3_9
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 3, 9, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
+#ifdef USE_PA6_3_10
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 3, 10, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
+#ifdef USE_PA6_3_11
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 3, 11, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
 
+#ifdef USE_PA6_4_6
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 4, 6, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
+#ifdef USE_PA6_4_7
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 4, 7, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
+#ifdef USE_PA6_4_8
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 4, 8, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
+#ifdef USE_PA6_4_9
    vecTimingPA.push_back(bench_partial_array_pow
       <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, 4, 9, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(static_cast<U>(maxU - range), range, dummy, mmbr, seed, ebr));
+#endif
 }
 
 
@@ -1560,25 +1633,28 @@ void bench_PA_PTAG(std::vector<TimingPA>& vecTimingPA,
 //          typename U, typename ST>
 //void bench_PA_2a(...)
 
+#ifndef SKIP_PA_2
       bench_PA_2a<PTAG, ARRAY_SIZE, MontType, false, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
       bench_PA_2a<PTAG, ARRAY_SIZE, MontType, false, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
-
+#endif
+#ifndef SKIP_PA_1
       bench_PA_1a<PTAG, ARRAY_SIZE, MontType, false, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
       bench_PA_1a<PTAG, ARRAY_SIZE, MontType, false, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
-
+#endif
       bench_PA_6b<PTAG, ARRAY_SIZE, MontType, false, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
       bench_PA_6b<PTAG, ARRAY_SIZE, MontType, false, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
 
 
    if constexpr (std::is_same<typename MontType::MontType::MontyTag,
                                     ::hurchalla::detail::TagMontyFullrange>::value) {
-
+#ifndef SKIP_PA_2
       bench_PA_2a<PTAG, ARRAY_SIZE, MontType, true, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
       bench_PA_2a<PTAG, ARRAY_SIZE, MontType, true, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
-
+#endif
+#ifndef SKIP_PA_1
       bench_PA_1a<PTAG, ARRAY_SIZE, MontType, true, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
       bench_PA_1a<PTAG, ARRAY_SIZE, MontType, true, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
-
+#endif
       bench_PA_6b<PTAG, ARRAY_SIZE, MontType, true, false>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
       bench_PA_6b<PTAG, ARRAY_SIZE, MontType, true, true>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
    }
@@ -1598,6 +1674,70 @@ void bench_PA_all(std::vector<TimingPA>& vecTimingPA,
       bench_PA_PTAG<hc::LowuopsTag, ARRAY_SIZE, MontType>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
       bench_PA_PTAG<hc::LowlatencyTag, ARRAY_SIZE, MontType>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
 }
+
+
+
+#ifdef PERF_MACRO
+
+
+//#define XSTR(x) STR(x)
+//#define STR(x) #x
+//#pragma message "The value of PERF_MACRO is: " XSTR(PERF_MACRO)
+
+//float invalid_assignment = PERF_MACRO;
+
+
+template <int i>
+constexpr bool bool_parse_perf_macro()
+{
+    static_assert(i == 5 || i == 7 ||
+        (i >= 13 && i <= 18), "");
+    constexpr char parse_string[] = PERF_MACRO;
+    return (parse_string[i] == 't');
+}
+
+constexpr int table_bits_perf_macro()
+{
+    constexpr char parse_string[] = PERF_MACRO;
+    return (parse_string[0] - '0');
+}
+constexpr int code_section_perf_macro()
+{
+    constexpr char parse_string[] = PERF_MACRO;
+    int val = parse_string[2] - '0';
+    val = 10*val + parse_string[3] - '0';
+    return val;
+}
+constexpr int array_size_perf_macro()
+{
+    constexpr char parse_string[] = PERF_MACRO;
+    int val = parse_string[9] - '0';
+    val = 10*val + parse_string[10] - '0';
+    return val;
+}
+constexpr bool is_low_uops_perf_macro()
+{
+    constexpr char parse_string[] = PERF_MACRO;
+    return (parse_string[12] == 'u');
+}
+
+constexpr int TableBits = table_bits_perf_macro();
+constexpr int CodeSection = code_section_perf_macro();
+constexpr int ArraySize = array_size_perf_macro();
+
+constexpr bool UseSlidingWindow = bool_parse_perf_macro<5>();
+constexpr bool UseSquaringValue = bool_parse_perf_macro<7>();
+
+constexpr bool UseLowUops = is_low_uops_perf_macro();
+
+constexpr bool UseEarlyExitInInit = bool_parse_perf_macro<13>();
+constexpr bool UnrollTablesizeInInit = bool_parse_perf_macro<14>();
+constexpr bool UnrollArraySize = bool_parse_perf_macro<15>();
+constexpr bool UnrollNumTablesInit = bool_parse_perf_macro<16>();
+constexpr bool UnrollTableBits = bool_parse_perf_macro<17>();
+constexpr bool UnrollNumTablesMainloop = bool_parse_perf_macro<18>();
+
+#endif
 
 
 
@@ -1708,61 +1848,25 @@ using namespace hurchalla;
    for (size_t i=0; i<4; ++i) {
      for (size_t j=0; j<timingPA[i].size(); ++j) {
 
-#if 0
-      bench_PA_all<2, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+#if defined(PERF_MACRO)
 
-#elif 1
-//3 07 t t 02 yxxxxxx
-      constexpr bool UseEarlyExitInInit = true;
-      constexpr bool UnrollTablesizeInInit = false;
-      constexpr bool UnrollArraySize = false;
-      constexpr bool UnrollNumTablesInit = false;
-      constexpr bool UnrollTableBits = false;
-      constexpr bool UnrollNumTablesMainloop = false;
+      using PERF_PTAG = std::conditional<UseLowUops, hurchalla::LowuopsTag, hurchalla::LowlatencyTag>::type;
       timingPA[i][j].push_back(bench_partial_array_pow
          <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
-         LowlatencyTag, 3, 7, 2, MontType, true, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+         PERF_PTAG, TableBits, CodeSection, ArraySize, MontType, UseSquaringValue, UseSlidingWindow>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 
-#elif 1
-// template <bool UseEarlyExitInInit,
-//          bool UnrollTablesizeInInit,
-//          bool UnrollArraySize,
-//          bool UnrollNumTablesInit,
-//          bool UnrollTableBits,
-//          bool UnrollNumTablesMainloop,
-//          class PTAG, size_t TABLE_BITS, size_t CODE_SECTION, size_t ARRAY_SIZE,
-//          class MontType, bool USE_SQUARING_VALUE_OPTIMIZATION, bool USE_SLIDING_WINDOW_OPTIMIZATION,
-//          typename U, typename ST>
-//TimingPA bench_partial_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST seed, unsigned int exponent_bits_reduce)
-      constexpr bool UseEarlyExitInInit = false;
-      constexpr bool UnrollTablesizeInInit = false;
-      constexpr bool UnrollArraySize = false;
-      constexpr bool UnrollNumTablesInit = false;
-      constexpr bool UnrollTableBits = false;
-      constexpr bool UnrollNumTablesMainloop = false;
-      timingPA[i][j].push_back(bench_partial_array_pow
-         <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
-         LowuopsTag, 2, 12, 3, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingPA[i][j].push_back(bench_partial_array_pow
-         <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
-         LowuopsTag, 2, 15, 3, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingPA[i][j].push_back(bench_partial_array_pow
-         <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
-         LowuopsTag, 2, 12, 4, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingPA[i][j].push_back(bench_partial_array_pow
-         <UseEarlyExitInInit, UnrollTablesizeInInit, UnrollArraySize, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
-         LowuopsTag, 2, 15, 4, MontType, false, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 #else
-      bench_PA_all<2, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_all<3, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+//      bench_PA_all<2, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+//      bench_PA_all<3, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
       bench_PA_all<4, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-      bench_PA_all<5, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+/*      bench_PA_all<5, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
       bench_PA_all<6, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
       bench_PA_all<7, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
       bench_PA_all<8, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
       bench_PA_all<10, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
       bench_PA_all<12, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
       bench_PA_all<14, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+*/
 #endif
 
      }
