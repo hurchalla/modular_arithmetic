@@ -1459,17 +1459,19 @@ void bench_PA_6(...)
    bench_PA_6<false, false, true, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
       PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
 
-   bench_PA_6<true, true, false, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
-      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+   if HURCHALLA_CPP17_CONSTEXPR (ARRAY_SIZE > 1) {
+      bench_PA_6<true, true, false, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+         PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
 
-   bench_PA_6<false, true, false, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
-      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+      bench_PA_6<false, true, false, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+         PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
 
-   bench_PA_6<true, false, false, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
-      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+      bench_PA_6<true, false, false, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+         PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
 
-   bench_PA_6<false, false, false, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
-      PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+      bench_PA_6<false, false, false, UnrollNumTablesInit, UnrollTableBits, UnrollNumTablesMainloop,
+         PTAG, ARRAY_SIZE, MontType, USE_SQUARING_VALUE_OPTIMIZATION, USE_SLIDING_WINDOW_OPTIMIZATION>(vecTimingPA, maxU, range, dummy, mmbr, seed, ebr);
+   }
 }
 
 
@@ -1856,10 +1858,11 @@ using namespace hurchalla;
          PERF_PTAG, TableBits, CodeSection, ArraySize, MontType, UseSquaringValue, UseSlidingWindow>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 
 #else
-//      bench_PA_all<2, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-//      bench_PA_all<3, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+      bench_PA_all<1, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+/*      bench_PA_all<2, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+      bench_PA_all<3, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
       bench_PA_all<4, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-/*      bench_PA_all<5, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
+      bench_PA_all<5, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
       bench_PA_all<6, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
       bench_PA_all<7, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
       bench_PA_all<8, MontType>(timingPA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
