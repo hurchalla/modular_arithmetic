@@ -1892,7 +1892,7 @@ break_0_18:
         size_t index = static_cast<size_t>(branchless_shift_right(n, shift));
         HPBC_CLOCKWORK_ASSERT2(index <= MASK);
         C cR1 = MFE::getMontvalueR(mf);
-        V result = MFE::twoPowLimited_times_x_v2(mf, index + 1, cR1);
+        V result = MFE::twoPowLimited_times_x_times2(mf, index, cR1);
 
         while (shift >= P2) {
             if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
@@ -1909,7 +1909,7 @@ break_0_18:
             shift -= P2;
             index = static_cast<size_t>(branchless_shift_right(n, shift)) & MASK;
             C tmp = mf.getCanonicalValue(result);
-            result = MFE::twoPowLimited_times_x_v2(mf, index + 1, tmp);
+            result = MFE::twoPowLimited_times_x_times2(mf, index, tmp);
         }
         result = mf.halve(result);
 
@@ -1950,7 +1950,7 @@ break_0_18:
 
         while (shift >= P2) {
             size_t index = static_cast<size_t>(branchless_shift_right(n, shift)) & MASK;
-            V result = MFE::twoPowLimited_times_x_v2(mf, index + 1, cresult);
+            V result = MFE::twoPowLimited_times_x_times2(mf, index, cresult);
 
             if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
                 SV sv = MFE::getSquaringValue(mf, result);
@@ -2853,7 +2853,7 @@ break_0_39:
         HPBC_CLOCKWORK_ASSERT2(index <= MASK);
         // normally we use (index & MASK), but it's redundant with index <= MASK
         C cR1 = MFE::getMontvalueR(mf);
-        V result = MFE::twoPowLimited_times_x_v2(mf, index + 1, cR1);
+        V result = MFE::twoPowLimited_times_x_times2(mf, index, cR1);
 
         bits_remaining -= P2;
 
@@ -2873,7 +2873,7 @@ break_0_39:
             index = static_cast<size_t>(n2 >> high_word_shift) >> (digits_smaller - P2);
             n2 = static_cast<U>(n2 << P2);
             C tmp = mf.getCanonicalValue(result);
-            result = MFE::twoPowLimited_times_x_v2(mf, index + 1, tmp);
+            result = MFE::twoPowLimited_times_x_times2(mf, index, tmp);
         }
         result = mf.halve(result);
 
@@ -2938,7 +2938,7 @@ break_0_39:
         while (bits_remaining >= P2 + P2) {
             size_t index = static_cast<size_t>(n2 >> high_word_shift) >> (digits_smaller - P2);
             n2 = static_cast<U>(n2 << P2);
-            V result = MFE::twoPowLimited_times_x_v2(mf, index + 1, cresult);
+            V result = MFE::twoPowLimited_times_x_times2(mf, index, cresult);
 
             if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
                 SV sv = MFE::getSquaringValue(mf, result);
@@ -4586,7 +4586,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
             HPBC_CLOCKWORK_ASSERT2(index <= MASK);
             // normally we use (index & MASK), but it's redundant with index <= MASK
             C cR1 = MFE_LU::getMontvalueR(mf[j]);
-            result[j] = MFE_LU::twoPowLimited_times_x_v2(mf[j], index + 1, cR1);
+            result[j] = MFE_LU::twoPowLimited_times_x_times2(mf[j], index, cR1);
         }
 
         while (shift >= P2) {
@@ -4612,7 +4612,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
                 size_t index = static_cast<size_t>(branchless_shift_right(n[j], shift)) & MASK;
                 C tmp = mf[j].getCanonicalValue(result[j]);
-                result[j] = MFE_LU::twoPowLimited_times_x_v2(mf[j], index + 1, tmp);
+                result[j] = MFE_LU::twoPowLimited_times_x_times2(mf[j], index, tmp);
             }
         }
 
@@ -4668,7 +4668,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
                 size_t index = static_cast<size_t>(branchless_shift_right(n[j], shift)) & MASK;
                 C tmp = mf[j].getCanonicalValue(result[j]);
-                result[j] = MFE_LU::twoPowLimited_times_x_v2(mf[j], index + 1, tmp);
+                result[j] = MFE_LU::twoPowLimited_times_x_times2(mf[j], index, tmp);
             }
 
             if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
@@ -4760,7 +4760,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
             HPBC_CLOCKWORK_ASSERT2(index <= MASK);
             // normally we use (index & MASK), but it's redundant with index <= MASK
             C cR1 = MFE_LU::getMontvalueR(mf[j]);
-            result[j] = MFE_LU::twoPowLimited_times_x_v2(mf[j], index + 1, cR1);
+            result[j] = MFE_LU::twoPowLimited_times_x_times2(mf[j], index, cR1);
         }
         bits_remaining -= P2;
 
@@ -4788,7 +4788,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
                 size_t index = static_cast<size_t>(n2[j] >> high_word_shift) >> (digits_smaller - P2);
                 n2[j] = static_cast<U>(n2[j] << P2);
                 C tmp = mf[j].getCanonicalValue(result[j]);
-                result[j] = MFE_LU::twoPowLimited_times_x_v2(mf[j], index + 1, tmp);
+                result[j] = MFE_LU::twoPowLimited_times_x_times2(mf[j], index, tmp);
             }
         }
 
@@ -4864,7 +4864,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
                 size_t index = static_cast<size_t>(n2[j] >> high_word_shift) >> (digits_smaller - P2);
                 n2[j] = static_cast<U>(n2[j] << P2);
                 C tmp = mf[j].getCanonicalValue(result[j]);
-                result[j] = MFE_LU::twoPowLimited_times_x_v2(mf[j], index + 1, tmp);
+                result[j] = MFE_LU::twoPowLimited_times_x_times2(mf[j], index, tmp);
             }
 
             if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {

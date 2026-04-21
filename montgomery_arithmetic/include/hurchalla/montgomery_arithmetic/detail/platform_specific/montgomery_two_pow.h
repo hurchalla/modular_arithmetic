@@ -81,7 +81,7 @@ template <class MontyTag> struct tagged_montgomery_two_pow
   call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
   {
     // 31 best.  30 trails ~0.15% with asm, and trails ~0.6% with no asm
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
   }
 };
 // Full Specialization: clang and big uint pow and MontgomeryHalf.
@@ -100,7 +100,7 @@ template <> struct tagged_montgomery_two_pow
   {
     // slightly prefer 0 31 false due to tiny bit better on asm.  Very close to a
     // toss-up with 0 30 false.
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
   }
 };
 // Full Specialization: clang and big uint pow and MontgomeryQuarter.
@@ -120,7 +120,7 @@ template <> struct tagged_montgomery_two_pow
   {
     // 0, 31, false best.  It's ~2.5% faster than 30 for asm (and 1% faster
     // than 29), though ~1.5% slower than 30 with noasm.
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
   }
 };
 
@@ -147,7 +147,7 @@ template <class MontyTag> struct tagged_montgomery_two_pow
     // ~0.25% with noasm.  Note that for noasm, 0 30 true leads by ~4.5% over
     // 0 30 false; however using true loses ~6% perf with asm, so it would be a
     // bad compromise.
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
   }
 };
 // Full Specialization: gcc and big uint pow and MontgomeryHalf.
@@ -168,7 +168,7 @@ template <> struct tagged_montgomery_two_pow
     // Use 0 31 false:
     // We slightly prefer 31 for asm (very close to toss-up with 30), and 31 is
     // ~2% faster than 30 with noasm.
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
   }
 };
 // Full Specialization: gcc and big uint pow and MontgomeryQuarter.
@@ -188,7 +188,7 @@ template <> struct tagged_montgomery_two_pow
   {
     // 0 31 false wins.  It's a tiny bit better on asm than 30 (almost a toss-
     // up) and very roughly over 1% faster than 30 on noasm.
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
   }
 };
 
@@ -214,7 +214,7 @@ template <class MontyTag> struct tagged_montgomery_two_pow
   call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
   {
     // 0 31 false best, both asm, noasm
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
   }
 };
 // Full Specialization: clang and small uint pow and MontgomeryHalf.
@@ -234,7 +234,7 @@ template <> struct tagged_montgomery_two_pow
   {
     // 31 preferred, but 29 wins at biggest array sizes by ~0.25% - 0.5%.  So 29
     // is fine too (it loses by larger margins at smaller sizes).
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
   }
 };
 // Full Specialization: clang and small uint pow and MontgomeryQuarter.
@@ -252,7 +252,7 @@ template <> struct tagged_montgomery_two_pow
   call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
   {
     // 31 wins overall, 29 very close and arguably wins with noasm.
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
   }
 };
 
@@ -276,7 +276,7 @@ template <class MontyTag> struct tagged_montgomery_two_pow
     // 0 29 false and 31 equally good.  for absolute perf 31 wins by 0.1 - 0.5%,
     // at cost of biggest array sizes.  29 wins at smaller sizes by a larger
     // margin (around 0.5% - 1%, and up to 2%).
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
   }
 };
 // Full Specialization: gcc and small uint pow and MontgomeryHalf.
@@ -294,7 +294,7 @@ template <> struct tagged_montgomery_two_pow
   call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
   {
     // 0, 28, false wins.  30 fine too though a bit slower
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 28, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 28, false>(mf, n);
   }
 };
 // Full Specialization: gcc and small uint pow and MontgomeryQuarter.
@@ -314,7 +314,7 @@ template <> struct tagged_montgomery_two_pow
     // 29 seems best (it wins at biggest array sizes), but it's not completely
     // clear what's best overall.  28 seems best overall if you favor small
     // array sizes.
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
   }
 };
 
@@ -343,7 +343,7 @@ template <class MontyTag> struct tagged_montgomery_two_pow
   call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
   {
     // 0 31 x best.  28 second place
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
   }
 };
 // Full Specialization: clang and big uint pow and MontgomeryHalf.
@@ -361,7 +361,7 @@ template <> struct tagged_montgomery_two_pow
   call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
   {
     // 0 31 x best, 30 pretty close second
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
   }
 };
 // Full Specialization: clang and big uint pow and MontgomeryQuarter.
@@ -379,7 +379,7 @@ template <> struct tagged_montgomery_two_pow
   call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
   {
     // 0 30 x best.  31 extremely close second.
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
   }
 };
 
@@ -400,7 +400,7 @@ template <class MontyTag> struct tagged_montgomery_two_pow
   call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
   {
     // 0 31 x clear winner.  29 clear second place
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
   }
 };
 // Full Specialization: gcc and big uint pow and MontgomeryHalf.
@@ -418,7 +418,7 @@ template <> struct tagged_montgomery_two_pow
   call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
   {
     // 0 31 x clear winner
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 31, false>(mf, n);
   }
 };
 // Full Specialization: gcc and big uint pow and MontgomeryQuarter.
@@ -436,7 +436,7 @@ template <> struct tagged_montgomery_two_pow
   call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
   {
     // 29 or 31 best, though 30 arguably better since it has absolute best time
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
   }
 };
 
@@ -458,7 +458,7 @@ template <class MontyTag> struct tagged_montgomery_two_pow
   call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
   {
     // 29 ~3% slower
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 28, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 28, false>(mf, n);
   }
 };
 // Full Specialization: clang and small uint pow and MontgomeryHalf.
@@ -476,7 +476,7 @@ template <> struct tagged_montgomery_two_pow
   call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
   {
     // 29 clear winner asm (though 28 ~2% better than 29 on noasm)
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
   }
 };
 // Full Specialization: clang and small uint pow and MontgomeryQuarter.
@@ -494,7 +494,7 @@ template <> struct tagged_montgomery_two_pow
   call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
   {
     // 0 28 x seems best, though 29 is close enough to be a near toss-up
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 28, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 28, false>(mf, n);
   }
 };
 
@@ -515,7 +515,7 @@ template <class MontyTag> struct tagged_montgomery_two_pow
   call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
   {
     // 0 29 x best.  31 very close second
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
   }
 };
 // Full Specialization: gcc and small uint pow and MontgomeryHalf.
@@ -533,7 +533,7 @@ template <> struct tagged_montgomery_two_pow
   call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
   {
     // 0 29 x clear winner
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
   }
 };
 // Full Specialization: gcc and small uint pow and MontgomeryQuarter.
@@ -551,7 +551,7 @@ template <> struct tagged_montgomery_two_pow
   call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
   {
     // 0 29 x clearly wins
-    return impl_montgomery_two_pow::call<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
+    return impl_montgomery_two_pow::arraycall<MF, U, ARRAY_SIZE, 0, 29, false>(mf, n);
   }
 };
 

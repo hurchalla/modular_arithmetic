@@ -335,7 +335,7 @@ struct impl_montgomery_two_pow {
 
         while (shift >= P2) {
             size_t index = static_cast<size_t>(branchless_shift_right(n, shift)) & MASK;
-            V result = MFE::twoPowLimited_times_x_v2(mf, index + 1, cresult);
+            V result = MFE::twoPowLimited_times_x_times2(mf, index, cresult);
 
             if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
                 SV sv = MFE::getSquaringValue(mf, result);
@@ -672,7 +672,7 @@ struct impl_montgomery_two_pow {
         while (bits_remaining >= P2 + P2) {
             size_t index = static_cast<size_t>(n2 >> high_word_shift) >> (digits_smaller - P2);
             n2 = static_cast<U>(n2 << P2);
-            V result = MFE::twoPowLimited_times_x_v2(mf, index + 1, cresult);
+            V result = MFE::twoPowLimited_times_x_times2(mf, index, cresult);
 
             if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
                 SV sv = MFE::getSquaringValue(mf, result);
@@ -735,7 +735,7 @@ struct impl_montgomery_two_pow {
             size_t ARRAY_SIZE, size_t TABLE_BITS, size_t CODE_SECTION,
             bool USE_SQUARING_VALUE_OPTIMIZATION>
   static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
-  call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
+  arraycall(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
   {
     static_assert(ut_numeric_limits<U>::is_integer, "");
     static_assert(!ut_numeric_limits<U>::is_signed, "");
@@ -789,7 +789,7 @@ struct impl_montgomery_two_pow {
             HPBC_CLOCKWORK_ASSERT2(index <= MASK);
             // normally we use (index & MASK), but it's redundant with index <= MASK
             C cR1 = MFE_LU::getMontvalueR(mf[j]);
-            result[j] = MFE_LU::twoPowLimited_times_x_v2(mf[j], index + 1, cR1);
+            result[j] = MFE_LU::twoPowLimited_times_x_times2(mf[j], index, cR1);
         }
 
         while (shift >= P2) {
@@ -815,7 +815,7 @@ struct impl_montgomery_two_pow {
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
                 size_t index = static_cast<size_t>(branchless_shift_right(n[j], shift)) & MASK;
                 C tmp = mf[j].getCanonicalValue(result[j]);
-                result[j] = MFE_LU::twoPowLimited_times_x_v2(mf[j], index + 1, tmp);
+                result[j] = MFE_LU::twoPowLimited_times_x_times2(mf[j], index, tmp);
             }
         }
 
@@ -869,7 +869,7 @@ struct impl_montgomery_two_pow {
             HURCHALLA_REQUEST_UNROLL_LOOP for (size_t j=0; j<ARRAY_SIZE; ++j) {
                 size_t index = static_cast<size_t>(branchless_shift_right(n[j], shift)) & MASK;
                 C tmp = mf[j].getCanonicalValue(result[j]);
-                result[j] = MFE_LU::twoPowLimited_times_x_v2(mf[j], index + 1, tmp);
+                result[j] = MFE_LU::twoPowLimited_times_x_times2(mf[j], index, tmp);
             }
 
             if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
@@ -968,7 +968,7 @@ struct impl_montgomery_two_pow {
                 size_t index = static_cast<size_t>(n2[j] >> high_word_shift) >> (digits_smaller - P2);
                 n2[j] = static_cast<U>(n2[j] << P2);
                 C tmp = mf[j].getCanonicalValue(result[j]);
-                result[j] = MFE_LU::twoPowLimited_times_x_v2(mf[j], index + 1, tmp);
+                result[j] = MFE_LU::twoPowLimited_times_x_times2(mf[j], index, tmp);
             }
 
             if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION) {
