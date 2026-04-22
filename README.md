@@ -14,7 +14,7 @@ Clockwork is designed to be a flexible and bulletproof library with the best per
 
 The Clockwork library requires only compiler support for C++11, which is essentially supported universally at this point.  
 
-Compilers that are confirmed to build this library without warnings or errors on Ubuntu linux (x64) include clang6, clang10, clang18, gcc7, gcc10, gcc13, and intel compiler 19.  On Windows, Microsoft Visual C++ 2017, 2019, 2022 are all confirmed to build the library without warnings or errors.  On MacOS, clang16 and gcc14 are confirmed to build without warnings or errors.  The library is intended for use on all architectures (e.g. x86/64, ARM, RISC-V), but has so far been tested only with x86, x64 (Windows and Ubuntu), and ARM64 (MacOS).
+Compilers that are confirmed to build this library without warnings or errors on Ubuntu linux (x64) include clang6, clang10, clang18, gcc7, gcc10, gcc13, and intel compiler 19.  On Windows, Microsoft Visual C++ 2017, 2019, 2022 are all confirmed to build the library without warnings or errors.  On MacOS, clang16 and gcc14 are confirmed to build without warnings or errors.  The library is intended for use on all architectures (e.g. x86/64, ARM, RISC-V), but has so far been tested only with x86 (Windows), x64 (Windows and Ubuntu), and ARM64 (MacOS).
 
 ## Status
 
