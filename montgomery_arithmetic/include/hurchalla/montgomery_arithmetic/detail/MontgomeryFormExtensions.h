@@ -75,19 +75,19 @@ struct MontgomeryFormExtensions final {
         return mf.impl.template twoPowLimited_times_x_v2<PTAG>(exponent, x);
     }
 
-    // note: magicValue is R cubed mod N  (in normal integer form)
+    // note: in normal integer form, montvalueRsquared is R cubed mod N
     HURCHALLA_FORCE_INLINE
-    static RU getMagicValue(const MF& mf)
+    static CanonicalValue getMontvalueRsquared(const MF& mf)
     {
-        return mf.impl.template getMagicValue<PTAG>();
+        return mf.impl.template getMontvalueRsquared<PTAG>();
     }
 
     HURCHALLA_FORCE_INLINE
     static MontgomeryValue
-    convertInExtended_aTimesR(const MF& mf, RU a, RU magicValue)
+    convertInExtended_aTimesR(const MF& mf, RU a, CanonicalValue Rsquared)
     {
-        HPBC_CLOCKWORK_PRECONDITION(magicValue == getMagicValue(mf));
-        return mf.impl.template convertInExtended_aTimesR<PTAG>(a, magicValue);
+        HPBC_CLOCKWORK_PRECONDITION(Rsquared == getMontvalueRsquared(mf));
+        return mf.impl.template convertInExtended_aTimesR<PTAG>(a, Rsquared);
     }
 
     // this shifts RsquaredModN by exponent (rather than multiplying by
@@ -102,16 +102,16 @@ struct MontgomeryFormExtensions final {
         return mf.impl.template twoPowLimited<PTAG>(exponent);
     }
 
-    // this shifts RcubedModN by exponent (rather than multiplying by
+    // this shifts R cubed mod N by exponent (rather than multiplying by
     // (1<<exponent)) before calling REDC as usual.
     // Similarly to twoPowLimited, the exponent shift must be limited
     // to 0 <= shift < digitsR.
     HURCHALLA_FORCE_INLINE
     static MontgomeryValue
-    RTimesTwoPowLimited(const MF& mf, size_t exponent, RU magicValue)
+    RTimesTwoPowLimited(const MF& mf, size_t exponent, CanonicalValue Rsquared)
     {
         HPBC_CLOCKWORK_PRECONDITION(exponent < ut_numeric_limits<RU>::digits);
-        return mf.impl.template RTimesTwoPowLimited<PTAG>(exponent, magicValue);
+        return mf.impl.template RTimesTwoPowLimited<PTAG>(exponent, Rsquared);
     }
 
 

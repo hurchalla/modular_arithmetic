@@ -453,20 +453,24 @@ class MontyWrappedStandardMath final {
     }
 
     template <class PTAG>   // Performance TAG (ignored by this class)
-    HURCHALLA_FORCE_INLINE T getMagicValue(PTAG) const
+    HURCHALLA_FORCE_INLINE C getMontvalueRsquared(PTAG) const
     {
-        T result = ::hurchalla::get_R_mod_n(modulus_);
-        HPBC_CLOCKWORK_POSTCONDITION2(result < modulus_);
-        return result;
+        C montR = getMontvalueR();
+        V sq = square(montR, PTAG());
+        return getCanonicalValue(sq);
     }
     template <class PTAG>   // Performance TAG (ignored by this class)
-    HURCHALLA_FORCE_INLINE V convertInExtended_aTimesR(T a, T RmodN, PTAG) const
+    HURCHALLA_FORCE_INLINE V convertInExtended_aTimesR(T a, C Rsquared, PTAG) const
     {
-        HPBC_CLOCKWORK_PRECONDITION2(RmodN == getMagicValue(PTAG()));
+        HPBC_CLOCKWORK_PRECONDITION2(Rsquared == getMontvalueRsquared(PTAG()));
         T tmp = a;
         if (tmp >= modulus_)
             tmp = static_cast<T>(tmp % modulus_);
-        HPBC_CLOCKWORK_ASSERT2(tmp < modulus_);
+        T inv_modulus = ::hurchalla::inverse_mod_R(modulus_);
+        T u_lo = Rsquared.get();
+        T u_hi = 0;
+        // see explanation in twoPowLimited_times_x() for why we use REDC here
+        T RmodN = ::hurchalla::REDC_standard(u_hi, u_lo, modulus_, inv_modulus, PTAG());
         HPBC_CLOCKWORK_ASSERT2(RmodN < modulus_);
         T result = ::hurchalla::modular_multiplication_prereduced_inputs(
                                                           tmp, RmodN, modulus_);
@@ -488,9 +492,9 @@ class MontyWrappedStandardMath final {
     }
     // PTAG Performance TAG - ignored by this class
     template <class PTAG> HURCHALLA_FORCE_INLINE
-    V RTimesTwoPowLimited(size_t exponent, T RmodN, PTAG) const
+    V RTimesTwoPowLimited(size_t exponent, C Rsquared, PTAG) const
     {
-        HPBC_CLOCKWORK_PRECONDITION2(RmodN == getMagicValue(PTAG()));
+        HPBC_CLOCKWORK_PRECONDITION2(Rsquared == getMontvalueRsquared(PTAG()));
         static constexpr int digitsT = ut_numeric_limits<T>::digits;
         int power = static_cast<int>(exponent);
         HPBC_CLOCKWORK_PRECONDITION2(0 <= power && power < digitsT);
@@ -498,6 +502,12 @@ class MontyWrappedStandardMath final {
         T tmp = static_cast<T>(static_cast<T>(1) << power);
         if (tmp >= modulus_)
             tmp = static_cast<T>(tmp % modulus_);
+
+        T inv_modulus = ::hurchalla::inverse_mod_R(modulus_);
+        T u_lo = Rsquared.get();
+        T u_hi = 0;
+        // see explanation in twoPowLimited_times_x() for why we use REDC here
+        T RmodN = ::hurchalla::REDC_standard(u_hi, u_lo, modulus_, inv_modulus, PTAG());
 
         HPBC_CLOCKWORK_ASSERT2(tmp < modulus_);
         HPBC_CLOCKWORK_ASSERT2(RmodN < modulus_);

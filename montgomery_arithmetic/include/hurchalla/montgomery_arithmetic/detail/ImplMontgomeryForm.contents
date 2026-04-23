@@ -282,15 +282,15 @@ public:
     }
 
     template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
-    U getMagicValue() const
+    CanonicalValue getMontvalueRsquared() const
     {
-        return impl.getMagicValue(PTAG());
+        return impl.getMontvalueRsquared(PTAG());
     }
 
     template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
-    MontgomeryValue convertInExtended_aTimesR(U a, U magicValue) const
+    MontgomeryValue convertInExtended_aTimesR(U a, CanonicalValue Rsquared) const
     {
-        return impl.convertInExtended_aTimesR(a, magicValue, PTAG());
+        return impl.convertInExtended_aTimesR(a, Rsquared, PTAG());
     }
 
     template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
@@ -299,9 +299,9 @@ public:
         return impl.twoPowLimited(exponent, PTAG());
     }
     template <class PTAG> HURCHALLA_IMF_MAYBE_FORCE_INLINE
-    MontgomeryValue RTimesTwoPowLimited(size_t exponent, U magicValue) const
+    MontgomeryValue RTimesTwoPowLimited(size_t exponent, CanonicalValue Rsquared) const
     {
-        return impl.RTimesTwoPowLimited(exponent, magicValue, PTAG());
+        return impl.RTimesTwoPowLimited(exponent, Rsquared, PTAG());
     }
 
 

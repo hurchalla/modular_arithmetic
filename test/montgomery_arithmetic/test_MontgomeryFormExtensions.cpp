@@ -70,11 +70,8 @@ void MFE_tests(const MF& mf)
     V mont_sqrtR = mf.pow(mf.convertIn(2), static_cast<T>(digitsR/2));
     V mont_R = mf.square(mont_sqrtR);
 
-
-    // test getMagicValue
-    // (magic should be R cubed mod N  (in normal integer form))
-    RU magic0 = MFE0::getMagicValue(mf);
-    RU magic1 = MFE1::getMagicValue(mf);
+    C magic0 = MFE0::getMontvalueRsquared(mf);
+    C magic1 = MFE1::getMontvalueRsquared(mf);
 
     // test convertInExtended
     {

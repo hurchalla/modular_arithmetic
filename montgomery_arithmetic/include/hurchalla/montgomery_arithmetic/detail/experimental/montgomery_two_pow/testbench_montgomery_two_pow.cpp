@@ -953,7 +953,7 @@ using namespace hurchalla;
    std::array<unsigned int, 4> ebr = { default_ebr, default_ebr, exponent_bits_reduce, exponent_bits_reduce };
 
 
-   constexpr int NUM_TEST_REPETITIONS = 30;
+   constexpr int NUM_TEST_REPETITIONS = 15;
 
 
 #if defined(TEST_ARRAY)
@@ -1822,8 +1822,275 @@ std::cout << "Timings By Test Type:\n";
        // format is bench_range<TABLE_BITS, USE_SLIDING_WINDOW_OPTIMIZATION, CODE_SECTION,
        //                       MontType, USE_SQUARING_VALUE_OPTIMIZATION>
 
+#if 1
+   // time/test the new experimental sections (43-106) vs. the accepted best (section 42)
       timings[i][j].push_back(
          bench_range<0, false , 42, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+      timings[i][j].push_back(
+         bench_range<0, false , 43, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 44, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 45, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 46, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 47, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 48, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 49, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 50, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 51, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 52, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 53, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 54, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 55, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 56, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 57, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 58, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 59, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 60, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 61, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 62, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 63, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 64, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 65, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 66, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 67, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 68, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 69, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 70, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 71, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 72, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 73, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 74, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+      timings[i][j].push_back(
+         bench_range<0, false , 75, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 76, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 77, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 78, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 79, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 80, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 81, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 82, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 83, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 84, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 85, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 86, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 87, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 88, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 89, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 90, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 91, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 92, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 93, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 94, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 95, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 96, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 97, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 98, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 99, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 100, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 101, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 102, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 103, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 104, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 105, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 106, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+   if constexpr (std::is_same<typename MontType::MontType::MontyTag,
+                                    ::hurchalla::detail::TagMontyFullrange>::value) {
+      timings[i][j].push_back(
+         bench_range<0, false , 43, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 44, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 45, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 46, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 47, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 48, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 49, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 50, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 51, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 52, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 53, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 54, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 55, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 56, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 57, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 58, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 59, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 60, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 61, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 62, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 63, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 64, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 65, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 66, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 67, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 68, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 69, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 70, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 71, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 72, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 73, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 74, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+      timings[i][j].push_back(
+         bench_range<0, false , 75, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 76, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 77, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 78, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 79, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 80, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 81, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 82, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 83, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 84, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 85, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 86, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 87, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 88, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 89, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 90, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 91, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 92, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 93, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 94, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 95, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 96, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 97, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 98, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 99, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 100, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 101, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 102, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 103, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 104, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 105, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timings[i][j].push_back(
+         bench_range<0, false , 106, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+   }
+#endif
 
 #if 0
 // This is a copy/paste of the "best of best" code sections from further below (nothing is new here).
@@ -2645,6 +2912,8 @@ std::cout << "OVERALL BEST:\n";
          std::cout << t.table_bits << " " << t.code_section;
          if (t.code_section < 10)
             std::cout <<  " ";
+         if (t.code_section < 100)
+            std::cout <<  " ";
       std::cout << "\n";
    }
 std::cout << "Timings By Test Type:\n";
@@ -2663,8 +2932,10 @@ std::cout << "Timings By Test Type:\n";
          std::cout << t.table_bits << " " << t.code_section;
          if (t.code_section < 10)
             std::cout <<  " ";
+         if (t.code_section < 100)
+            std::cout <<  " ";
          if (i != 3)
-            std:: cout << "    ";
+            std:: cout << "   ";
       }
       std::cout << "\n";
    }

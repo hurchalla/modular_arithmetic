@@ -536,7 +536,7 @@ class MontyCommonBase {
 
     // returns (R*R*R) mod N
     template <class PTAG> HURCHALLA_FORCE_INLINE
-    T getMagicValue(PTAG) const
+    C getMontvalueRsquared(PTAG) const
     {
         HPBC_CLOCKWORK_INVARIANT2(r_squared_mod_n_ < n_);
         namespace hc = ::hurchalla;
@@ -545,19 +545,19 @@ class MontyCommonBase {
         HPBC_CLOCKWORK_ASSERT2(u_hi < n_);  // verify that (u_hi*R + u_lo) < n*R
         T result = hc::REDC_standard(u_hi, u_lo, n_, inv_n_, PTAG());
         HPBC_CLOCKWORK_POSTCONDITION2(result < n_);
-        return result;
+        return C(result);
     }
     // returns the montgomery representation of ((R * a) % N).
     // We accomplish this via  REDC(((R*R*R)%N) * a).
     template <class PTAG> HURCHALLA_FORCE_INLINE
-    V convertInExtended_aTimesR(T a, T magicValue, PTAG) const
+    V convertInExtended_aTimesR(T a, C Rsquared, PTAG) const
     {
         // see convertIn() comments for explanation
-        HPBC_CLOCKWORK_PRECONDITION2(magicValue == getMagicValue(PTAG()));
-        HPBC_CLOCKWORK_ASSERT2(magicValue < n_);
+        HPBC_CLOCKWORK_PRECONDITION2(Rsquared == getMontvalueRsquared(PTAG()));
+        HPBC_CLOCKWORK_ASSERT2(Rsquared.get() < n_);
         namespace hc = ::hurchalla;
         T u_lo;
-        T u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, a, magicValue);
+        T u_hi = hc::unsigned_multiply_to_hilo_product(u_lo, a, Rsquared.get());
         HPBC_CLOCKWORK_ASSERT2(u_hi < n_);
         const D* child = static_cast<const D*>(this);
         V result = child->montyREDC(u_hi, u_lo, PTAG());
@@ -587,18 +587,18 @@ class MontyCommonBase {
         return result;
     }
     template <class PTAG> HURCHALLA_FORCE_INLINE
-    V RTimesTwoPowLimited(size_t exponent, T magicValue, PTAG) const
+    V RTimesTwoPowLimited(size_t exponent, C Rsquared, PTAG) const
     {
-        HPBC_CLOCKWORK_PRECONDITION2(magicValue == getMagicValue(PTAG()));
-        HPBC_CLOCKWORK_ASSERT2(magicValue < n_);
+        HPBC_CLOCKWORK_PRECONDITION2(Rsquared == getMontvalueRsquared(PTAG()));
+        HPBC_CLOCKWORK_ASSERT2(Rsquared.get() < n_);
         static constexpr int digitsT = ut_numeric_limits<T>::digits;
         int power = static_cast<int>(exponent);
         HPBC_CLOCKWORK_PRECONDITION2(0 <= power && power < digitsT);
 
-        T u_lo = branchless_shift_left(magicValue, power);
+        T u_lo = branchless_shift_left(Rsquared.get(), power);
         int rshift = digitsT - power;
         HPBC_CLOCKWORK_ASSERT2(rshift > 0);
-        T u_hi = branchless_shift_right(static_cast<T>(magicValue >> 1), rshift - 1);
+        T u_hi = branchless_shift_right(static_cast<T>(Rsquared.get() >> 1), rshift - 1);
 
         HPBC_CLOCKWORK_ASSERT2(u_hi < n_);
         const D* child = static_cast<const D*>(this);

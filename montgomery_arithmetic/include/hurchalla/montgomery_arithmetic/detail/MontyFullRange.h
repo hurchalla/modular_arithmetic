@@ -321,9 +321,9 @@ class MontyFullRange final :
     // via squareToMontgomeryValue
     HURCHALLA_FORCE_INLINE V getMontgomeryValue(SV sv) const
     {
-         //T nonneg_value = sv.get_subtrahend() != 0 ? sv.get() + n_ : sv.get();
+         //T nonneg_value = sv.get_subtrahend() != 0 ? sv.getbits() + n_ : sv.getbits();
         T nonneg_value = ::hurchalla::conditional_select(
-                           (sv.get_subtrahend() != 0), sv.get() + n_, sv.get());
+                           (sv.get_subtrahend() != 0), sv.getbits() + n_, sv.getbits());
         return V(nonneg_value);
     }
 

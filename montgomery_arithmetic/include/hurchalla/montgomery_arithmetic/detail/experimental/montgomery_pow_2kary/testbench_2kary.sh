@@ -121,6 +121,7 @@ echo "compilation finished, now executing:"
 ./testbench_montgomery_pow_2kary $5 $6 $7
 
 # To give you an example of invoking this script at the command line:
-#   ./testbench.sh clang++ O3 MontgomeryFull __uint128_t 191 8 50  -DTEST_ARRAY -DHURCHALLA_ALLOW_INLINE_ASM_ALL
-
+#   ./testbench_2kary.sh clang++ O3 MontgomeryFull __uint128_t 191 8 50  -DTEST_ARRAY -DHURCHALLA_ALLOW_INLINE_ASM_ALL
+# or
+#   ./testbench_2kary.sh clang++ O2 MontgomeryQuarter uint64_t 191 8 22 -DTEST_PARTIAL_ARRAY '-DPERF_MACRO="2 09 xxt 03 ytxxtxx"'
 

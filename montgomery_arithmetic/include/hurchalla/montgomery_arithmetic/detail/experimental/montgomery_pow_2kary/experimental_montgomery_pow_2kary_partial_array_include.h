@@ -62,7 +62,7 @@
 
 
     U n_orig = n;
-    (void)n_orig;   // silence potential unsed var warnings
+    (void)n_orig;   // silence potential unused var warnings
     int shift;
     size_t tmp;
     if (n > MASKBIG) {
