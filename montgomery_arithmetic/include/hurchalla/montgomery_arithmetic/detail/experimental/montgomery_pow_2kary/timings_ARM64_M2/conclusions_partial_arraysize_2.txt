@@ -1,0 +1,514 @@
+Winners partial, ARRAY SIZE 2
+
+
+64 quarter gcc asm  and  NO asm
+0.2834 2 15 x x 02 uxtttxx
+
+2 15 x x 02   (no sliding window)
+5t combined with 2x is most important (worth ~6%).  cant really separate these two
+4t second most important (worth ~3%)
+no sliding window worth ~2.3%
+then 2x 5t and  NO use sliding window - it's not clear what order of importance, but all this is needed.
+everything else can be x
+
+I'd suggest using
+2 15 x x 02 yxxttxx
+or
+2 15 x x 02 uxxttxx
+This is NO UseEarlyExitInInit, UnrollArraySize, and UnrollNumTablesInit.
+
+This is ~13% faster than the best section < 06  (sections 00 and 05)
+
+
+
+
+64 quarter clang asm  and  NO asm
+0.3048 2 12 t x 02 uxttttx
+
+2 12 t x 02   (using sliding window)
+using 5t makes 10% diff over 5x
+Everything else is within 1% difference cumulative
+After using 5t, the most important thing is using sliding window, and then using 7x
+It should make basically no difference if I use x for all other params
+
+I'd suggest using 
+2 12 x x 02 ytxxtxx
+or
+2 12 x x 02 utxxtxx
+This is UnrollNumTablesInit.
+
+or perhaps also unrolling ARRAY_SIZE (which clang may well be doing implicitly above)
+2 12 x x 02 ytxttxx
+or
+2 12 x x 02 utxttxx
+This is UnrollArraySize, and UnrollNumTablesInit.
+
+This is ~2.5% faster than the best CODE_SECTION under 06 (which is 00).
+With sliding window which is maybe a better comparison, it is ~2.9% faster.
+
+
+
+
+64 half gcc asm and noasm
+asm
+0.3010 2 10 t x 02 uxtxtxt
+noasm
+0.2867 2 15 x x 02 uxxtttx
+
+for asm, 2 10 wins.  for noasm 2 16 wins.
+2 15 is a good compromise.
+
+For best perf we seem to need both 2x and 5t together
+This is NO UseEarlyExitInInit, and UnrollNumTablesInit.
+
+if we use ARRAY_SIZE (it seems gcc doesn't implicitly use it this time)
+it increases perf ~2% for noasm and ~0.1% for asm 
+
+I'd suggest using
+2 15 x x 02 yxxttxx
+or
+2 15 x x 02 uxxttxx
+This is NO UseEarlyExitInInit, UnrollArraySize, and UnrollNumTablesInit.
+
+if not using ARRAY_SIZE unroll, I'd suggest
+2 15 x x 02 yxxxtxx
+or
+2 15 x x 02 uxxxtxx
+This is NO UseEarlyExitInInit, and UnrollNumTablesInit.
+
+For asm, this is 5.7% faster than best CODE_SECTION under 06  (00)
+For noasm, this is 14.5% faster than best CODE_SECTION under 06  (05)
+
+
+
+
+
+64 half clang asm and noasm
+0.3084 2 12 t x 02 ytttttx
+0.3101 2 12 x x 02 uxttttx
+0.3121 2 12 x x 02 yxxxttx
+
+for asm 5t is most important (~12% diff), followed by 7x (7x makes ~0.22% diff)
+for noasm, almost exact same
+This is UnrollNumTablesInit.
+I'd guess clang is implicitly also unrolling ARRAY_SIZE, so it's probably ok to use
+UnrollArraySize and UnrollNumTablesInit.
+
+I'd suggest using
+2 12 x x 02 ytxttxx
+or
+2 12 x x 02 utxttxx
+
+it would probably be fine to modify the above so it doesn't explicitly unroll ARRAY_SIZE
+
+!!! For asm/noasm, this is only 1.5%-2% faster than 00 !!!
+though it can avoid sliding window conditional branches.
+
+
+
+
+
+
+64 full gcc asm
+x t (uses_squaring_values) is ~6% faster than x x
+t t (sliding window) is worth ~0.7%
+2x ~3% faster than 2t
+5t ~2.8% faster than 5x
+7x ~1.3% faster than 7t
+4x maybe a tiny bit preferred (~0.2%) but hard to say
+Use:  NO UseEarlyExitInInit, UnrollNumTablesInit, (optional) UnrollArraySize
+I suggest
+0.3179 2 13 x t 02 yxxxtxx
+(or
+0.3182 2 13 x t 02 uxxxtxx)
+This is ~12.5% faster than fastest code section < 6 (05)
+
+noasm
+(best time is 0.3351 2 11 x t 02 uttxxtt)
+x t (uses_squaring_values) is ~7% faster than x x
+t t (sliding window) is ~3% slower
+the biggest thing is to use 7t: it's ~6% faster than 7x.
+4x is ~3% faster than 4t.
+1u ~1.4% faster than 1y.
+
+I suggest do  NOT  use 7t since it conflicts with the faster asm
+With 7x, 1y and 4t are preferred (together worth ~1.5%) and nothing else matters much
+
+0.3740 2 13 x t 02 uxxxtxx
+This is ~0.6% faster than fastest code section < 6 (00)
+
+For TRUE noasm where you check the asm macros are not defined, use
+0.3356 2 10 x t 02 uxxxxxx
+This is ~6.6% faster than fastest code section < 6 (00)
+
+(with asm macros defined, you get  0.3332 2 10 x t 02 uxxxxxx)
+
+I could use:
+
+#ifdef HURCHALLA_ALLOW_INLINE_ASM_ALL
+0.3182 2 13 x t 02 uxxxtxx
+#else
+0.3356 2 10 x t 02 uxxxxxx
+#endif
+
+or better yet, find out which specific asm macro would cause "2 13 x t 02 uxxxtxx"
+to be at its fastest, and ifdef on that rather than ASM_ALL (ASM_ALL is not ideal to use)
+Answer:
+It is HURCHALLA_ALLOW_INLINE_ASM_SUBTRACT_RDZ and HURCHALLA_ALLOW_INLINE_ASM_MODSUB
+that are responsible for the speed, at 10% boost, and 5% boost respectively.
+Essentially nothing else makes a difference for asm macros.
+Using only -DHURCHALLA_ALLOW_INLINE_ASM_SUBTRACT_RDZ, the timings are in 64quarter_gcc.txt
+   2 13 x t 02 uxxxtxx is acceptable for it (~0.7% slower than the best x t timing there)
+   and most likely HURCHALLA_ALLOW_INLINE_ASM_MODSUB would be paired with 
+   HURCHALLA_ALLOW_INLINE_ASM_SUBTRACT_RDZ anyway, or even more likely, 
+   HURCHALLA_ALLOW_INLINE_ASM_ALL would be used, which effectively provides RDZ and MODSUB.
+
+Recommendation, use:
+#if defined(HURCHALLA_ALLOW_INLINE_ASM_SUBTRACT_RDZ) \
+    || defined(HURCHALLA_ALLOW_INLINE_ASM_ALL)
+0.3182 2 13 x t 02 uxxxtxx
+#else
+0.3356 2 10 x t 02 uxxxxxx
+#endif
+
+
+
+
+
+
+64 full clang
+asm wants:
+5t (worth 10%)
+1y (worth 0.9%)
+7x (worth 0.3%)\
+
+best 0.3296 2 11 x t 02 ytttttx
+noasm wants:
+5t (worth 10.6%)
+7x (worth 0.2%)
+best 0.3383 2 11 x t 02 yxxtttx
+
+t t (sliding window) would provide ~0.7% speedup
+but I would choose x t
+
+I suggest   2 11 x t  ytxxtxx or ytxttxx
+asm:
+0.3297 2 11 x t 02 ytxxtxx
+0.3297 2 11 x t 02 ytxttxx
+noasm:
+0.3385 2 11 x t 02 ytxxtxx
+0.3386 2 11 x t 02 ytxttxx
+
+
+
+
+
+
+128 quarter gcc
+use
+(noasm) 1.6883 3 07 x x 02 uxtxxxx
+(asm) 1.7154 3 07 x x 02 uxtxxxx
+
+this is ~0.3% slower than the best noasm timing,
+and ~4% slower than best asm.
+But it is low overhead - minimal unrolling,
+and still much better than 00 (which is 1.84 with asm and 2.00 noasm)
+
+Alternatively, I could use
+(asm) 1.6809 3 07 t x 02 uxtxxxx
+or
+(asm)1.7202 3 07 x x 02 utxxxxx
+
+and either the above noasm, or maybe
+(noasm) 1.6933 3 07 t x 02 uxxxxxx
+
+
+
+
+
+
+
+
+128 quarter clang
+Use:
+(asm)   1.7239 3 08 x x 02 utxxxxx     (fastest is 1.6963 3 08 t x 02 uxttttt)
+(noasm) 1.7583 3 08 x x 02 ytxxxxx     (fastest is 1.7424 3 08 x x 02 yttttxt)
+Note that noasm really wants 1y, not 1u.
+
+with no asm
+1.8084 3 08 x x 02 utxxxxx
+1.7598 3 08 x x 02 ytxxxxx
+
+with only asm mults
+1.7519 3 08 x x 02 utxxxxx
+1.7643 3 08 x x 02 ytxxxxx
+
+with only asm redc
+1.7519 3 08 x x 02 utxxxxx
+1.7437 3 08 x x 02 ytxxxxx
+
+with asm mults and redc
+1.7196 3 08 x x 02 utxxxxx
+1.7504 3 08 x x 02 ytxxxxx
+
+We can see that asm redc is sufficient for decent perf with 1u (lowuops)
+and would only get better if more asm (asm mult) is used.  Otherwise,
+choosing 1y never gives bad results (or great).
+So what we should do is
+#if defined(HURCHALLA_ALLOW_INLINE_ASM_REDC) \
+    || defined(HURCHALLA_ALLOW_INLINE_ASM_ALL)
+  1.7239 3 08 x x 02 utxxxxx
+#else
+  1.7583 3 08 x x 02 ytxxxxx
+#endif
+
+
+
+
+
+
+
+128 half gcc
+noasm really wants 1u - it does 5.5% worse with 1y than 1u
+asm wants 1y - it does 2.5% worse with 1u.
+    The reason for 1y working better for asm, is that in ImplRedc.h, when
+    HURCHALLA_ALLOW_INLINE_ASM_REDC is defined (this issue probably is
+    ARM64 gcc only), gcc will use the LowuopsTag ARM64 inline asm if we
+    specify 1u, and it produces horrible perf with this inline asm when
+    doing 128 half.  I suspect a gcc bug.
+So what we should do is
+#if defined(HURCHALLA_ALLOW_INLINE_ASM_REDC) \
+    || defined(HURCHALLA_ALLOW_INLINE_ASM_ALL)
+  use 1y
+#else
+  use 1u
+#endif
+
+(asm) 1.7313 3 07 x x 02 yxxxxxx   (best timing  1.7100 3 07 t x 02 yxxtxxx)
+
+NOASM
+-----
+1.9644 4 06 t x 02 uttxxxx
+1.9755 4 06 t x 02 uxxtxxx
+1.9808 4 06 t x 02 uxxxtxx
+1.9982 4 06 t x 02 uxxxxxx   ????  this is 1% diff from above, when it should be ~equal
+Under a manual same setup I get
+    1.9788 4 06 t x 02 uxxxxxx    ????
+
+other auto timings:
+2.0571 4 06 x x 02 uxxxtxx
+2.0517 4 06 x x 02 utxxtxx
+
+2.0454 4 01 x x 02 uxxxxxx
+2.0550 4 06 x x 02 utxxxxx
+
+manually I get:
+    2.1786 3 07 x x 02 yxxxxxx
+
+    2.0477 4 06 x x 02 uxxxxxx
+    2.0466 4 06 x x 02 utxxxxx
+    2.0440 4 01 x x 02 uxxxxxx
+
+    1.9765 4 06 t x 02 uxxxxxx
+    1.9362 4 06 t x 02 uxtxxtx
+
+So UseSlidingWindow is ~3.5% speedup.
+3t combined with 6t is ~2% speedup.
+
+Looks like best choice for noasm is
+1.9760 4 06 t x 02 utxxxxx   or   1.9765 4 06 t x 02 uxxxxxx
+
+ASM
+---
+best timings:
+1.7100 3 07 t x 02 yxxtxxx
+1.7307 3 07 x x 02 yxxtxtt
+
+1.7313 3 07 x x 02 yxxxxxx
+
+manually:
+(all asm)
+    1.8473 4 06 t x 02 utxxxxx
+    1.7291 3 07 x x 02 yxxxxxx
+(no asm)
+    1.9766 4 06 t x 02 utxxxxx
+    2.1784 3 07 x x 02 yxxxxxx
+*(only asm redc)
+    2.1281 4 06 t x 02 utxxxxx
+    2.1800 3 07 x x 02 yxxxxxx
+(only asm mult)
+    2.0028 4 06 t x 02 utxxxxx
+    2.0431 3 07 x x 02 yxxxxxx
+(only asm square)
+    1.9324 4 06 t x 02 utxxxxx
+    2.0560 3 07 x x 02 yxxxxxx
+(only asm mults/squares)
+    1.8858 4 06 t x 02 utxxxxx
+    1.9430 3 07 x x 02 yxxxxxx
+(only asm redc + mults/squares)
+    1.9547 4 06 t x 02 utxxxxx
+    1.9243 3 07 x x 02 yxxxxxx
+(only asm redc + mults/squares + getcanonical)
+    1.8458 4 06 t x 02 utxxxxx
+    1.7295 3 07 x x 02 yxxxxxx
+(only asm getcanonical)
+    1.8459 4 06 t x 02 utxxxxx
+    1.9445 3 07 x x 02 yxxxxxx
+*(only mults/squares + getcanonical)
+    1.7607 4 06 t x 02 utxxxxx
+    1.7373 3 07 x x 02 yxxxxxx
+(only redc + getcanonical)
+    2.0207 4 06 t x 02 utxxxxx
+    1.9612 3 07 x x 02 yxxxxxx
+
+y is better when you have mult/square/redc  or  mult/square/getcanonical  or  redc/getcanonical
+biggest diff is with redc/getcanonical
+u appears to get faster in all cases where I remove asm REDC
+
+Conclusion, use:
+#if defined(HURCHALLA_ALLOW_INLINE_ASM_REDC) \
+    || defined(HURCHALLA_ALLOW_INLINE_ASM_ALL)
+  1.7291 3 07 x x 02 yxxxxxx
+#else
+  1.9766 4 06 t x 02 utxxxxx
+#endif
+
+
+
+
+
+
+
+128 half clang
+asm
+best timing: 1.6715 3 07 t x 02 uxtxxxt
+1.7105 3 08 x x 02 uxxxxxx
+1.7117 3 07 x x 02 uxxxxxx
+1.6866 3 07 t x 02 uxxxxxx
+1.6868 3 07 t x 02 utxxxxx
+1.6759 3 07 t x 02 utxtxxx
+noasm
+best timing: 1.7969 3 07 t x 02 uxtxxtt
+1.8638 3 08 x x 02 uxxxxxx
+1.8549 3 08 x x 02 utxxxxx
+1.8475 3 08 t x 02 utxxxxx
+1.8371 3 08 t x 02 uxxxxxx
+1.9246 3 07 x x 02 uxxxxxx
+1.8888 3 09 x x 02 uxxxxxx
+
+t x is only ~1.5% speedup, so use x x.
+Conclusion:  it seems pretty straightforward we should use
+1.7105 3 08 x x 02 uxxxxxx 
+
+
+
+
+
+
+
+
+128 full gcc
+asm best timing    1.8065 3 07 t t 02 yttxttx
+noasm best timing  2.2521 4 06 x t 02 ytxxttt
+
+asm
+---
+1.8152 3 07 t t 02 yxxxxxx
+1.8344 4 06 t t 02 ytxxxxx
+1.8349 4 06 t t 02 yxxxxxx
+1.8371 3 07 t t 02 ytxxxxx
+1.8493 3 06 t t 02 ytxxxxx
+1.8505 3 06 t t 02 yxxxxxx
+
+1.8664 3 07 x t 02 ytxxxxx
+1.8687 3 07 x t 02 yxxxxxx
+1.8735 4 07 x t 02 ytxxxxx
+1.8810 3 08 x t 02 yxxxxxx
+1.8816 4 07 x t 02 yxxxxxx
+1.8925 3 08 x t 02 ytxxxxx
+1.9014 4 06 x t 02 yxxxxxx
+1.9033 4 06 x t 02 ytxxxxx
+
+1.9223 4 01 x t 02 yxxxxxx
+
+1.8601 2 05 x x 02 uxxxxxx
+1.8610 2 00 x x 02 uxxxxxx
+
+t t is ~2.8% faster than x t.  This is borderline which to prefer.
+That assumes the numbers are accurate -
+  there's an unexpected 1% diff between  3 07 t t 02 yxxxxxx  and  3 07 x t 02 ytxxxxx
+manual:
+    1.8653 3 07 x t 02 ytxxxxx
+    1.8154 3 07 t t 02 ytxxxxx
+    1.8649 3 07 x t 02 yxxxxxx
+    1.8119 3 07 t t 02 yxxxxxx
+The comclusion is confirmed:
+t t is ~2.8% faster than x t.  This is borderline which to prefer.
+
+noasm
+---
+2.2521 4 06 x t 02 ytxxttt
+
+2.2535 4 06 x t 02 ytxxxxx
+2.2563 4 06 x t 02 yxxxxxx
+2.2838 4 06 x x 02 ytxxxxx
+2.2876 4 06 x x 02 yxxxxxx
+2.2994 4 06 t t 02 yxxxxxx
+2.3001 3 06 x t 02 ytxxxxx
+2.3029 3 06 t t 02 ytxxxxx
+2.3046 3 06 x t 02 yxxxxxx
+2.3052 3 07 x t 02 ytxxxxx
+2.3053 4 06 t t 02 ytxxxxx
+2.3144 3 07 x t 02 yxxxxxx
+
+2.3041 4 01 x t 02 yxxxxxx
+
+2.6669 2 00 x x 02 yxxxxxx
+2.6641 2 05 x x 02 yxxxxxx
+
+---
+Conclusion: use
+1.8664 3 07 x t 02 ytxxxxx
+
+
+
+
+
+
+128 full clang
+
+asm
+1.8545 3 08 x t 02 ytxxxxx
+1.8573 3 08 x t 02 yxxxxxx
+1.8594 3 07 x t 02 yxxxxxx
+1.8725 3 09 x t 02 ytxxxxx
+
+1.9181 4 01 x t 02 yxxxxxx
+2.1601 2 05 x x 02 uxxxxxx
+2.1603 2 00 x x 02 uxxxxxx
+
+noasm
+2.0209 3 08 x t 02 yxxxxxx
+2.0259 3 08 x t 02 ytxxxxx
+2.0594 3 09 x t 02 yxxxxxx
+
+2.1317 5 01 x x 02 yxxxxxx
+2.3403 2 05 x x 02 yxxxxxx
+2.3392 2 00 x x 02 yxxxxxx
+
+Conclusion is straightforward, use
+1.8545 3 08 x t 02 ytxxxxx
+
+
+
+
+
+
+
+-DHURCHALLA_ALLOW_INLINE_ASM_SUBTRACT_RDZ -DHURCHALLA_ALLOW_INLINE_ASM_MODSUB -DHURCHALLA_MONTGOMERY_POW_2KARY_USE_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_REDC -DHURCHALLA_ALLOW_INLINE_ASM_BRANCHLESS_SHIFTS -DHURCHALLA_ALLOW_INLINE_ASM_MULTIPLY_TO_HILO -DHURCHALLA_ALLOW_INLINE_ASM_SQUARE_TO_HILO -DHURCHALLA_ALLOW_INLINE_ASM_HALFRANGE_GET_CANONICAL
+
+ -DHURCHALLA_ALLOW_INLINE_ASM_CSELECT_ON_BIT -DHURCHALLA_ALLOW_INLINE_ASM_TWOTIMES 
+
+
+
+
