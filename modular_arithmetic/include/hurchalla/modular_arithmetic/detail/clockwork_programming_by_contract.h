@@ -24,8 +24,12 @@
 #  include <cstdlib>
       /* We can (probably) detect if exceptions are enabled by checking the
          gcc/clang macro __EXCEPTIONS, msvc's macro _CPPUNWIND, and the official
-         but not always supported C++98 macro __cpp_exceptions. */
-#  if defined(__cplusplus) && (defined(__EXCEPTIONS) || defined(_CPPUNWIND) \
+         but not always supported C++98 macro __cpp_exceptions.
+         Note: MSVC 2022 doesn't allow us to force-inline any function that
+         contains a try/catch, and we don't want contracts to affect inlining.
+         Thus we use the #else section for MSVC */
+#  if !defined(_MSC_VER) && defined(__cplusplus) && \
+                        (defined(__EXCEPTIONS) || defined(_CPPUNWIND) \
                         || (defined(__cpp_exceptions) && __cpp_exceptions != 0))
       // with exceptions: treat an exception as a failure during assert
 #     define HPBC_CLOCKWORK_BASIC_ASSERT(...) \
@@ -40,6 +44,17 @@
                   } \
                } while(0)
 #  else   /* without exceptions */
+#   if defined(_MSC_VER)
+#     define HPBC_CLOCKWORK_BASIC_ASSERT(...) \
+               do { \
+                  if ((void)0, __VA_ARGS__) {} \
+                  else { \
+                     fprintf(stderr, "Assert failed (%s): file %s, line %d\n", \
+                              #__VA_ARGS__, __FILE__, __LINE__); \
+                     std::abort(); \
+                  } \
+               } while(0)
+#   else
 #     define HPBC_CLOCKWORK_BASIC_ASSERT(...) \
                do { \
                   if (__VA_ARGS__) {} \
@@ -49,6 +64,7 @@
                      std::abort(); \
                   } \
                } while(0)
+#   endif
 #  endif
 
 #  define HPBC_CLOCKWORK_API_PRECONDITION(...) do { \
@@ -109,9 +125,15 @@
 #    error "Invalid assert level for HURCHALLA_CLOCKWORK_ASSERT_LEVEL"
 #  endif
 
+#ifdef _MSC_VER
+#  define HPBC_CLOCKWORK_LEVEL_ASSERT(LEVEL, ...) do { \
+                       if ((void)0, HURCHALLA_CLOCKWORK_ASSERT_LEVEL >= LEVEL) { \
+                            HPBC_CLOCKWORK_BASIC_ASSERT(__VA_ARGS__); } } while(0)
+#else
 #  define HPBC_CLOCKWORK_LEVEL_ASSERT(LEVEL, ...) do { \
                        if (HURCHALLA_CLOCKWORK_ASSERT_LEVEL >= LEVEL) { \
                             HPBC_CLOCKWORK_BASIC_ASSERT(__VA_ARGS__); } } while(0)
+#endif
 
 #  define HPBC_CLOCKWORK_PRECONDITION(...) HPBC_CLOCKWORK_LEVEL_ASSERT(1, __VA_ARGS__)
 #  define HPBC_CLOCKWORK_PRECONDITION2(...) HPBC_CLOCKWORK_LEVEL_ASSERT(2, __VA_ARGS__)
