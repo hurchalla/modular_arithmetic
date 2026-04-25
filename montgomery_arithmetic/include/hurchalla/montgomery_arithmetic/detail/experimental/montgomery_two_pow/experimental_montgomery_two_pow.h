@@ -3197,7 +3197,7 @@ __attribute__((unused));    // suppresses unused label warning
         } else {
             while (shift >= P2) {
                 HPBC_CLOCKWORK_ASSERT2(index <= MASK);
-                result = MFE::twoPowLimited_times_x_v2(mf, index + 1, cresult);
+                result = MFE::twoPowLimited_times_x_times2(mf, index, cresult);
 
                 SV sv;
                 if HURCHALLA_CPP17_CONSTEXPR (USE_SQUARING_VALUE_OPTIMIZATION)

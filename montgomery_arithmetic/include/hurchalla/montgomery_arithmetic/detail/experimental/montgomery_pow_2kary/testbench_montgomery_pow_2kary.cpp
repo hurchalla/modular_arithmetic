@@ -2513,7 +2513,7 @@ bench_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce,
 
       bench_ARRAY_CS2_by_size<hc::LowuopsTag, 2, MontType>(timingA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
       bench_ARRAY_CS2_by_size<hc::LowlatencyTag, 2, MontType>(timingA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-/*
+#if 0
       bench_ARRAY_CS2_by_size<hc::LowuopsTag, 3, MontType>(timingA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
       bench_ARRAY_CS2_by_size<hc::LowlatencyTag, 3, MontType>(timingA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
 
@@ -2537,7 +2537,7 @@ bench_array_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce,
 
       bench_ARRAY_CS2_by_size<hc::LowuopsTag, 12, MontType>(timingA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
 //      bench_ARRAY_CS2_by_size<hc::LowlatencyTag, 12, MontType>(timingA[i][j], maxU, range, dummy, mmbr[i], seed, ebr[i]);
-*/
+#endif
 
 
 #if 0
