@@ -3070,7 +3070,11 @@ break_0_39:
                     else
                         current_bit_is_zero = (static_cast<size_t>(branchless_shift_right(n, shift-1)) & 1u) == 0;
 
+#if defined(_MSC_VER)
+                    if (UseSlidingWindowOnes || !SquareOnWindowLastBit) {
+#else
                     if HURCHALLA_CPP17_CONSTEXPR (UseSlidingWindowOnes || !SquareOnWindowLastBit) {
+#endif
                         if (!current_bit_is_zero)
                             break;
                     } else {
@@ -4272,7 +4276,7 @@ if HURCHALLA_CPP17_CONSTEXPR (CODE_SECTION == 0) {
             size_t ARRAY_SIZE, size_t TABLE_BITS = 5, size_t CODE_SECTION = 0,
             bool USE_SQUARING_VALUE_OPTIMIZATION = false>
   static std::array<typename MF::MontgomeryValue, ARRAY_SIZE>
-  call(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
+  arraycall(const std::array<MF, ARRAY_SIZE>& mf, const std::array<U, ARRAY_SIZE>& n)
   {
     static_assert(ut_numeric_limits<U>::is_integer, "");
     static_assert(!ut_numeric_limits<U>::is_signed, "");

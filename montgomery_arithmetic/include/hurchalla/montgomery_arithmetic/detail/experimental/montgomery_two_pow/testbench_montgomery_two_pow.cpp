@@ -331,7 +331,7 @@ int test_correctness_array_two_pow()
       }
       std::array<MontType, ARRAY_SIZE> mf_arr = vector_to_stdarray<ARRAY_SIZE>(mf_vec);
 
-      auto mont_result_arr = hc::experimental::experimental_montgomery_two_pow::call
+      auto mont_result_arr = hc::experimental::experimental_montgomery_two_pow::arraycall
                   <MontType, U, ARRAY_SIZE, TABLE_BITS, CODE_SECTION, USE_SQUARING_VALUE_OPTIMIZATION>
                   (mf_arr, exponent_arr);
 
@@ -475,7 +475,16 @@ bench_array_two_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_red
             do {
                val = generate_random_value<U>(gen, distrib64);
                val = val & maxmask;
-            } while (val > max || val < max/2 || (val % 2 == 0));
+            } while (val > max || val < max/2);
+            // make val odd if it isn't already odd:
+            if (val == 0)
+               val = 1;
+            else {
+               if (val % 2 == 0)
+                  --val;
+               if (val < max/2)
+                  val += 2;
+            }
             tmpvec.push_back(val);
          }
       }
@@ -564,7 +573,7 @@ bench_array_two_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_red
          for (size_t j=0; j < ARRAY_SIZE; ++j)
             exparr[j] = randexpU[i + j];
 
-         std::array<V, ARRAY_SIZE> result = hurchalla::experimental::experimental_montgomery_two_pow::call
+         std::array<V, ARRAY_SIZE> result = hurchalla::experimental::experimental_montgomery_two_pow::arraycall
                <MontType, U, ARRAY_SIZE, TABLE_BITS, CODE_SECTION, USE_SQUARING_VALUE_OPTIMIZATION>(mfarr, exparr);
 
 #if 0
@@ -583,7 +592,7 @@ bench_array_two_pow(U min, U range, U& totalU, unsigned int max_modulus_bits_red
          else {
             struct OpenV : public V {
                HURCHALLA_FORCE_INLINE OpenV(V x) : V(x) {}
-               HURCHALLA_FORCE_INLINE auto get() -> decltype(V::get()) { return V::get(); }
+               HURCHALLA_FORCE_INLINE auto get() -> decltype(this->V::get()) { return this->V::get(); }
             };
             for (size_t j=0; j < ARRAY_SIZE; ++j)
                totalU += static_cast<U>(OpenV(result[j]).get());
@@ -733,7 +742,16 @@ bench_range(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST 
             do {
                val = generate_random_value<U>(gen, distrib64);
                val = val & maxmask;
-            } while (val > max || val < max/2 || (val % 2 == 0));
+            } while (val > max || val < max/2);
+            // make val odd if it isn't already odd:
+            if (val == 0)
+               val = 1;
+            else {
+               if (val % 2 == 0)
+                  --val;
+               if (val < max/2)
+                  val += 2;
+            }
             tmpvec.push_back(val);
          }
       }
@@ -810,7 +828,7 @@ bench_range(U min, U range, U& totalU, unsigned int max_modulus_bits_reduce, ST 
             using V = typename MontType::MontgomeryValue;
             struct OpenV : public V {
                HURCHALLA_FORCE_INLINE OpenV(V x) : V(x) {}
-               HURCHALLA_FORCE_INLINE auto get() -> decltype(V::get()) { return V::get(); }
+               HURCHALLA_FORCE_INLINE auto get() -> decltype(this->V::get()) { return this->V::get(); }
             };
             totalU += static_cast<U>(OpenV(val).get());
          }
@@ -908,29 +926,8 @@ using namespace hurchalla;
 
 
    constexpr int UDIGITS = hc::ut_numeric_limits<U>::digits;
-      // Note you're not required to use string_to_uint().  I just used it as a way to set values greater than 2^64 without getting a compile error.
-
-   U modulus;
-   if (UDIGITS >= 128)
-      modulus = string_to_uint<U>("1234567890123456789012345678901");
-   else if (UDIGITS >= 64)
-      modulus = string_to_uint<U>("1234567890123456789");
-   else if (UDIGITS >= 32)
-      modulus = string_to_uint<U>("123456789");
-   else if (UDIGITS >= 16)
-      modulus = string_to_uint<U>("12345");
-   else
-      modulus = string_to_uint<U>("63");
-
-   if (modulus % 2 == 0) {
-      std::cout << "Error: modulus must be odd to use Montgomery arithmetic\n";
-      return 1;
-   }
-
-
    constexpr U maxU = hc::ut_numeric_limits<U>::max();
    U range = static_cast<U>(100000);
-
 
 
 
@@ -969,30 +966,29 @@ using namespace hurchalla;
    for (size_t i=0; i<4; ++i) {
      for (size_t j=0; j<timingA[i].size(); ++j) {
 
-#if 0
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 29, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 29, 4, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 29, 5, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 29, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 29, 7, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 29, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 29, 10, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 29, 12, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 29, 14, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 29, 16, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-#endif
-
 #if 1
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 27, 1, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 28, 1, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 1, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 30, 1, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 31, 1, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 27, 2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 28, 2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 30, 2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 31, 2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
       timingA[i][j].push_back(
          bench_array_two_pow<0, 27, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(
@@ -1083,6 +1079,10 @@ using namespace hurchalla;
 
 
       timingA[i][j].push_back(
+         bench_array_two_pow<0, 32, 1, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 32, 2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
          bench_array_two_pow<0, 32, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(
          bench_array_two_pow<0, 32, 4, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
@@ -1102,6 +1102,28 @@ using namespace hurchalla;
 
    if constexpr (std::is_same<typename MontType::MontType::MontyTag,
                                     ::hurchalla::detail::TagMontyFullrange>::value) {
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 27, 1, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 28, 1, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 1, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 30, 1, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 31, 1, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 27, 2, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 28, 2, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 29, 2, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 30, 2, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 31, 2, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+
       timingA[i][j].push_back(
          bench_array_two_pow<0, 27, 3, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(
@@ -1192,6 +1214,10 @@ using namespace hurchalla;
 
 
       timingA[i][j].push_back(
+         bench_array_two_pow<0, 32, 1, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
+         bench_array_two_pow<0, 32, 2, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+      timingA[i][j].push_back(
          bench_array_two_pow<0, 32, 3, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(
          bench_array_two_pow<0, 32, 4, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
@@ -1211,162 +1237,10 @@ using namespace hurchalla;
    }
 #endif
 
+
+
+
 #if 1
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 0, 10, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 1, 10, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 4, 10, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 7, 10, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 0, 12, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 1, 12, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 4, 12, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 7, 12, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 0, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 1, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 4, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 7, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 0, 4, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 1, 4, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 4, 4, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 7, 4, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 0, 5, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 1, 5, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 4, 5, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 7, 5, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 0, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 1, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 4, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 7, 6, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 0, 7, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 1, 7, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 4, 7, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 7, 7, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 0, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 1, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 4, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 7, 8, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-
-   if constexpr (std::is_same<typename MontType::MontType::MontyTag,
-                                    ::hurchalla::detail::TagMontyFullrange>::value) {
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 0, 10, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 1, 10, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 4, 10, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 7, 10, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 0, 12, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 1, 12, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 4, 12, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 7, 12, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 0, 3, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 1, 3, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 4, 3, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 7, 3, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 0, 4, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 1, 4, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 4, 4, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 7, 4, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 0, 5, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 1, 5, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 4, 5, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 7, 5, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 0, 6, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 1, 6, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 4, 6, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 7, 6, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 0, 7, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 1, 7, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 4, 7, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 7, 7, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 0, 8, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 1, 8, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 4, 8, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timingA[i][j].push_back(
-         bench_array_two_pow<0, 7, 8, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-   }
-#endif
-
-
-
-
-#if 0
       timingA[i][j].push_back(
          bench_array_two_pow<0, 0, 10, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timingA[i][j].push_back(
@@ -1789,7 +1663,7 @@ using namespace hurchalla;
    }
 #endif
 
-#if 0
+#if 1
 // Array sizes 1 and 2 - we expect these to comparatively be quite slow
       timingA[i][j].push_back(
          bench_array_two_pow<0, 0, 1, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
@@ -2017,346 +1891,6 @@ std::cout << "Timings By Test Type:\n";
        // format is bench_range<TABLE_BITS, USE_SLIDING_WINDOW_OPTIMIZATION, CODE_SECTION,
        //                       MontType, USE_SQUARING_VALUE_OPTIMIZATION>
 
-
-
-
-#if 1
-// retest the code sections that use any of the twopowlimited functions
-// (I added new left_shift_to_hilo functions, and the twopowlimited functions are what call them)
-      timings[i][j].push_back(
-         bench_range<0, true , 17, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 17, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 18, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 18, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 22, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 22, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 23, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 23, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 24, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 24, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 25, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 25, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 26, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 26, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, false, 28, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 29, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 31, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 31, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 32, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 32, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 33, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 33, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 34, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 34, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 35, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 35, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 36, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 36, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 37, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 37, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 38, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 38, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 39, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 39, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, false, 40, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 41, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 19, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 19, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 20, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 20, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 21, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 21, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-
-      timings[i][j].push_back(
-         bench_range<0, true , 2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-
-      timings[i][j].push_back(
-         bench_range<0, false, 10, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 11, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 12, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 13, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 10, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 11, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 12, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 13, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, false, 14, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 15, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 16, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 14, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 15, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 16, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-   if constexpr (std::is_same<typename MontType::MontType::MontyTag,
-                                    ::hurchalla::detail::TagMontyFullrange>::value) {
-      timings[i][j].push_back(
-         bench_range<0, true , 17, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 17, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 18, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 18, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 22, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 22, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 23, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 23, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 24, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 24, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 25, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 25, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 26, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 26, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, false, 28, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 29, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 31, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 31, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 32, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 32, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 33, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 33, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 34, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 34, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 35, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 35, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 36, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 36, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 37, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 37, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 38, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 38, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 39, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 39, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, false, 40, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 41, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 19, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 19, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 20, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 20, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 21, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 21, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 2, MontType, true >(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 2, MontType, true >(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 3, MontType, true >(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 3, MontType, true >(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, false, 10, MontType, true >(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 11, MontType, true >(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 12, MontType, true >(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 13, MontType, true >(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 10, MontType, true >(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 11, MontType, true >(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 12, MontType, true >(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 13, MontType, true >(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, false, 14, MontType, true >(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 15, MontType, true >(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 16, MontType, true >(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 14, MontType, true >(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 15, MontType, true >(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 16, MontType, true >(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-   }
-
-      timings[i][j].push_back(
-         bench_range<1, true , 2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<1, true , 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<2, true , 2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<3, true , 2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-
-
-
-      timings[i][j].push_back(
-         bench_range<4, true , 2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<4, true , 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<4, false, 2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<4, false, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<5, true , 2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<5, true , 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<5, false, 2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<5, false, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<6, true , 2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<6, false, 2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-   if constexpr (std::is_same<typename MontType::MontType::MontyTag,
-                                    ::hurchalla::detail::TagMontyFullrange>::value) {
-      timings[i][j].push_back(
-         bench_range<4, true , 2, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<4, true , 3, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<4, false, 2, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<4, false, 3, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<5, true , 2, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<5, true , 3, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<5, false, 2, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<5, false, 3, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<6, true , 2, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<6, false, 2, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-   }
-#endif
-
-// enable the following section - because I want to
-// retest the code sections that use any of the twopowlimited functions
-// (I added new left_shift_to_hilo functions, and the twopowlimited functions are what call them)
 
 #if 1
    // time/test the new experimental sections (43-106) vs. the accepted best (section 42)
@@ -2628,225 +2162,14 @@ std::cout << "Timings By Test Type:\n";
    }
 #endif
 
-#if 0
-// This is a copy/paste of the "best of best" code sections from further below (nothing is new here).
-// The goal here is to time and compare only code sections that have already proven to be
-// among the absolute top performers for Halfrange scalar pow __uint128_t
 
-      timings[i][j].push_back(
-         bench_range<0, true , 1, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 1, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 3, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
+// Tests covered (for TABLE_BITS == 0) below are CODE_SECTIONs:
+// 0-26 28-29 31-41
+// (FullRange squaring optimization tests) 0-3 10-26 28-29 31-41
+// Note that 27 and 30 are skipped (presumed slow I think).  4-9 are skipped for FullRange squaring-opt tests because
+// those CODE_SECTIONS don't use SQUARING_VALUE_OPTIMIZATION
 
-      timings[i][j].push_back(
-         bench_range<0, true , 15, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 15, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 17, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 17, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 18, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 18, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 39, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 39, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 20, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 20, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 21, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 21, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 22, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 22, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 23, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 23, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 24, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 24, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 32, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 32, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 33, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 33, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 34, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 34, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 35, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 35, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 36, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 36, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-#endif
-
-
-#if 0
-// This is a copy/paste of the "best of best" code sections from further below (nothing is new here).
-// The goal here is to time and compare only code sections that have already proven to be
-// among the absolute top performers for Quarterrange scalar pow __uint128_t
-
-      timings[i][j].push_back(
-         bench_range<0, true , 22, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 22, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 23, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 23, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 24, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 24, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 25, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 25, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 19, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 19, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 20, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 20, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 21, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 21, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 34, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 34, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 35, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 35, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 36, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 36, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 37, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 37, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 31, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 31, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 32, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 32, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 33, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 33, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-#endif
-
-#if 0
-// These tests are selected copy/pastes (taken from below) of the best of the best for Fullrange  __uint128_t
-
-   if constexpr (std::is_same<typename MontType::MontType::MontyTag,
-                                    ::hurchalla::detail::TagMontyFullrange>::value) {
-      timings[i][j].push_back(
-         bench_range<0, false, 18, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 39, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 19, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 19, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 20, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 20, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 21, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 21, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 22, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 22, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 23, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 23, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 24, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 24, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 25, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 25, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 31, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 31, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 32, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 32, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 33, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 33, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<0, true , 34, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 34, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 35, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 35, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 36, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 36, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, true , 37, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-      timings[i][j].push_back(
-         bench_range<0, false, 37, MontType, true>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-  }
-#endif
-
-
-
-#if 0
+#if 1
       timings[i][j].push_back(
          bench_range<0, true , 17, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timings[i][j].push_back(
@@ -3161,12 +2484,10 @@ std::cout << "Timings By Test Type:\n";
          bench_range<3, true , 1, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timings[i][j].push_back(
          bench_range<3, true , 2, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
-
-      timings[i][j].push_back(
-         bench_range<4, true , 1, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
 #endif
 
-#if 0
+
+#if 1
       timings[i][j].push_back(
          bench_range<4, true , 0, MontType, false>(static_cast<U>(maxU - range), range, dummy, mmbr[i], seed, ebr[i]));
       timings[i][j].push_back(
