@@ -14,7 +14,8 @@ invoke_test() {
     shift
     echo $@
     echo ""
-    $@
+#    $@
+    nice -n -20 "$@"
   ) 2>&1 | tee $1
 
   # Check if the subshell failed

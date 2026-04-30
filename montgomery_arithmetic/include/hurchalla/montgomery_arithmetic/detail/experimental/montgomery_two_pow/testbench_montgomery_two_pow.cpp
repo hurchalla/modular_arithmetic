@@ -925,7 +925,6 @@ using namespace hurchalla;
 
 
 
-   constexpr int UDIGITS = hc::ut_numeric_limits<U>::digits;
    constexpr U maxU = hc::ut_numeric_limits<U>::max();
    U range = static_cast<U>(100000);
 
